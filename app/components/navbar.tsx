@@ -35,9 +35,9 @@ const Navbar = () => {
       <div className="flex items-center gap-5">
         <div className="flex items-center gap-4">
           <img src="/logo.svg" alt="Coca Logo" className="w-10 h-10 rounded-full" />
-          <img src="/coca.svg" alt="Coca" className="h-6" />
+          <img src="/coca.svg" alt="Coca" className="h-6 hidden md:block" />
         </div>
-        <div className="w-px h-8 bg-gray-200"></div>
+        <div className="w-px h-8 bg-gray-200 hidden md:block"></div>
         <span className="font-bold text-gray-800">Dashboard</span>
       </div>
       
