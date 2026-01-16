@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import PopupActions from "@/app/components/Dashboard/PopupActions";
+import PopupActions from "@/app/components/Dashboard/common/PopupActions";
 
 type FilterPopupProps = {
   open: boolean;
