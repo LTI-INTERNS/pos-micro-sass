@@ -1,17 +1,16 @@
-import DashboardLayout from '../components/dashboard_layout';
-import SearchBar from '../components/searchbar';
-//import CustomerManagement from '@/app/Customermanagement/table-handle';
-import CustomersTable from '../components/customers-table';
-import CustomerActions from '../components/customer-actions';
+import DashboardLayout from "../components/dashboard_layout";
+import SearchBar from "../components/searchbar";
+import CustomerActionsBar from "../components/customer-actions";
+import CustomersTable from "../components/customers-table";
 
-export default function DashboardPage() {
+export default function CustomersPage() {
   return (
     <DashboardLayout>
-        <div className="text-gray-500 text-center mt-20">
-            <SearchBar />
-            <CustomerActions />
-           <CustomersTable customers={[]} />
-        </div>
+      <div className="w-full space-y-6">
+        <SearchBar />
+        <CustomerActionsBar />
+        <CustomersTable customers={[]} />
+      </div>
     </DashboardLayout>
   );
 }
