@@ -18,16 +18,16 @@ export default function CustomersTable({ customers }: Props) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
       <div className="flex items-center justify-between px-6 py-4">
-        <h2 className="text-base font-semibold text-gray-900">
+        <h2 className="text-xm font-semibold text-gray-900">
           Customers
         </h2>
-        <button className="text-sm font-medium text-orange-500 hover:text-orange-600">
+        <button className="text-xs font-medium text-orange-500 hover:text-orange-600">
           View All
         </button>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead>
             <tr className="border-t border-b border-gray-100 text-gray-500">
               <th className="px-6 py-4 text-left font-semibold">Name</th>
@@ -36,7 +36,7 @@ export default function CustomersTable({ customers }: Props) {
               <th className="px-6 py-4 text-left font-semibold">Points</th>
               <th className="px-6 py-4 text-left font-semibold">Email</th>
               <th className="px-6 py-4 text-right font-semibold">
-                Outstanding Payments
+                Outstanding <br></br>Payments
               </th>
             </tr>
           </thead>

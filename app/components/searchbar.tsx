@@ -5,12 +5,14 @@ import { Search } from "lucide-react";
 
 type SearchBarProps = {
   placeholder?: string;
-  onSearch?: (value: string) => void; 
+  onSearch?: (value: string) => void;
+  onFilter?: () => void;
 };
 
 export default function SearchBar({
   placeholder = "Search customers...",
   onSearch,
+  onFilter,
 }: SearchBarProps) {
   const [value, setValue] = useState("");
 
@@ -22,18 +24,38 @@ export default function SearchBar({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSearch?.(value);
+    onSearch?.(value); 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-[320px]">
-      <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"/>
-      <input
-        value={value}
-        onChange={handleChange}
-        placeholder={placeholder}
-        className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-100"
-      />
+    <form
+      onSubmit={handleSubmit}
+      className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden"
+    >
+      <div className="flex items-center">
+        <div className="flex items-center gap-3 flex-1 px-6 py-4">
+          <Search size={12} className="text-gray-400" />
+          <input
+            value={value}
+            onChange={handleChange}
+            placeholder={placeholder}
+            className="w-full text-sm text-gray-700 placeholder:text-gray-400 outline-none"
+          />
+        </div>
+
+        <div className="h-10 w-px bg-gray-200" />
+
+        <div className="px-6 py-4">
+          <button
+            type="button"
+            onClick={onFilter}
+            className="rounded-full border border-orange-400 px-6 py-2 text-sm font-semibold text-orange-500
+                       hover:bg-orange-50 transition"
+          >
+            Filter
+          </button>
+        </div>
+      </div>
     </form>
   );
 }
