@@ -7,3 +7,8 @@ type SearchBarProps = {
   placeholder?: string;
   onSearch?: (value: string) => void; 
 };
+export default function SearchBar({
+  placeholder = "Search customers...",
+  onSearch,
+}: SearchBarProps) {
+  const [value, setValue] = useState("");
