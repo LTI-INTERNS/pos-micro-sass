@@ -20,7 +20,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-screen flex flex-col relative">
+    <aside className="w-64 bg-white border-r border-gray-200 h-full flex flex-col relative">
       <div className="py-5"   >
         {menuItems.map((item) => (
           <div
@@ -37,8 +37,8 @@ const Sidebar = () => {
         ))}
       </div>
       
-      <div className="absolute bottom-20 left-10 right-6">
-        <div className="flex items-center gap-3 px-4 py-3 text-gray-600  cursor-pointer">
+      <div className="p-5">
+        <div className="flex items-center gap-3 px-4 py-3 text-gray-600  cursor-pointer hover:bg-gray-50 rounded">
             <Settings size={20} />
           <span>Settings</span>
         </div>
