@@ -12,3 +12,17 @@ export default function SearchBar({
   onSearch,
 }: SearchBarProps) {
   const [value, setValue] = useState("");
+
+function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const next = e.target.value;
+    setValue(next);
+    onSearch?.(next); 
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSearch?.(value); 
+  }  
+return {
+    
+}
