@@ -26,7 +26,7 @@ export default function FormField({
         placeholder={placeholder}
         className="
           w-full rounded-full border border-gray-200 px-5 py-3 outline-none
-          placeholder:text-gray-300
+          placeholder:text-gray-300 text-gray-800
           focus:border-orange-500 focus:ring-2 focus:ring-orange-200
         "
       />
