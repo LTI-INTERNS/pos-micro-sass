@@ -95,6 +95,33 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleSave = () => {
+    if (validateForm()) {
+      console.log("Form is valid! Submitted data:", formValues);
+      // API call
+      onClose();
+      resetForm();
+    }
+  };
+
+  const handleCancel = () => {
+    onClose();
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormValues({
+      name: "",
+      number: "",
+      displayName: "",
+      branchName: "",
+      email: "",
+      password: "",
+      pin: ""
+    });
+    setErrors({});
+  };
+
   return (
     <ModalShell
       open={isOpen}
