@@ -12,7 +12,7 @@ type PopupActionsProps = {
 
 export default function PopupActions({ actions }: PopupActionsProps) {
   return (
-    <div className="mt-6 flex gap-4">
+    <div className="mt-6 flex justify-center gap-4">
       {actions.map((action, index) => {
         const isPrimary = action.variant === "primary";
 
