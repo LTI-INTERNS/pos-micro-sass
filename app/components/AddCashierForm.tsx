@@ -129,6 +129,31 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
       onClose={handleCancel}
       
     >
+        <div className="space-y-3">
+        <div>
+          <FormField
+            label="Name"
+            placeholder="Enter name"
+            value={formValues.name}
+            onChange={(val) => setField("name", val)}
+          />
+          {errors.name && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.name}</p>
+          )}
+        </div>
+
+        <div>
+          <FormField
+            label="Number"
+            placeholder="Enter Number"
+            value={formValues.number}
+            onChange={(val) => setField("number", val)}
+          />
+          {errors.number && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.number}</p>
+          )}
+        </div>
+        </div>
 
     </ModalShell>
      );
