@@ -212,8 +212,22 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
             <p className="text-xs text-red-500 mt-1 px-3">{errors.pin}</p>
           )}
         </div>
-        </div>
 
+        <PopupActions
+          actions={[
+            {
+              label: "Cancel",
+              onClick: handleCancel,
+              variant: "secondary"
+            },
+            {
+              label: "Save",
+              onClick: handleSave,
+              variant: "primary"
+            }
+          ]}
+        />
+        </div>
     </ModalShell>
      );
 }
