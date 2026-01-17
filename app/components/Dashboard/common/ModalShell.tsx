@@ -7,7 +7,7 @@ type ModalShellProps = {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
-  widthClassName?: string; // e.g. "w-[900px]" or "max-w-4xl w-full"
+  widthClassName?: string; 
 };
 
 export default function ModalShell({
@@ -31,7 +31,7 @@ export default function ModalShell({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* backdrop */}
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
 
       {/* card */}
       <div className={`relative rounded-2xl bg-white shadow-xl ${widthClassName}`}>

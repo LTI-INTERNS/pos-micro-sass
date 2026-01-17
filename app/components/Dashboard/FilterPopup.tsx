@@ -59,7 +59,7 @@ export default function FilterPopup({
               placeholder="Date"
               className="
                 w-full rounded-2xl border border-gray-200 px-4 py-4 outline-none
-                placeholder:text-orange-500
+                placeholder:text-orange-500 text-gray-800
                 focus:border-orange-500 focus:ring-2 focus:ring-orange-200
               "
             />
@@ -70,7 +70,7 @@ export default function FilterPopup({
               placeholder="Type"
               className="
                 w-full rounded-2xl border border-gray-200 px-4 py-4 outline-none
-                placeholder:text-gray-400
+                placeholder:text-gray-400 text-gray-800
                 focus:border-orange-500 focus:ring-2 focus:ring-orange-200
               "
             />
