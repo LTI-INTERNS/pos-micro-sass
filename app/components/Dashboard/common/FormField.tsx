@@ -16,8 +16,8 @@ export default function FormField({
   type = "text",
 }: FormFieldProps) {
   return (
-    <div className="space-y-2">
-      <label className="text-sm text-gray-500">{label}</label>
+    <div className="space-y-1">    
+      <label className="text-[12px] text-gray-500">{label}</label> 
 
       <input
         type={type}
@@ -25,8 +25,8 @@ export default function FormField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className="
-          w-full rounded-full border border-gray-200 px-5 py-3 outline-none
-          placeholder:text-gray-300
+          w-full rounded-full border border-gray-200 px-4 py-2 outline-none
+          placeholder:text-gray-300 text-gray-800
           focus:border-orange-500 focus:ring-2 focus:ring-orange-200
         "
       />
