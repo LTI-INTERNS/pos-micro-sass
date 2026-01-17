@@ -213,20 +213,25 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           )}
         </div>
 
-        <PopupActions
-          actions={[
-            {
-              label: "Cancel",
-              onClick: handleCancel,
-              variant: "secondary"
-            },
-            {
-              label: "Save",
-              onClick: handleSave,
-              variant: "primary"
-            }
-          ]}
-        />
+        
+        <div className="flex justify-center">
+          <div className="w-[420px]">
+            <PopupActions
+              actions={[
+                {
+                  label: "Cancel",
+                  onClick: handleCancel,
+                  variant: "secondary"
+                },
+                {
+                  label: "Save",
+                  onClick: handleSave,
+                  variant: "primary"
+                }
+              ]}
+            />
+          </div>
+          </div>
         </div>
     </ModalShell>
      );
