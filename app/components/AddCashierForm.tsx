@@ -176,6 +176,42 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
             <p className="text-xs text-red-500 mt-1 px-3">{errors.branchName}</p>
           )}
         </div>
+        <div>
+          <FormField
+            label="Email"
+            placeholder="Enter Email"
+            value={formValues.email}
+            onChange={(val) => setField("email", val)}
+          />
+          {errors.email && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.email}</p>
+          )}
+        </div>
+
+        <div>
+          <FormField
+            label="Password"
+            placeholder="Enter Password"
+            value={formValues.password}
+            onChange={(val) => setField("password", val)}
+            type="text"
+          />
+          {errors.password && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.password}</p>
+          )}
+        </div>
+
+        <div>
+          <FormField
+            label="PIN"
+            placeholder="Enter PIN"
+            value={formValues.pin}
+            onChange={(val) => setField("pin", val)}
+          />
+          {errors.pin && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.pin}</p>
+          )}
+        </div>
         </div>
 
     </ModalShell>
