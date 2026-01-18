@@ -27,7 +27,8 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
    const [latestValues, setLatestValues] = React.useState<Record<string, string>>({});
 
   return (
-  
+   <ModalShell open={true} title="Add New Expense" onClose={onClose} widthClassName="w-[980px] max-w-[92vw]">
+
    <div >
     <ReusableForm
           fields={addExpenseFields}
@@ -57,7 +58,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 
    </div>
    
-     
+   </ModalShell>  
       
   )
 }
