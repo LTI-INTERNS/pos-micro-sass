@@ -3,6 +3,7 @@ import React from 'react'
 import ReusableForm , { FieldConfig } from './common/ReusableForm'
 import PopupActions from './common/PopupActions';
 import ModalShell from './common/ModalShell';
+import Method from './common/Method';
 
 type AddExpensesPopupProps = {
   open: boolean;
@@ -35,6 +36,25 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
             onSave(values as any);
           }}
         />
+
+     <Method />
+
+      <div className="flex items-center justify-center">
+          <div className="w-[420px]">
+            <PopupActions
+              actions={[
+                { label: "Cancel", onClick: onClose, variant: "secondary" },
+                {
+                  label: "Save",
+                  onClick: () => onSave(latestValues as any),
+                  variant: "primary",
+                },
+              ]}
+            />
+          </div>
+        </div>
+
+
    </div>
    
      
