@@ -22,6 +22,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     'Supplier Management',
     'Reports',
     'Ai Prediction',
+    'Branches',
   ];
 
   return (
