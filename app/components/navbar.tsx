@@ -41,15 +41,15 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
     <nav className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
       <div className="flex items-center gap-5">
         {/*Hamburger menu for mobile responsivenes */}
-        <button className="md:hidden p-2 rounded hover:bg-orange-100 text-gray-00"  onClick={toggleSidebar}>
+        <button className="sm:hidden p-2 rounded hover:bg-orange-100 text-gray-00"  onClick={toggleSidebar}>
           <Menu size={24} />
         </button>
 
         <div className="flex items-center gap-4">
           <img src="/logo.svg" alt="Coca Logo" className="w-8 h-8 rounded-full" />
-          <img src="/coca.svg" alt="Coca" className="h-4 hidden md:block" />
+          <img src="/coca.svg" alt="Coca" className="h-4 hidden sm:block" />
         </div>
-        <div className="w-px h-8 bg-gray-200 hidden md:block"></div>
+        <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
         <span className="font-bold text-gray-800">Dashboard</span>
       </div>
       
