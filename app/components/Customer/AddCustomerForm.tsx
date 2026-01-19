@@ -39,6 +39,7 @@ export default function AddCustomerForm({
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
+  
 
 
     return (
@@ -48,6 +49,47 @@ export default function AddCustomerForm({
         onClose={onClose}
         widthClassName="w-[600px] max-w-[92vw]"
         >
+        <form className="space-y-1 mt-[-4]">
+            
+            <div>
+                <FormField
+                label="Name"
+                placeholder="Enter name"
+                value={values.name}
+                onChange={(next) => setField("name", next)}
+                />
+                {errors.name && (
+                <p className="text-xs text-red-500 mt-1 px-3">{errors.name}</p>
+                )}
+            </div>
+
+            
+            <div>
+                <FormField
+                label="Phone number"
+                placeholder="Enter phone number"
+                value={values.phoneNumber}
+                onChange={(next) => setField("phoneNumber", next)}
+                type="text"
+                />
+                {errors.phoneNumber && (
+                <p className="text-xs text-red-500 mt-1 px-3">{errors.phoneNumber}</p>
+                )}
+            </div>
+
+            
+            <div>
+                <FormField
+                label="Email"
+                placeholder="Enter email address"
+                value={values.email}
+                onChange={(next) => setField("email", next)}
+                />
+                {errors.email && (
+                <p className="text-xs text-red-500 mt-1 px-3">{errors.email}</p>
+                )}
+            </div>
+        </form>.
         </ModalShell>
   );
 }
