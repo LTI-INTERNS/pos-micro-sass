@@ -32,6 +32,15 @@ export default function AddCustomerForm({
 
     const [errors, setErrors] = React.useState<FormErrors>({});
 
+    const setField = (name: keyof FormValues, value: string) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+
     return (
         <ModalShell
         open={open}
