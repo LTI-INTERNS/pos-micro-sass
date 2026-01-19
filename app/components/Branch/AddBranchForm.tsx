@@ -102,6 +102,33 @@ export default function AddBranchForm({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleSubmit = () => {
+    if (validateForm()) {
+      console.log("Form is valid! Submitted data:", values);
+      onSubmit(values);
+      resetForm();
+    }
+  };
+
+  const handleCancel = () => {
+    onClose();
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setValues({
+      branchId: branchId,
+      name: "",
+      phoneNumber: "",
+      address: "",
+      registrationNumber: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+    setErrors({});
+  };
+
 
     return (
         <ModalShell 
