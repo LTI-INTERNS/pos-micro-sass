@@ -62,7 +62,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </div>
 
         <div className="p-5">
-          <div className="flex items-center gap-3 px-4 py-3 text-gray-600 cursor-pointer hover:bg-gray-50 rounded">
+          <div
+            onClick={() => setActiveItem('Settings')}
+            className={`flex items-center gap-3 px-4 py-3 rounded cursor-pointer
+              ${activeItem === 'Settings' 
+                ? "bg-orange-50 text-orange-500 border-r-orange-500" 
+                : "text-gray-400 hover:bg-gray-50 border-r-4 border-r-transparent"
+              }`}
+          >
             <Settings size={20} />
             <span>Settings</span>
           </div>
