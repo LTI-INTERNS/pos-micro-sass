@@ -44,33 +44,39 @@ export default function SearchBar({
         </div>
 
         <div className="h-7 w-px bg-gray-200" />
+       <div className="flex items-center gap-2 px-6 py-2">
+  <button
+    type="button"
+    onClick={onFilter}
+    className="rounded-full border border-orange-400 px-5 py-1.5
+               text-xs font-semibold text-orange-500
+               hover:bg-orange-50 transition"
+  >
+    All
+  </button>
 
-        <div className="px-6 py-2">
-          <button
-            type="button"
-            onClick={onFilter}
-            className="rounded-full border border-orange-400 px-5 py-1.5 text-xs font-semibold text-orange-500
-                       hover:bg-orange-50 transition"
-          >
-            All
-          </button>
-           <button
-            type="button"
-            onClick={onFilter}
-            className="rounded-full border border-orange-400 px-5 py-1.5 text-xs font-semibold text-orange-500
-                       hover:bg-orange-50 transition"
-          >
-            New
-          </button>
-           <button
-            type="button"
-            onClick={onFilter}
-            className="rounded-full border border-orange-400 px-5 py-1.5 text-xs font-semibold text-orange-500
-                       hover:bg-orange-50 transition"
-          >
-            Top
-          </button>
-        </div>
+  <button
+    type="button"
+    onClick={onFilter}
+    className="rounded-full border border-orange-400 px-5 py-1.5
+               text-xs font-semibold text-orange-500
+               hover:bg-orange-50 transition"
+  >
+    New
+  </button>
+
+  <button
+    type="button"
+    onClick={onFilter}
+    className="rounded-full border border-orange-400 px-5 py-1.5
+               text-xs font-semibold text-orange-500
+               hover:bg-orange-50 transition"
+  >
+    Top
+  </button>
+</div>
+
+
       </div>
     </form>
   );
