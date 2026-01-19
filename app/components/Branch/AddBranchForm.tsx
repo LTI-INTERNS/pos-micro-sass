@@ -32,7 +32,7 @@ export default function AddBranchForm({
   onSubmit,
 }: AddBranchFormProps) {
     const [values, setValues] = React.useState<Record<string, string>>({
-        branchId: branchId,
+        branchId: "A001",
         name: "",
         phoneNumber: "",
         address: "",
@@ -43,13 +43,6 @@ export default function AddBranchForm({
     });
 
     const [errors, setErrors] = React.useState<FormErrors>({});
-
-    React.useEffect(() => {
-        setValues((prev) => ({
-          ...prev,
-          branchId: branchId,
-        }));
-      }, [branchId]);
 
     const setField = (name: keyof FormValues, next: string) => {
         setValues((prev) => ({ ...prev, [name]: next }));
