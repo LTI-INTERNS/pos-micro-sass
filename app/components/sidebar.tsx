@@ -20,8 +20,8 @@ const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-full flex flex-col relative">
-      <div className="py-5"   >
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
+      <div className="py-5 flex-1 overflow-y-auto"   >
         {menuItems.map((item) => (
           <div
             key={item}
