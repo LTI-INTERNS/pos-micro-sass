@@ -127,7 +127,7 @@ export default function AddBranchForm({
         <ModalShell 
             open={open} 
             title="New Branch" 
-            onClose={onClose} 
+            onClose={handleCancel} 
             widthClassName="w-[700px] max-w-[92vw]">
             <form className="space-y-0.5 mt-[-10px]">
                 <div className="space-y-1">
@@ -240,7 +240,7 @@ export default function AddBranchForm({
                         actions={[
                             {
                             label: "Cancel",
-                            onClick: onClose,
+                            onClick: handleCancel,
                             variant: "secondary",
                             },
                             {
