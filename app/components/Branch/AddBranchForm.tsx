@@ -136,7 +136,27 @@ export default function AddBranchForm({
             title="New Branch" 
             onClose={onClose} 
             widthClassName="w-[700px] max-w-[92vw]">
+            <form className="space-y-0.5 mt-[-10px]">
 
+            <div className="flex justify-center">
+                <div className="w-[420px]">
+                <PopupActions
+                    actions={[
+                        {
+                        label: "Cancel",
+                        onClick: onClose,
+                        variant: "secondary",
+                        },
+                        {
+                        label: "Add Branch",
+                        onClick: handleSubmit,
+                        variant: "primary",
+                        },
+                    ]}
+                />
+                </div>
+            </div>
+        </form>
         </ModalShell>
     );
 }
