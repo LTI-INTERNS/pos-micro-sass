@@ -21,7 +21,7 @@ export default function CustomerActionsBar({
                      hover:bg-orange-50 hover:shadow-sm
                      transition"
         >
-          Delete Customer
+          Delete Supplier
         </button>
 
         <button
@@ -31,7 +31,7 @@ export default function CustomerActionsBar({
                      hover:bg-orange-50 hover:shadow-sm
                      transition"
         >
-          Edit Customer
+          Edit Supplier
         </button>
 
         <button
@@ -41,7 +41,7 @@ export default function CustomerActionsBar({
                      hover:bg-orange-600
                      transition"
         >
-          Add New Customer
+          Add New Supplier
         </button>
       </div>
     </div>

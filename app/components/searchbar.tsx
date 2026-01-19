@@ -10,7 +10,7 @@ type SearchBarProps = {
 };
 
 export default function SearchBar({
-  placeholder = "Search customers...",
+  placeholder = "Search Suppliers...",
   onSearch,
   onFilter,
 }: SearchBarProps) {
