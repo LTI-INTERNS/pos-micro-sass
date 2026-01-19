@@ -66,8 +66,8 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     }
 
     // Branch Name validation
-    if (!formValues.branchName.trim()) {
-      newErrors.branchName = "Branch name is required";
+    if (!formValues.branchName) {
+      newErrors.branchName = "Please select a branch";
     }
 
     // Email validation
@@ -165,17 +165,22 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           )}
         </div>
 
-        <div>
-          <FormField
-            label="Branch Name"
-            placeholder="Enter Branch Name"
-            value={formValues.branchName}
-            onChange={(val) => setField("branchName", val)}
+        <FormField
+          label="Branch Name"
+          placeholder="Select Branch"
+          value={formValues.branchName}
+          onChange={(val) => setField("branchName", val)}
+          type="dropdown"
+          options={[
+            { value: "branch-a", label: "Branch A" },
+            { value: "branch-b", label: "Branch B" },
+            { value: "branch-c", label: "Branch C" },
+          ]}
           />
           {errors.branchName && (
             <p className="text-xs text-red-500 mt-1 px-3">{errors.branchName}</p>
           )}
-        </div>
+          
         <div>
           <FormField
             label="Email"
