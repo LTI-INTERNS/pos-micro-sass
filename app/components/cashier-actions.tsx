@@ -51,14 +51,14 @@ export default function CustomerActionsBar({
 
         <button
           onClick={onAdd}
-          className="w-full rounded-full bg-orange-500 py-2
-                     text-xs font-semibold text-white
-                     hover:bg-orange-600
+          className="w-full rounded-full border border-orange-400 bg-white py-2
+                     text-xs font-semibold text-orange-500
+                     hover:bg-orange-50 hover:shadow-sm
                      transition"
         >
           Add New Customer
         </button>
- <button
+        <button
           onClick={onExport}
           className="w-full rounded-full border border-orange-400 bg-white py-2
                      text-xs font-semibold text-orange-500
