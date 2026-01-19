@@ -54,7 +54,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
       </div>
       
       <div className="flex items-center gap-4">
-        <span className="bg-gray-100 px-4 py-1 rounded-full text-[13px] font-bold text-gray-600">
+        <span className="hidden sm:inline bg-gray-100 px-4 py-1 rounded-full text-[13px] font-bold text-gray-600">
           {currentTime
             ? `${formatTime(currentTime)} ${formatDate(currentTime)}`
             : '--:--:-- --/--/----'}
