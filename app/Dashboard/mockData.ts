@@ -15,6 +15,15 @@ export const supplierStatCards = [
   },
   
 ];
+export const branchStatCards = [
+  {
+    title: "All Branches",
+    value: "342",
+    percentage: "+4.2%",
+    trend: "up",
+  },
+  
+];
 
 export const salesLineData = [
   { day: "Mon", value: 220 },
