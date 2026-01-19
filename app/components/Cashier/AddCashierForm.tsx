@@ -129,7 +129,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
       onClose={handleCancel}
       
     >
-        <div className="space-y-3">
+        <div className="space-y-2 mt-[-4px]">
         <div>
           <FormField
             label="Name"
