@@ -42,7 +42,13 @@ export default function SalesBarChart() {
 
           <YAxis tick={{ fontSize: 14 }} />
 
-          <Tooltip />
+          <Tooltip 
+            contentStyle={{
+              backgroundColor: '#000',
+              border: 'none',
+              borderRadius: '8px',
+            }}
+          />
 
           <Bar
             dataKey="value"

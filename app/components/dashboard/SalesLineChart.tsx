@@ -24,7 +24,13 @@ export default function SalesLineChart() {
           <YAxis
             tick={{ fontSize: 14 }}
           />
-          <Tooltip />
+          <Tooltip 
+            contentStyle={{
+              backgroundColor: '#000',
+              border: 'none',
+              borderRadius: '8px',
+            }}
+          />
 
           <Line type="monotone" dataKey="coffeetalk" stroke="#6366f1" strokeWidth={2} />
           <Line type="monotone" dataKey="lowSlow" stroke="#ef4444" strokeWidth={2} />
