@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 
 const Navbar = () => {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   useEffect(() => {
+    setCurrentTime(new Date());
+
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -43,7 +45,9 @@ const Navbar = () => {
       
       <div className="flex items-center gap-4">
         <span className="bg-gray-100 px-4 py-1 rounded-full text-[13px] font-bold text-gray-600">
-          {formatTime(currentTime)} {formatDate(currentTime)}
+          {currentTime
+            ? `${formatTime(currentTime)} ${formatDate(currentTime)}`
+            : '--:--:-- --/--/----'}
         </span>
         <button className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold ">
           Log Out
