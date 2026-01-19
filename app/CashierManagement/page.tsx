@@ -104,7 +104,7 @@ export default function CashierManagementPage() {
         <DateRangeBar value="Today : Apr 25, 2018 12:00 AM - Apr 26, 2018 12:00 AM" />
 
         {/* Search + Tabs container */}
-        <div className="w-full bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="w-full bg-white border border-gray-200 overflow-hidden">
           <div className="flex items-center">
             <div className="flex-1">
               <SearchBar
@@ -113,6 +113,8 @@ export default function CashierManagementPage() {
               />
             </div>
 
+            <div className="hidden sm:block h-12 w-px bg-gray-200 mx-4" />
+            
             <div className="hidden sm:flex items-center gap-2 pr-4">
               <CashierStatusTabs value={status} onChange={setStatus} />
             </div>
