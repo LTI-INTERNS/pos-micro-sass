@@ -17,8 +17,8 @@ type AddExpensesPopupProps = {
   }) => void;
 };
 const addExpenseFields: FieldConfig[] = [
-  { name: "date", label: "Date", placeholder: "Enter date", type: "text" },
-  { name: "category", label: "Category", placeholder: "Enter category", type: "text" },
+  { name: "date", label: "Date", placeholder: "Enter date", type: "date" },
+  { name: "category", label: "Category", placeholder: "Enter category", type: "dropdown" },
   { name: "description", label: "Description", placeholder: "Enter description", type: "text" },
   { name: "amount", label: "Amount", placeholder: "Enter amount", type: "number" },
 ];

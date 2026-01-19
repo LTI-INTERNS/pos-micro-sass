@@ -5,7 +5,7 @@ type FormFieldProps = {
   placeholder?: string;
   value: string;
   onChange: (next: string) => void;
-  type?: "text" | "number";
+  type?: "text" | "number" | "date" | "dropdown";
 };
 
 export default function FormField({
