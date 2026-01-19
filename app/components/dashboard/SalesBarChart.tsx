@@ -20,21 +20,35 @@ export default function SalesBarChart() {
         </button>
       </div>
 
-      <ResponsiveContainer width="100%" height={280}>
-        <BarChart data={salesBarData} margin={{ bottom: 40 }}>
+      
+      <ResponsiveContainer width="100%" height={250}>
+        <BarChart
+          data={salesBarData}
+          margin={{
+            top: 10,
+            right: 10,
+            left: 0,
+            bottom: 10, 
+          }}
+        >
           <XAxis
             dataKey="hour"
-            interval={0}                 
-            angle={-90}                  
+            interval={0}
+            angle={-90}
             textAnchor="end"
-            height={60}
+            height={50}     
             tick={{ fontSize: 14 }}
           />
-          <YAxis 
-          tick={{ fontSize: 14 }}
-          />
+
+          <YAxis tick={{ fontSize: 14 }} />
+
           <Tooltip />
-          <Bar dataKey="value" fill="#93c5fd" />
+
+          <Bar
+            dataKey="value"
+            fill="#93c5fd"
+            radius={[4, 4, 0, 0]} 
+          />
         </BarChart>
       </ResponsiveContainer>
     </div>
