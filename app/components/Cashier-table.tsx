@@ -1,6 +1,6 @@
 "use client";
 
-type Customer = {
+type Cashier = {
   id: number;
   name: string;
   cashno: number
@@ -11,19 +11,16 @@ type Customer = {
 };
 
 type Props = {
-  customers: Customer[];
+  Cashier: Cashier[];
 };
 
-export default function CustomersTable({ customers }: Props) {
+export default function CustomersTable({ Cashier }: Props) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
       <div className="flex items-center justify-between px-6 py-3">
         <h2 className="text-xs font-semibold text-gray-900">
-          Customers
+          Cashiers
         </h2>
-        <button className="text-xs font-medium text-orange-500 hover:text-orange-600">
-          View All
-        </button>
       </div>
 
       <div className="overflow-x-auto">
@@ -41,7 +38,7 @@ export default function CustomersTable({ customers }: Props) {
           </thead>
 
           <tbody>
-            {customers.map((c) => (
+            {Cashier.map((c) => (
               <tr
                 key={c.id}
                 className="border-b border-gray-100 hover:bg-gray-50 transition"
@@ -76,13 +73,13 @@ export default function CustomersTable({ customers }: Props) {
               </tr>
             ))}
 
-            {customers.length === 0 && (
+            {Cashier.length === 0 && (
               <tr>
                 <td
                   colSpan={6}
                   className="px-6 py-5 text-center text-gray-400 text-xs"
                 >
-                  No customers found
+                  No Cashier found
                 </td>
               </tr>
             )}
