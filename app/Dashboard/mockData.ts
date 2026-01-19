@@ -2,29 +2,18 @@
 
 export const statCards = [
   {
-    title: "Customers",
+    title: "All Suppliers",
     value: "342",
     percentage: "+4.2%",
     trend: "up",
   },
   {
-    title: "Low Stock Products",
+    title: "New Suppliers",
     value: "12",
     percentage: "-1.5%",
     trend: "down",
   },
-  {
-    title: "Total Sales",
-    value: "$1,290",
-    percentage: "+2.2%",
-    trend: "up",
-  },
-  {
-    title: "Expenses",
-    value: "$1,940",
-    percentage: "+4.0%",
-    trend: "up",
-  },
+  
 ];
 
 export const salesLineData = [
