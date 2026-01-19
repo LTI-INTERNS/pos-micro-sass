@@ -8,7 +8,7 @@ type Props = {
   onExport?: () => void;
 };
 
-export default function CustomerActionsBar({
+export default function CashierActionsBar({
   onAdd,
   onEdit,
   onDelete,

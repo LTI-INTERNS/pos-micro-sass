@@ -14,7 +14,7 @@ type Props = {
   Cashier: Cashier[];
 };
 
-export default function CustomersTable({ Cashier }: Props) {
+export default function CashiersTable({ Cashier }: Props) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
       <div className="flex items-center justify-between px-6 py-3">
