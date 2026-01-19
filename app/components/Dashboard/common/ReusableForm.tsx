@@ -7,7 +7,7 @@ export type FieldConfig = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number";
+  type?: "text" | "number" | "date" | "dropdown";
 };
 
 type ReusableFormProps = {
