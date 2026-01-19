@@ -58,6 +58,50 @@ export default function AddBranchForm({
         }
     };
 
+    const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    // Name validation
+    if (!values.name.trim()) {
+      newErrors.name = "Name is required";
+    }
+
+    // Phone number validation - exactly 10 digits
+    if (!values.phoneNumber.trim()) {
+      newErrors.phoneNumber = "Phone number is required";
+    } else if (!/^\d{10}$/.test(values.phoneNumber.replace(/\D/g, ""))) {
+      newErrors.phoneNumber = "Phone number must be exactly 10 digits";
+    }
+
+    // Address validation
+    if (!values.address.trim()) {
+      newErrors.address = "Address is required";
+    }
+
+    // Email validation
+    if (!values.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+    // Password validation
+    if (!values.password) {
+      newErrors.password = "Password is required";
+    } else if (values.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+
+    // Confirm password validation
+    if (!values.confirmPassword) {
+      newErrors.confirmPassword = "Confirm password is required";
+    } else if (values.password !== values.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
 
     return (
         <ModalShell 
