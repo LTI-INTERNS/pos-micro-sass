@@ -1,10 +1,10 @@
 import StatCard from '@/app/components/StatCard';
-import { statCards } from '@/app/Dashboard/mockData';
+import { supplierStatCards } from '@/app/Dashboard/mockData';
 
 export default function StatCardGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-      {statCards.map((card) => (
+      {supplierStatCards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}
