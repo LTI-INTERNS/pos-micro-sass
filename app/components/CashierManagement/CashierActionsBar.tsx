@@ -16,7 +16,7 @@ export default function CashierActionsBar({
   onExport,
 }: Props) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 px-6 py-3">
+    
       <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
         <button
           onClick={onDeactivate}
@@ -63,6 +63,6 @@ export default function CashierActionsBar({
           Export CSV
         </button>
       </div>
-    </div>
+    
   );
 }
