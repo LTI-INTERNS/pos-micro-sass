@@ -39,8 +39,28 @@ export default function AddCustomerForm({
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
-  
 
+    const handleSubmit = () => {
+        if (validateForm()) {
+        console.log("Form is valid! Submitted data:", values);
+        onSubmit(values);
+        resetForm();
+        }
+    };
+
+    const handleCancel = () => {
+        onClose();
+        resetForm();
+    };
+
+    const resetForm = () => {
+        setValues({
+        name: "",
+        phoneNumber: "",
+        email: "",
+        });
+        setErrors({});
+    };
 
     return (
         <ModalShell
@@ -89,7 +109,26 @@ export default function AddCustomerForm({
                 <p className="text-xs text-red-500 mt-1 px-3">{errors.email}</p>
                 )}
             </div>
-        </form>.
+
+            <div className="flex justify-center pt-4">
+                <div className="w-[420px]">
+                <PopupActions
+                    actions={[
+                    {
+                        label: "Cancel",
+                        onClick: handleCancel,
+                        variant: "secondary",
+                    },
+                    {
+                        label: "Add customer",
+                        onClick: handleSubmit,
+                        variant: "primary",
+                    },
+                    ]}
+                />
+                </div>
+            </div>
+        </form>
         </ModalShell>
   );
 }
