@@ -39,7 +39,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} sm:translate-x-0 sm:relative sm:top-0 sm:left-0`}
       >
 
-        <div className="flex justify-end sm:hidden p-4">
+        <div className="flex justify-end sm:hidden p-4 text-gray-400">
           <button onClick={onClose}>
             <X size={24} />
           </button>
