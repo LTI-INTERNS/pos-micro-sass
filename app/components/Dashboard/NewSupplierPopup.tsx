@@ -28,17 +28,46 @@ const baseFields: FieldConfig[] = [
 
 // Co-Operate screen
 const cooperateFields: FieldConfig[] = [
-  { name: "companyName", label: "Company Name", placeholder: "Enter name" },
-  { name: "contactPerson", label: "Contact person Name", placeholder: "Enter name" },
-  { name: "phone", label: "Phone number", placeholder: "Enter phone number" },
-  { name: "email", label: "Email", placeholder: "Enter email address" },
-  { name: "address", label: "Address", placeholder: "Enter Address" },
+  {
+    name: "companyName",
+    label: "Company Name",
+    placeholder: "Enter name",
+    span: 2, // full width
+  },
+
+  {
+    name: "contactPerson",
+    label: "Contact person Name",
+    placeholder: "Enter name",
+    span: 1, // half width (LEFT)
+  },
+  {
+    name: "phone",
+    label: "Phone number",
+    placeholder: "Enter phone number",
+    span: 1, // half width (RIGHT)
+  },
+
+  {
+    name: "email",
+    label: "Email",
+    placeholder: "Enter email address",
+    span: 2,
+  },
+  {
+    name: "address",
+    label: "Address",
+    placeholder: "Enter Address",
+    span: 2,
+  },
   {
     name: "regNumber",
     label: "Registration Number (Optional)",
     placeholder: "Enter Registration Number",
+    span: 2,
   },
 ];
+
 
 // Individual screen
 const individualFields: FieldConfig[] = [
