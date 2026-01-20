@@ -10,7 +10,11 @@ export type FieldConfig = {
   type?: "text" | "number" | "date" | "dropdown" | "radio";
   options?: { value: string; label: string }[];
   disabled?: boolean;
+
+  // NEW: grid span (1 = half width, 2 = full width)
+  span?: 1 | 2;
 };
+
 
 type ReusableFormProps = {
   fields: FieldConfig[];
@@ -52,11 +56,14 @@ export default function ReusableForm({
     onSubmit(values);
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      {fields.map((f) => (
+ return (
+  <form
+    onSubmit={handleSubmit}
+    className="grid grid-cols-2 gap-x-6 gap-y-4"
+  >
+    {fields.map((f) => (
+      <div key={f.name} className={f.span === 1 ? "col-span-1" : "col-span-2"}>
         <FormField
-          key={f.name}
           name={f.name}
           label={f.label}
           placeholder={f.placeholder}
@@ -66,7 +73,8 @@ export default function ReusableForm({
           options={f.options}
           disabled={f.disabled}
         />
-      ))}
-    </form>
-  );
+      </div>
+    ))}
+  </form>
+);
 }

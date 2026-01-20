@@ -55,7 +55,7 @@ export default function ModalShell({
         </div>
 
         {/* Body */}
-        <div className="px-10 py-7">{children}</div>
+        <div className="px-10 py-7 text-left">{children}</div>
       </div>
     </div>
   );

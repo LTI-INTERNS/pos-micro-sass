@@ -22,23 +22,25 @@ export default function FormField({
   disabled = false,
 }: Props) {
   const labelCls = "text-xs text-gray-500 mb-2 block";
+
   const inputCls =
     "w-full h-11 rounded-full border border-gray-200 bg-white px-5 text-sm text-gray-900 " +
     "outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-200";
-  const disabledCls = "bg-gray-100 text-gray-400 cursor-not-allowed";
+
+  const disabledCls = "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed";
 
   if (type === "radio") {
     return (
       <div className="py-1">
         {label ? <label className={labelCls}>{label}</label> : null}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-left justify-between">
           {options.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-3 text-sm text-gray-600">
+            <label key={opt.value} className="flex items-left gap-3 text-sm text-gray-600">
               <span>{opt.label}</span>
               <input
                 type="radio"
-                name={name} // ✅ MUST be field name
+                name={name}
                 value={opt.value}
                 checked={value === opt.value}
                 onChange={() => onChange(opt.value)}
@@ -58,8 +60,8 @@ export default function FormField({
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
           className={`${inputCls} ${disabled ? disabledCls : ""}`}
+          disabled={disabled}
         >
           <option value="">{placeholder ?? "Select"}</option>
           {options.map((opt) => (
@@ -80,8 +82,8 @@ export default function FormField({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
         className={`${inputCls} ${disabled ? disabledCls : ""}`}
+        disabled={disabled}
       />
     </div>
   );
