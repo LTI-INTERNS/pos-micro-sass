@@ -1,6 +1,6 @@
 // app/dashboard/mockData.ts
 
-export const statCards = [
+export const predictstatCards = [
   {
     title: "Customers",
     value: "342",

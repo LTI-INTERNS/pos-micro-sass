@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { salesBarData } from '@/app/dashboard/mockData';
+import { salesBarData } from '@/app/dashboard-predict/mockData';
 
 export default function SalesBarChart() {
   return (

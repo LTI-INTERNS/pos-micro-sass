@@ -1,5 +1,5 @@
 import TopSellingItem from './TopSellingItem';
-import { topSellingItemsData } from '@/app/dashboard/mockData';
+import { topSellingItemsData } from '@/app/dashboard-predict/mockData';
 
 export default function TopSellingSection() {
   return (

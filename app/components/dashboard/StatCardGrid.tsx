@@ -1,10 +1,17 @@
 import StatCard from './StatCard';
-import { statCards } from '@/app/dashboard/mockData';
+import { reportstatCards } from '@/app/dashboard-report/mockData';
+import { predictstatCards } from '@/app/dashboard-predict/mockData';
 
-export default function StatCardGrid() {
+interface StatCardGridProps {
+  type?: 'report' | 'predict';
+}
+
+export default function StatCardGrid({ type = 'report' }: StatCardGridProps) {
+  const cards = type === 'predict' ? predictstatCards : reportstatCards;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statCards.map((card) => (
+      {cards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}
@@ -16,3 +23,4 @@ export default function StatCardGrid() {
     </div>
   );
 }
+

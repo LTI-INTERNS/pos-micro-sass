@@ -1,5 +1,5 @@
 import StaffReportItem from './StaffReportItem';
-import { staffReportData } from '@/app/dashboard/mockData';
+import { staffReportData } from '@/app/dashboard-predict/mockData';
 
 export default function StaffReportSection() {
   return (
