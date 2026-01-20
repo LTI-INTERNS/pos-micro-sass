@@ -20,10 +20,10 @@ export default function FoodCard({ item }: Props) {
       />
 
       <div className="p-3">
-        <p className="text-sm font-semibold text-gray-900">
+        <p className="text-sm font-semibold text-gray-900 text-center">
           {item.name}
         </p>
-        <p className="text-sm text-orange-500 font-bold">
+        <p className="text-sm text-orange-500 font-bold text-center">
           LKR {item.price.toFixed(2)}
         </p>
       </div>
