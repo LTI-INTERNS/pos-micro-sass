@@ -42,6 +42,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         <Navbar toggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       </div>
 
+      <div className="h-[50px]"></div>
+
       <div className="flex flex-1">
         {/* Desktop Sidebar*/}
         <div className="fixed left-0 top-[60px] bottom-0 z-20 hidden sm:block overflow-y-auto scrollbar-hide hover:scrollbar-show group">
@@ -53,7 +55,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         </div>
 
-        <main className="flex-1 ml-0 sm:ml-64 overflow-y-auto p-8 scrollbar-hide">
+        <main className="flex-1 ml-0 sm:ml-64 top-[60px]overflow-y-auto p-8 scrollbar-hide">
           {children}
         </main>
       </div>
