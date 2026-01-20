@@ -1,6 +1,6 @@
 import DashboardLayout from "../components/dashboard_layout";
 import DateRangeBar from "../components/DateRangeBar";
-import SearchBar from "../components/ProfitCalculation/SuppliersSearch";
+import SearchBar from "../components/ProfitCalculation/CashierSearch";
 import ActionsBar from "../components/ProfitCalculation/ActionBar";
 import ProductTable, {Product} from "../components/ProfitCalculation/ProductsTable";
 import StatCardGrid from "../components/ProfitCalculation/ProfitStatCardGrid";
