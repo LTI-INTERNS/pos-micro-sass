@@ -1,40 +1,49 @@
 "use client";
 
-type FormFieldProps = {
-  label: string;
+type Props = {
+  name: string;
+  label?: string;
   placeholder?: string;
+  type?: "text" | "number" | "date" | "dropdown" | "radio";
   value: string;
   onChange: (next: string) => void;
-  type?: "text" | "number" | "date" | "dropdown" | "radio";
   options?: { value: string; label: string }[];
+  disabled?: boolean;
 };
 
 export default function FormField({
+  name,
   label,
   placeholder,
+  type = "text",
   value,
   onChange,
-  type = "text",
   options = [],
-}: FormFieldProps) {
+  disabled = false,
+}: Props) {
+  const labelCls = "text-xs text-gray-500 mb-2 block";
+  const inputCls =
+    "w-full h-11 rounded-full border border-gray-200 bg-white px-5 text-sm text-gray-900 " +
+    "outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-200";
+  const disabledCls = "bg-gray-100 text-gray-400 cursor-not-allowed";
+
   if (type === "radio") {
     return (
-      <div className="space-y-2">
-        <label className="text-[12px] text-gray-500">{label}</label>
-        <div className="flex gap-6">
+      <div className="py-1">
+        {label ? <label className={labelCls}>{label}</label> : null}
+
+        <div className="flex items-center justify-between">
           {options.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
-              <div className="relative flex items-center justify-center">
-                <input
-                  type="radio"
-                  name={label}
-                  value={opt.value}
-                  checked={value === opt.value}
-                  onChange={(e) => onChange(e.target.value)}
-                  className="w-5 h-5 cursor-pointer accent-orange-500"
-                />
-              </div>
-              <span className="text-gray-700 text-sm">{opt.label}</span>
+            <label key={opt.value} className="flex items-center gap-3 text-sm text-gray-600">
+              <span>{opt.label}</span>
+              <input
+                type="radio"
+                name={name} // ✅ MUST be field name
+                value={opt.value}
+                checked={value === opt.value}
+                onChange={() => onChange(opt.value)}
+                className="h-5 w-5 accent-orange-500"
+              />
             </label>
           ))}
         </div>
@@ -42,41 +51,38 @@ export default function FormField({
     );
   }
 
-  return (
-    <div className="space-y-1">
-      <label className="text-[12px] text-gray-500">{label}</label>
-
-      {type === "dropdown" ? (
+  if (type === "dropdown") {
+    return (
+      <div>
+        {label ? <label className={labelCls}>{label}</label> : null}
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`
-            w-full rounded-full border border-gray-200 px-4 py-2 outline-none
-            focus:border-orange-500 focus:ring-2 focus:ring-orange-200
-            ${!value ? "text-gray-300" : "text-gray-800"}
-          `}
+          disabled={disabled}
+          className={`${inputCls} ${disabled ? disabledCls : ""}`}
         >
-          <option value="" disabled>{placeholder || "Select an option"}</option>
+          <option value="">{placeholder ?? "Select"}</option>
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
             </option>
           ))}
         </select>
-      ) : (
+      </div>
+    );
+  }
 
+  return (
+    <div>
+      {label ? <label className={labelCls}>{label}</label> : null}
       <input
         type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="
-          w-full rounded-full border border-gray-200 px-4 py-2 outline-none
-          placeholder:text-gray-300 text-gray-800
-          focus:border-orange-500 focus:ring-2 focus:ring-orange-200
-        "
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className={`${inputCls} ${disabled ? disabledCls : ""}`}
       />
-      )}
     </div>
   );
 }

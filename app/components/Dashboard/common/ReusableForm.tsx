@@ -1,91 +1,61 @@
 "use client";
 
-type Props = {
+import * as React from "react";
+import FormField from "@/app/components/Dashboard/common/FormField";
+
+export type FieldConfig = {
   name: string;
-  label?: string;
+  label: string;
   placeholder?: string;
   type?: "text" | "number" | "date" | "dropdown" | "radio";
-  value: string;
-  onChange: (next: string) => void;
   options?: { value: string; label: string }[];
   disabled?: boolean;
 };
 
-export default function FormField({
-  name,
-  label,
-  placeholder,
-  type = "text",
-  value,
-  onChange,
-  options = [],
-  disabled = false,
-}: Props) {
-  const labelCls = "text-xs text-gray-500 mb-2 block";
+type ReusableFormProps = {
+  fields: FieldConfig[];
+  initialValues?: Record<string, string>;
+  onSubmit: (values: Record<string, string>) => void;
+};
 
-  const inputCls =
-    "w-full h-11 rounded-full border border-gray-200 bg-white px-5 text-sm text-gray-900 " +
-    "outline-none focus:border-orange-300 focus:ring-2 focus:ring-orange-200";
+export default function ReusableForm({ fields, initialValues, onSubmit }: ReusableFormProps) {
+  const [values, setValues] = React.useState<Record<string, string>>(() => {
+    const base: Record<string, string> = {};
+    for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
+    return base;
+  });
 
-  const disabledCls =
-    "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed";
+  React.useEffect(() => {
+    const base: Record<string, string> = {};
+    for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
+    setValues(base);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(fields), JSON.stringify(initialValues)]);
 
-  if (type === "radio") {
-    return (
-      <div className="py-1">
-        {label ? <label className={labelCls}>{label}</label> : null}
+  const setField = (name: string, next: string) => {
+    setValues((prev) => ({ ...prev, [name]: next }));
+  };
 
-        <div className="flex items-center justify-between">
-          {options.map((opt) => (
-            <label key={opt.value} className="flex items-center gap-3 text-sm text-gray-600">
-              <span>{opt.label}</span>
-              <input
-                type="radio"
-                name={name}                 // ✅ important (unique per field)
-                value={opt.value}
-                checked={value === opt.value}
-                onChange={() => onChange(opt.value)}
-                className="h-5 w-5 accent-orange-500"
-              />
-            </label>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (type === "dropdown") {
-    return (
-      <div>
-        {label ? <label className={labelCls}>{label}</label> : null}
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`${inputCls} ${disabled ? disabledCls : ""}`}
-          disabled={disabled}
-        >
-          <option value="">{placeholder ?? "Select"}</option>
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-      </div>
-    );
-  }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(values);
+  };
 
   return (
-    <div>
-      {label ? <label className={labelCls}>{label}</label> : null}
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className={`${inputCls} ${disabled ? disabledCls : ""}`}
-        disabled={disabled}
-      />
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {fields.map((f) => (
+        <FormField
+          key={f.name}
+          name={f.name} // THIS LINE MUST EXIST
+          label={f.label}
+          placeholder={f.placeholder}
+          type={f.type ?? "text"}
+          value={values[f.name] ?? ""}
+          onChange={(next) => setField(f.name, next)}
+          options={f.options}
+          disabled={f.disabled}
+        />
+      ))}
+    </form>
   );
 }
