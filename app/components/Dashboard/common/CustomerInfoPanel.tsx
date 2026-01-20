@@ -6,14 +6,13 @@ import { useMemo } from "react";
 export type OrderItem = {
   id: string;
   name: string;
-  price: number;
+  price: number; // LKR
   qty: number;
   imageUrl: string;
 };
 
 type Props = {
   showOrders?: boolean;
-
   items?: OrderItem[];
   taxRate?: number; // default 10%
 
@@ -21,7 +20,11 @@ type Props = {
   onInc?: (id: string) => void;
   onDec?: (id: string) => void;
   onCancel?: () => void;
-  onPay?: (summary: { subtotal: number; tax: number; total: number }) => void;
+  onPay?: (summary: {
+    subtotal: number;
+    tax: number;
+    total: number;
+  }) => void;
 };
 
 export default function CustomerInfoPanel({
@@ -34,6 +37,7 @@ export default function CustomerInfoPanel({
   onCancel,
   onPay,
 }: Props) {
+  /* ================= Calculations ================= */
   const subtotal = useMemo(
     () => items.reduce((sum, it) => sum + it.price * it.qty, 0),
     [items]
@@ -42,10 +46,17 @@ export default function CustomerInfoPanel({
   const tax = useMemo(() => subtotal * taxRate, [subtotal, taxRate]);
   const total = useMemo(() => subtotal + tax, [subtotal, tax]);
 
+  /* ================= LKR formatter ================= */
+  const formatter = new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+    minimumFractionDigits: 2,
+  });
+
   return (
     <aside className="w-full h-full bg-white">
       <div className="h-full flex flex-col">
-        {/* Top */}
+        {/* Header */}
         <div className="px-6 pt-6">
           <h2 className="text-[22px] font-semibold text-slate-900">
             Customer Information
@@ -78,7 +89,7 @@ export default function CustomerInfoPanel({
               {items.map((it) => (
                 <div key={it.id} className="border-b pb-4">
                   <div className="flex items-center gap-4">
-                    <div className="relative h-16 w-16 overflow-hidden rounded-2xl bg-slate-100 shrink-0">
+                    <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                       <Image
                         src={it.imageUrl}
                         alt={it.name}
@@ -91,33 +102,31 @@ export default function CustomerInfoPanel({
                       <p className="truncate text-[16px] font-semibold text-slate-900">
                         {it.name}
                       </p>
-                      <p className="mt-1 text-xs text-slate-400">Price</p>
+                      <p className="text-xs text-slate-400 mt-1">Price</p>
                       <p className="text-[16px] font-semibold text-orange-600">
-                        ${it.price.toFixed(2)}
+                        {formatter.format(it.price)}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => onDec?.(it.id)}
-                        className="h-11 w-11 rounded-full bg-slate-200/70
-                                   text-slate-700 text-xl grid place-items-center
-                                   hover:bg-slate-200 transition"
-                        aria-label="Decrease"
+                        className="h-11 w-11 rounded-full bg-slate-200
+                                   text-xl text-slate-700 grid place-items-center"
+                        aria-label="Decrease quantity"
                       >
                         –
                       </button>
 
-                      <span className="w-4 text-center text-[15px] font-semibold text-slate-900">
+                      <span className="w-4 text-center font-semibold">
                         {it.qty}
                       </span>
 
                       <button
                         onClick={() => onInc?.(it.id)}
                         className="h-11 w-11 rounded-full bg-slate-900
-                                   text-white text-xl grid place-items-center
-                                   hover:bg-slate-800 transition"
-                        aria-label="Increase"
+                                   text-xl text-white grid place-items-center"
+                        aria-label="Increase quantity"
                       >
                         +
                       </button>
@@ -128,35 +137,35 @@ export default function CustomerInfoPanel({
 
               {items.length === 0 && (
                 <div className="py-10 text-center text-sm text-slate-400">
-                  No items yet
+                  No items added
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Bottom totals + actions */}
+        {/* Totals & actions */}
         {showOrders && (
-          <div className="px-6 pt-6 pb-6 border-t">
-            <div className="text-sm text-slate-500 space-y-3">
-              <div className="flex items-center justify-between">
+          <div className="px-6 py-6 border-t">
+            <div className="space-y-3 text-sm text-slate-500">
+              <div className="flex justify-between">
                 <span>Sub Total</span>
                 <span className="font-semibold text-slate-900">
-                  ${subtotal.toFixed(2)}
+                  {formatter.format(subtotal)}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <span>Tax ({Math.round(taxRate * 100)}%)</span>
                 <span className="font-semibold text-slate-900">
-                  ${tax.toFixed(2)}
+                  {formatter.format(tax)}
                 </span>
               </div>
 
-              <div className="border-t border-dashed pt-4 flex items-center justify-between">
-                <span className="text-slate-600 font-semibold">Total</span>
-                <span className="text-orange-600 font-bold text-[16px]">
-                  ${total.toFixed(2)}
+              <div className="pt-4 border-t border-dashed flex justify-between">
+                <span className="font-semibold text-slate-600">Total</span>
+                <span className="font-bold text-orange-600 text-[16px]">
+                  {formatter.format(total)}
                 </span>
               </div>
             </div>
@@ -164,18 +173,16 @@ export default function CustomerInfoPanel({
             <div className="mt-6 grid grid-cols-2 gap-4">
               <button
                 onClick={onCancel}
-                className="w-full rounded-full border border-orange-400
-                           text-orange-600 font-semibold py-4 text-sm
-                           hover:bg-orange-50 transition"
+                className="rounded-full border border-orange-400
+                           text-orange-600 font-semibold py-4"
               >
                 Cancel
               </button>
 
               <button
                 onClick={() => onPay?.({ subtotal, tax, total })}
-                className="w-full rounded-full bg-orange-500
-                           text-white font-semibold py-4 text-sm
-                           hover:bg-orange-600 transition"
+                className="rounded-full bg-orange-500
+                           text-white font-semibold py-4"
               >
                 Pay Now
               </button>
