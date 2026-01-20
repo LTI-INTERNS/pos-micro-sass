@@ -125,64 +125,61 @@ function DiscountRow({
     <button
       type="button"
       onClick={onSelect}
-      className={[
-        "w-full overflow-hidden rounded-xl border text-left transition",
-        selected
-          ? "border-orange-400 bg-orange-50/30"
-          : "border-slate-200 bg-white",
-      ].join(" ")}
+      className="group w-full flex items-stretch transition-transform active:scale-[0.98]"
     >
-      <div className="flex items-stretch">
-        {/* Left side */}
-        <div className="flex-1 px-4 py-4 flex items-center gap-3">
-          {/* RADIO */}
-          <span
-            className={[
-              "h-5 w-5 rounded-full grid place-items-center shrink-0",
-              selected
-                ? "bg-orange-500"
-                : "border border-slate-300 bg-white",
-            ].join(" ")}
-          >
-            {selected && (
-              <svg
-                className="h-3 w-3 text-white"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M20 6L9 17l-5-5"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </span>
+      {/* 1. Left Part (Name Showing Part) */}
+      <div 
+        className={[
+          "flex-1 px-4 py-4 flex items-center gap-3 rounded-l-xl border-y border-l transition",
+          selected
+            ? "border-orange-400 bg-orange-50/30"
+            : "border-slate-200 bg-white group-hover:border-slate-300",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "h-5 w-5 rounded-full grid place-items-center shrink-0",
+            selected
+              ? "bg-orange-500"
+              : "border border-slate-300 bg-white",
+          ].join(" ")}
+        >
+          {selected && (
+            <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M20 6L9 17l-5-5"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </span>
 
-          <span className="text-sm font-semibold text-slate-900 leading-snug">
-            {option.label}
-          </span>
-        </div>
+        <span className="text-sm font-semibold text-slate-900 leading-snug">
+          {option.label}
+        </span>
+      </div>
 
-        {/* Right percent ticket */}
-        <div className="relative w-[78px] bg-orange-500 text-white font-bold grid place-items-center">
-          <span className="text-sm">{option.percent}%</span>
-
-          {/* scalloped edge */}
-          <div className="absolute left-0 top-0 h-full w-3">
-            <div
-              className="h-full w-full bg-white"
-              style={{
-                maskImage:
-                  "radial-gradient(circle 7px at 0 10px, transparent 98%, #000 100%), radial-gradient(circle 7px at 0 30px, transparent 98%, #000 100%), radial-gradient(circle 7px at 0 50px, transparent 98%, #000 100%), radial-gradient(circle 7px at 0 70px, transparent 98%, #000 100%)",
-                WebkitMaskImage:
-                  "radial-gradient(circle 7px at 0 10px, transparent 98%, #000 100%), radial-gradient(circle 7px at 0 30px, transparent 98%, #000 100%), radial-gradient(circle 7px at 0 50px, transparent 98%, #000 100%), radial-gradient(circle 7px at 0 70px, transparent 98%, #000 100%)",
-              }}
-            />
-          </div>
-        </div>
+      {/* 2. Right Part (Percentage Ticket Stub) */}
+      <div 
+        className="relative w-[78px] bg-orange-500 text-white font-bold grid place-items-center"
+        style={{
+          WebkitMaskImage: 'radial-gradient(circle 4px at 78px 50%, transparent 4px, black 4px)',
+          WebkitMaskSize: '100% 12px',
+          WebkitMaskRepeat: 'repeat-y',
+          WebkitMaskPosition: '0 -3.5px',
+          maskImage: 'radial-gradient(circle 4px at 78px 50%, transparent 4px, black 4px)',
+          maskSize: '100% 14px',
+          maskRepeat: 'repeat-y',
+          maskPosition: '0 -4px'
+        }}
+      >
+        <span className="text-sm">{option.percent}%</span>
+        
+        {/* Separator Perforation Line */}
+        <div className="absolute left-0 top-1 bottom-1 border-l border-dashed border-white/40" />
       </div>
     </button>
   );
