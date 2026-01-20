@@ -12,7 +12,7 @@ type PopupActionsProps = {
 
 export default function PopupActions({ actions }: PopupActionsProps) {
   return (
-    <div className="mt-6 flex gap-4">
+    <div className="mt-8 flex justify-center gap-6">
       {actions.map((action, index) => {
         const isPrimary = action.variant === "primary";
 
@@ -22,10 +22,11 @@ export default function PopupActions({ actions }: PopupActionsProps) {
             type="button"
             onClick={action.onClick}
             className={`
-              w-full rounded-full py-3 font-semibold transition active:scale-[0.98]
+              h-12 min-w-[230px] px-10 rounded-full text-sm font-semibold
+              transition active:scale-[0.98]
               ${
                 isPrimary
-                  ? "bg-orange-500 text-white hover:bg-orange-600"
+                  ? "bg-orange-500 text-white hover:bg-orange-600 shadow-sm"
                   : "border border-orange-500 bg-white text-orange-500 hover:bg-orange-50"
               }
             `}
