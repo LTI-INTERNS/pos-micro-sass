@@ -8,6 +8,7 @@ export type FieldConfig = {
   label: string;
   placeholder?: string;
   type?: "text" | "number" | "date" | "dropdown";
+  options?: { value: string; label: string }[]; //  added
 };
 
 type ReusableFormProps = {
@@ -23,14 +24,18 @@ export default function ReusableForm({
 }: ReusableFormProps) {
   const [values, setValues] = React.useState<Record<string, string>>(() => {
     const base: Record<string, string> = {};
-    for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
+    for (const f of fields) {
+      base[f.name] = initialValues?.[f.name] ?? "";
+    }
     return base;
   });
 
-  // If fields change (different popup), reset safely
+  // Reset values when fields or initial values change
   React.useEffect(() => {
     const base: Record<string, string> = {};
-    for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
+    for (const f of fields) {
+      base[f.name] = initialValues?.[f.name] ?? "";
+    }
     setValues(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(fields), JSON.stringify(initialValues)]);
@@ -52,6 +57,7 @@ export default function ReusableForm({
           label={f.label}
           placeholder={f.placeholder}
           type={f.type ?? "text"}
+          options={f.options}                 
           value={values[f.name] ?? ""}
           onChange={(next) => setField(f.name, next)}
         />
