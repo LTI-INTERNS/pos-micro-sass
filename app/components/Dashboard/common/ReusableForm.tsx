@@ -16,24 +16,35 @@ type ReusableFormProps = {
   fields: FieldConfig[];
   initialValues?: Record<string, string>;
   onSubmit: (values: Record<string, string>) => void;
+
+  //  NEW
+  onValuesChange?: (values: Record<string, string>) => void;
+  resetKey?: string | number;
 };
 
-export default function ReusableForm({ fields, initialValues, onSubmit }: ReusableFormProps) {
-  const [values, setValues] = React.useState<Record<string, string>>(() => {
-    const base: Record<string, string> = {};
-    for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
-    return base;
-  });
+export default function ReusableForm({
+  fields,
+  initialValues,
+  onSubmit,
+  onValuesChange,
+  resetKey,
+}: ReusableFormProps) {
+  const [values, setValues] = React.useState<Record<string, string>>({});
 
+  //  Reset ONLY when popup opens (or resetKey changes)
   React.useEffect(() => {
     const base: Record<string, string> = {};
     for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
     setValues(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(fields), JSON.stringify(initialValues)]);
+  }, [resetKey]);
 
   const setField = (name: string, next: string) => {
-    setValues((prev) => ({ ...prev, [name]: next }));
+    setValues((prev) => {
+      const merged = { ...prev, [name]: next };
+      onValuesChange?.(merged); //  notify parent
+      return merged;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -46,7 +57,7 @@ export default function ReusableForm({ fields, initialValues, onSubmit }: Reusab
       {fields.map((f) => (
         <FormField
           key={f.name}
-          name={f.name} // THIS LINE MUST EXIST
+          name={f.name}
           label={f.label}
           placeholder={f.placeholder}
           type={f.type ?? "text"}

@@ -1,26 +1,9 @@
 "use client";
-import * as React from "react";
+
+import { useMemo, useRef, useState } from "react";
 import ModalShell from "@/app/components/Dashboard/common/ModalShell";
 import ReusableForm, { FieldConfig } from "@/app/components/Dashboard/common/ReusableForm";
 import PopupActions from "@/app/components/Dashboard/common/PopupActions";
-
-const supplierFields: FieldConfig[] = [
-  { name: "id", label: "ID", placeholder: "A001", type: "text" },
-  {
-    name: "type",
-    label: "Supplier Type",
-    type: "radio",
-    options: [
-      { value: "co-operate", label: "Co-Operate" },
-      { value: "individual", label: "Individual" },
-    ],
-  },
-  { name: "name", label: "Name", placeholder: "Enter name" },
-  { name: "phone", label: "Phone number", placeholder: "Enter phone number" },
-  { name: "email", label: "Email", placeholder: "Enter email address" },
-  { name: "address", label: "Address", placeholder: "Enter address" },
-  { name: "regNumber", label: "Registration Number (Optional)", placeholder: "Enter registration number" },
-];
 
 type Props = {
   open: boolean;
@@ -28,52 +11,87 @@ type Props = {
   onSave: (values: Record<string, string>) => void;
 };
 
+/* ---------- Field Sets ---------- */
+
+const baseFields: FieldConfig[] = [
+  { name: "id", label: "ID", placeholder: "A001", type: "text", disabled: true },
+  {
+    name: "type",
+    label: "",
+    type: "radio",
+    options: [
+      { value: "co-operate", label: "Co-Operate" },
+      { value: "individual", label: "Individual" },
+    ],
+  },
+];
+
+// Co-Operate screen
+const cooperateFields: FieldConfig[] = [
+  { name: "companyName", label: "Company Name", placeholder: "Enter name" },
+  { name: "contactPerson", label: "Contact person Name", placeholder: "Enter name" },
+  { name: "phone", label: "Phone number", placeholder: "Enter phone number" },
+  { name: "email", label: "Email", placeholder: "Enter email address" },
+  { name: "address", label: "Address", placeholder: "Enter Address" },
+  {
+    name: "regNumber",
+    label: "Registration Number (Optional)",
+    placeholder: "Enter Registration Number",
+  },
+];
+
+// Individual screen
+const individualFields: FieldConfig[] = [
+  { name: "fullName", label: "Full Name", placeholder: "Enter name" },
+  { name: "phone", label: "Phone number", placeholder: "Enter phone number" },
+  { name: "email", label: "Email", placeholder: "Enter email address" },
+  { name: "address", label: "Address", placeholder: "Enter Address" },
+  { name: "nic", label: "NIC (Optional)", placeholder: "Enter NIC" },
+];
+
 export default function NewSupplierPopup({ open, onClose, onSave }: Props) {
-  const [latestValues, setLatestValues] = React.useState<Record<string, string>>({});
-  const formWrapRef = React.useRef<HTMLDivElement>(null);
+  const formWrapRef = useRef<HTMLDivElement>(null);
+
+  const [supplierType, setSupplierType] = useState<"co-operate" | "individual">("co-operate");
+
+  // Build the active fields list based on radio selection
+  const fields: FieldConfig[] = useMemo(() => {
+    return [...baseFields, ...(supplierType === "co-operate" ? cooperateFields : individualFields)];
+  }, [supplierType]);
 
   const handleAddSupplier = () => {
     const formEl = formWrapRef.current?.querySelector("form") as HTMLFormElement | null;
-    formEl?.requestSubmit?.();
+    formEl?.requestSubmit();
   };
 
   return (
     <ModalShell
-  open={open}
-  title="New Supplier"
-  onClose={onClose}
-  widthClassName="w-[760px] max-w-[90vw]"
->
-  <div className="flex flex-col text-left">
-    {/* Body */}
-    <div className="px-4 py-3">
-      <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
-        <ReusableForm
-          fields={supplierFields}
-          onSubmit={(values) => onSave(values)}
-        />
-      </div>
-    </div>
-
-    {/* Footer */}
-    <div className="border-t border-gray-100 bg-white px-4 py-2">
-      <div className="flex justify-end">
-        <div className="w-[320px]">
-          <PopupActions
-            actions={[
-              { label: "Cancel", onClick: onClose, variant: "secondary" },
-              {
-                label: "Add supplier",
-                onClick: () => {}, // handled by form submit
-                variant: "primary",
-              },
-            ]}
+      open={open}
+      title="New Supplier"
+      onClose={onClose}
+      widthClassName="w-[900px] max-w-[92vw]"
+    >
+      <div className="flex flex-col">
+        <div ref={formWrapRef}>
+          <ReusableForm
+            fields={fields}
+            initialValues={{ id: "A001", type: supplierType }}
+            resetKey={open ? "open" : "closed"} // reset only when popup opens/closes
+            onValuesChange={(vals) => {
+              const nextType = vals.type === "individual" ? "individual" : "co-operate";
+              if (nextType !== supplierType) setSupplierType(nextType);
+            }}
+            onSubmit={onSave}
           />
         </div>
-      </div>
-    </div>
 
-  </div>
-</ModalShell>
+        <PopupActions
+          actions={[
+            { label: "Cancel", onClick: onClose, variant: "secondary" },
+            { label: "Add supplier", onClick: handleAddSupplier, variant: "primary" },
+          ]}
+        />
+      </div>
+    </ModalShell>
   );
 }
