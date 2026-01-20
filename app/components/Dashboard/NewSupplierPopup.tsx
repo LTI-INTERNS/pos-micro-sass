@@ -6,7 +6,15 @@ import PopupActions from "@/app/components/Dashboard/common/PopupActions";
 
 const supplierFields: FieldConfig[] = [
   { name: "id", label: "ID", placeholder: "A001", type: "text" },
-  { name: "type", label: "Supplier Type", type: "dropdown", placeholder: "Select type" },
+  {
+    name: "type",
+    label: "Supplier Type",
+    type: "radio",
+    options: [
+      { value: "co-operate", label: "Co-Operate" },
+      { value: "individual", label: "Individual" },
+    ],
+  },
   { name: "name", label: "Name", placeholder: "Enter name" },
   { name: "phone", label: "Phone number", placeholder: "Enter phone number" },
   { name: "email", label: "Email", placeholder: "Enter email address" },

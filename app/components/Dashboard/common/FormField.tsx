@@ -5,7 +5,7 @@ type FormFieldProps = {
   placeholder?: string;
   value: string;
   onChange: (next: string) => void;
-  type?: "text" | "number" | "date" | "dropdown";
+  type?: "text" | "number" | "date" | "dropdown" | "radio";
   options?: { value: string; label: string }[];
 };
 
@@ -15,11 +15,36 @@ export default function FormField({
   value,
   onChange,
   type = "text",
-   options = [],
+  options = [],
 }: FormFieldProps) {
+  if (type === "radio") {
+    return (
+      <div className="space-y-2">
+        <label className="text-[12px] text-gray-500">{label}</label>
+        <div className="flex gap-6">
+          {options.map((opt) => (
+            <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+              <div className="relative flex items-center justify-center">
+                <input
+                  type="radio"
+                  name={label}
+                  value={opt.value}
+                  checked={value === opt.value}
+                  onChange={(e) => onChange(e.target.value)}
+                  className="w-5 h-5 cursor-pointer accent-orange-500"
+                />
+              </div>
+              <span className="text-gray-700 text-sm">{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-1">    
-      <label className="text-[12px] text-gray-500">{label}</label> 
+    <div className="space-y-1">
+      <label className="text-[12px] text-gray-500">{label}</label>
 
       {type === "dropdown" ? (
         <select

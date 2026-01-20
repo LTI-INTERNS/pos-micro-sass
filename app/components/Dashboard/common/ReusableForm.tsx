@@ -7,7 +7,8 @@ export type FieldConfig = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number" | "date" | "dropdown";
+  type?: "text" | "number" | "date" | "dropdown" | "radio";
+  options?: { value: string; label: string }[];
 };
 
 type ReusableFormProps = {
@@ -54,6 +55,7 @@ export default function ReusableForm({
           type={f.type ?? "text"}
           value={values[f.name] ?? ""}
           onChange={(next) => setField(f.name, next)}
+          options={f.options}
         />
       ))}
     </form>
