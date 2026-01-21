@@ -90,7 +90,7 @@ export default function ProfitPage() {
       <div className="w-full space-y-6">
         <DateRangeBar/>
         <StatCardGrid />
-        <SearchBar onSearch={handleSearch} placeholder="Search Profit Data" />
+        <SearchBar onSearch={handleSearch} placeholder="Search Cashiers" />
         <ActionsBar onExport={() => exportToCSV(filteredProfits)} />
         <ProfitTable profits={filteredProfits} />
       </div>
