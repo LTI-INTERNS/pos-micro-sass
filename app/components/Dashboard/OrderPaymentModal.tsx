@@ -1,21 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
-import {
-  Delete,
-  Printer,
-  Mail,
-  Check,
-} from "lucide-react";
+import { Delete, Printer, Mail, Check } from "lucide-react";
 
 type Props = {
   open: boolean;
   onClose: () => void;
+
+  // receive from outside
+  orderNo: string | number;
+  tipAmount: number;
+  totalAmount: number;
+
+  currencyCode?: string; // default "LKR"
 };
 
-export default function OrderPaymentModal({ open, onClose }: Props) {
+function formatMoney(currency: string, amount: number) {
+  const safe = Number.isFinite(amount) ? amount : 0;
+  return `${currency} ${safe.toFixed(2)}`;
+}
+
+function sanitizeAmountInput(raw: string) {
+  let v = raw.replace(/[^0-9.]/g, "");
+
+  // Allow only one dot
+  const firstDot = v.indexOf(".");
+  if (firstDot !== -1) {
+    v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, "");
+  }
+
+  // If starts with ".", convert to "0."
+  if (v.startsWith(".")) v = "0" + v;
+
+  // Prevent multiple leading zeros (allow "0.xxx")
+  if (v.length > 1 && v.startsWith("0") && v[1] !== ".") {
+    v = v.replace(/^0+/, "");
+    if (v === "") v = "0";
+  }
+
+  // If user typed only zeros like "000" => keep single "0"
+  if (/^0+$/.test(v)) v = "0";
+
+  return v;
+}
+
+export default function OrderPaymentModal({
+  open,
+  onClose,
+  orderNo,
+  tipAmount,
+  totalAmount,
+  currencyCode = "LKR",
+}: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
+  const [amount, setAmount] = useState<string>("");
+  const [amountFocused, setAmountFocused] = useState(false);
+
+  const tipText = useMemo(
+    () => formatMoney(currencyCode, tipAmount),
+    [currencyCode, tipAmount]
+  );
+  const totalText = useMemo(
+    () => formatMoney(currencyCode, totalAmount),
+    [currencyCode, totalAmount]
+  );
+
+  const isCash = selectedMethod === "Cash";
+  const showCurrencyInInput = isCash && amountFocused;
 
   // Footer button handlers
   const handleGiftReceipt = () => {
@@ -27,8 +79,8 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
   };
 
   const handleDone = () => {
-    console.log("Done clicked", { selectedMethod });
-    onClose(); // close modal after done (optional)
+    console.log("Done clicked", { orderNo, selectedMethod, amount });
+    onClose();
   };
 
   if (!open) return null;
@@ -43,8 +95,9 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             <h2 className="text-lg font-semibold text-black leading-none">
               Order payment
             </h2>
-            <p className="text-sm text-gray-400 mt-1">Order #102</p>
+            <p className="text-sm text-gray-400 mt-1">Order #{orderNo}</p>
           </div>
+
           <button
             onClick={onClose}
             className="text-gray-600 hover:text-black text-xl leading-none mt-1"
@@ -59,11 +112,11 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
           <div className="rounded-xl bg-gray-50 p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Tip Amount</span>
-              <span className="font-semibold text-black">$ 8.12</span>
+              <span className="font-semibold text-black">{tipText}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Total Amount</span>
-              <span className="text-orange-500 font-semibold">$ 64.00</span>
+              <span className="text-orange-500 font-semibold">{totalText}</span>
             </div>
           </div>
 
@@ -86,7 +139,14 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
                   <button
                     key={pm.id}
                     type="button"
-                    onClick={() => setSelectedMethod(pm.id)}
+                    onClick={() => {
+                      setSelectedMethod(pm.id);
+
+                      // If moving away from Cash, drop focus state (and optionally clear)
+                      if (pm.id !== "Cash") {
+                        setAmountFocused(false);
+                      }
+                    }}
                     className={`h-14 rounded-xl border-2 box-border
                       flex items-center justify-center bg-white transition-all
                       ${
@@ -109,57 +169,85 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             </div>
           </div>
 
-          {/* Input */}
-          <div>
-            <p className="mb-2 text-sm font-semibold text-black">
-              Input amount
-            </p>
-            <input
-              placeholder="Input amount"
-              className="w-full h-14 rounded-full border border-gray-400 px-5 text-center outline-none
-                         focus:border-orange-400 text-gray-600 font-semibold
-                         placeholder:text-gray-400 placeholder:font-normal"
-            />
-          </div>
+          {/* Input amount (ONLY for Cash) */}
+          {isCash && (
+            <div>
+              <p className="mb-2 text-sm font-semibold text-black">
+                Input amount
+              </p>
 
-          {/* Keypad */}
-          <div className="grid grid-cols-4 gap-3 text-black">
-            {[
-              "1", "2", "3", "10",
-              "4", "5", "6", "20",
-              "7", "8", "9", "⌫",
-              "C", "0", ".", "Add",
-            ].map((key) => (
-              <button
-                key={key}
-                className={`h-14 rounded-full text-lg font-bold transition-all
-                  active:scale-90 flex items-center justify-center
-                  ${
-                    ["10", "20"].includes(key)
-                      ? "bg-blue-50 text-blue-600"
-                      : key === "C"
-                      ? "bg-orange-50 text-orange-500"
-                      : key === "⌫"
-                      ? "bg-orange-50"
-                      : key === "Add"
-                      ? "bg-gray-100 text-gray-800 font-normal"
-                      : "bg-gray-100 text-gray-800"
-                  }
-                `}
-              >
-                {key === "⌫" ? (
-                  <Delete size={28} strokeWidth={2} color="#ffffff" fill="#f97316" />
-                ) : (
-                  key
+              <div className="relative">
+                {/* Show LKR ONLY when input is focused */}
+                {showCurrencyInInput && (
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                    {currencyCode}
+                  </span>
                 )}
-              </button>
-            ))}
-          </div>
+
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Input amount"
+                  value={amount}
+                  onFocus={() => setAmountFocused(true)}
+                  onBlur={() => setAmountFocused(false)}
+                  onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
+                  className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
+                    text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
+                    ${
+                      showCurrencyInInput
+                        ? "text-left pl-20 pr-5"
+                        : "text-center px-5"
+                    }
+                  `}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Keypad (ONLY for Cash) */}
+          {isCash && (
+            <div className="grid grid-cols-4 gap-3 text-black">
+              {[
+                "1", "2", "3", "10",
+                "4", "5", "6", "20",
+                "7", "8", "9", "⌫",
+                "C", "0", ".", "Add",
+              ].map((key) => (
+                <button
+                  key={key}
+                  className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
+                    ${
+                      ["10", "20"].includes(key)
+                        ? "bg-blue-50 text-blue-600"
+                        : key === "C"
+                        ? "bg-orange-50 text-orange-500"
+                        : key === "⌫"
+                        ? "bg-orange-50"
+                        : key === "Add"
+                        ? "bg-gray-100 text-gray-800 font-normal"
+                        : "bg-gray-100 text-gray-800"
+                    }
+                  `}
+                >
+                  {key === "⌫" ? (
+                    <Delete
+                      size={28}
+                      strokeWidth={2}
+                      color="#ffffff"
+                      fill="#f97316"
+                    />
+                  ) : (
+                    key
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-5 py-4 border-t flex gap-3">
-          {/* Gift receipt */}
           <button
             onClick={handleGiftReceipt}
             className="flex-1 h-14 rounded-xl bg-gray-900 text-white
@@ -170,7 +258,6 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             <span>Gift receipt</span>
           </button>
 
-          {/* Email */}
           <button
             onClick={handleEmail}
             className="flex-1 h-14 rounded-xl bg-gray-900 text-white
@@ -181,7 +268,6 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             <span>Email</span>
           </button>
 
-          {/* Done */}
           <button
             onClick={handleDone}
             className="flex-1 h-14 rounded-xl
