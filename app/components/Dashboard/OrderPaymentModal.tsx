@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Delete } from "lucide-react";
+import {
+  Delete,
+  Printer,
+  Mail,
+  Check,
+} from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -11,6 +16,20 @@ type Props = {
 
 export default function OrderPaymentModal({ open, onClose }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
+
+  // Footer button handlers
+  const handleGiftReceipt = () => {
+    console.log("Gift receipt clicked");
+  };
+
+  const handleEmail = () => {
+    console.log("Email clicked");
+  };
+
+  const handleDone = () => {
+    console.log("Done clicked", { selectedMethod });
+    onClose(); // close modal after done (optional)
+  };
 
   if (!open) return null;
 
@@ -68,7 +87,8 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
                     key={pm.id}
                     type="button"
                     onClick={() => setSelectedMethod(pm.id)}
-                    className={`h-14 rounded-xl border flex items-center justify-center bg-white transition-all
+                    className={`h-14 rounded-xl border-2 box-border
+                      flex items-center justify-center bg-white transition-all
                       ${
                         isSelected
                           ? "border-orange-500"
@@ -96,7 +116,9 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             </p>
             <input
               placeholder="Input amount"
-              className="w-full h-14 rounded-full border border-gray-400 px-5 text-center outline-none focus:border-orange-400 text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal"
+              className="w-full h-14 rounded-full border border-gray-400 px-5 text-center outline-none
+                         focus:border-orange-400 text-gray-600 font-semibold
+                         placeholder:text-gray-400 placeholder:font-normal"
             />
           </div>
 
@@ -110,7 +132,8 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             ].map((key) => (
               <button
                 key={key}
-                className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
+                className={`h-14 rounded-full text-lg font-bold transition-all
+                  active:scale-90 flex items-center justify-center
                   ${
                     ["10", "20"].includes(key)
                       ? "bg-blue-50 text-blue-600"
@@ -136,14 +159,39 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t flex gap-3">
-          <button className="flex-1 h-12 rounded-xl bg-gray-900 text-white text-sm">
-            Gift receipt
+          {/* Gift receipt */}
+          <button
+            onClick={handleGiftReceipt}
+            className="flex-1 h-14 rounded-xl bg-gray-900 text-white
+                       flex flex-col items-center justify-center gap-1
+                       text-xs transition active:scale-95"
+          >
+            <Printer size={18} />
+            <span>Gift receipt</span>
           </button>
-          <button className="flex-1 h-12 rounded-xl bg-gray-900 text-white text-sm">
-            Email
+
+          {/* Email */}
+          <button
+            onClick={handleEmail}
+            className="flex-1 h-14 rounded-xl bg-gray-900 text-white
+                       flex flex-col items-center justify-center gap-1
+                       text-xs transition active:scale-95"
+          >
+            <Mail size={18} />
+            <span>Email</span>
           </button>
-          <button className="flex-1 h-12 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-white text-sm font-semibold">
-            Done
+
+          {/* Done */}
+          <button
+            onClick={handleDone}
+            className="flex-1 h-14 rounded-xl
+                       bg-gradient-to-r from-orange-400 to-pink-500
+                       text-white
+                       flex flex-col items-center justify-center gap-1
+                       text-xs font-semibold transition active:scale-95"
+          >
+            <Check size={18} />
+            <span>Done</span>
           </button>
         </div>
       </div>
