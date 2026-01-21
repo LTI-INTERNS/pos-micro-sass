@@ -15,13 +15,13 @@ type Props = {
 
 export default function ProfitTable({ profits }: Props) {
   return (
-    <section className="bg-white rounded-xl border border-gray-100">
+    <section className="bg-white rounded-xl border border-gray-100 p-4">
       <div className="flex items-center justify-between px-6 py-3">
         <h2 className="text-xs font-semibold text-gray-900">Profits</h2>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs">
+        <table className="w-full text-xs table-auto">
           <thead>
             <tr className="border-b border-gray-100 text-gray-900">
               <th className="px-6 py-2 text-left font-normal font-semibold" >ID</th>
