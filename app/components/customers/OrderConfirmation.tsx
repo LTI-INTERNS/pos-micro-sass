@@ -69,25 +69,25 @@ export default function OrderConfirmationPage() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between text-slate-500">
             <span>SUBTOTAL</span>
-            <span className="text-black">$ {subtotal.toFixed(2)}</span>
+            <span className="text-black">LKR {subtotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-slate-500">
             <span>SUBCHARGE</span>
-            <span className="text-black">$ 0</span>
+            <span className="text-black">LKR 0</span>
           </div>
           <div className="flex justify-between text-slate-500">
             <span>ORDER DISCOUNT</span>
-            <span className="text-black">$ 0</span>
+            <span className="text-black">LKR 0</span>
           </div>
           <div className="flex justify-between text-slate-500">
             <span>TAX</span>
-            <span className="text-black">$ 0</span>
+            <span className="text-black">LKR 0</span>
           </div>
 
           <div className="border-t pt-3 flex justify-between font-semibold">
             <span className="text-black">BILL AMOUNT</span>
             <span className="text-orange-500">
-              $ {subtotal.toFixed(2)}
+              LKR {subtotal.toFixed(2)}
             </span>
           </div>
         </div>
