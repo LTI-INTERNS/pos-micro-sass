@@ -1,6 +1,6 @@
 "use client";
 
-export type Product = {
+export type Profit = {
   id: string;
   date: string;
   category: string;
@@ -10,14 +10,14 @@ export type Product = {
 };
 
 type Props = {
-  products: Product[];
+  profits: Profit[];
 };
 
-export default function ProductTable({ products }: Props) {
+export default function ProfitTable({ profits }: Props) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
       <div className="flex items-center justify-between px-6 py-3">
-        <h2 className="text-xs font-semibold text-gray-900">Products</h2>
+        <h2 className="text-xs font-semibold text-gray-900">Profits</h2>
       </div>
 
       <div className="overflow-x-auto">
@@ -34,7 +34,7 @@ export default function ProductTable({ products }: Props) {
           </thead>
 
           <tbody>
-            {products.map((c) => (
+            {profits.map((c) => (
               <tr
                 key={c.id}
                 className="border-b border-gray-100 hover:bg-gray-50 transition"
@@ -47,6 +47,16 @@ export default function ProductTable({ products }: Props) {
                 <td className="px-6 py-3 font-medium text-gray-900">{c.payment}</td>
               </tr>
             ))}
+            {profits.length === 0 && (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-6 py-6 text-center text-gray-400 text-xs"
+                >
+                  No profits found
+                </td>
+              </tr>
+            )}
 
           </tbody>
         </table>
