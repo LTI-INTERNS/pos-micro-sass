@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Delete, Printer, Mail, Check } from "lucide-react";
 
@@ -8,7 +8,6 @@ type Props = {
   open: boolean;
   onClose: () => void;
 
-  // receive from outside
   orderNo: string | number;
   tipAmount: number;
   totalAmount: number;
@@ -45,6 +44,15 @@ function sanitizeAmountInput(raw: string) {
   return v;
 }
 
+function addWholeAmount(current: string, addBy: number) {
+  const cur = parseFloat(current || "0");
+  const next = cur + addBy;
+
+  // if current had decimals, keep 2 dp; else show whole
+  const hasDot = current.includes(".");
+  return hasDot ? next.toFixed(2) : String(Math.trunc(next));
+}
+
 export default function OrderPaymentModal({
   open,
   onClose,
@@ -56,6 +64,8 @@ export default function OrderPaymentModal({
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
   const [amount, setAmount] = useState<string>("");
   const [amountFocused, setAmountFocused] = useState(false);
+
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const tipText = useMemo(
     () => formatMoney(currencyCode, tipAmount),
@@ -81,6 +91,52 @@ export default function OrderPaymentModal({
   const handleDone = () => {
     console.log("Done clicked", { orderNo, selectedMethod, amount });
     onClose();
+  };
+
+  const focusAmountInput = () => {
+    inputRef.current?.focus();
+  };
+
+  const handleKeypadPress = (key: string) => {
+    // Make the input "selected" when keypad used (so LKR appears)
+    focusAmountInput();
+
+    setAmount((prev) => {
+      // Backspace
+      if (key === "⌫") {
+        return prev.slice(0, -1);
+      }
+
+      // Clear
+      if (key === "C") {
+        return "";
+      }
+
+      // Quick add buttons
+      if (key === "10" || key === "20") {
+        return sanitizeAmountInput(addWholeAmount(prev, Number(key)));
+      }
+
+      // Dot
+      if (key === ".") {
+        if (prev.includes(".")) return prev; // only one dot
+        if (prev === "" || prev === "0") return "0."; // allow 0.5 style
+        return sanitizeAmountInput(prev + ".");
+      }
+
+      // Digits
+      if (/^\d$/.test(key)) {
+        return sanitizeAmountInput(prev + key);
+      }
+
+      // "Add" button behavior (you can change later)
+      if (key === "Add") {
+        console.log("Add pressed", { amount: prev });
+        return prev;
+      }
+
+      return prev;
+    });
   };
 
   if (!open) return null;
@@ -142,9 +198,12 @@ export default function OrderPaymentModal({
                     onClick={() => {
                       setSelectedMethod(pm.id);
 
-                      // If moving away from Cash, drop focus state (and optionally clear)
+                      // leaving cash: drop focus state
                       if (pm.id !== "Cash") {
                         setAmountFocused(false);
+                      } else {
+                        // returning to cash: optionally focus input
+                        setTimeout(() => focusAmountInput(), 0);
                       }
                     }}
                     className={`h-14 rounded-xl border-2 box-border
@@ -185,6 +244,7 @@ export default function OrderPaymentModal({
                 )}
 
                 <input
+                  ref={inputRef}
                   type="text"
                   inputMode="decimal"
                   placeholder="Input amount"
@@ -216,6 +276,10 @@ export default function OrderPaymentModal({
               ].map((key) => (
                 <button
                   key={key}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onTouchStart={(e) => e.preventDefault()} 
+                  onClick={() => handleKeypadPress(key)}
                   className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
                     ${
                       ["10", "20"].includes(key)
