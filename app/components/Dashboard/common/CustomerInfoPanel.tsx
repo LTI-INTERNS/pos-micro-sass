@@ -73,14 +73,14 @@ export default function CustomerInfoPanel({
             {/* Customer Card */}
             {selectedCustomer ? (
               <>
-                <div className="mt-4 rounded-2xl bg-slate-50 p-4 space-y-2">
-                  <p className="text-[16px] font-semibold text-slate-900">
+                <div className="mt-1 rounded-2xl bg-slate-50 p-4 space-y-0.5">
+                  <p className="text-slate-800">
                     {selectedCustomer.name}
                   </p>
-                  <p className="text-slate-700">
+                  <p className="text-slate-800">
                     {selectedCustomer.phoneNumber}
                   </p>
-                  <p className="text-slate-700">
+                  <p className="text-slate-800">
                     {selectedCustomer.email}
                   </p>
                 </div>
@@ -88,7 +88,7 @@ export default function CustomerInfoPanel({
                 {/* Remove customer */}
                 <button
                   onClick={() => setSelectedCustomer(null)}
-                  className="mt-4 w-full rounded-full bg-orange-50 text-orange-600
+                  className="mt-2 w-full rounded-full bg-orange-50 text-orange-600
                             font-semibold py-4 text-sm hover:bg-orange-100 transition"
                 >
                   Remove Customer
