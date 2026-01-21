@@ -24,7 +24,7 @@ export default function ExpensePopupPreview() {
   // today date
   const today = new Date().toISOString().split("T")[0];
 
-  // 🔹 get next ID from localStorage
+  //  get next ID from localStorage
   useEffect(() => {
     const stored = localStorage.getItem("expenses");
     if (!stored) {
@@ -42,7 +42,7 @@ export default function ExpensePopupPreview() {
   }, []);
 
   const fields: FieldConfig[] = [
-    { name: "id", label: "ID" },
+    { name: "id", label: "ID", disabled: true, },
     { name: "date", label: "Date", type: "date" },
     {
       name: "category",

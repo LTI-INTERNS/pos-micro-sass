@@ -8,7 +8,8 @@ export type FieldConfig = {
   label: string;
   placeholder?: string;
   type?: "text" | "number" | "date" | "dropdown";
-  options?: { value: string; label: string }[]; //  added
+  options?: { value: string; label: string }[];
+  disabled?: boolean; 
 };
 
 type ReusableFormProps = {
@@ -30,7 +31,6 @@ export default function ReusableForm({
     return base;
   });
 
-  // Reset values when fields or initial values change
   React.useEffect(() => {
     const base: Record<string, string> = {};
     for (const f of fields) {
@@ -57,7 +57,8 @@ export default function ReusableForm({
           label={f.label}
           placeholder={f.placeholder}
           type={f.type ?? "text"}
-          options={f.options}                 
+          options={f.options}
+          disabled={f.disabled}   
           value={values[f.name] ?? ""}
           onChange={(next) => setField(f.name, next)}
         />
