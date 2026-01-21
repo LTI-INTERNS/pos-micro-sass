@@ -10,7 +10,6 @@ export default function ActionsBar({
   onExport,
 }: Props) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 px-6 py-3">
       <div className="grid grid-cols-2 gap-3">
       <button
           onClick={onAdd}
@@ -18,7 +17,7 @@ export default function ActionsBar({
                      text-xs font-semibold text-white
                      hover:bg-orange-600 transition"
         >
-          Add New Cashier
+          Add New Expenses
         </button>
       <button
         onClick={onExport}
@@ -28,7 +27,7 @@ export default function ActionsBar({
       >
         Export CSV
       </button>
-    </div>
+    
     </div>
   );
 }
