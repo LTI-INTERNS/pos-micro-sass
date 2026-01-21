@@ -8,7 +8,7 @@ const page = () => {
   return (
     
      <DashboardLayout>
-      <div className="flex gap-6 px-6 pt-6 ">
+      <div className="flex gap-6  pt-6 ">
         
         
         <div className="flex-1 flex flex-col ">
@@ -26,7 +26,7 @@ const page = () => {
         </div>
 
         
-        <div className="w-80 sticky top-18 h-[calc(100vh-96px)]">
+        <div className="w-md sticky top-18 h-[calc(100vh-96px)]">
           <CustomerInfoPanel/>
         </div>
 
