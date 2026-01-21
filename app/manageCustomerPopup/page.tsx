@@ -1,9 +1,9 @@
-import React from 'react'
+import ManageCustomer from "../components/customers/ManageCustomer";
 
-const page = () => {
+export default function CustomersPage() {
   return (
-    <div>page</div>
-  )
+    <div className="min-h-screen  flex items-center justify-center p-6">
+      <ManageCustomer />
+    </div>
+  );
 }
-
-export default page
