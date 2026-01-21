@@ -1,6 +1,8 @@
 "use client";
 
-import { Delete } from "lucide-react"; // Import Lucide Delete icon
+import { useState } from "react";
+import Image from "next/image";
+import { Delete } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -8,6 +10,8 @@ type Props = {
 };
 
 export default function OrderPaymentModal({ open, onClose }: Props) {
+  const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
+
   if (!open) return null;
 
   return (
@@ -17,7 +21,9 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-4 border-b">
           <div>
-            <h2 className="text-lg font-semibold text-black leading-none">Order payment</h2>
+            <h2 className="text-lg font-semibold text-black leading-none">
+              Order payment
+            </h2>
             <p className="text-sm text-gray-400 mt-1">Order #102</p>
           </div>
           <button
@@ -44,24 +50,50 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
 
           {/* Payment method */}
           <div>
-            <p className="mb-2 text-sm font-semibold text-black">Payment method</p>
+            <p className="mb-2 text-sm font-semibold text-black">
+              Payment method
+            </p>
+
             <div className="grid grid-cols-4 gap-3">
-              {["💵", "💳", "VISA", "🏧"].map((item, i) => (
-                <button
-                  key={i}
-                  className={`h-14 rounded-xl border flex items-center justify-center
-                  ${i === 0 ? "border-orange-500" : "border-gray-200"}
-                  `}
-                >
-                  {item}
-                </button>
-              ))}
+              {[
+                { id: "Cash", src: "/Cash.png", alt: "Cash" },
+                { id: "Master", src: "/Master.png", alt: "Mastercard" },
+                { id: "Visa", src: "/Visa.png", alt: "Visa" },
+                { id: "GiftCard", src: "/GiftCard.png", alt: "Gift card" },
+              ].map((pm) => {
+                const isSelected = selectedMethod === pm.id;
+
+                return (
+                  <button
+                    key={pm.id}
+                    type="button"
+                    onClick={() => setSelectedMethod(pm.id)}
+                    className={`h-14 rounded-xl border flex items-center justify-center bg-white transition-all
+                      ${
+                        isSelected
+                          ? "border-orange-500"
+                          : "border-gray-200 hover:border-gray-300"
+                      }
+                    `}
+                  >
+                    <Image
+                      src={pm.src}
+                      alt={pm.alt}
+                      width={44}
+                      height={44}
+                      className="object-contain"
+                    />
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Input */}
           <div>
-            <p className="mb-2 text-sm font-semibold text-black">Input amount</p>
+            <p className="mb-2 text-sm font-semibold text-black">
+              Input amount
+            </p>
             <input
               placeholder="Input amount"
               className="w-full h-14 rounded-full border border-gray-400 px-5 text-center outline-none focus:border-orange-400 text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal"
@@ -78,17 +110,25 @@ export default function OrderPaymentModal({ open, onClose }: Props) {
             ].map((key) => (
               <button
                 key={key}
-  className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
-    ${["10", "20"].includes(key) ? "bg-blue-50 text-blue-600" :
-            key === "C" ? "bg-orange-50 text-orange-500" :
-            key === "⌫" ? "bg-orange-50" : 
-            key === "Add" ? "bg-gray-100 text-gray-800 font-normal" :
-            "bg-gray-100 text-gray-800"}
+                className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
+                  ${
+                    ["10", "20"].includes(key)
+                      ? "bg-blue-50 text-blue-600"
+                      : key === "C"
+                      ? "bg-orange-50 text-orange-500"
+                      : key === "⌫"
+                      ? "bg-orange-50"
+                      : key === "Add"
+                      ? "bg-gray-100 text-gray-800 font-normal"
+                      : "bg-gray-100 text-gray-800"
+                  }
                 `}
-    >
-            {key === "⌫" ? (
-                <Delete size={28} strokeWidth={2} color="#ffffff" fill="#f97316" />) : (key) 
-            }
+              >
+                {key === "⌫" ? (
+                  <Delete size={28} strokeWidth={2} color="#ffffff" fill="#f97316" />
+                ) : (
+                  key
+                )}
               </button>
             ))}
           </div>
