@@ -22,7 +22,6 @@ export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
 
       
       <div className="overflow-x-auto">
-        <div className="min-w-[100px]"> 
           <table className="w-full text-xs table-auto">
             <thead>
               <tr className="border-b border-gray-100 text-gray-900">
@@ -52,7 +51,7 @@ export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
               {RecurringExpenses.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-6 py-6 text-center text-gray-400 text-xs"
                 >
                   No cashiers found
@@ -62,7 +61,6 @@ export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
             </tbody>
           </table>
         </div>
-      </div>
     </section>
   );
 }
