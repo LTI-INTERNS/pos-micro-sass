@@ -1,9 +1,9 @@
 import DashboardLayout from '../components/dashboard_layout';
-import DateRangeBar from '../components/dashboard/DateRangeBar';
-import StatCardGrid from '../components/dashboard/StatCardGrid';
-import ChartsSection from '../components/dashboard/ChartsSection';
-import StaffReportSection from '@/app/components/dashboard/StaffReportSection';
-import TopSellingSection from '@/app/components/dashboard/TopSellingSection';
+import DateRangeBar from '../components/Dashboard/DateRangeBar';
+import StatCardGrid from '../components/Dashboard/StatCardGrid';
+import ChartsSection from '../components/Dashboard/ChartsSection';
+import StaffReportSection from '@/app/components/Dashboard/StaffReportSection';
+import TopSellingSection from '@/app/components/Dashboard/TopSellingSection';
 
 
 export default function DashboardPage() {

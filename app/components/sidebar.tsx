@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Settings, X } from 'lucide-react';
 
 interface SidebarProps {
@@ -9,6 +10,9 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [activeItem, setActiveItem] = useState('Dashboard');
 
   const menuItems = [
@@ -25,6 +29,27 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     'Ai Prediction',
     'Branches',
   ];
+
+  // Auto detect active item based on URL
+  useEffect(() => {
+    if (pathname.startsWith('/staff-management')) {
+      setActiveItem('Staff Management');
+    } else if (pathname.startsWith('/dashboard')) {
+      setActiveItem('Dashboard');
+    }
+  }, [pathname]);
+
+  const handleNavigation = (item: string) => {
+    setActiveItem(item);
+
+    if (item === 'Dashboard') {
+      router.push('/dashboard');
+    }
+
+    if (item === 'Staff Management') {
+      router.push('/staff-management');
+    }
+  };
 
   return (
     <>
@@ -51,7 +76,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           {menuItems.map((item) => (
             <div
               key={item}
-              onClick={() => setActiveItem(item)}
+              onClick={() => handleNavigation(item)}
               className={`px-8 py-3 mb-2 text-[11px] cursor-pointer font-bold border-r-4 ${
                 activeItem === item
                   ? 'bg-orange-50 text-orange-500 border-r-orange-500'
