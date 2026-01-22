@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "../components/dashboard_layout";
-import DateRangeBar from "../components/DateRangeBar";
+import DateRangePicker from "../components/Dashboard/common/DateRangeBar";
 import SearchBar from "../components/Dashboard/common/Search-bar"; 
 import ActionButton from "../components/Dashboard/common/ActionButton";
 import ExpensesTable, { Expenses } from "../components/ExpensesManagement/ExpensesTable";
@@ -15,8 +15,33 @@ const sampleExpenses: Expenses[] = [
 ];
 
 export default function ExpensesPage() {
+  const [start, setStart] = useState<Date | undefined>();
+  const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [filteredExpenses, setFilteredExpenses] = useState<Expenses[]>(sampleExpenses);
+
+  useEffect(() => {
+    let filtered = sampleExpenses;
+
+    if (search.trim() !== "") {
+      const lowerQuery = search.toLowerCase();
+      filtered = filtered.filter(
+        (exp) =>
+          exp.id.toLowerCase().includes(lowerQuery) ||
+          exp.category.toLowerCase().includes(lowerQuery) ||
+          exp.description.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    if (start && end) {
+      filtered = filtered.filter((exp) => {
+        const expDate = new Date(exp.date);
+        return expDate >= start && expDate <= end;
+      });
+    }
+
+    setFilteredExpenses(filtered);
+  }, [search, start, end]);
 
   function handleSearch(query: string) {
     setSearch(query);
@@ -59,11 +84,20 @@ export default function ExpensesPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
-        <DateRangeBar />
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
+
         <StatCardGrid />
+
         <SearchBar
           value={search}
-          onChange={handleSearch}
+          onChange={setSearch}
           placeholder="Search Expenses..."
           debounceMs={300}
           showClear
