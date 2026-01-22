@@ -12,7 +12,7 @@ type Props = {
 export default function SearchBar({
   value,
   onChange,
-  placeholder = "Search customers...",
+  placeholder = "Search",
   onFilter,
 }: Props) {
   return (
