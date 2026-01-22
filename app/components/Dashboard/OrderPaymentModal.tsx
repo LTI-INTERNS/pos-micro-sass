@@ -64,8 +64,13 @@ export default function OrderPaymentModal({
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
   const [amount, setAmount] = useState<string>("");
   const [amountFocused, setAmountFocused] = useState(false);
+  const [tipFocused, setTipFocused] = useState(false);
+
+  // NEW: tip input (NOT linked to keypad yet)
+  const [tipInput, setTipInput] = useState<string>("");
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const tipInputRef = useRef<HTMLInputElement | null>(null);
 
   const tipText = useMemo(
     () => formatMoney(currencyCode, tipAmount),
@@ -89,7 +94,7 @@ export default function OrderPaymentModal({
   };
 
   const handleDone = () => {
-    console.log("Done clicked", { orderNo, selectedMethod, amount });
+    console.log("Done clicked", { orderNo, selectedMethod, amount, tipInput });
     onClose();
   };
 
@@ -262,6 +267,38 @@ export default function OrderPaymentModal({
                   `}
                 />
               </div>
+
+              {/* NEW: Tip amount input (not linked to keypad/buttons yet) */}
+              <p className="mt-4 mb-2 text-sm font-semibold text-black">
+                Tip amount
+              </p>
+
+              <div className="relative">
+                {tipFocused && (
+                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                    {currencyCode}
+                  </span>
+                )}
+
+                <input
+                  ref={tipInputRef}
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Tip amount"
+                  value={tipInput}
+                  onFocus={() => setTipFocused(true)}
+                  onBlur={() => setTipFocused(false)}
+                  onChange={(e) => setTipInput(sanitizeAmountInput(e.target.value))}
+                  className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
+                    text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
+                    ${
+                      tipFocused
+                        ? "text-left pl-20 pr-5"
+                        : "text-center px-5"
+                    }
+                  `}
+                />
+              </div>
             </div>
           )}
 
@@ -278,7 +315,7 @@ export default function OrderPaymentModal({
                   key={key}
                   type="button"
                   onMouseDown={(e) => e.preventDefault()}
-                  onTouchStart={(e) => e.preventDefault()} 
+                  onTouchStart={(e) => e.preventDefault()}
                   onClick={() => handleKeypadPress(key)}
                   className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
                     ${
