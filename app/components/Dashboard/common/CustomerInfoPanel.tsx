@@ -14,7 +14,6 @@ export type OrderItem = {
 type Props = {
   showOrders?: boolean;
   items?: OrderItem[];
-  taxRate?: number; // default 10%
 
   onAddCustomer?: () => void;
   onInc?: (id: string) => void;
@@ -26,7 +25,6 @@ type Props = {
   onCancel?: () => void;
   onPay?: (summary: {
     subtotal: number;
-    tax: number;
     total: number;
   }) => void;
 };
@@ -34,7 +32,6 @@ type Props = {
 export default function CustomerInfoPanel({
   showOrders = true,
   items = [],
-  taxRate = 0.1,
   onAddCustomer,
   onInc,
   onDec,
@@ -48,8 +45,7 @@ export default function CustomerInfoPanel({
     [items]
   );
 
-  const tax = useMemo(() => subtotal * taxRate, [subtotal, taxRate]);
-  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
+  const total = useMemo(() => subtotal, [subtotal]);
 
   /* ================= LKR formatter ================= */
   const formatter = useMemo(
@@ -214,13 +210,6 @@ export default function CustomerInfoPanel({
                 </span>
               </div>
 
-              <div className="flex justify-between">
-                <span>Tax ({Math.round(taxRate * 100)}%)</span>
-                <span className="font-semibold text-slate-900">
-                  {formatter.format(tax)}
-                </span>
-              </div>
-
               <div className="pt-4 border-t border-dashed flex justify-between">
                 <span className="font-semibold text-slate-600">Total</span>
                 <span className="font-bold text-orange-600 text-[16px]">
@@ -239,7 +228,7 @@ export default function CustomerInfoPanel({
               </button>
 
               <button
-                onClick={() => onPay?.({ subtotal, tax, total })}
+                onClick={() => onPay?.({ subtotal, total })}
                 className="rounded-full bg-orange-500
                            text-white font-semibold py-4"
               >
