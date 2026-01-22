@@ -15,6 +15,8 @@ type Props = {
   currencyCode?: string; // default "LKR"
 };
 
+type ActiveField = "amount" | "tip" | null;
+
 function formatMoney(currency: string, amount: number) {
   const safe = Number.isFinite(amount) ? amount : 0;
   return `${currency} ${safe.toFixed(2)}`;
@@ -23,22 +25,18 @@ function formatMoney(currency: string, amount: number) {
 function sanitizeAmountInput(raw: string) {
   let v = raw.replace(/[^0-9.]/g, "");
 
-  // Allow only one dot
   const firstDot = v.indexOf(".");
   if (firstDot !== -1) {
     v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, "");
   }
 
-  // If starts with ".", convert to "0."
   if (v.startsWith(".")) v = "0" + v;
 
-  // Prevent multiple leading zeros (allow "0.xxx")
   if (v.length > 1 && v.startsWith("0") && v[1] !== ".") {
     v = v.replace(/^0+/, "");
     if (v === "") v = "0";
   }
 
-  // If user typed only zeros like "000" => keep single "0"
   if (/^0+$/.test(v)) v = "0";
 
   return v;
@@ -47,10 +45,24 @@ function sanitizeAmountInput(raw: string) {
 function addWholeAmount(current: string, addBy: number) {
   const cur = parseFloat(current || "0");
   const next = cur + addBy;
+  return current.includes(".") ? next.toFixed(2) : String(Math.trunc(next));
+}
 
-  // if current had decimals, keep 2 dp; else show whole
-  const hasDot = current.includes(".");
-  return hasDot ? next.toFixed(2) : String(Math.trunc(next));
+function handleKeypadValue(prev: string, key: string) {
+  if (key === "⌫") return prev.slice(0, -1);
+  if (key === "C") return "";
+  if (key === "10" || key === "20") {
+    return sanitizeAmountInput(addWholeAmount(prev, Number(key)));
+  }
+  if (key === ".") {
+    if (prev.includes(".")) return prev;
+    if (prev === "" || prev === "0") return "0.";
+    return sanitizeAmountInput(prev + ".");
+  }
+  if (/^\d$/.test(key)) {
+    return sanitizeAmountInput(prev + key);
+  }
+  return prev;
 }
 
 export default function OrderPaymentModal({
@@ -62,12 +74,13 @@ export default function OrderPaymentModal({
   currencyCode = "LKR",
 }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
+
   const [amount, setAmount] = useState<string>("");
+  const [tipInput, setTipInput] = useState<string>("");
+
   const [amountFocused, setAmountFocused] = useState(false);
   const [tipFocused, setTipFocused] = useState(false);
-
-  // NEW: tip input (NOT linked to keypad yet)
-  const [tipInput, setTipInput] = useState<string>("");
+  const [activeField, setActiveField] = useState<ActiveField>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const tipInputRef = useRef<HTMLInputElement | null>(null);
@@ -84,71 +97,24 @@ export default function OrderPaymentModal({
   const isCash = selectedMethod === "Cash";
   const showCurrencyInInput = isCash && amountFocused;
 
-  // Footer button handlers
-  const handleGiftReceipt = () => {
-    console.log("Gift receipt clicked");
-  };
-
-  const handleEmail = () => {
-    console.log("Email clicked");
-  };
-
-  const handleDone = () => {
-    console.log("Done clicked", { orderNo, selectedMethod, amount, tipInput });
-    onClose();
-  };
-
-  const focusAmountInput = () => {
-    inputRef.current?.focus();
-  };
-
   const handleKeypadPress = (key: string) => {
-    // Make the input "selected" when keypad used (so LKR appears)
-    focusAmountInput();
+    if (!activeField) return;
 
-    setAmount((prev) => {
-      // Backspace
-      if (key === "⌫") {
-        return prev.slice(0, -1);
-      }
+    if (activeField === "amount") {
+      inputRef.current?.focus();
+      setAmount((prev) => handleKeypadValue(prev, key));
+    }
 
-      // Clear
-      if (key === "C") {
-        return "";
-      }
-
-      // Quick add buttons
-      if (key === "10" || key === "20") {
-        return sanitizeAmountInput(addWholeAmount(prev, Number(key)));
-      }
-
-      // Dot
-      if (key === ".") {
-        if (prev.includes(".")) return prev; // only one dot
-        if (prev === "" || prev === "0") return "0."; // allow 0.5 style
-        return sanitizeAmountInput(prev + ".");
-      }
-
-      // Digits
-      if (/^\d$/.test(key)) {
-        return sanitizeAmountInput(prev + key);
-      }
-
-      // "Add" button behavior (you can change later)
-      if (key === "Add") {
-        console.log("Add pressed", { amount: prev });
-        return prev;
-      }
-
-      return prev;
-    });
+    if (activeField === "tip") {
+      tipInputRef.current?.focus();
+      setTipInput((prev) => handleKeypadValue(prev, key));
+    }
   };
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
-      {/* Right panel */}
       <div className="h-full w-[420px] bg-white shadow-xl flex flex-col">
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-4 border-b">
@@ -203,12 +169,10 @@ export default function OrderPaymentModal({
                     onClick={() => {
                       setSelectedMethod(pm.id);
 
-                      // leaving cash: drop focus state
                       if (pm.id !== "Cash") {
                         setAmountFocused(false);
-                      } else {
-                        // returning to cash: optionally focus input
-                        setTimeout(() => focusAmountInput(), 0);
+                        setTipFocused(false);
+                        setActiveField(null);
                       }
                     }}
                     className={`h-14 rounded-xl border-2 box-border
@@ -233,7 +197,7 @@ export default function OrderPaymentModal({
             </div>
           </div>
 
-          {/* Input amount (ONLY for Cash) */}
+          {/* Inputs (Cash only) */}
           {isCash && (
             <div>
               <p className="mb-2 text-sm font-semibold text-black">
@@ -241,7 +205,6 @@ export default function OrderPaymentModal({
               </p>
 
               <div className="relative">
-                {/* Show LKR ONLY when input is focused */}
                 {showCurrencyInInput && (
                   <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
                     {currencyCode}
@@ -254,7 +217,11 @@ export default function OrderPaymentModal({
                   inputMode="decimal"
                   placeholder="Input amount"
                   value={amount}
-                  onFocus={() => setAmountFocused(true)}
+                  onFocus={() => {
+                    setAmountFocused(true);
+                    setTipFocused(false);
+                    setActiveField("amount");
+                  }}
                   onBlur={() => setAmountFocused(false)}
                   onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
                   className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
@@ -268,7 +235,6 @@ export default function OrderPaymentModal({
                 />
               </div>
 
-              {/* NEW: Tip amount input (not linked to keypad/buttons yet) */}
               <p className="mt-4 mb-2 text-sm font-semibold text-black">
                 Tip amount
               </p>
@@ -286,9 +252,15 @@ export default function OrderPaymentModal({
                   inputMode="decimal"
                   placeholder="Tip amount"
                   value={tipInput}
-                  onFocus={() => setTipFocused(true)}
+                  onFocus={() => {
+                    setTipFocused(true);
+                    setAmountFocused(false);
+                    setActiveField("tip");
+                  }}
                   onBlur={() => setTipFocused(false)}
-                  onChange={(e) => setTipInput(sanitizeAmountInput(e.target.value))}
+                  onChange={(e) =>
+                    setTipInput(sanitizeAmountInput(e.target.value))
+                  }
                   className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
                     text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
                     ${
@@ -350,7 +322,6 @@ export default function OrderPaymentModal({
         {/* Footer */}
         <div className="px-5 py-4 border-t flex gap-3">
           <button
-            onClick={handleGiftReceipt}
             className="flex-1 h-14 rounded-xl bg-gray-900 text-white
                        flex flex-col items-center justify-center gap-1
                        text-xs transition active:scale-95"
@@ -360,7 +331,6 @@ export default function OrderPaymentModal({
           </button>
 
           <button
-            onClick={handleEmail}
             className="flex-1 h-14 rounded-xl bg-gray-900 text-white
                        flex flex-col items-center justify-center gap-1
                        text-xs transition active:scale-95"
@@ -370,7 +340,7 @@ export default function OrderPaymentModal({
           </button>
 
           <button
-            onClick={handleDone}
+            onClick={onClose}
             className="flex-1 h-14 rounded-xl
                        bg-gradient-to-r from-orange-400 to-pink-500
                        text-white
