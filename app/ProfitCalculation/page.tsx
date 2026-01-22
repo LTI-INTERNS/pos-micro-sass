@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import DashboardLayout from "../components/dashboard_layout";
-import DateRangeBar from "../components/DateRangeBar";
+import DateRangePicker from "../components/Dashboard/common/DateRangeBar";
 import SearchBar from "../components/Dashboard/common/Search-bar"; 
 import ActionButton from "../components/Dashboard/common/ActionButton";
 import ProfitTable, {Profit} from "../components/ProfitCalculation/ProfitTable";
@@ -51,21 +52,34 @@ const sampleProfits: Profit[] = [
 ];
 
 export default function ProfitPage() {
+  const [start, setStart] = useState<Date | undefined>();
+  const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [filteredProfits, setFilteredProducts] = useState<Profit[]>(sampleProfits);
 
-  function handleSearch(query: string) {
-    setSearch(query);
+  useEffect(() => {
+    let filtered = sampleProfits;
 
-    const lowerQuery = query.toLowerCase();
-    const filtered = sampleProfits.filter(
-      (profit) =>
-        profit.id.toLowerCase().includes(lowerQuery) ||
-        profit.category.toLowerCase().includes(lowerQuery) ||
-        profit.description.toLowerCase().includes(lowerQuery)
-    );
+    if (search.trim() !== "") {
+      const lowerQuery = search.toLowerCase();
+      filtered = filtered.filter(
+        (profit) =>
+          profit.id.toLowerCase().includes(lowerQuery) ||
+          profit.category.toLowerCase().includes(lowerQuery) ||
+          profit.description.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    if (start && end) {
+      filtered = filtered.filter((profit) => {
+        const profitDate = new Date(profit.date);
+        return profitDate >= start && profitDate <= end;
+      });
+    }
+
     setFilteredProducts(filtered);
-  }
+  }, [search, start, end]);
+
 
   function exportToCSV(data: Profit[], filename = "profit_data.csv") {
     if (!data || !data.length) return;
@@ -91,11 +105,20 @@ export default function ProfitPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangeBar/>
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
+
         <StatCardGrid />
+
         <SearchBar
           value={search}
-          onChange={handleSearch}
+          onChange={setSearch}
           placeholder="Search Profits..."
           debounceMs={300}
           showClear
