@@ -54,9 +54,12 @@ export default function DiscountPopup({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center px-4" role="dialog">
+    <div
+      className="fixed inset-0 z-50 grid place-items-center px-4"
+      role="dialog"
+    >
       <button
-        className="absolute inset-0 bg-black/25"
+        className="absolute inset-0 bg-black/25 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close"
       />
@@ -67,7 +70,7 @@ export default function DiscountPopup({
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
             onClick={onClose}
-            className="h-9 w-9 grid place-items-center rounded-full hover:bg-slate-100"
+            className="h-9 w-9 grid text-black place-items-center rounded-full hover:bg-slate-100"
           >
             ✕
           </button>
@@ -128,7 +131,7 @@ function DiscountRow({
       className="group w-full flex items-stretch transition-transform active:scale-[0.98]"
     >
       {/* 1. Left Part (Name Showing Part) */}
-      <div 
+      <div
         className={[
           "flex-1 px-4 py-4 flex items-center gap-3 rounded-l-xl border-y border-l transition",
           selected
@@ -139,9 +142,7 @@ function DiscountRow({
         <span
           className={[
             "h-5 w-5 rounded-full grid place-items-center shrink-0",
-            selected
-              ? "bg-orange-500"
-              : "border border-slate-300 bg-white",
+            selected ? "bg-orange-500" : "border border-slate-300 bg-white",
           ].join(" ")}
         >
           {selected && (
@@ -163,21 +164,23 @@ function DiscountRow({
       </div>
 
       {/* 2. Right Part (Percentage Ticket Stub) */}
-      <div 
+      <div
         className="relative w-[78px] bg-orange-500 text-white font-bold grid place-items-center"
         style={{
-          WebkitMaskImage: 'radial-gradient(circle 4px at 78px 50%, transparent 4px, black 4px)',
-          WebkitMaskSize: '100% 12px',
-          WebkitMaskRepeat: 'repeat-y',
-          WebkitMaskPosition: '0 -3.5px',
-          maskImage: 'radial-gradient(circle 4px at 78px 50%, transparent 4px, black 4px)',
-          maskSize: '100% 14px',
-          maskRepeat: 'repeat-y',
-          maskPosition: '0 -4px'
+          WebkitMaskImage:
+            "radial-gradient(circle 4px at 78px 50%, transparent 4px, black 4px)",
+          WebkitMaskSize: "100% 12px",
+          WebkitMaskRepeat: "repeat-y",
+          WebkitMaskPosition: "0 -3.5px",
+          maskImage:
+            "radial-gradient(circle 4px at 78px 50%, transparent 4px, black 4px)",
+          maskSize: "100% 14px",
+          maskRepeat: "repeat-y",
+          maskPosition: "0 -4px",
         }}
       >
         <span className="text-sm">{option.percent}%</span>
-        
+
         {/* Separator Perforation Line */}
         <div className="absolute left-0 top-1 bottom-1 border-l border-dashed border-white/40" />
       </div>
