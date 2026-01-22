@@ -2,8 +2,8 @@
 import { useState } from "react";
 import DashboardLayout from "../components/dashboard_layout";
 import DateRangeBar from "../components/DateRangeBar";
-import SearchBar from "../components/ProfitCalculation/CashierSearch";
-import ActionsBar from "../components/RecurringExpenses/ActionBar";
+import SearchBar from "../components/Dashboard/common/Search-bar"; 
+import ActionButton from "../components/Dashboard/common/ActionButton";
 import RecurringExpensesTable, { RecurringExpenses } from "../components/RecurringExpenses/RecExpensesTable";
 import StatCardGrid from "../components/RecurringExpenses/RecStatCardGrid";
 
@@ -16,9 +16,12 @@ const sampleRecurringExpenses: RecurringExpenses[] = [
 ];
 
 export default function RecurringExpensesPage() {
+  const [search, setSearch] = useState("");
   const [filteredExpenses, setFilteredExpenses] = useState<RecurringExpenses[]>(sampleRecurringExpenses);
 
   function handleSearch(query: string) {
+    setSearch(query);
+
     const lowerQuery = query.toLowerCase();
     const filtered = sampleRecurringExpenses.filter(
       (exp) =>
@@ -59,8 +62,30 @@ export default function RecurringExpensesPage() {
       <div className="w-full space-y-5">
         <DateRangeBar />
         <StatCardGrid />
-        <SearchBar onSearch={handleSearch} placeholder="Search Cashier" />
-        <ActionsBar onExport={() => exportToCSV(filteredExpenses)} />
+        <SearchBar
+          value={search}
+          onChange={handleSearch}
+          placeholder="Search Recurring Expenses..."
+          debounceMs={300}
+          showClear
+          showFilter
+          onFilter={() => console.log("Open filter modal")}
+        />
+
+        <div className="grid grid-cols-2 gap-3">
+          <ActionButton
+            label="Add Recurring Expense"
+            variant="primary"
+            onClick={() => console.log("Open add modal")}
+          />
+
+          <ActionButton
+            label="Export CSV"
+            variant="primary"
+            onClick={() => exportToCSV(filteredExpenses)}
+          />
+        </div>
+
         <RecurringExpensesTable RecurringExpenses={filteredExpenses} />
       </div>
     </DashboardLayout>
