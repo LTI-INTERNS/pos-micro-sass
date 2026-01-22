@@ -13,7 +13,8 @@ export default function DashboardPage() {
            <div className="my-6">
              <SearchBar ></SearchBar>
              </div>
-            <CashiersTable Cashier={[]} />
+            <CashiersTable cashiers={[]} />
+
         </div>
     </DashboardLayout>
   );
