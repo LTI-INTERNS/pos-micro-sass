@@ -74,3 +74,44 @@ export const salesBarData = [
   { hour: "9-10 AM", value: 2800 },
   { hour: "11-12 AM", value: 3600 },
 ];
+
+
+export type Supplier = {
+  id: number;
+  type: "Individual" | "Company";
+  name: string;
+  phone: number;
+  email: string;
+  address: string;
+  regNo: string;
+};
+
+export const suppliers: Supplier[] = [
+  {
+    id: 1,
+    type: "Individual",
+    name: "Kamal Perera",
+    phone: 771234567,
+    email: "kamal@gmail.com",
+    address: "Colombo",
+    regNo: "SUP-001",
+  },
+  {
+    id: 2,
+    type: "Company",
+    name: "ABC Traders",
+    phone: 719876543,
+    email: "abc@gmail.com",
+    address: "Kandy",
+    regNo: "SUP-002",
+  },
+  {
+    id: 3,
+    type: "Individual",
+    name: "Sunil Fernando",
+    phone: 761112233,
+    email: "sunil@gmail.com",
+    address: "Galle",
+    regNo: "SUP-003",
+  },
+];

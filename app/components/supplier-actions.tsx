@@ -6,7 +6,7 @@ type Props = {
   onDelete?: () => void;
 };
 
-export default function CustomerActionsBar({
+export default function SupplierActionsBar({
   onAdd,
   onEdit,
   onDelete,
