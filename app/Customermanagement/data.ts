@@ -1,30 +1,30 @@
-export type Customer = {
+export type Branch = {
   id: number;
   name: string;
   phone: string;
-  promoCard: string;
-  points: number;
+  address: string;
+  regno: number;
   email: string;
-  outstanding: number;
+  password: string;
 };
 
-export const customersData: Customer[] = [
+export const branchesData: Branch[] = [
   {
     id: 1,
     name: "Nimal",
     phone: "0771234567",
-    promoCard: "P01",
-    points: 10,
+    address: "P01",
+    regno: 10,
     email: "nimal@coca.lk",
-    outstanding: 5000,
+    password: "password123",
   },
   {
     id: 2,
     name: "Kamal",
     phone: "0719999999",
-    promoCard: "P02",
-    points: 20,
+    address: "P02",
+    regno: 20,
     email: "kamal@coca.lk",
-    outstanding: 0,
+    password: "password123",
   },
 ];

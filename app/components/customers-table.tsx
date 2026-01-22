@@ -1,26 +1,30 @@
-import CommonTable, { Column } from "@/app/components/common/CommonTable";
-import { Customer } from "@/app/Customermanagement/data";
+"use client";
 
-const customerColumns: Column<Customer>[] = [
+import CommonTable, { Column } from "@/app/components/common/CommonTable";
+import { Branch } from "@/app/Customermanagement/data";
+
+type BranchesTableProps = {
+  branches: Branch[];
+};
+
+const columns: Column<Branch>[] = [
+  { key: "id", label: "ID" },
   { key: "name", label: "Name" },
   { key: "phone", label: "Phone" },
-  { key: "promoCard", label: "Promo Card" },
-  { key: "points", label: "Points" },
+  { key: "address", label: "Address" },
+  { key: "regno", label: "Registration Number" },
   { key: "email", label: "Email" },
-  {
-    key: "outstanding",
-    label: "Outstanding",
-    align: "right",
-    render: (c) => `Rs. ${c.outstanding.toLocaleString()}`,
-  },
+  { key: "password", label: "Password", render: () => "••••••••" }, 
 ];
 
-export default function CustomersTable({ customers }: { customers: Customer[] }) {
+// Simple table wrapper that expects pre-filtered branch data.
+export default function BranchesTable({ branches }: BranchesTableProps) {
   return (
     <CommonTable
-      title="Customers"
-      data={customers}
-      columns={customerColumns}
+      title="Branches"
+      data={branches}
+      columns={columns}
+      emptyMessage="No branches found"
     />
   );
 }

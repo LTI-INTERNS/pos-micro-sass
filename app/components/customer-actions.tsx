@@ -6,7 +6,7 @@ type Props = {
   onDelete?: () => void;
 };
 
-export default function CustomerActionsBar({
+export default function BranchActionsBar({
   onAdd,
   onEdit,
   onDelete,
@@ -21,7 +21,7 @@ export default function CustomerActionsBar({
                      hover:bg-orange-50 hover:shadow-sm
                      transition"
         >
-          Delete Customer
+          Delete Branch
         </button>
 
         <button
@@ -31,7 +31,7 @@ export default function CustomerActionsBar({
                      hover:bg-orange-50 hover:shadow-sm
                      transition"
         >
-          Edit Customer
+          Edit Branch
         </button>
 
         <button
@@ -41,7 +41,7 @@ export default function CustomerActionsBar({
                      hover:bg-orange-600
                      transition"
         >
-          Add New Customer
+          Add New Branch
         </button>
       </div>
     </div>

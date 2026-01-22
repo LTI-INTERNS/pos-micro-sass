@@ -3,17 +3,17 @@
 import { useMemo, useState } from "react";
 import DashboardLayout from "@/app/components/dashboard_layout";
 import SearchBar from "@/app/components/common/Search-bar";
-import CustomerActionsBar from "@/app/components/customer-actions";
-import CustomersTable from "@/app/components/customers-table";
+import BranchActionsBar from "@/app/components/customer-actions";
+import BranchesTable from "@/app/components/customers-table";
 import StatCardGrid from "@/app/components/StatCardGrid";
 import { filterRows } from "@/app/components/common/filterRows";
-import { customersData } from "@/app/Customermanagement/data";
+import {branchesData } from "@/app/Customermanagement/data";
 
-export default function CustomersPage() {
+export default function BranchesPage() {
   const [query, setQuery] = useState("");
 
-  const filteredCustomers = useMemo(() => {
-    return filterRows(customersData, query, ["name", "phone", "email", "promoCard"]);
+  const filteredBranches = useMemo(() => {
+    return filterRows(branchesData, query, ["id", "name", "phone", "address"]);
   }, [query]);
 
   return (
@@ -27,22 +27,19 @@ export default function CustomersPage() {
           <SearchBar
   value={query}
   onChange={setQuery}
-  placeholder="Search customers..."
+  placeholder="Search branches..."
   showFilter
   filterLabel="Filter"
   onFilter={() => {
     console.log("open filter popup");
   }}
 />
-
-
-
-          <CustomerActionsBar
+          <BranchActionsBar
           />
         </section>
 
         {/* Table */}
-        <CustomersTable customers={filteredCustomers} />
+        <BranchesTable branches={filteredBranches} />
       </div>
     </DashboardLayout>
   );
