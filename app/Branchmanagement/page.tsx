@@ -3,11 +3,11 @@
 import { useMemo, useState } from "react";
 import DashboardLayout from "@/app/components/dashboard_layout";
 import SearchBar from "@/app/components/common/Search-bar";
-import BranchActionsBar from "@/app/components/customer-actions";
-import BranchesTable from "@/app/components/customers-table";
+import BranchActionsBar from "@/app/components/branches-actions";
+import BranchesTable from "@/app/components/branches-table";
 import StatCardGrid from "@/app/components/StatCardGrid";
 import { filterRows } from "@/app/components/common/filterRows";
-import {branchesData } from "@/app/Customermanagement/data";
+import {branchesData } from "@/app/Branchmanagement/data";
 
 export default function BranchesPage() {
   const [query, setQuery] = useState("");

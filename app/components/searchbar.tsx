@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import SearchBar from "@/app/components/common/Search-bar";
-import BranchesTable from "@/app/components/customers-table";
+import BranchesTable from "@/app/components/branches-table";
 
-import { branchesData } from "@/app/Customermanagement/data";
+import { branchesData } from "@/app/Branchmanagement/data";
 
 export default function BranchesPage() {
   const [query, setQuery] = useState("");

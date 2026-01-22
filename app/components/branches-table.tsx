@@ -1,7 +1,7 @@
 "use client";
 
 import CommonTable, { Column } from "@/app/components/common/CommonTable";
-import { Branch } from "@/app/Customermanagement/data";
+import { Branch } from "@/app/Branchmanagement/data";
 
 type BranchesTableProps = {
   branches: Branch[];
