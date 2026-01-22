@@ -2,8 +2,8 @@
 import { useState } from "react";
 import DashboardLayout from "../components/dashboard_layout";
 import DateRangeBar from "../components/DateRangeBar";
-import SearchBar from "../components/ProfitCalculation/CashierSearch";
-import ActionsBar from "../components/ProfitCalculation/ActionBar";
+import SearchBar from "../components/Dashboard/common/Search-bar"; 
+import ActionButton from "../components/Dashboard/common/ActionButton";
 import ProfitTable, {Profit} from "../components/ProfitCalculation/ProfitTable";
 import StatCardGrid from "../components/ProfitCalculation/ProfitStatCardGrid";
 
@@ -51,9 +51,12 @@ const sampleProfits: Profit[] = [
 ];
 
 export default function ProfitPage() {
+  const [search, setSearch] = useState("");
   const [filteredProfits, setFilteredProducts] = useState<Profit[]>(sampleProfits);
 
   function handleSearch(query: string) {
+    setSearch(query);
+
     const lowerQuery = query.toLowerCase();
     const filtered = sampleProfits.filter(
       (profit) =>
@@ -90,8 +93,22 @@ export default function ProfitPage() {
       <div className="w-full space-y-6">
         <DateRangeBar/>
         <StatCardGrid />
-        <SearchBar onSearch={handleSearch} placeholder="Search Cashiers" />
-        <ActionsBar onExport={() => exportToCSV(filteredProfits)} />
+        <SearchBar
+          value={search}
+          onChange={handleSearch}
+          placeholder="Search Profits..."
+          debounceMs={300}
+          showClear
+          showFilter
+          onFilter={() => console.log("Open filter modal")}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full sm:w-[700px]">
+          <ActionButton
+            label="Export CSV"
+            variant="primary"
+            onClick={() => exportToCSV(filteredProfits)}
+          />
+        </div>
         <ProfitTable profits={filteredProfits} />
       </div>
     </DashboardLayout>
