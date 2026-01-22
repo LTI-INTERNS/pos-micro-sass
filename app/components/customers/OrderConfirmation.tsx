@@ -6,8 +6,7 @@ type OrderItem = {
   id: number;
   name: string;
   qty: number;
-  price: number;
-  tax: number;
+  price: number; 
   subtotal: number;
 };
 
@@ -17,7 +16,6 @@ const orderItems: OrderItem[] = [
     name: "Steak sapi bakar",
     qty: 1,
     price: 25.12,
-    tax: 0.33,
     subtotal: 25.12,
   },
   {
@@ -25,7 +23,6 @@ const orderItems: OrderItem[] = [
     name: "Ayam kentang",
     qty: 1,
     price: 15.4,
-    tax: 0.32,
     subtotal: 15.4,
   },
   {
@@ -33,7 +30,6 @@ const orderItems: OrderItem[] = [
     name: "Mie kuah pedas",
     qty: 1,
     price: 11.21,
-    tax: 0.42,
     subtotal: 11.21,
   },
 ];
@@ -52,7 +48,7 @@ export default function OrderConfirmationPage() {
       </div>
 
 
-      <OrderTable data={orderItems} headings={[{ label: "ITEM NAME" }, { label: "QTY" }, { label: "PRICE" },{ label: "TAX" },{ label: "SUBTOTAL" },]} emptyMessage="No order items found"/>
+      <OrderTable data={orderItems} headings={[{ label: "ITEM NAME" }, { label: "QTY" }, { label: "PRICE" },{ label: "SUBTOTAL" },]} emptyMessage="No order items found"/>
 
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -79,10 +75,7 @@ export default function OrderConfirmationPage() {
             <span>ORDER DISCOUNT</span>
             <span className="text-black">LKR 0</span>
           </div>
-          <div className="flex justify-between text-slate-500">
-            <span>TAX</span>
-            <span className="text-black">LKR 0</span>
-          </div>
+         
 
           <div className="border-t pt-3 flex justify-between font-semibold">
             <span className="text-black">BILL AMOUNT</span>

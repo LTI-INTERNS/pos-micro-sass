@@ -6,7 +6,6 @@ type OrderItem = {
   name: string;
   qty: number;
   price: number;
-  tax: number;
   subtotal: number;
 };
 
@@ -55,9 +54,6 @@ const OrderTable = ({ data, headings, emptyMessage }: Props) => {
           </td>
           <td className="px-6 py-4 text-right text-black">
             LKR {item.price}
-          </td>
-          <td className="px-6 py-4 text-right text-black">
-            LKR {item.tax}
           </td>
           <td className="px-6 py-4 text-right font-medium text-black">
             LKR {item.subtotal}
