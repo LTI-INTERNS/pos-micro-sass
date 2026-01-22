@@ -7,6 +7,7 @@ import DateRangeBar from "../components/Dashboard/DateRangeBar";
 import SearchBar from "../components/Dashboard/common/Search-bar";
 import CommonTable, { Column } from "../components/Dashboard/common/CommonTable";
 import StaffToolbar from "../components/StaffManagement/StaffToolbar";
+import AddStaffPopup from "./AddStaffPopup";
 
 import { staffData } from "./mockStaffData";
 import { filterRows } from "../components/Dashboard/common/filterRows";
@@ -23,6 +24,7 @@ type Staff = {
 
 export default function StaffManagementPage() {
   const [search, setSearch] = useState("");
+  const [showPopup, setShowPopup] = useState(false);
 
   const columns: Column<Staff>[] = [
     { key: "id", label: "ID" },
@@ -34,7 +36,6 @@ export default function StaffManagementPage() {
     { key: "pin", label: "Pin" },
   ];
 
-  // Filter staff list using reusable helper
   const filteredStaff = useMemo(() => {
     return filterRows(staffData, search, [
       "id",
@@ -43,16 +44,13 @@ export default function StaffManagementPage() {
       "position",
       "email",
     ]);
-  }, [search]);
+  }, [search, staffData]);
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        
-        {/* Date range */}
         <DateRangeBar />
 
-        {/* Search Bar */}
         <SearchBar
           value={search}
           onChange={setSearch}
@@ -63,10 +61,8 @@ export default function StaffManagementPage() {
           onFilter={() => console.log("Filter clicked")}
         />
 
-        {/* Action buttons */}
-        <StaffToolbar />
+        <StaffToolbar onAdd={() => setShowPopup(true)} />
 
-        {/* Table */}
         <CommonTable
           title="Staff List"
           data={filteredStaff}
@@ -74,6 +70,10 @@ export default function StaffManagementPage() {
           emptyMessage="No staff found"
         />
       </div>
+
+      {showPopup && (
+        <AddStaffPopup onClose={() => setShowPopup(false)} />
+      )}
     </DashboardLayout>
   );
 }
