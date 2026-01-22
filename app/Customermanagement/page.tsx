@@ -34,12 +34,11 @@ export default function CustomersPage() {
             onChange={setQuery}
             placeholder="Search customers..."
           />
-
+          <CustomerActionsBar />
           <CustomersTable customers={filteredCustomers} />
         </div>
 
-        {/* Actions */}
-        <CustomerActionsBar />
+        
       </div>
     </DashboardLayout>
   );
