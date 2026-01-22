@@ -8,15 +8,22 @@ type Props = {
   label: string;
   onClick?: () => void;
   variant?: Variant;
+
+  
+  className?: string;
+  fullWidth?: boolean; 
 };
 
 export default function ActionButton({
   label,
   onClick,
   variant = "outline",
+  className = "",
+  fullWidth = true,
 }: Props) {
+
   const base =
-    "flex-1 rounded-full py-2 text-xs font-semibold transition";
+    `${fullWidth ? "flex-1" : ""} rounded-full py-2 text-xs font-semibold transition`;
 
   const styles = {
     outline:
@@ -26,7 +33,7 @@ export default function ActionButton({
   };
 
   return (
-    <button onClick={onClick} className={`${base} ${styles[variant]}`}>
+    <button onClick={onClick} className={`${base} ${styles[variant]} ${className}`}>
       {label}
     </button>
   );

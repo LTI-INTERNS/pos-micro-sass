@@ -13,32 +13,36 @@ export default function CustomersPage() {
   const [query, setQuery] = useState("");
 
   const filteredCustomers = useMemo(() => {
-    return filterRows(customersData, query, [
-      "name",
-      "phone",
-      "email",
-      "promoCard",
-    ]);
+    return filterRows(customersData, query, ["name", "phone", "email", "promoCard"]);
   }, [query]);
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        {/* Stats */}
+       
         <StatCardGrid />
 
-        {/* Search + Table */}
-        <div className="space-y-4">
+        {/* Toolbar (Search + Actions) */}
+        <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
           <SearchBar
-            value={query}
-            onChange={setQuery}
-            placeholder="Search customers..."
-          />
-          <CustomerActionsBar />
-          <CustomersTable customers={filteredCustomers} />
-        </div>
+  value={query}
+  onChange={setQuery}
+  placeholder="Search customers..."
+  showFilter
+  filterLabel="Filter"
+  onFilter={() => {
+    console.log("open filter popup");
+  }}
+/>
 
-        
+
+
+          <CustomerActionsBar
+          />
+        </section>
+
+        {/* Table */}
+        <CustomersTable customers={filteredCustomers} />
       </div>
     </DashboardLayout>
   );

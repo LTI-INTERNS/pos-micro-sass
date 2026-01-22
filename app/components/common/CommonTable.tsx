@@ -7,6 +7,8 @@ export type Column<T> = {
   label: string;
   align?: "left" | "right" | "center";
   render?: (row: T) => React.ReactNode;
+
+  // width?: string; // e.g. "140px" or "20%"
 };
 
 type Props<T> = {
@@ -14,6 +16,12 @@ type Props<T> = {
   data: T[];
   columns: Column<T>[];
   emptyMessage?: string;
+};
+
+const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
+  left: "text-left",
+  right: "text-right",
+  center: "text-center",
 };
 
 function CommonTableInner<T>({
@@ -39,7 +47,8 @@ function CommonTableInner<T>({
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
-                  className={`px-6 py-2 font-semibold text-${col.align ?? "left"}`}
+                  className={`px-6 py-2 font-semibold ${ALIGN_CLASS[col.align ?? "left"]}`}
+                  // style={col.width ? { width: col.width } : undefined}
                 >
                   {col.label}
                 </th>
@@ -56,7 +65,9 @@ function CommonTableInner<T>({
                 {columns.map((col) => (
                   <td
                     key={String(col.key)}
-                    className={`px-6 py-3 text-${col.align ?? "left"} text-gray-700`}
+                    
+                    className={`px-6 py-3 ${ALIGN_CLASS[col.align ?? "left"]} text-gray-700`}
+                    // style={col.width ? { width: col.width } : undefined}
                   >
                     {col.render
                       ? col.render(row)
@@ -70,7 +81,7 @@ function CommonTableInner<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-5 text-center text-gray-400"
+                  className="px-6 py-5 text-center text-orange-400"
                 >
                   {emptyMessage}
                 </td>
@@ -80,7 +91,7 @@ function CommonTableInner<T>({
         </table>
       </div>
     </section>
-  );
+  ); 
 }
 
 const CommonTable = React.memo(CommonTableInner) as typeof CommonTableInner;
