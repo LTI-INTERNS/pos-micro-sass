@@ -45,7 +45,8 @@ function sanitizeAmountInput(raw: string) {
 function addWholeAmount(current: string, addBy: number) {
   const cur = parseFloat(current || "0");
   const next = cur + addBy;
-  return current.includes(".") ? next.toFixed(2) : String(Math.trunc(next));
+  const hasDot = current.includes(".");
+  return hasDot ? next.toFixed(2) : String(Math.trunc(next));
 }
 
 function handleKeypadValue(prev: string, key: string) {
@@ -94,8 +95,7 @@ export default function OrderPaymentModal({
     [currencyCode, totalAmount]
   );
 
-  const isCash = selectedMethod === "Cash";
-  const showCurrencyInInput = isCash && amountFocused;
+  const showCurrencyInInput = amountFocused;
 
   const showCardPercentages =
     selectedMethod === "Visa" || selectedMethod === "Master";
@@ -161,7 +161,7 @@ export default function OrderPaymentModal({
                 { id: "Cash", src: "/Cash.png", alt: "Cash" },
                 { id: "Master", src: "/Master.png", alt: "Mastercard" },
                 { id: "Visa", src: "/Visa.png", alt: "Visa" },
-                { id: "GiftCard", src: "/GiftCard.png", alt: "Gift card" },
+                { id: "Discount", src: "/Discount.png", alt: "Discount card" },
               ].map((pm) => {
                 const isSelected = selectedMethod === pm.id;
 
@@ -171,12 +171,8 @@ export default function OrderPaymentModal({
                     type="button"
                     onClick={() => {
                       setSelectedMethod(pm.id);
-
-                      if (pm.id !== "Cash") {
-                        setAmountFocused(false);
-                        setTipFocused(false);
-                        setActiveField(null);
-                      }
+                      // Keep fields visible for all methods.
+                      // Do NOT clear focus/activeField here.
                     }}
                     className={`h-14 rounded-xl border-2 box-border
                       flex items-center justify-center bg-white transition-all
@@ -201,146 +197,140 @@ export default function OrderPaymentModal({
 
             {/* Card percentage buttons (Visa / Master only) */}
             {showCardPercentages && (
-                <div className="mt-3 grid grid-cols-3 gap-3">
-                  {["3%", "4%", "5%"].map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onTouchStart={(e) => e.preventDefault()}
-                      className="h-7 rounded-lg border border-gray-300
-                                text-sm font-semibold text-gray-700
-                                transition-all duration-150
-                                hover:border-orange-400 hover:text-orange-500
-                                active:scale-90 active:bg-orange-50"
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {["3%", "4%", "5%"].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
+                    className="h-7 rounded-lg border border-gray-300
+                               text-sm font-semibold text-gray-700
+                               transition-all duration-150
+                               hover:border-orange-400 hover:text-orange-500
+                               active:scale-90 active:bg-orange-50"
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* Inputs (Cash only) */}
-          {isCash && (
-            <div>
-              <p className="mb-2 text-sm font-semibold text-black">
-                Input amount
-              </p>
+          {/* Inputs (NOW shown for ALL payment methods) */}
+          <div>
+            <p className="mb-2 text-sm font-semibold text-black">
+              Input amount
+            </p>
 
-              <div className="relative">
-                {showCurrencyInInput && (
-                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
-                    {currencyCode}
-                  </span>
-                )}
+            <div className="relative">
+              {showCurrencyInInput && (
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                  {currencyCode}
+                </span>
+              )}
 
-                <input
-                  ref={inputRef}
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Input amount"
-                  value={amount}
-                  onFocus={() => {
-                    setAmountFocused(true);
-                    setTipFocused(false);
-                    setActiveField("amount");
-                  }}
-                  onBlur={() => setAmountFocused(false)}
-                  onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
-                  className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
-                    text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
-                    ${
-                      showCurrencyInInput
-                        ? "text-left pl-20 pr-5"
-                        : "text-center px-5"
-                    }
-                  `}
-                />
-              </div>
-
-              <p className="mt-4 mb-2 text-sm font-semibold text-black">
-                Tip amount
-              </p>
-
-              <div className="relative">
-                {tipFocused && (
-                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
-                    {currencyCode}
-                  </span>
-                )}
-
-                <input
-                  ref={tipInputRef}
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Tip amount"
-                  value={tipInput}
-                  onFocus={() => {
-                    setTipFocused(true);
-                    setAmountFocused(false);
-                    setActiveField("tip");
-                  }}
-                  onBlur={() => setTipFocused(false)}
-                  onChange={(e) =>
-                    setTipInput(sanitizeAmountInput(e.target.value))
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="decimal"
+                placeholder="Input amount"
+                value={amount}
+                onFocus={() => {
+                  setAmountFocused(true);
+                  setTipFocused(false);
+                  setActiveField("amount");
+                }}
+                onBlur={() => setAmountFocused(false)}
+                onChange={(e) => setAmount(sanitizeAmountInput(e.target.value))}
+                className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
+                  text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
+                  ${
+                    showCurrencyInInput
+                      ? "text-left pl-20 pr-5"
+                      : "text-center px-5"
                   }
-                  className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
-                    text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
-                    ${
-                      tipFocused
-                        ? "text-left pl-20 pr-5"
-                        : "text-center px-5"
-                    }
-                  `}
-                />
-              </div>
+                `}
+              />
             </div>
-          )}
 
-          {/* Keypad (ONLY for Cash) */}
-          {isCash && (
-            <div className="grid grid-cols-4 gap-3 text-black">
-              {[
-                "1", "2", "3", "10",
-                "4", "5", "6", "20",
-                "7", "8", "9", "⌫",
-                "C", "0", ".", "Add",
-              ].map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onTouchStart={(e) => e.preventDefault()}
-                  onClick={() => handleKeypadPress(key)}
-                  className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
-                    ${
-                      ["10", "20"].includes(key)
-                        ? "bg-blue-50 text-blue-600"
-                        : key === "C"
-                        ? "bg-orange-50 text-orange-500"
-                        : key === "⌫"
-                        ? "bg-orange-50"
-                        : key === "Add"
-                        ? "bg-gray-100 text-gray-800 font-normal"
-                        : "bg-gray-100 text-gray-800"
-                    }
-                  `}
-                >
-                  {key === "⌫" ? (
-                    <Delete
-                      size={28}
-                      strokeWidth={2}
-                      color="#ffffff"
-                      fill="#f97316"
-                    />
-                  ) : (
-                    key
-                  )}
-                </button>
-              ))}
+            <p className="mt-4 mb-2 text-sm font-semibold text-black">
+              Tip amount
+            </p>
+
+            <div className="relative">
+              {tipFocused && (
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
+                  {currencyCode}
+                </span>
+              )}
+
+              <input
+                ref={tipInputRef}
+                type="text"
+                inputMode="decimal"
+                placeholder="Tip amount"
+                value={tipInput}
+                onFocus={() => {
+                  setTipFocused(true);
+                  setAmountFocused(false);
+                  setActiveField("tip");
+                }}
+                onBlur={() => setTipFocused(false)}
+                onChange={(e) => setTipInput(sanitizeAmountInput(e.target.value))}
+                className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
+                  text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
+                  ${
+                    tipFocused
+                      ? "text-left pl-20 pr-5"
+                      : "text-center px-5"
+                  }
+                `}
+              />
             </div>
-          )}
+          </div>
+
+          {/* Keypad (NOW shown for ALL payment methods) */}
+          <div className="grid grid-cols-4 gap-3 text-black">
+            {[
+              "1", "2", "3", "10",
+              "4", "5", "6", "20",
+              "7", "8", "9", "⌫",
+              "C", "0", ".", "Add",
+            ].map((key) => (
+              <button
+                key={key}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onTouchStart={(e) => e.preventDefault()}
+                onClick={() => handleKeypadPress(key)}
+                className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
+                  ${
+                    ["10", "20"].includes(key)
+                      ? "bg-blue-50 text-blue-600"
+                      : key === "C"
+                      ? "bg-orange-50 text-orange-500"
+                      : key === "⌫"
+                      ? "bg-orange-50"
+                      : key === "Add"
+                      ? "bg-gray-100 text-gray-800 font-normal"
+                      : "bg-gray-100 text-gray-800"
+                  }
+                `}
+              >
+                {key === "⌫" ? (
+                  <Delete
+                    size={28}
+                    strokeWidth={2}
+                    color="#ffffff"
+                    fill="#f97316"
+                  />
+                ) : (
+                  key
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Footer */}
