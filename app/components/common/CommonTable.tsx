@@ -9,23 +9,23 @@ export type Column<T> = {
   render?: (row: T) => React.ReactNode;
 };
 
-type CommonTableProps<T> = {
+type Props<T> = {
   title?: string;
   data: T[];
   columns: Column<T>[];
   emptyMessage?: string;
 };
 
-export default function CommonTable<T>({
+function CommonTableInner<T>({
   title,
   data,
   columns,
   emptyMessage = "No data found",
-}: CommonTableProps<T>) {
+}: Props<T>) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
       {title && (
-        <div className="flex items-center justify-between px-6 py-3">
+        <div className="px-6 py-3">
           <h2 className="text-xs font-semibold text-gray-900">
             {title}
           </h2>
@@ -48,10 +48,10 @@ export default function CommonTable<T>({
           </thead>
 
           <tbody>
-            {data.map((row, index) => (
+            {data.map((row: any) => (
               <tr
-                key={index}
-                className="border-b border-gray-100 hover:bg-gray-50 transition"
+                key={row.id}
+                className="border-b border-gray-100 hover:bg-gray-50"
               >
                 {columns.map((col) => (
                   <td
@@ -70,7 +70,7 @@ export default function CommonTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-5 text-center text-gray-400 text-xs"
+                  className="px-6 py-5 text-center text-gray-400"
                 >
                   {emptyMessage}
                 </td>
@@ -82,3 +82,6 @@ export default function CommonTable<T>({
     </section>
   );
 }
+
+const CommonTable = React.memo(CommonTableInner) as typeof CommonTableInner;
+export default CommonTable;
