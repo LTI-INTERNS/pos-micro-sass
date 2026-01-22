@@ -20,7 +20,7 @@ export default function CustomersPage() {
   return (
     <div className="space-y-4">
       <SearchBar
-        placeholder="Search customers..."
+        placeholder="customers..."
         value={query}
         onChange={setQuery}
         onFilter={() => console.log("open filter popup")}
