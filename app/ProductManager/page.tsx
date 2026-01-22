@@ -1,8 +1,8 @@
 import DashboardLayout from '../components/dashboard_layout';
-import CashierActionsBar from '../components/cashier-actions';
-import CashiersTable from '../components/Cashier-table';
+import CashierActionsBar from '../components/product-actions';
 import SearchBar from '../components/Search-bar';
 import SupplierPopup from '../components/Dashboard/Supplier-popup';
+import ProductsTable from '../components/product-table';
 
 export default function DashboardPage() {
   return (
@@ -13,7 +13,7 @@ export default function DashboardPage() {
            <div className="my-6">
              <SearchBar ></SearchBar>
              </div>
-            <CashiersTable cashiers={[]} />
+            <ProductsTable products={[]} />
 
         </div>
     </DashboardLayout>
