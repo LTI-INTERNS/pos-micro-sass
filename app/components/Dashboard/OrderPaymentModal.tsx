@@ -97,6 +97,9 @@ export default function OrderPaymentModal({
   const isCash = selectedMethod === "Cash";
   const showCurrencyInInput = isCash && amountFocused;
 
+  const showCardPercentages =
+    selectedMethod === "Visa" || selectedMethod === "Master";
+
   const handleKeypadPress = (key: string) => {
     if (!activeField) return;
 
@@ -195,6 +198,27 @@ export default function OrderPaymentModal({
                 );
               })}
             </div>
+
+            {/* Card percentage buttons (Visa / Master only) */}
+            {showCardPercentages && (
+                <div className="mt-3 grid grid-cols-3 gap-3">
+                  {["3%", "4%", "5%"].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onTouchStart={(e) => e.preventDefault()}
+                      className="h-7 rounded-lg border border-gray-300
+                                text-sm font-semibold text-gray-700
+                                transition-all duration-150
+                                hover:border-orange-400 hover:text-orange-500
+                                active:scale-90 active:bg-orange-50"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
           </div>
 
           {/* Inputs (Cash only) */}
