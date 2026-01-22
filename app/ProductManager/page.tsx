@@ -1,8 +1,8 @@
-import DashboardLayout from '../components/dashboard_layout';
-import CashierActionsBar from '../components/product-actions';
-import SearchBar from '../components/Search-bar';
-import SupplierPopup from '../components/Dashboard/Supplier-popup';
-import ProductsTable from '../components/product-table';
+import DashboardLayout from '@/app/components/dashboard_layout';
+import CashierActionsBar from '@/app/ProductManager/product-actions';
+import SearchBar from '@/app/components/Search-bar';
+import ProductsTable from '@/app/ProductManager/product-table';
+import SupplierPopup from '@/app/components/SupplyPopUp/Supplier-popup';
 
 export default function DashboardPage() {
   return (

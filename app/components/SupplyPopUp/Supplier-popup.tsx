@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import NewSupplierPopup from "@/app/components/Dashboard/NewSupplierPopup";
+import NewSupplierPopup from "@/app/components/SupplyPopUp/NewSupplierPopup";
 
 export default function SupplierPopup() {
   const [open, setOpen] = React.useState(false);
