@@ -6,6 +6,7 @@ type FormFieldProps = {
   value: string;
   onChange: (next: string) => void;
   type?: "text" | "number" | "date" | "dropdown";
+  options?: { value: string; label: string }[];
 };
 
 export default function FormField({
@@ -14,10 +15,30 @@ export default function FormField({
   value,
   onChange,
   type = "text",
+   options = [],
 }: FormFieldProps) {
   return (
-    <div className="space-y-1">    
-      <label className="text-[12px] text-gray-500">{label}</label> 
+    <div className="space-y-1">
+      <label className="text-[12px] text-gray-500">{label}</label>
+
+      {type === "dropdown" ? (
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`
+            w-full rounded-full border border-gray-200 px-4 py-2 outline-none
+            focus:border-orange-500 focus:ring-2 focus:ring-orange-200
+            ${!value ? "text-gray-300" : "text-gray-800"}
+          `}
+        >
+          <option value="" disabled>{placeholder || "Select an option"}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      ) : (
 
       <input
         type={type}
@@ -30,6 +51,7 @@ export default function FormField({
           focus:border-orange-500 focus:ring-2 focus:ring-orange-200
         "
       />
+      )}
     </div>
   );
 }

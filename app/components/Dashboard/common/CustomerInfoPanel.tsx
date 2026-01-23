@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useMemo } from "react";
+import { useState } from "react";
+import AddCustomerModal, { CustomerFormValues } from "@/app/components/Dashboard/common/AddCustomerModal";
 
 export type OrderItem = {
   id: string;
@@ -24,6 +26,7 @@ type Props = {
     subtotal: number;
     tax: number;
     total: number;
+    customer?: CustomerFormValues | null; // Add customer to the type
   }) => void;
 };
 
@@ -37,6 +40,10 @@ export default function CustomerInfoPanel({
   onCancel,
   onPay,
 }: Props) {
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] =
+    useState<CustomerFormValues | null>(null);
+
   /* ================= Calculations ================= */
   const subtotal = useMemo(
     () => items.reduce((sum, it) => sum + it.price * it.qty, 0),

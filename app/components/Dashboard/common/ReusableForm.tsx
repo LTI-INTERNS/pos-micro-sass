@@ -41,14 +41,10 @@ export default function ReusableForm({
     for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
     setValues(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
+  }, [JSON.stringify(fields), JSON.stringify(initialValues)]);
 
   const setField = (name: string, next: string) => {
-    setValues((prev) => {
-      const merged = { ...prev, [name]: next };
-      onValuesChange?.(merged); //  notify parent
-      return merged;
-    });
+    setValues((prev) => ({ ...prev, [name]: next }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,25 +52,18 @@ export default function ReusableForm({
     onSubmit(values);
   };
 
- return (
-  <form
-    onSubmit={handleSubmit}
-    className="grid grid-cols-2 gap-x-6 gap-y-4"
-  >
-    {fields.map((f) => (
-      <div key={f.name} className={f.span === 1 ? "col-span-1" : "col-span-2"}>
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {fields.map((f) => (
         <FormField
-          name={f.name}
+          key={f.name}
           label={f.label}
           placeholder={f.placeholder}
           type={f.type ?? "text"}
           value={values[f.name] ?? ""}
           onChange={(next) => setField(f.name, next)}
-          options={f.options}
-          disabled={f.disabled}
         />
-      </div>
-    ))}
-  </form>
-);
+      ))}
+    </form>
+  );
 }

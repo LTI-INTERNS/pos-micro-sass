@@ -7,7 +7,7 @@ type ModalShellProps = {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
-  widthClassName?: string; 
+  widthClassName?: string; // e.g. "w-[900px]" or "max-w-4xl w-full"
 };
 
 export default function ModalShell({
