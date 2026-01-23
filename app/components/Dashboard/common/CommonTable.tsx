@@ -7,34 +7,33 @@ export type Column<T> = {
   label: string;
   align?: "left" | "right" | "center";
   render?: (row: T) => React.ReactNode;
-
-  // width?: string; // e.g. "140px" or "20%"
 };
 
-type Props<T> = {
+type CommonTableProps<T> = {
   title?: string;
   data: T[];
   columns: Column<T>[];
   emptyMessage?: string;
 };
 
-const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
+const alignClass = {
   left: "text-left",
   right: "text-right",
   center: "text-center",
-};
+} as const;
 
-function CommonTableInner<T>({
+export default function CommonTable<T>({
   title,
   data,
   columns,
   emptyMessage = "No data found",
-}: Props<T>) {
+}: CommonTableProps<T>) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
       {title && (
-        <div className="px-6 py-3">
-          <h2 className="text-xs font-semibold text-gray-900">
+        <div className="flex items-center justify-between px-6 py-3">
+          
+          <h2 className="text-xs font-semibold text-black">
             {title}
           </h2>
         </div>
@@ -43,12 +42,14 @@ function CommonTableInner<T>({
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-t border-b border-gray-100 text-gray-500">
+            
+            <tr className="border-b border-gray-100">
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
-                  className={`px-6 py-2 font-semibold ${ALIGN_CLASS[col.align ?? "left"]}`}
-                  // style={col.width ? { width: col.width } : undefined}
+                  className={`px-6 py-2 font-normal text-black ${
+                    alignClass[col.align ?? "left"]
+                  }`}
                 >
                   {col.label}
                 </th>
@@ -57,17 +58,17 @@ function CommonTableInner<T>({
           </thead>
 
           <tbody>
-            {data.map((row: any) => (
+            {data.map((row, index) => (
               <tr
-                key={row.id}
-                className="border-b border-gray-100 hover:bg-gray-50"
+                key={index}
+                className="border-b border-gray-100 hover:bg-gray-50 transition"
               >
                 {columns.map((col) => (
                   <td
                     key={String(col.key)}
-                    
-                    className={`px-6 py-3 ${ALIGN_CLASS[col.align ?? "left"]} text-gray-700`}
-                    // style={col.width ? { width: col.width } : undefined}
+                    className={`px-6 py-3 text-black ${
+                      alignClass[col.align ?? "left"]
+                    }`}
                   >
                     {col.render
                       ? col.render(row)
@@ -91,8 +92,5 @@ function CommonTableInner<T>({
         </table>
       </div>
     </section>
-  ); 
+  );
 }
-
-const CommonTable = React.memo(CommonTableInner) as typeof CommonTableInner;
-export default CommonTable;
