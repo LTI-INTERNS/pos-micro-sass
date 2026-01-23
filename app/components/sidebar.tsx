@@ -13,6 +13,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const menuItems = [
     'Dashboard',
+    'Staff Management',
     'Customers Management',
     'Products Management',
     'Cashier Management',
