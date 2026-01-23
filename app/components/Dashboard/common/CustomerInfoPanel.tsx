@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export type OrderItem = {
   id: string;
@@ -14,17 +14,15 @@ export type OrderItem = {
 type Props = {
   showOrders?: boolean;
   items?: OrderItem[];
+  taxRate?: number; // default 10%
 
   onAddCustomer?: () => void;
   onInc?: (id: string) => void;
   onDec?: (id: string) => void;
-
-  // manual qty input handler
-  onSetQty?: (id: string, qty: number) => void;
-
   onCancel?: () => void;
   onPay?: (summary: {
     subtotal: number;
+    tax: number;
     total: number;
   }) => void;
 };
@@ -32,10 +30,10 @@ type Props = {
 export default function CustomerInfoPanel({
   showOrders = true,
   items = [],
+  taxRate = 0.1,
   onAddCustomer,
   onInc,
   onDec,
-  onSetQty,
   onCancel,
   onPay,
 }: Props) {
@@ -45,55 +43,15 @@ export default function CustomerInfoPanel({
     [items]
   );
 
-  const total = useMemo(() => subtotal, [subtotal]);
+  const tax = useMemo(() => subtotal * taxRate, [subtotal, taxRate]);
+  const total = useMemo(() => subtotal + tax, [subtotal, tax]);
 
   /* ================= LKR formatter ================= */
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat("en-LK", {
-        style: "currency",
-        currency: "LKR",
-        minimumFractionDigits: 2,
-      }),
-    []
-  );
-
-  /**
-   * Local input state so typing feels natural.
-   * Keyed by item id -> string value in input.
-   */
-  const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
-
-  // ✅ FIX: Always sync input values from items so + / - updates show in the input
-  useEffect(() => {
-    setQtyDraft(() => {
-      const next: Record<string, string> = {};
-      for (const it of items) next[it.id] = String(it.qty);
-      return next;
-    });
-  }, [items]);
-
-  function clampPositiveInt(n: number) {
-    if (!Number.isFinite(n)) return 1;
-    return Math.max(1, Math.trunc(n));
-  }
-
-  function commitQty(id: string, raw: string) {
-    // If user clears input, treat as 1 on blur/commit
-    if (raw.trim() === "") {
-      const qty = 1;
-      setQtyDraft((p) => ({ ...p, [id]: String(qty) }));
-      onSetQty?.(id, qty);
-      return;
-    }
-
-    // digits-only (no decimals, no minus)
-    const parsed = Number(raw);
-    const qty = clampPositiveInt(parsed);
-
-    setQtyDraft((p) => ({ ...p, [id]: String(qty) }));
-    onSetQty?.(id, qty);
-  }
+  const formatter = new Intl.NumberFormat("en-LK", {
+    style: "currency",
+    currency: "LKR",
+    minimumFractionDigits: 2,
+  });
 
   return (
     <aside className="w-full h-full bg-white">
@@ -160,22 +118,9 @@ export default function CustomerInfoPanel({
                         –
                       </button>
 
-                      {/* Manual input */}
-                      <input
-                        value={qtyDraft[it.id] ?? String(it.qty)}
-                        onChange={(e) => {
-                          // allow only digits while typing
-                          const next = e.target.value.replace(/\D/g, "");
-                          setQtyDraft((p) => ({ ...p, [it.id]: next }));
-                        }}
-                        onBlur={() => commitQty(it.id, qtyDraft[it.id] ?? "")}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        className="h-11 w-14 rounded-xl border border-slate-200 bg-white
-                                   text-center font-semibold text-slate-900 outline-none
-                                   focus:ring-2 focus:ring-orange-200"
-                        aria-label="Quantity"
-                      />
+                      <span className="w-4 text-center font-semibold">
+                        {it.qty}
+                      </span>
 
                       <button
                         onClick={() => onInc?.(it.id)}
@@ -210,6 +155,13 @@ export default function CustomerInfoPanel({
                 </span>
               </div>
 
+              <div className="flex justify-between">
+                <span>Tax ({Math.round(taxRate * 100)}%)</span>
+                <span className="font-semibold text-slate-900">
+                  {formatter.format(tax)}
+                </span>
+              </div>
+
               <div className="pt-4 border-t border-dashed flex justify-between">
                 <span className="font-semibold text-slate-600">Total</span>
                 <span className="font-bold text-orange-600 text-[16px]">
@@ -228,7 +180,7 @@ export default function CustomerInfoPanel({
               </button>
 
               <button
-                onClick={() => onPay?.({ subtotal, total })}
+                onClick={() => onPay?.({ subtotal, tax, total })}
                 className="rounded-full bg-orange-500
                            text-white font-semibold py-4"
               >
