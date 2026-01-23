@@ -82,7 +82,7 @@ export default function CommonTable<T>({
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-6 py-5 text-center text-black text-xs"
+                  className="px-6 py-5 text-center text-orange-400"
                 >
                   {emptyMessage}
                 </td>

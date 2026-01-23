@@ -7,7 +7,7 @@ type ModalShellProps = {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
-  widthClassName?: string; 
+  widthClassName?: string;
 };
 
 export default function ModalShell({
@@ -29,15 +29,20 @@ export default function ModalShell({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* backdrop */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute inset-0 bg-black/20 backdrop-blur-[2px]"
+        aria-label="Close modal"
+      />
 
-      {/* card */}
-      <div className={`relative rounded-2xl bg-white shadow-xl ${widthClassName}`}>
-        {/* header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+      {/* Card */}
+      <div className={`relative rounded-2xl bg-white shadow-2xl overflow-hidden ${widthClassName}`}>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-200 px-10 py-7">
+          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
 
           <button
             type="button"
@@ -49,8 +54,8 @@ export default function ModalShell({
           </button>
         </div>
 
-        {/* body */}
-        <div className="px-6 py-5">{children}</div>
+        {/* Body */}
+        <div className="px-10 py-7 text-left">{children}</div>
       </div>
     </div>
   );
