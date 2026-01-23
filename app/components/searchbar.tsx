@@ -2,20 +2,19 @@
 
 import { useMemo, useState } from "react";
 import SearchBar from "@/app/components/common/Search-bar";
-import CustomersTable from "@/app/components/customers-table";
+import BranchesTable from "@/app/components/branches-table";
 
-import { Customer } from "@/app/Customermanagement/data";
+import { branchesData } from "@/app/Branchmanagement/data";
 
-export default function CustomersPage() {
+export default function BranchesPage() {
   const [query, setQuery] = useState("");
 
-  const customers = [
-  ];
+  const branches = branchesData;
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return customers.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
-  }, [customers, query]);
+    return branches.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+  }, [branches, query]);
 
   return (
     <form
