@@ -59,7 +59,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
             ? `${formatTime(currentTime)} ${formatDate(currentTime)}`
             : '--:--:-- --/--/----'}
         </span>
-        <button className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold ">
+        <button className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold">
           Log Out
         </button>
       </div>
