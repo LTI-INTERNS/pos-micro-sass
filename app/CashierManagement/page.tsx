@@ -66,6 +66,7 @@ export default function CashierManagementPage() {
       "Email",
       "Password",
       "Pin",
+      "Status",
     ];
 
     const csvRows = [
@@ -79,6 +80,7 @@ export default function CashierManagementPage() {
           r.email,
           r.passwordMasked,
           r.pinMasked,
+          r.status,
         ]
           .map((v) => `"${String(v).replaceAll('"', '""')}"`)
           .join(",")
@@ -114,7 +116,7 @@ export default function CashierManagementPage() {
             </div>
 
             <div className="hidden sm:block h-12 w-px bg-gray-200 mx-4" />
-            
+
             <div className="hidden sm:flex items-center gap-2 pr-4">
               <CashierStatusTabs value={status} onChange={setStatus} />
             </div>

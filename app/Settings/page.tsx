@@ -1,15 +1,12 @@
 "use client";
 
 import DashboardLayout from "../components/dashboard_layout";
-import DateRangeBar from "../components/CashierManagement/DateRangeBar";
 
 export default function SettingsPage() {
   return (
     <DashboardLayout>
       {/* Fill available height inside DashboardLayout main */}
       <div className="w-full h-full flex flex-col gap-2">
-        {/* Top date range bar */}
-        <DateRangeBar value="Today : Apr 25, 2018 12:00 AM - Apr 26, 2018 12:00 AM" />
 
         {/* Two cards share remaining screen height */}
         <div className="flex-1 grid grid-rows-2 gap-4 min-h-0">

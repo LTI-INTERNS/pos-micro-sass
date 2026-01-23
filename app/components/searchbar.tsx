@@ -1,31 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useMemo, useState } from "react";
+import SearchBar from "@/app/components/common/Search-bar";
+import BranchesTable from "@/app/components/branches-table";
 
-type SearchBarProps = {
-  placeholder?: string;
-  onSearch?: (value: string) => void;
-  onFilter?: () => void;
-};
+import { branchesData } from "@/app/Branchmanagement/data";
 
-export default function SearchBar({
-  placeholder = "Search customers...",
-  onSearch,
-  onFilter,
-}: SearchBarProps) {
-  const [value, setValue] = useState("");
+export default function BranchesPage() {
+  const [query, setQuery] = useState("");
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const next = e.target.value;
-    setValue(next);
-    onSearch?.(next);
-  }
+  const branches = branchesData;
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    onSearch?.(value);
-  }
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return branches.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+  }, [branches, query]);
 
   return (
     <form
