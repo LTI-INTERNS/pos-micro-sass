@@ -61,187 +61,142 @@ export default function CustomerInfoPanel({
   });
 
   return (
-    <>
-      <aside className="w-full h-full bg-white">
-        <div className="h-full flex flex-col">
-          {/*customer section */}
+    <aside className="w-full h-full bg-white">
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div className="px-6 pt-6">
+          <h2 className="text-[22px] font-semibold text-slate-900">
+            Customer Information
+          </h2>
+
+          <button
+            onClick={onAddCustomer}
+            className="mt-4 w-full rounded-full bg-orange-50 text-orange-600
+                       font-semibold py-4 text-sm hover:bg-orange-100 transition"
+          >
+            Add Customer
+          </button>
+
+          <div className="mt-6 border-t" />
+        </div>
+
+        {/* Orders title */}
+        {showOrders && (
           <div className="px-6 pt-6">
-            <h2 className="text-[22px] font-semibold text-slate-900">
-              Customer Information
-            </h2>
-
-            {/* Customer Card */}
-            {selectedCustomer ? (
-              <>
-                <div className="mt-1 rounded-2xl bg-slate-50 p-4 space-y-0.5">
-                  <p className="text-slate-800">
-                    {selectedCustomer.name}
-                  </p>
-                  <p className="text-slate-800">
-                    {selectedCustomer.phoneNumber}
-                  </p>
-                  <p className="text-slate-800">
-                    {selectedCustomer.email}
-                  </p>
-                </div>
-
-                {/* Remove customer */}
-                <button
-                  onClick={() => setSelectedCustomer(null)}
-                  className="mt-2 w-full rounded-full bg-orange-50 text-orange-600
-                            font-semibold py-4 text-sm hover:bg-orange-100 transition"
-                >
-                  Remove Customer
-                </button>
-              </>
-            ) : (
-              /* Add customer */
-              <button
-                onClick={() => setCustomerModalOpen(true)}
-                className="mt-4 w-full rounded-full bg-orange-50 text-orange-600
-                          font-semibold py-4 text-sm hover:bg-orange-100 transition"
-              >
-                Add Customer
-              </button>
-            )}
-
-            <div className="mt-6 border-t" />
+            <h3 className="text-[20px] font-semibold text-slate-900">
+              Orders details
+            </h3>
           </div>
+        )}
 
-          {/* Orders title */}
-          {showOrders && (
-            <div className="px-6 pt-6">
-              <h3 className="text-[20px] font-semibold text-slate-900">
-                Orders details
-              </h3>
-            </div>
-          )}
+        {/* Orders list */}
+        {showOrders && (
+          <div className="px-6 pt-4 flex-1 overflow-auto">
+            <div className="space-y-4">
+              {items.map((it) => (
+                <div key={it.id} className="border-b pb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
+                      <Image
+                        src={it.imageUrl}
+                        alt={it.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
 
-          {/* Orders list */}
-          {showOrders && (
-            <div className="px-6 pt-4 flex-1 overflow-auto">
-              <div className="space-y-4">
-                {items.map((it) => (
-                  <div key={it.id} className="border-b pb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                        <Image
-                          src={it.imageUrl}
-                          alt={it.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[16px] font-semibold text-slate-900">
+                        {it.name}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">Price</p>
+                      <p className="text-[16px] font-semibold text-orange-600">
+                        {formatter.format(it.price)}
+                      </p>
+                    </div>
 
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[16px] font-semibold text-slate-900">
-                          {it.name}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-1">Price</p>
-                        <p className="text-[16px] font-semibold text-orange-600">
-                          {formatter.format(it.price)}
-                        </p>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => onDec?.(it.id)}
+                        className="h-11 w-11 rounded-full bg-slate-200
+                                   text-xl text-slate-700 grid place-items-center"
+                        aria-label="Decrease quantity"
+                      >
+                        –
+                      </button>
 
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => onDec?.(it.id)}
-                          className="h-11 w-11 rounded-full bg-slate-200
-                                     text-xl text-slate-700 grid place-items-center"
-                          aria-label="Decrease quantity"
-                        >
-                          –
-                        </button>
+                      <span className="w-4 text-center font-semibold">
+                        {it.qty}
+                      </span>
 
-                        <span className="w-4 text-center font-semibold">
-                          {it.qty}
-                        </span>
-
-                        <button
-                          onClick={() => onInc?.(it.id)}
-                          className="h-11 w-11 rounded-full bg-slate-900
-                                     text-xl text-white grid place-items-center"
-                          aria-label="Increase quantity"
-                        >
-                          +
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => onInc?.(it.id)}
+                        className="h-11 w-11 rounded-full bg-slate-900
+                                   text-xl text-white grid place-items-center"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
 
-                {items.length === 0 && (
-                  <div className="py-10 text-center text-sm text-slate-400">
-                    No items added
-                  </div>
-                )}
+              {items.length === 0 && (
+                <div className="py-10 text-center text-sm text-slate-400">
+                  No items added
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Totals & actions */}
+        {showOrders && (
+          <div className="px-6 py-6 border-t">
+            <div className="space-y-3 text-sm text-slate-500">
+              <div className="flex justify-between">
+                <span>Sub Total</span>
+                <span className="font-semibold text-slate-900">
+                  {formatter.format(subtotal)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span>Tax ({Math.round(taxRate * 100)}%)</span>
+                <span className="font-semibold text-slate-900">
+                  {formatter.format(tax)}
+                </span>
+              </div>
+
+              <div className="pt-4 border-t border-dashed flex justify-between">
+                <span className="font-semibold text-slate-600">Total</span>
+                <span className="font-bold text-orange-600 text-[16px]">
+                  {formatter.format(total)}
+                </span>
               </div>
             </div>
-          )}
 
-          {/* Totals & actions */}
-          {showOrders && (
-            <div className="px-6 py-6 border-t">
-              <div className="space-y-3 text-sm text-slate-500">
-                <div className="flex justify-between">
-                  <span>Sub Total</span>
-                  <span className="font-semibold text-slate-900">
-                    {formatter.format(subtotal)}
-                  </span>
-                </div>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              <button
+                onClick={onCancel}
+                className="rounded-full border border-orange-400
+                           text-orange-600 font-semibold py-4"
+              >
+                Cancel
+              </button>
 
-                <div className="flex justify-between">
-                  <span>Tax ({Math.round(taxRate * 100)}%)</span>
-                  <span className="font-semibold text-slate-900">
-                    {formatter.format(tax)}
-                  </span>
-                </div>
-
-                <div className="pt-4 border-t border-dashed flex justify-between">
-                  <span className="font-semibold text-slate-600">Total</span>
-                  <span className="font-bold text-orange-600 text-[16px]">
-                    {formatter.format(total)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <button
-                  onClick={onCancel}
-                  className="rounded-full border border-orange-400
-                             text-orange-600 font-semibold py-4"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  onClick={() =>
-                    onPay?.({
-                      subtotal,
-                      tax,
-                      total,
-                      customer: selectedCustomer,
-                    })
-                  }
-                  className="rounded-full bg-orange-500
-                             text-white font-semibold py-4"
-                >
-                  Pay Now
-                </button>
-              </div>
+              <button
+                onClick={() => onPay?.({ subtotal, tax, total })}
+                className="rounded-full bg-orange-500
+                           text-white font-semibold py-4"
+              >
+                Pay Now
+              </button>
             </div>
-          )}
-        </div>
-      </aside>
-
-      <AddCustomerModal
-        open={customerModalOpen}
-        onClose={() => setCustomerModalOpen(false)}
-        onSubmit={(customer) => {
-          setSelectedCustomer(customer);
-          setCustomerModalOpen(false);
-        }}
-      />
-    </>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }

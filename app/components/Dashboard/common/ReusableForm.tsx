@@ -7,27 +7,35 @@ export type FieldConfig = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number" | "date" | "dropdown";
+  type?: "text" | "number" | "date" | "dropdown" | "radio";
+  options?: { value: string; label: string }[];
+  disabled?: boolean;
+
+  // NEW: grid span (1 = half width, 2 = full width)
+  span?: 1 | 2;
 };
+
 
 type ReusableFormProps = {
   fields: FieldConfig[];
   initialValues?: Record<string, string>;
   onSubmit: (values: Record<string, string>) => void;
+
+  //  NEW
+  onValuesChange?: (values: Record<string, string>) => void;
+  resetKey?: string | number;
 };
 
 export default function ReusableForm({
   fields,
   initialValues,
   onSubmit,
+  onValuesChange,
+  resetKey,
 }: ReusableFormProps) {
-  const [values, setValues] = React.useState<Record<string, string>>(() => {
-    const base: Record<string, string> = {};
-    for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
-    return base;
-  });
+  const [values, setValues] = React.useState<Record<string, string>>({});
 
-  // If fields change (different popup), reset safely
+  //  Reset ONLY when popup opens (or resetKey changes)
   React.useEffect(() => {
     const base: Record<string, string> = {};
     for (const f of fields) base[f.name] = initialValues?.[f.name] ?? "";
