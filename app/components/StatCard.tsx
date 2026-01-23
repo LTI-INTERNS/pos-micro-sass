@@ -3,6 +3,7 @@ type StatCardProps = {
   value: string;
   percentage: string;
   trend: 'up' | 'down';
+  showDetailButton?: boolean;
 };
 
 export default function StatCard({
@@ -10,6 +11,7 @@ export default function StatCard({
   value,
   percentage,
   trend,
+  showDetailButton = true, 
 }: StatCardProps) {
   const isUp = trend === 'up';
 
@@ -27,9 +29,11 @@ export default function StatCard({
         </p>
       </div>
 
-      <button className="mt-4 text-sm font-medium text-orange-500 flex items-center gap-1">
-        View detail →
-      </button>
+      {showDetailButton && (
+        <button className="mt-4 text-sm font-medium text-orange-500 flex items-center gap-1">
+          View detail →
+        </button>
+      )}
     </div>
   );
 }
