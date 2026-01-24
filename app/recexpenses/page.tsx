@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DashboardLayout from "../Admin/components/common/dashboard_layout";
-import DateRangePicker from "../Admin/components/common/DateRangeBar";
-import SearchBar from "../Admin/components/common/Search-bar"; 
-import ActionButton from "../Admin/components/common/ActionButton";
-import RecurringExpensesTable, { RecurringExpenses } from "../Admin/components/recexpenses/RecExpensesTable";
-import StatCardGrid from "../Admin/components/recexpenses/RecStatCardGrid";
+import DashboardLayout from "../components/Admin/common/dashboard_layout";
+import DateRangePicker from "../components/Admin/common/DateRangeBar";
+import SearchBar from "../components/Admin/common/Search-bar"; 
+import ActionButton from "../components/Admin/common/ActionButton";
+import RecurringExpensesTable, { RecurringExpenses } from "../components/Admin/recexpenses/RecExpensesTable";
+import StatCardGrid from "../components/Admin/recexpenses/RecStatCardGrid";
 
 const sampleRecurringExpenses: RecurringExpenses[] = [
   { id: "001", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },

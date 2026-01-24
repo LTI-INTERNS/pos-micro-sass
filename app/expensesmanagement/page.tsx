@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import DashboardLayout from "../Admin/components/common/dashboard_layout";
-import DateRangePicker from "../Admin/components/common/DateRangeBar";
-import SearchBar from "../Admin/components/common/Search-bar"; 
-import ActionButton from "../Admin/components/common/ActionButton";
-import ExpensesTable, { Expenses } from "../Admin/components/expensesmanagement/ExpensesTable";
-import StatCardGrid from "../Admin/components/expensesmanagement/ExpensesStatCardGrid";
+import DashboardLayout from "../components/Admin/common/dashboard_layout";
+import DateRangePicker from "../components/Admin/common/DateRangeBar";
+import SearchBar from "../components/Admin/common/Search-bar"; 
+import ActionButton from "../components/Admin/common/ActionButton";
+import ExpensesTable, { Expenses } from "../components/Admin/expensesmanagement/ExpensesTable";
+import StatCardGrid from "../components/Admin/expensesmanagement/ExpensesStatCardGrid";
 
 const sampleExpenses: Expenses[] = [
   { id: "001", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },

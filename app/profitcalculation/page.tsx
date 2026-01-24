@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DashboardLayout from "../Admin/components/common/dashboard_layout";
-import DateRangePicker from "../Admin/components/common/DateRangeBar";
-import SearchBar from "../Admin/components/common/Search-bar"; 
-import ActionButton from "../Admin/components/common/ActionButton";
-import ProfitTable, {Profit} from "../Admin/components/profitcalculation/ProfitTable";
-import StatCardGrid from "../Admin/components/profitcalculation/ProfitStatCardGrid";
+import DashboardLayout from "../components/Admin/common/dashboard_layout";
+import DateRangePicker from "../components/Admin/common/DateRangeBar";
+import SearchBar from "../components/Admin/common/Search-bar"; 
+import ActionButton from "../components/Admin/common/ActionButton";
+import ProfitTable, {Profit} from "../components/Admin/profitcalculation/ProfitTable";
+import StatCardGrid from "../components/Admin/profitcalculation/ProfitStatCardGrid";
 
 const sampleProfits: Profit[] = [
   {

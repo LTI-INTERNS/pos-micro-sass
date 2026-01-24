@@ -1,5 +1,5 @@
 "use client";
-import CommonTable, { Column } from "@/app/Admin/components/common/CommonTable"; 
+import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable"; 
 
 export type Expenses = {
   id: string;
