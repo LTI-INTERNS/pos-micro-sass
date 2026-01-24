@@ -2,23 +2,29 @@ import StatCard from '@/app/components/Admin/common/StatCard';
 
 const statCards = [
   {
-    title: "New Branches",
-    value: "34",
-    percentage: "+4.2%",
+    title: "New Customers",
+    value: "12",
+    percentage: "+1.5%",
+    trend: "down" as const,
+  },
+   {
+    title: "Customers",
+    value: "342",
+    percentage: "+2.5%",
     trend: "up" as const,
   },
 ];
   
 export default function StatCardGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {statCards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}
           value={card.value}
           percentage={card.percentage}
-          trend={card.trend as 'up' | 'down'}
+          trend={card.trend}
           showDetailButton={false}
         />
       ))}

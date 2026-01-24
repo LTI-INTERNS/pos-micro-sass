@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/app/components/Admin/productmanagement/productStarCardGrid";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
 import ProductActionsBar from "@/app/components/Admin/productmanagement/product-actions";
 import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
@@ -22,7 +23,7 @@ export default function DashboardPage() {
         {/* Toolbar */}
         <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
           <DateRangePicker />
-         {/* <StatCardGrid /> */}
+          <StatCardGrid />
           <SearchBar
             value={query}
             onChange={setQuery}

@@ -25,7 +25,7 @@ export default function BranchesPage() {
 
         <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
           <DateRangePicker />
-         
+          <StatCardGrid />
           <SearchBar
             value={query}
             onChange={setQuery}

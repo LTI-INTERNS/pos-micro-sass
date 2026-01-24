@@ -6,7 +6,7 @@ import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
 import CustomerActionsBar from "@/app/components/Admin/customermanagement/customer-actions";
 import CustomersTable from "@/app/components/Admin/customermanagement/customers-table";
-//import StatCardGrid from "@/app/Customermanagement/StatCardGrid";
+import StatCardGrid from "@/app/components/Admin/customermanagement/customerStarGrid";
 import { filterRows } from "./filterRows";
 import { customersData } from "./data";
 
@@ -21,7 +21,7 @@ export default function CustomersPage() {
     <DashboardLayout>
       <div className="w-full space-y-6">
        <DateRangePicker />
-       {/*  <StatCardGrid /> */}
+       <StatCardGrid />
 
         {/* Toolbar (Search + Actions) */}
         <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
