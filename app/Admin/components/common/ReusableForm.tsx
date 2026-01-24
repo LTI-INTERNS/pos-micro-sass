@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import FormField from "@/app/components/Dashboard/common/FormField";
+import FormField from "./FormField";
 
 export type FieldConfig = {
   name: string;
