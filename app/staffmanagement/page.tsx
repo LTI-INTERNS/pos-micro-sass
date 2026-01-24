@@ -6,8 +6,8 @@ import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import SearchBar from "../components/Admin/common/Search-bar";
 import CommonTable, { Column } from "../components/Admin/common/CommonTable";
-import StaffToolbar from "../components/Admin/staffmanagement/StaffToolbar";
 import AddStaffPopup from "./popup/AddStaffPopup";
+import ActionButton from "../components/Admin/common/ActionButton";
 
 import { staffData } from "./mock/mockStaffData";
 
@@ -63,8 +63,36 @@ export default function StaffManagementPage() {
           onFilter={() => console.log("Filter clicked")}
         />
 
-        <StaffToolbar onAdd={() => setShowPopup(true)} />
+        <div className="flex flex-wrap gap-3 mt-4">
+        <ActionButton
+            className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
+            label="Delete Staff"
+            variant="outline"
+            onClick={() => console.log("Open add modal")}
+        />
 
+        <ActionButton
+            className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
+            label="Edit Staff"
+            variant="outline"
+            onClick={() => console.log("Open add modal")}
+        />
+
+        <ActionButton
+            className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
+            label="Add New Staff"
+            variant="primary"
+            onClick={() => setShowPopup(true)}
+        />
+
+        <ActionButton
+            className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
+            label="Export CSV"
+            variant="primary"
+            onClick={() => console.log("Open add modal")}
+        />
+
+        </div>
         <CommonTable
           title="Staff List"
           data={filteredStaff}
