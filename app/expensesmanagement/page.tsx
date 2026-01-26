@@ -6,7 +6,7 @@ import SearchBar from "../components/Admin/common/Search-bar";
 import ActionButton from "../components/Admin/common/ActionButton";
 import ExpensesTable, { Expenses } from "../components/Admin/expensesmanagement/ExpensesTable";
 import StatCardGrid from "../components/Admin/expensesmanagement/ExpensesStatCardGrid";
-
+import AddExpensesPopup from "../components/Admin/expensesmanagement/AddExpensesPopup";
 import { mockExpenses } from "../components/Admin/expensesmanagement/mock";
 
 export default function ExpensesPage() {
@@ -14,6 +14,8 @@ export default function ExpensesPage() {
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [filteredExpenses, setFilteredExpenses] = useState<Expenses[]>(mockExpenses);
+  const [showAddExpense, setShowAddExpense] = useState(false);
+
 
   useEffect(() => {
     let filtered = mockExpenses;
@@ -104,7 +106,7 @@ export default function ExpensesPage() {
           <ActionButton
             label="Add Expense"
             variant="primary"
-            onClick={() => console.log("Open add modal")}
+            onClick={() => setShowAddExpense(true)}
           />
 
           <ActionButton
@@ -112,9 +114,20 @@ export default function ExpensesPage() {
             variant="primary"
             onClick={() => exportToCSV(filteredExpenses)}
           />
-        </div>
+        </div> 
         <ExpensesTable Expenses={filteredExpenses} />
       </div>
+
+      <AddExpensesPopup
+        open={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        onSave={(values) => {
+          console.log("Saved expense:", values);
+          setShowAddExpense(false);
+          // later: update expenses state or API call
+        }}
+      />
+
     </DashboardLayout>
   );
 }
