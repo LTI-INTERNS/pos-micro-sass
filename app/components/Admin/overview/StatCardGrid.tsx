@@ -1,19 +1,10 @@
 import StatCard from '../common/StatCard';
-export const branchStatCards = [
-  {
-    title: "All Branches",
-    value: "342",
-    percentage: "+4.2%",
-    trend: "up",
-  },
-  
-];
+import { statCards } from '@/app/overview/mock/mockData';
 
-
-export default function BranchCardGrid() {
+export default function StatCardGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {branchStatCards.map((card) => (
+      {statCards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}
