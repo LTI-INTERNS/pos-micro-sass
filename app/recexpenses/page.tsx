@@ -3,30 +3,26 @@
 import { useState, useEffect } from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangePicker from "../components/Admin/common/DateRangeBar";
-import SearchBar from "../components/Admin/common/Search-bar"; 
+import SearchBar from "../components/Admin/common/Search-bar";
 import ActionButton from "../components/Admin/common/ActionButton";
-import RecurringExpensesTable, { RecurringExpenses } from "../components/Admin/recexpenses/RecExpensesTable";
+import RecurringExpensesTable, {
+  RecurringExpenses,
+} from "../components/Admin/recexpenses/RecExpensesTable";
 import StatCardGrid from "../components/Admin/recexpenses/RecStatCardGrid";
 
-const sampleRecurringExpenses: RecurringExpenses[] = [
-  { id: "001", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "002", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "003", date: "2025.10.25", category: "Inventory", description: "Cleaning Supplies", payment: "Cash", addedby: "Admin" },
-  { id: "004", date: "2025.11.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "005", date: "2025.12.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-];
+import { mockRecurringExpenses } from "../components/Admin/recexpenses/mock";
 
 export default function RecurringExpensesPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
-  const [filteredExpenses, setFilteredExpenses] = useState<RecurringExpenses[]>(sampleRecurringExpenses);
+  const [filteredExpenses, setFilteredExpenses] =
+    useState<RecurringExpenses[]>(mockRecurringExpenses);
 
-  // Filter table whenever search or date range changes
   useEffect(() => {
-    let filtered = sampleRecurringExpenses;
+    let filtered = mockRecurringExpenses;
 
-    // Filter by search query
+    // Search filter
     if (search.trim() !== "") {
       const lowerQuery = search.toLowerCase();
       filtered = filtered.filter(
@@ -37,7 +33,7 @@ export default function RecurringExpensesPage() {
       );
     }
 
-    // Filter by date range
+    // Date range filter
     if (start && end) {
       filtered = filtered.filter((exp) => {
         const expDate = new Date(exp.date);
@@ -48,17 +44,24 @@ export default function RecurringExpensesPage() {
     setFilteredExpenses(filtered);
   }, [search, start, end]);
 
-  function exportToCSV(data: RecurringExpenses[], filename = "recurring_expenses.csv") {
+  function exportToCSV(
+    data: RecurringExpenses[],
+    filename = "recurring_expenses.csv"
+  ) {
     if (!data || !data.length) return;
 
     const headers = Object.keys(data[0]);
     const csvRows = [
       headers.join(","),
-      ...data.map((row) => headers.map((field) => `"${(row as any)[field]}"`).join(",")),
+      ...data.map((row) =>
+        headers.map((field) => `"${(row as any)[field]}"`).join(",")
+      ),
     ];
 
     const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.href = url;

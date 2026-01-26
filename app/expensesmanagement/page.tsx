@@ -7,21 +7,16 @@ import ActionButton from "../components/Admin/common/ActionButton";
 import ExpensesTable, { Expenses } from "../components/Admin/expensesmanagement/ExpensesTable";
 import StatCardGrid from "../components/Admin/expensesmanagement/ExpensesStatCardGrid";
 
-const sampleExpenses: Expenses[] = [
-  { id: "001", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "002", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "004", date: "2025.11.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "005", date: "2025.12.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-];
+import { mockExpenses } from "../components/Admin/expensesmanagement/mock";
 
 export default function ExpensesPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
-  const [filteredExpenses, setFilteredExpenses] = useState<Expenses[]>(sampleExpenses);
+  const [filteredExpenses, setFilteredExpenses] = useState<Expenses[]>(mockExpenses);
 
   useEffect(() => {
-    let filtered = sampleExpenses;
+    let filtered = mockExpenses;
 
     if (search.trim() !== "") {
       const lowerQuery = search.toLowerCase();
@@ -47,7 +42,7 @@ export default function ExpensesPage() {
     setSearch(query);
 
     const lowerQuery = query.toLowerCase();
-    const filtered = sampleExpenses.filter(
+    const filtered = mockExpenses.filter(
       (exp) =>
         exp.id.toLowerCase().includes(lowerQuery) ||
         exp.category.toLowerCase().includes(lowerQuery) ||
