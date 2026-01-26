@@ -73,7 +73,7 @@ export default function SearchBar({
         value={inputValue}
         onChange={(e) => handleInput(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 text-xs outline-none placeholder-gray-400"
+        className="flex-1 text-xs outline-none placeholder-gray-400 text-black"
       />
 
       {showClear && inputValue.trim() !== "" && (
