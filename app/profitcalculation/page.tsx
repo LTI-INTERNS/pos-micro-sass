@@ -1,63 +1,72 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangePicker from "../components/Admin/common/DateRangeBar";
-import SearchBar from "../components/Admin/common/Search-bar"; 
+import SearchBar from "../components/Admin/common/Search-bar";
+import FilterPopup from "../components/Admin/common/FilterPopup"; 
 import ActionButton from "../components/Admin/common/ActionButton";
 import ProfitTable, {Profit} from "../components/Admin/profitcalculation/ProfitTable";
 import StatCardGrid from "../components/Admin/profitcalculation/ProfitStatCardGrid";
-
 import { mockProfits } from "../components/Admin/profitcalculation/mock";
+import { useTableFilters } from "../components/Admin/common/Filterlogic";
 
 export default function ProfitPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
-  const [filteredProfits, setFilteredProducts] = useState<Profit[]>(mockProfits);
+  const [showFilter, setShowFilter] = useState(false);
 
-  useEffect(() => {
-    let filtered = mockProfits;
+  const [filters, setFilters] = useState<{
+    category?: string;
+    payment?: string;
+  }>({});
 
-    if (search.trim() !== "") {
-      const lowerQuery = search.toLowerCase();
-      filtered = filtered.filter(
-        (profit) =>
-          profit.id.toLowerCase().includes(lowerQuery) ||
-          profit.category.toLowerCase().includes(lowerQuery) ||
-          profit.description.toLowerCase().includes(lowerQuery)
-      );
-    }
+  const categoryOptions = getUniqueOptions(mockProfits, "category");
+  const paymentOptions = getUniqueOptions(mockProfits, "payment");
 
-    if (start && end) {
-      filtered = filtered.filter((profit) => {
-        const profitDate = new Date(profit.date);
-        return profitDate >= start && profitDate <= end;
-      });
-    }
-
-    setFilteredProducts(filtered);
-  }, [search, start, end]);
+  const filteredProfits = useTableFilters<Profit>({
+    data: mockProfits,
+    search,
+    start,
+    end,
+    dateKey: "date",
+    searchKeys: ["id", "category", "description"],
+    filters,
+  });
 
 
   function exportToCSV(data: Profit[], filename = "profit_data.csv") {
-    if (!data || !data.length) return;
+    if (!data.length) return;
 
     const headers = Object.keys(data[0]);
     const csvRows = [
       headers.join(","),
-      ...data.map((row) => headers.map((field) => `"${(row as any)[field]}"`).join(",")), 
+      ...data.map((row) =>
+        headers.map((field) => `"${(row as any)[field]}"`).join(",")
+      ),
     ];
 
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([csvRows.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", filename);
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
     link.click();
-    URL.revokeObjectURL(url);
+  }
+
+  function getUniqueOptions<T, K extends keyof T>(
+    data: T[],
+    key: K
+  ) {
+    return Array.from(new Set(data.map((item) => item[key])))
+      .filter(Boolean)
+      .map((value) => ({
+        label: String(value),
+        value: String(value),
+      }));
   }
 
 
@@ -74,16 +83,39 @@ export default function ProfitPage() {
         />
 
         <StatCardGrid />
+        <div className="relative">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search Profits..."
+            debounceMs={300}
+            showClear
+            showFilter
+            onFilter={() => setShowFilter((v) => !v)}
+          />
+          <FilterPopup
+              open={showFilter}
+              onClose={() => setShowFilter(false)}
+              onApply={(values) => {
+                setFilters(values);
+                setShowFilter(false);
+              }}
+              fields={[
+                {
+                  name: "category",
+                  placeholder: "Category",
+                  options: categoryOptions,
+                },
+                {
+                  name: "payment",
+                  placeholder: "Payment",
+                  options: paymentOptions,
+                },
+              ]}
+            />
+          </div>
 
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search Profits..."
-          debounceMs={300}
-          showClear
-          showFilter
-          onFilter={() => console.log("Open filter modal")}
-        />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full sm:w-[700px]">
           <ActionButton
             label="Export CSV"
