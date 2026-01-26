@@ -18,7 +18,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const menuItems = [
     { label: 'Dashboard', path: '/overview' },
     { label: 'Staff Management', path: '/staffmanagement' },
-    { label: 'Customers Management', path: '/customersmanagement' },
+    { label: 'Customers Management', path: '/customermanagement' },
     { label: 'Products Management', path: '/productmanagement' },
     { label: 'Cashier Management', path: '/cashiermanagement' },
     { label: 'Expenses Management', path: '/expensesmanagement' },
