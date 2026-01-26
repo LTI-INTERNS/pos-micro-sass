@@ -1,12 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import FoodGrid from "../components/Pos/posdashboard/FoodGrid";
-
+import CustomerInfoPanel from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
+import ManageCustomer from "../components/Pos/ManageCustomerPopup";
 
 const page = () => {
   const [search, setSearch] = useState("");
+  const [showCustomerPopup, setShowCustomerPopup] = useState(false);
   return (
     
      <DashboardLayout>
@@ -23,11 +25,26 @@ const page = () => {
         </div>
 
         
-        <div className="w-md sticky top-18 h-[calc(100vh-96px)]">
-          
+        <div className="w-md sticky  h-[calc(100vh-96px)]">
+          <CustomerInfoPanel onAddCustomer={() => setShowCustomerPopup(true)}/>
         </div>
 
       </div>
+
+      {showCustomerPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Background overlay */}
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowCustomerPopup(false)}
+          />
+
+          {/* Modal content */}
+          <div className="relative z-10 w-full max-w-4xl mx-4">
+            <ManageCustomer />
+          </div>
+        </div>
+      )}
 
     </DashboardLayout>
   );
