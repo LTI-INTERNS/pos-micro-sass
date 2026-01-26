@@ -9,7 +9,8 @@ import ActionButton from "../components/Admin/common/ActionButton";
 import ProfitTable, {Profit} from "../components/Admin/profitcalculation/ProfitTable";
 import StatCardGrid from "../components/Admin/profitcalculation/ProfitStatCardGrid";
 import { mockProfits } from "../components/Admin/profitcalculation/mock";
-import { useTableFilters } from "../components/Admin/common/Filterlogic";
+import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import { useCSVExport } from "../components/Admin/common/csvExport";
 
 export default function ProfitPage() {
   const [start, setStart] = useState<Date | undefined>();
@@ -22,8 +23,8 @@ export default function ProfitPage() {
     payment?: string;
   }>({});
 
-  const categoryOptions = getUniqueOptions(mockProfits, "category");
-  const paymentOptions = getUniqueOptions(mockProfits, "payment");
+  const categoryOptions = getFilterOptions(mockProfits, "category");
+  const paymentOptions = getFilterOptions(mockProfits, "payment");
 
   const filteredProfits = useTableFilters<Profit>({
     data: mockProfits,
@@ -36,39 +37,7 @@ export default function ProfitPage() {
   });
 
 
-  function exportToCSV(data: Profit[], filename = "profit_data.csv") {
-    if (!data.length) return;
-
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","),
-      ...data.map((row) =>
-        headers.map((field) => `"${(row as any)[field]}"`).join(",")
-      ),
-    ];
-
-    const blob = new Blob([csvRows.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
-  }
-
-  function getUniqueOptions<T, K extends keyof T>(
-    data: T[],
-    key: K
-  ) {
-    return Array.from(new Set(data.map((item) => item[key])))
-      .filter(Boolean)
-      .map((value) => ({
-        label: String(value),
-        value: String(value),
-      }));
-  }
-
+  const exportToCSV = useCSVExport<Profit>(); 
 
   return (
     <DashboardLayout>
@@ -120,7 +89,7 @@ export default function ProfitPage() {
           <ActionButton
             label="Export CSV"
             variant="primary"
-            onClick={() => exportToCSV(filteredProfits)}
+            onClick={() => exportToCSV(filteredProfits, "Profits.csv")}
           />
         </div>
         <ProfitTable profits={filteredProfits} />

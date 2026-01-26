@@ -9,7 +9,9 @@ import ExpensesTable, { Expenses } from "../components/Admin/expensesmanagement/
 import StatCardGrid from "../components/Admin/expensesmanagement/ExpensesStatCardGrid";
 import AddExpensesPopup from "../components/Admin/expensesmanagement/AddExpensesPopup";
 import { mockExpenses } from "../components/Admin/expensesmanagement/mock";
-import { useTableFilters } from "../components/Admin/common/Filterlogic";
+import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import { useCSVExport } from "../components/Admin/common/csvExport";
+
 
 export default function ExpensesPage() {
   const [start, setStart] = useState<Date | undefined>();
@@ -24,11 +26,9 @@ export default function ExpensesPage() {
     addedby?: string;
   }>({});
   
-  const categoryOptions = getUniqueOptions(mockExpenses, "category");
-  const paymentOptions = getUniqueOptions(mockExpenses, "payment");
-  const addedByOptions = getUniqueOptions(mockExpenses, "addedby");
-  
-  
+  const categoryOptions = getFilterOptions(mockExpenses, "category");
+  const paymentOptions = getFilterOptions(mockExpenses, "payment");
+  const addedByOptions = getFilterOptions(mockExpenses, "addedby");
 
   const filteredExpenses = useTableFilters<Expenses>({
         data: mockExpenses,
@@ -40,43 +40,8 @@ export default function ExpensesPage() {
         filters,
       });
 
-
-  function exportToCSV(data: Expenses[], filename = "Expenses.csv") {
-    if (!data || !data.length) return;
-
+  const exportCSV = useCSVExport<Expenses>();
   
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","),
-      ...data.map((row) => headers.map((field) => `"${(row as any)[field]}"`).join(",")),
-    ];
-
-    
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-
-   
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", filename);
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function getUniqueOptions<T, K extends keyof T>(
-    data: T[],
-    key: K
-  ) {
-    return Array.from(new Set(data.map((item) => item[key])))
-      .filter(Boolean)
-      .map((value) => ({
-        label: String(value),
-        value: String(value),
-      }));
-  }
-  
-
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
@@ -138,7 +103,7 @@ export default function ExpensesPage() {
           <ActionButton
             label="Export CSV"
             variant="primary"
-            onClick={() => exportToCSV(filteredExpenses)}
+            onClick={() => exportCSV(filteredExpenses, "Expenses.csv")}
           />
         </div> 
         <ExpensesTable Expenses={filteredExpenses} />

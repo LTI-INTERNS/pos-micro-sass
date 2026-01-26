@@ -12,7 +12,8 @@ import RecurringExpensesTable, {
 import StatCardGrid from "../components/Admin/recexpenses/RecStatCardGrid";
 import AddRecExpensesPopup from "../components/Admin/recexpenses/AddRecExpensesPopup";
 import { mockRecurringExpenses } from "../components/Admin/recexpenses/mock";
-import { useTableFilters } from "../components/Admin/common/Filterlogic";
+import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import { useCSVExport } from "../components/Admin/common/csvExport";
 
 
 export default function RecurringExpensesPage() {
@@ -28,9 +29,9 @@ export default function RecurringExpensesPage() {
     addedby?: string;
   }>({});
 
-  const categoryOptions = getUniqueOptions(mockRecurringExpenses, "category");
-  const paymentOptions = getUniqueOptions(mockRecurringExpenses, "payment");
-  const addedByOptions = getUniqueOptions(mockRecurringExpenses, "addedby");
+  const categoryOptions = getFilterOptions(mockRecurringExpenses, "category");
+  const paymentOptions = getFilterOptions(mockRecurringExpenses, "payment");
+  const addedByOptions = getFilterOptions(mockRecurringExpenses, "addedby");
 
   const filteredExpenses = useTableFilters<RecurringExpenses>({
       data: mockRecurringExpenses,
@@ -42,44 +43,7 @@ export default function RecurringExpensesPage() {
       filters,
     });
   
-
-  function exportToCSV(
-    data: RecurringExpenses[],
-    filename = "recurring_expenses.csv"
-  ) {
-    if (!data || !data.length) return;
-
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","),
-      ...data.map((row) =>
-        headers.map((field) => `"${(row as any)[field]}"`).join(",")
-      ),
-    ];
-
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", filename);
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function getUniqueOptions<T, K extends keyof T>(
-    data: T[],
-    key: K
-  ) {
-    return Array.from(new Set(data.map((item) => item[key])))
-      .filter(Boolean)
-      .map((value) => ({
-        label: String(value),
-        value: String(value),
-      }));
-  }
+  const exportToCSV = useCSVExport<RecurringExpenses>();
 
   return (
     <DashboardLayout>
@@ -140,7 +104,7 @@ export default function RecurringExpensesPage() {
           <ActionButton
             label="Export CSV"
             variant="primary"
-            onClick={() => exportToCSV(filteredExpenses)}
+            onClick={() => exportToCSV(filteredExpenses, "RecurringExpenses.csv")}
           />
         </div>
 
