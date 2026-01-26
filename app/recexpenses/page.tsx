@@ -9,8 +9,9 @@ import RecurringExpensesTable, {
   RecurringExpenses,
 } from "../components/Admin/recexpenses/RecExpensesTable";
 import StatCardGrid from "../components/Admin/recexpenses/RecStatCardGrid";
-
+import AddRecExpensesPopup from "../components/Admin/recexpenses/AddRecExpensesPopup";
 import { mockRecurringExpenses } from "../components/Admin/recexpenses/mock";
+import AddExpensesPopup from "../components/Admin/expensesmanagement/AddExpensesPopup";
 
 export default function RecurringExpensesPage() {
   const [start, setStart] = useState<Date | undefined>();
@@ -18,6 +19,7 @@ export default function RecurringExpensesPage() {
   const [search, setSearch] = useState("");
   const [filteredExpenses, setFilteredExpenses] =
     useState<RecurringExpenses[]>(mockRecurringExpenses);
+  const [showAddRecExpense, setShowAddRecExpense] = useState(false);
 
   useEffect(() => {
     let filtered = mockRecurringExpenses;
@@ -98,7 +100,7 @@ export default function RecurringExpensesPage() {
           <ActionButton
             label="Add Recurring Expense"
             variant="primary"
-            onClick={() => console.log("Open add modal")}
+            onClick={() => setShowAddRecExpense(true)}
           />
           <ActionButton
             label="Export CSV"
@@ -109,6 +111,17 @@ export default function RecurringExpensesPage() {
 
         <RecurringExpensesTable RecurringExpenses={filteredExpenses} />
       </div>
+
+      <AddRecExpensesPopup
+          open={showAddRecExpense}
+          onClose={() => setShowAddRecExpense(false)}
+          onSave={(values) => {
+            console.log("Saved Rec expense:", values);
+            setShowAddRecExpense(false);
+            // later: update expenses state or API call
+          }}
+        />
+
     </DashboardLayout>
   );
 }
