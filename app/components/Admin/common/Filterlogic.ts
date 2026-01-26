@@ -58,3 +58,16 @@ export function useTableFilters<T>({
 
   return filteredData;
 }
+
+export function getFilterOptions<T, K extends keyof T>(
+  data: T[],
+  key: K
+) {
+  return Array.from(new Set(data.map((item) => item[key])))
+    .filter(Boolean)
+    .map((value) => ({
+      label: String(value),
+      value: String(value),
+    }));
+}
+
