@@ -23,7 +23,7 @@ export const mockProfits: Profit[] = [
     category: "Inventory",
     description: "Cleaning Supplies",
     profit: "4500.00",
-    payment: "Cash",
+    payment: "Card",
   },
   {
     id: "004",

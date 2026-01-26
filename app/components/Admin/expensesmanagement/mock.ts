@@ -33,4 +33,12 @@ export const mockExpenses: Expenses[] = [
     payment: "Cash",
     addedby: "Admin",
   },
+  {
+    id: "006",
+    date: "2025-11-25",
+    category: "Beverages",
+    description: "Hot and cold drinks",
+    payment: "Card",
+    addedby: "Manager",
+  },
 ];

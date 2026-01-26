@@ -22,8 +22,8 @@ export const mockRecurringExpenses: RecurringExpenses[] = [
     date: "2025.10.25",
     category: "Inventory",
     description: "Cleaning Supplies",
-    payment: "Cash",
-    addedby: "Admin",
+    payment: "Card",
+    addedby: "Manager",
   },
   {
     id: "004",
