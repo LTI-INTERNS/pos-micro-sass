@@ -28,7 +28,13 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 
   return (
   
-   <ModalShell open={true} title="Add New Expense" onClose={onClose} widthClassName="w-[980px] max-w-[92vw]">
+   <ModalShell
+      open={open}
+      title="Add New Expense"
+      onClose={onClose}
+      widthClassName="w-[980px] max-w-[92vw]"
+    >
+
 
    <div >
     <ReusableForm
