@@ -95,23 +95,20 @@ export default function LoginForm() {
           </a>
         </div>
 
-        <button
-          disabled={loading}
-          className="w-full bg-orange-600 rounded-full text-white p-2"
-        >
+        <button disabled={loading} className="w-full bg-orange-600 rounded-full text-white p-2">
           {loading ? "Running..." : "Running order"}
         </button>
       </div>
       <div className="text-center text-gray-400 text-sm mt-4">
-  <button
-    type="button"
-    onClick={() => setShowAgreement(true)}
+        <button
+          type="button"
+          onClick={() => setShowAgreement(true)}
     className="hover:underline text-sm">
-    End user agreement.
-  </button>
+          End user agreement.
+        </button>
 </div>{showAgreement && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
       <h3 className="text-lg font-semibold mb-3">
         End User Agreement
       </h3>
