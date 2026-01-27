@@ -6,7 +6,7 @@ import CustomerInfoPanel, {
 } from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
-import ManageCustomer from "../components/Pos/ManageCustomer";
+
 
 const page = () => {
   const [search, setSearch] = useState("");
@@ -100,9 +100,7 @@ const page = () => {
             onClick={() => setShowCustomerPopup(false)}
           />
 
-          <div className="relative z-10 w-full max-w-4xl mx-4">
-            <ManageCustomer  />
-          </div>
+          
         </div>
       )}
     </DashboardLayout>
