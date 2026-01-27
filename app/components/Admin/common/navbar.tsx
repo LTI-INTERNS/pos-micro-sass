@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -9,6 +11,7 @@ interface NavbarProps {
 
 const Navbar = ({ toggleSidebar }: NavbarProps) => {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     setCurrentTime(new Date());
@@ -37,6 +40,14 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
     });
   };
 
+  const handleLogout = () => {
+    // clear auth/session data
+    // localStorage.removeItem('token');
+    // cookies, etc.
+
+    router.push('/landing'); 
+  };
+
   return (
     <nav className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
       <div className="flex items-center gap-5">
@@ -59,7 +70,9 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
             ? `${formatTime(currentTime)} ${formatDate(currentTime)}`
             : '--:--:-- --/--/----'}
         </span>
-        <button className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold">
+        <button
+          onClick={handleLogout} 
+          className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold">
           Log Out
         </button>
       </div>
