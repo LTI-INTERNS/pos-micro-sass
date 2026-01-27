@@ -101,7 +101,7 @@ const page = () => {
           />
 
           <div className="relative z-10 w-full max-w-4xl mx-4">
-            <ManageCustomer  />
+            <ManageCustomer onClose={() => setShowCustomerPopup(false)} />
           </div>
         </div>
       )}
