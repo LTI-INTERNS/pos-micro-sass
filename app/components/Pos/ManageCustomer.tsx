@@ -7,6 +7,7 @@ import { useState } from "react";
 
 type Props = {
   onClose: () => void;
+  onAddCustomer: () => void;
 };
 
 type Customer = {
@@ -55,7 +56,7 @@ const columns: Column<Customer>[] = [
     align: "left",
   },
 ];
-export default function ManageCustomer({ onClose }: Props) {
+export default function ManageCustomer({ onClose, onAddCustomer}: Props) {
     const [search, setSearch] = useState("");
   return (
     <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto">
@@ -88,7 +89,7 @@ export default function ManageCustomer({ onClose }: Props) {
        <div className="flex justify-center gap-4 mt-8">
            <div className="flex justify-center gap-4 w-full max-w-md mx-auto">
                 <Buttons onClick={onClose} label="Cancel" className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50"/>
-                <Buttons label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600"/>
+                <Buttons onClick={onAddCustomer} label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600"/>
            </div>
 
        </div>
