@@ -24,7 +24,7 @@ export default function CustomersPage() {
        <StatCardGrid />
 
         {/* Toolbar (Search + Actions) */}
-        <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
+       
           <SearchBar
               value={query}
               onChange={setQuery}
@@ -38,7 +38,6 @@ export default function CustomersPage() {
               
           <CustomerActionsBar
           />
-        </section>
 
         {/* Table */}
         <CustomersTable customers={filteredCustomers} />

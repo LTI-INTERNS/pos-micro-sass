@@ -22,7 +22,8 @@ export default function CashierActionsBar({
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+      <div className="bg-transparent rounded-xl border border-gray-100 px-6 py-3"
+>
         <div className="flex items-center gap-5">
           <ActionButton
             label="Add to Stock"
