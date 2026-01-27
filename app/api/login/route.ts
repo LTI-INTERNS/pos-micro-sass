@@ -1,13 +1,25 @@
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { username, password } = body;
+  const { username, password } = await req.json();
 
-  // TODO: replace with real validation (DB)
-  if (username === "admin" && password === "123") {
-    return NextResponse.json({ ok: true });
+  if (password !== "123") {
+    return NextResponse.json(
+      { ok: false, message: "Invalid credentials" },
+      { status: 401 }
+    );
   }
 
-  return NextResponse.json({ ok: false, message: "Invalid credentials" }, { status: 401 });
+  if (username === "admin") {
+    return NextResponse.json({ ok: true, role: "admin" });
+  }
+
+  if (username === "cashier") {
+    return NextResponse.json({ ok: true, role: "user" });
+  }
+
+  return NextResponse.json(
+    { ok: false, message: "Invalid credentials" },
+    { status: 401 }
+  );
 }

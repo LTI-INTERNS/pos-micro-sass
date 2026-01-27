@@ -4,6 +4,9 @@ import { useState } from "react";
 import { User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+type LoginResponse =
+  | { ok: true; role: "admin" | "cashier" }
+  | { ok: false; message: string };
 
 export default function LoginForm() {
   const router = useRouter();
@@ -28,8 +31,23 @@ export default function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+      
+      const data =  ( await res.json()) as LoginResponse;
 
-      if (!res.ok) throw new Error("Login failed");
+      if (!data.ok || !res.ok) {
+        throw new Error(!data.ok ? data.message : "Login failed");
+      }
+      if (data.role === "admin") {
+        router.push("/overview");
+        console.log("Admin logged in");
+        return;
+      }
+      if (data.role === "cashier") {
+         router.push("/switchuser");
+        console.log("User logged in");
+        return;
+      }
+
       router.push("/switchuser");
       console.log("Login successful");
     } catch (err: any) {
