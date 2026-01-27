@@ -5,9 +5,12 @@ type FormFieldProps = {
   placeholder?: string;
   value: string;
   onChange: (next: string) => void;
-  type?: "text" | "number" | "date" | "dropdown";
+
+
+  type?: "text" | "number" | "date" | "dropdown" | "password";
+
   options?: { value: string; label: string }[];
-  disabled?: boolean; 
+  disabled?: boolean;
 };
 
 export default function FormField({
@@ -17,7 +20,7 @@ export default function FormField({
   onChange,
   type = "text",
   options = [],
-  disabled = false, 
+  disabled = false,
 }: FormFieldProps) {
   return (
     <div className="space-y-1">
@@ -54,7 +57,11 @@ export default function FormField({
           className={`
             w-full rounded-full border px-4 py-2 outline-none
             placeholder:text-gray-300
-            ${disabled ? "bg-gray-100 text-gray-400 border-gray-200" : "text-gray-800 border-gray-200"}
+            ${
+              disabled
+                ? "bg-gray-100 text-gray-400 border-gray-200"
+                : "text-gray-800 border-gray-200"
+            }
             focus:border-orange-500 focus:ring-2 focus:ring-orange-200
           `}
         />

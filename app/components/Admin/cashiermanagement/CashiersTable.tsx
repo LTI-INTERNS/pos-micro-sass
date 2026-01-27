@@ -10,7 +10,9 @@ export type Cashier = {
   email: string;
   passwordMasked: string;
   pinMasked: string;
-  status: "new" | "top";
+
+  // no longer required (tabs removed)
+  status?: "new" | "top";
 };
 
 type Props = {
