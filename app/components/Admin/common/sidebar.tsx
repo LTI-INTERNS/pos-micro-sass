@@ -94,7 +94,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           <div
             onClick={() => {
               setActiveItem('Settings');
-              router.push('/Settings');
+              router.push('/settings');
               onClose();
             }}
             className={`flex items-center gap-3 px-4 py-3 rounded cursor-pointer

@@ -1,5 +1,5 @@
-
 "use client";
+import React from "react";
 
 type FoodItem = {
   id: number;
@@ -7,28 +7,29 @@ type FoodItem = {
   price: number;
   image: string;
 };
+
 type Props = {
   item: FoodItem;
+  onClick: () => void;
 };
 
-export default function FoodCard({ item }: Props) {
+export default function FoodCard({ item, onClick }: Props) {
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition cursor-pointer">
+    <div
+      onClick={onClick}
+      className="bg-white rounded-xl shadow-sm hover:shadow-md
+                 transition cursor-pointer active:scale-95"
+    >
       <img
         src={item.image}
         alt={item.name}
-        className="h-36 w-full object-cover rounded-t-xl"
+        className="w-full h-32 object-cover rounded-t-xl"
       />
 
       <div className="p-3">
-        <p className="text-sm font-semibold text-gray-900 text-center">
-          {item.name}
-        </p>
-        <p className="text-sm text-orange-500 font-bold text-center">
-          LKR {item.price.toFixed(2)}
-        </p>
+        <p className="text-sm font-semibold text-center text-black">{item.name}</p>
+        <p className="text-xs  text-center text-orange-500">LKR {item.price}</p>
       </div>
     </div>
   );
 }
-

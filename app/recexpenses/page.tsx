@@ -1,71 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangePicker from "../components/Admin/common/DateRangeBar";
-import SearchBar from "../components/Admin/common/Search-bar"; 
+import SearchBar from "../components/Admin/common/Search-bar";
+import FilterPopup from "../components/Admin/common/FilterPopup";
 import ActionButton from "../components/Admin/common/ActionButton";
-import RecurringExpensesTable, { RecurringExpenses } from "../components/Admin/recexpenses/RecExpensesTable";
+import RecurringExpensesTable, {
+  RecurringExpenses,
+} from "../components/Admin/recexpenses/RecExpensesTable";
 import StatCardGrid from "../components/Admin/recexpenses/RecStatCardGrid";
+import AddRecExpensesPopup from "../components/Admin/recexpenses/AddRecExpensesPopup";
+import { mockRecurringExpenses } from "../components/Admin/recexpenses/mock";
+import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import { useCSVExport } from "../components/Admin/common/csvExport";
 
-const sampleRecurringExpenses: RecurringExpenses[] = [
-  { id: "001", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "002", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "003", date: "2025.10.25", category: "Inventory", description: "Cleaning Supplies", payment: "Cash", addedby: "Admin" },
-  { id: "004", date: "2025.11.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "005", date: "2025.12.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-];
 
 export default function RecurringExpensesPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
-  const [filteredExpenses, setFilteredExpenses] = useState<RecurringExpenses[]>(sampleRecurringExpenses);
+  const [showFilter, setShowFilter] = useState(false);
+  const [showAddRecExpense, setShowAddRecExpense] = useState(false);
+  
+  const [filters, setFilters] = useState<{
+    category?: string;
+    payment?: string;
+    addedby?: string;
+  }>({});
 
-  // Filter table whenever search or date range changes
-  useEffect(() => {
-    let filtered = sampleRecurringExpenses;
+  const categoryOptions = getFilterOptions(mockRecurringExpenses, "category");
+  const paymentOptions = getFilterOptions(mockRecurringExpenses, "payment");
+  const addedByOptions = getFilterOptions(mockRecurringExpenses, "addedby");
 
-    // Filter by search query
-    if (search.trim() !== "") {
-      const lowerQuery = search.toLowerCase();
-      filtered = filtered.filter(
-        (exp) =>
-          exp.id.toLowerCase().includes(lowerQuery) ||
-          exp.category.toLowerCase().includes(lowerQuery) ||
-          exp.description.toLowerCase().includes(lowerQuery)
-      );
-    }
-
-    // Filter by date range
-    if (start && end) {
-      filtered = filtered.filter((exp) => {
-        const expDate = new Date(exp.date);
-        return expDate >= start && expDate <= end;
-      });
-    }
-
-    setFilteredExpenses(filtered);
-  }, [search, start, end]);
-
-  function exportToCSV(data: RecurringExpenses[], filename = "recurring_expenses.csv") {
-    if (!data || !data.length) return;
-
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","),
-      ...data.map((row) => headers.map((field) => `"${(row as any)[field]}"`).join(",")),
-    ];
-
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", filename);
-    link.click();
-    URL.revokeObjectURL(url);
-  }
+  const filteredExpenses = useTableFilters<RecurringExpenses>({
+      data: mockRecurringExpenses,
+      search,
+      start,
+      end,
+      dateKey: "date",
+      searchKeys: ["id", "category", "description"],
+      filters,
+    });
+  
+  const exportToCSV = useCSVExport<RecurringExpenses>();
 
   return (
     <DashboardLayout>
@@ -81,31 +59,68 @@ export default function RecurringExpensesPage() {
 
         <StatCardGrid />
 
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search Recurring Expenses..."
-          debounceMs={300}
-          showClear
-          showFilter
-          onFilter={() => console.log("Open filter modal")}
-        />
+        <div className="relative">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search Recurring Expenses..."
+            debounceMs={300}
+            showFilter
+            onFilter={() => setShowFilter((v) => !v)}
+          />
+          <FilterPopup
+              open={showFilter}
+              onClose={() => setShowFilter(false)}
+              onApply={(values) => {
+                setFilters(values);
+                setShowFilter(false);
+              }}
+              fields={[
+                {
+                  name: "category",
+                  placeholder: "Category",
+                  options: categoryOptions,
+                },
+                {
+                  name: "payment",
+                  placeholder: "Payment",
+                  options: paymentOptions,
+                },
+                {
+                  name: "addedby",
+                  placeholder: "Addedby",
+                  options: addedByOptions,
+                },
+              ]}
+            />
+          </div>
 
         <div className="grid grid-cols-2 gap-3">
           <ActionButton
             label="Add Recurring Expense"
             variant="primary"
-            onClick={() => console.log("Open add modal")}
+            onClick={() => setShowAddRecExpense(true)}
           />
           <ActionButton
             label="Export CSV"
             variant="primary"
-            onClick={() => exportToCSV(filteredExpenses)}
+            onClick={() => exportToCSV(filteredExpenses, "RecurringExpenses.csv")}
           />
         </div>
 
         <RecurringExpensesTable RecurringExpenses={filteredExpenses} />
       </div>
+
+      <AddRecExpensesPopup
+          open={showAddRecExpense}
+          onClose={() => setShowAddRecExpense(false)}
+          onSave={(values) => {
+            console.log("Saved Rec expense:", values);
+            setShowAddRecExpense(false);
+            // later: update expenses state or API call
+          }}
+        />
+
     </DashboardLayout>
   );
 }
