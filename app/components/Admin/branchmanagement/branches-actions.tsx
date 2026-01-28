@@ -13,13 +13,12 @@ export default function BranchActionsBar({ onEdit, onDelete }: Props) {
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-100 px-6 py-3">
         <div className="grid grid-cols-3 gap-3">
           <button
             onClick={onDelete}
             className="w-full rounded-full border border-orange-400 bg-white py-2
                        text-xs font-semibold text-orange-500
-                       hover:bg-orange-50 hover:shadow-sm transition"
+                       hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
           >
             Delete Branch
           </button>
@@ -28,7 +27,7 @@ export default function BranchActionsBar({ onEdit, onDelete }: Props) {
             onClick={onEdit}
             className="w-full rounded-full border border-orange-400 bg-white py-2
                        text-xs font-semibold text-orange-500
-                       hover:bg-orange-50 hover:shadow-sm transition"
+                       hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
           >
             Edit Branch
           </button>
@@ -37,12 +36,11 @@ export default function BranchActionsBar({ onEdit, onDelete }: Props) {
             onClick={() => setShowPopup(true)}
             className="w-full rounded-full bg-orange-500 py-2
                        text-xs font-semibold text-white
-                       hover:bg-orange-600 transition"
+                       hover:bg-orange-600 transition cursor-pointer"
           >
             Add New Branch
           </button>
         </div>
-      </div>
 
       {showPopup && (
         <AddBranchForm
