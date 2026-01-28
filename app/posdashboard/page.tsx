@@ -49,11 +49,14 @@ const page = () => {
       <div className="flex gap-6">
         
         <div className="flex-1 flex flex-col">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search Name or ID"
-          />
+          <div className="pt-2">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Search Name or ID"
+              className="py-2"
+            />
+          </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
             <FoodGrid search={search} onAdd={handleAddFood} />
