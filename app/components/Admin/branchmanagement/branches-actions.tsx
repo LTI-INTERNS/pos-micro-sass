@@ -14,8 +14,6 @@ export default function BranchActionsBar({ onEdit, onDelete }: Props) {
 
   return (
     <>
-      <div className="bg-transparent rounded-xl border border-gray-100 px-6 py-3"
->
         <div className="grid grid-cols-3 gap-3">
           <ActionButton
             label="Delete Branch"
@@ -31,7 +29,6 @@ export default function BranchActionsBar({ onEdit, onDelete }: Props) {
             onClick={() => setShowPopup(true)}
           />
         </div>
-      </div>
       {showPopup && (
         <AddBranchForm
           open={showPopup}
