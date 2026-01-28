@@ -1,40 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import Clock from '../../Landing/clock';
 import { Menu } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface NavbarProps {
   toggleSidebar: () => void;
 }
 
 const PosNavbar = ({ toggleSidebar }: NavbarProps) => {
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    setCurrentTime(new Date());
+  const handleLogout = () => {
+    // Optional: clear auth/session data
+    // localStorage.removeItem("token");
+    // sessionStorage.clear();
 
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false 
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    router.push('/switchuser');
   };
 
   return (
@@ -60,12 +42,10 @@ const PosNavbar = ({ toggleSidebar }: NavbarProps) => {
       </div>
       
       <div className="flex items-center gap-4">
-        <span className="hidden sm:inline bg-gray-100 px-4 py-1 rounded-full text-[13px] font-bold text-gray-600">
-          {currentTime
-            ? `${formatTime(currentTime)} ${formatDate(currentTime)}`
-            : '--:--:-- --/--/----'}
-        </span>
-        <button className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold ">
+        <Clock variant="navbar" />
+        <button 
+          onClick={handleLogout}
+          className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold ">
           Log Out
         </button>
       </div>
