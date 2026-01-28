@@ -67,7 +67,7 @@ export default function DiscountPopup({
           <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
           <button
             onClick={onClose}
-            className="h-9 w-9 grid text-black place-items-center rounded-full hover:bg-slate-100"
+            className="h-9 w-9 grid text-black place-items-center rounded-full hover:bg-slate-100 cursor-pointer"
           >
             ✕
           </button>
@@ -95,7 +95,7 @@ export default function DiscountPopup({
             <button
               onClick={onClose}
               className="w-[200px] rounded-full border border-orange-400
-                         text-orange-600 font-semibold py-3 hover:bg-orange-50"
+                         text-orange-600 font-semibold py-3 hover:bg-orange-50 cursor-pointer"
             >
               Cancel
             </button>
@@ -103,7 +103,7 @@ export default function DiscountPopup({
             <button
               onClick={() => onApply(selected)}
               className="w-[200px] rounded-full bg-orange-500
-                         text-white font-semibold py-3 hover:bg-orange-600"
+                         text-white font-semibold py-3 hover:bg-orange-600 cursor-pointer"
             >
               Apply
             </button>
@@ -127,7 +127,7 @@ function DiscountRow({
     <button
       type="button"
       onClick={onSelect}
-      className="group w-full flex items-stretch transition-transform active:scale-[0.98]"
+      className="group w-full flex items-stretch transition-transform active:scale-[0.98] cursor-pointer"
     >
       <div
         className={[
