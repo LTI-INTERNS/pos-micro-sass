@@ -21,7 +21,6 @@ export default function CashierActionsBar({
   const [showPopup, setShowPopup] = useState(false);
 
   return (
-    <>
       <div className="bg-transparent rounded-xl border border-gray-100 px-6 py-3"
 >
         <div className="flex items-center gap-5">
@@ -46,8 +45,7 @@ export default function CashierActionsBar({
             onClick={() => setShowPopup(true)}
           />
         </div>
-      </div>
-
+        
       {showPopup && (
         <AddProductPopup 
           open={showPopup} 
@@ -59,6 +57,6 @@ export default function CashierActionsBar({
           }}
         />
       )}
-    </>
+    </div>
   );
 }

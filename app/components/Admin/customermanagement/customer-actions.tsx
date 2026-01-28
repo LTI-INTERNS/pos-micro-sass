@@ -17,9 +17,7 @@ export default function CustomerActionsBar({
   const [showPopup, setShowPopup] = useState(false);
 
   return (
-    <>
-      <div className="bg-transparent rounded-xl border border-gray-100 px-6 py-3"
->
+      
         <div className="grid grid-cols-3 gap-3">
           <ActionButton
             label="Delete Customer"
@@ -35,13 +33,11 @@ export default function CustomerActionsBar({
             variant="primary"
             onClick={() => setShowPopup(true)}
           />
-        </div>
-      </div>
 
       {showPopup && (
         <AddCustomerForm open={showPopup} 
           onClose={() => setShowPopup(false)} />
       )}
-    </>
+    </div>
   );
 }
