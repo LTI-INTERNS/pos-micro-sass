@@ -23,7 +23,7 @@ export default function BranchesPage() {
 
       <div className="w-full space-y-6">
 
-        <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
+        
           <DateRangePicker />
           <StatCardGrid />
           <SearchBar
@@ -38,8 +38,7 @@ export default function BranchesPage() {
           />
 
         <BranchActionsBar />
-        </section>
-
+       
         <BranchesTable branches={filteredBranches} />
 
       </div>
