@@ -24,6 +24,7 @@ export default function CustomersPage() {
        <StatCardGrid />
 
         {/* Toolbar (Search + Actions) */}
+       
           <SearchBar
               value={query}
               onChange={setQuery}

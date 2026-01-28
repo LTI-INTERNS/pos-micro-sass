@@ -21,6 +21,7 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="w-full space-y-6">
         {/* Toolbar */}
+       
           <DateRangePicker />
           <StatCardGrid />
           <SearchBar
@@ -33,6 +34,7 @@ export default function DashboardPage() {
           />
 
           <ProductActionsBar />
+       
 
         {/* Table */}
         <ProductsTable products={filteredProducts} />
