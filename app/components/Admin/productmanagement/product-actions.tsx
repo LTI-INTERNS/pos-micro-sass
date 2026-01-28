@@ -22,7 +22,7 @@ export default function CashierActionsBar({
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-100 px-4 py-3">
+
         <div className="flex items-center gap-5">
           <ActionButton
             label="Add to Stock"
@@ -45,8 +45,7 @@ export default function CashierActionsBar({
             onClick={() => setShowPopup(true)}
           />
         </div>
-      </div>
-
+        
       {showPopup && (
         <AddProductPopup 
           open={showPopup} 
