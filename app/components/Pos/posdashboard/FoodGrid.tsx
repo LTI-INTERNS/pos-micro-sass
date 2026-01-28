@@ -36,37 +36,37 @@ const foods = [
     id: 5,
     name: "Sandwich",
     price: 900,
-    image: "/food/sandwich.png",
+    image: "/food/burger.jpg",
   },
   {
     id: 6,
     name: "Noodles",
     price: 1100,
-    image: "/food/noodles.png",
+    image: "/food/pizza.jpg",
   },
   {
     id: 7,
     name: "Rice",
     price: 1000,
-    image: "/food/rice.png",
+    image: "/food/fries.jpg",
   },
   {
     id: 8,
     name: "Pasta",
     price: 1300,
-    image: "/food/pasta.png",
+    image: "/food/salad.jpg",
   },
   {
     id: 9,
     name: "Sushi",
     price: 2000,
-    image: "/food/sushi.png",
+    image: "/food/burger.jpg",
   },
   {
     id: 10,
     name: "Tacos",
     price: 1500,
-    image: "/food/tacos.png",
+    image: "/food/pizza.jpg",
   }
 ];
 
