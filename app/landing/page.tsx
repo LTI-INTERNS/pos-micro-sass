@@ -1,7 +1,11 @@
+"use client";
+
 import Clock from "../components/Landing/clock";
 import RoleButton from "../components/Admin/common/ActionButton";
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
+  const router = useRouter();
   return (
     <main
       className="min-h-screen flex flex-col items-center justify-center text-center bg-cover bg-center relative"
@@ -16,8 +20,8 @@ export default function LandingPage() {
         <Clock />
 
         <div className="flex gap-4">
-          <RoleButton className="px-8 py-3 rounded-full border border-white/30 text-white backdrop-blur-md bg-white/10 hover:bg-white/20 transition text-sm md:text-base" label="Cashier" />
-          <RoleButton className="px-8 py-3 rounded-full border border-white/30 text-white backdrop-blur-md bg-white/10 hover:bg-white/20 transition text-sm md:text-base" label="Admin" />
+          <RoleButton className="px-8 py-3 rounded-full border border-white/30 text-white backdrop-blur-md bg-white/10 hover:bg-white/20 transition text-sm md:text-base cursor-pointer" label="Cashier" onClick={() => router.push("/switchuser")} />
+          <RoleButton className="px-8 py-3 rounded-full border border-white/30 text-white backdrop-blur-md bg-white/10 hover:bg-white/20 transition text-sm md:text-base cursor-pointer" label="Admin" onClick={() => router.push("/login")}/>
         </div>
       </div>
     </main>

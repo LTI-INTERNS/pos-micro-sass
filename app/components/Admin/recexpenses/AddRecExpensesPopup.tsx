@@ -5,7 +5,7 @@ import PopupActions from '../common/PopupActions';
 import ModalShell from '../common/ModalShell';
 
 
-type AddExpensesPopupProps = {
+type AddRecExpensesPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (values: {
@@ -16,21 +16,21 @@ type AddExpensesPopupProps = {
 
   }) => void;
 };
-const addExpenseFields: FieldConfig[] = [
+const addRecExpenseFields: FieldConfig[] = [
   { name: "date", label: "Date", placeholder: "Enter date", type: "text" },
   { name: "category", label: "Category", placeholder: "Enter category", type: "text" },
   { name: "description", label: "Description", placeholder: "Enter description", type: "text" },
   { name: "amount", label: "Amount", placeholder: "Enter amount", type: "number" },
 ];
 
-const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
+const AddRecExpensesPopup = ({ open, onClose, onSave }: AddRecExpensesPopupProps) => {
    const [latestValues, setLatestValues] = React.useState<Record<string, string>>({});
 
   return (
   
    <ModalShell
       open={open}
-      title="Add New Expense"
+      title="Add Recurring Expense"
       onClose={onClose}
       widthClassName="w-[980px] max-w-[92vw]"
     >
@@ -38,7 +38,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 
    <div >
     <ReusableForm
-          fields={addExpenseFields}
+          fields={addRecExpenseFields}
           onSubmit={(values) => {
             setLatestValues(values);
             onSave(values as any);
@@ -73,4 +73,4 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 
   )
 }
-export default AddExpensesPopup
+export default AddRecExpensesPopup

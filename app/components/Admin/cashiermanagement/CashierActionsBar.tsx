@@ -22,7 +22,7 @@ export default function CashierActionsBar({
           onClick={onDeactivate}
           className="w-full rounded-full border border-orange-400 bg-white py-2
                      text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm transition"
+                     hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
         >
           Deactivate Cashier
         </button>
@@ -31,7 +31,7 @@ export default function CashierActionsBar({
           onClick={onDelete}
           className="w-full rounded-full border border-orange-400 bg-white py-2
                      text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm transition"
+                     hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
         >
           Delete Cashier
         </button>
@@ -40,7 +40,7 @@ export default function CashierActionsBar({
           onClick={onEdit}
           className="w-full rounded-full border border-orange-400 bg-white py-2
                      text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm transition"
+                     hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
         >
           Edit Cashier
         </button>
@@ -49,7 +49,7 @@ export default function CashierActionsBar({
           onClick={onAdd}
           className="w-full rounded-full bg-orange-500 py-2
                      text-xs font-semibold text-white
-                     hover:bg-orange-600 transition"
+                     hover:bg-orange-600 transition cursor-pointer"
         >
           Add New Cashier
         </button>
@@ -58,7 +58,7 @@ export default function CashierActionsBar({
           onClick={onExport}
           className="w-full rounded-full bg-orange-500 py-2
                      text-xs font-semibold text-white
-                     hover:bg-orange-600 transition"
+                     hover:bg-orange-600 transition cursor-pointer"
         >
           Export CSV
         </button>

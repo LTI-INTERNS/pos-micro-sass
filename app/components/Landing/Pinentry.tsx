@@ -17,7 +17,7 @@ export default function PinEntryPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center bg-cover bg-center"
-      style={{ backgroundImage: "url('/bg.png')" }}
+      style={{ backgroundImage: "url('/landing.png')" }}
     >
       <div className=" p-8 w-[320px] text-center">
         
@@ -48,7 +48,7 @@ export default function PinEntryPage() {
           </button>
         </div>
 
-        <button className="w-full py-1 rounded-full bg-orange-500 hover:bg-orange-600 font-semibold">
+        <button className="w-full py-1 rounded-full bg-orange-500 hover:bg-orange-600 font-semibold cursor-pointer">
           Unlock
         </button>
       </div>

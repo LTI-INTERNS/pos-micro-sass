@@ -25,8 +25,8 @@ export default function PopupActions({ actions }: PopupActionsProps) {
               w-full rounded-full py-3 font-semibold transition active:scale-[0.98]
               ${
                 isPrimary
-                  ? "bg-orange-500 text-white hover:bg-orange-600"
-                  : "border border-orange-500 bg-white text-orange-500 hover:bg-orange-50"
+                  ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer"
+                  : "border border-orange-500 bg-white text-orange-500 hover:bg-orange-50 cursor-pointer"
               }
             `}
           >

@@ -7,6 +7,7 @@ import ActionButton from "../components/Admin/common/ActionButton";
 import SupplierTable from "../components/Admin/suppliermanagement/SupplierTable";
 import StatCardGrid from "../components/Admin/suppliermanagement/StatCardGrid";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
+import SupplierPopUp from "../components/Admin/suppliermanagement/SupplierPopUp";
 
 
 
@@ -60,6 +61,10 @@ export default function SupplierPage() {
 
 
   const [search, setSearch] = useState("");
+  
+  // Popup state
+  const [open, setOpen] = useState(false);
+  const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
 
   
   const filteredSuppliers = useMemo(() => {
@@ -100,7 +105,17 @@ export default function SupplierPage() {
           <ActionButton label="Add New Supplier" variant="primary" className="w-full rounded-full bg-orange-500 py-2
                      text-xs font-semibold text-white
                      hover:bg-orange-600
-                     transition" />
+                     transition" onClick={() => setOpen(true)} />
+                     <SupplierPopUp
+                            open={open}
+                            onClose={() => setOpen(false)}
+                            supplierId="A001"
+                            onSave={(vals) => {
+                              console.log(vals);
+                              setOpen(false);
+                               }
+                               }
+                             />
         </div>   
         
 

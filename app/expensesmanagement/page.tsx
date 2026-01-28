@@ -1,86 +1,47 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangePicker from "../components/Admin/common/DateRangeBar";
 import SearchBar from "../components/Admin/common/Search-bar"; 
+import FilterPopup from "../components/Admin/common/FilterPopup";
 import ActionButton from "../components/Admin/common/ActionButton";
 import ExpensesTable, { Expenses } from "../components/Admin/expensesmanagement/ExpensesTable";
 import StatCardGrid from "../components/Admin/expensesmanagement/ExpensesStatCardGrid";
+import AddExpensesPopup from "../components/Admin/expensesmanagement/AddExpensesPopup";
+import { mockExpenses } from "../components/Admin/expensesmanagement/mock";
+import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import { useCSVExport } from "../components/Admin/common/csvExport";
 
-const sampleExpenses: Expenses[] = [
-  { id: "001", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "002", date: "2025.10.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "004", date: "2025.11.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-  { id: "005", date: "2025.12.25", category: "Inventory", description: "Cleaning Supply", payment: "Cash", addedby: "Admin" },
-];
 
 export default function ExpensesPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
-  const [filteredExpenses, setFilteredExpenses] = useState<Expenses[]>(sampleExpenses);
+  const [showFilter, setShowFilter] = useState(false);
+  const [showAddExpense, setShowAddExpense] = useState(false);
 
-  useEffect(() => {
-    let filtered = sampleExpenses;
+  const [filters, setFilters] = useState<{
+    category?: string;
+    payment?: string;
+    addedby?: string;
+  }>({});
+  
+  const categoryOptions = getFilterOptions(mockExpenses, "category");
+  const paymentOptions = getFilterOptions(mockExpenses, "payment");
+  const addedByOptions = getFilterOptions(mockExpenses, "addedby");
 
-    if (search.trim() !== "") {
-      const lowerQuery = search.toLowerCase();
-      filtered = filtered.filter(
-        (exp) =>
-          exp.id.toLowerCase().includes(lowerQuery) ||
-          exp.category.toLowerCase().includes(lowerQuery) ||
-          exp.description.toLowerCase().includes(lowerQuery)
-      );
-    }
-
-    if (start && end) {
-      filtered = filtered.filter((exp) => {
-        const expDate = new Date(exp.date);
-        return expDate >= start && expDate <= end;
+  const filteredExpenses = useTableFilters<Expenses>({
+        data: mockExpenses,
+        search,
+        start,
+        end,
+        dateKey: "date",
+        searchKeys: ["id", "category", "description"],
+        filters,
       });
-    }
 
-    setFilteredExpenses(filtered);
-  }, [search, start, end]);
-
-  function handleSearch(query: string) {
-    setSearch(query);
-
-    const lowerQuery = query.toLowerCase();
-    const filtered = sampleExpenses.filter(
-      (exp) =>
-        exp.id.toLowerCase().includes(lowerQuery) ||
-        exp.category.toLowerCase().includes(lowerQuery) ||
-        exp.description.toLowerCase().includes(lowerQuery)
-    );
-    setFilteredExpenses(filtered);
-  }
-
-  function exportToCSV(data: Expenses[], filename = "Expenses.csv") {
-    if (!data || !data.length) return;
-
+  const exportCSV = useCSVExport<Expenses>();
   
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","),
-      ...data.map((row) => headers.map((field) => `"${(row as any)[field]}"`).join(",")),
-    ];
-
-    
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-
-   
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.href = url;
-    link.setAttribute("download", filename);
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  
-
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
@@ -95,31 +56,70 @@ export default function ExpensesPage() {
 
         <StatCardGrid />
 
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search Expenses..."
-          debounceMs={300}
-          showClear
-          showFilter
-          onFilter={() => console.log("Open filter modal")}
-        />
+       <div className="relative">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search Expenses..."
+            debounceMs={300}
+            showFilter
+            onFilter={() => setShowFilter((v) => !v)}
+          />
+
+          <FilterPopup
+            open={showFilter}
+            onClose={() => setShowFilter(false)}
+            onApply={(values) => {
+              setFilters(values);
+              setShowFilter(false);
+            }}
+            fields={[
+              {
+                name: "category",
+                placeholder: "Category",
+                options: categoryOptions,
+              },
+              {
+                name: "payment",
+                placeholder: "Payment",
+                options: paymentOptions,
+              },
+              {
+                name: "addedby",
+                placeholder: "Addedby",
+                options: addedByOptions,
+              },
+            ]}
+          />
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <ActionButton
             label="Add Expense"
             variant="primary"
-            onClick={() => console.log("Open add modal")}
+            onClick={() => setShowAddExpense(true)}
           />
 
           <ActionButton
             label="Export CSV"
             variant="primary"
-            onClick={() => exportToCSV(filteredExpenses)}
+            onClick={() => exportCSV(filteredExpenses, "Expenses.csv")}
           />
-        </div>
+        </div> 
         <ExpensesTable Expenses={filteredExpenses} />
       </div>
+
+      <AddExpensesPopup
+        open={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        onSave={(values) => {
+          console.log("Saved expense:", values);
+          setShowAddExpense(false);
+          // later: update expenses state or API call
+        }}
+      />
+      
+
     </DashboardLayout>
   );
 }

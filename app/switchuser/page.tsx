@@ -1,4 +1,4 @@
-import SwitchUserScreen from "../components/landing/switchuser/SwitchUserScreen";
+import SwitchUserScreen from "../components/Landing/switchuser/SwitchUserScreen";
 
 export default function SwitchUserPage() {
   return <SwitchUserScreen />;

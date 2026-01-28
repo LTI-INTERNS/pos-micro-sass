@@ -241,8 +241,8 @@ export default function OrderPaymentModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
-        <div className="h-full w-[420px] bg-white shadow-xl flex flex-col">
+      <div className="fixed inset-0 px-6 z-50 flex justify-end bg-black/30">
+        <div className="h-full w-md bg-white shadow-xl flex flex-col">
           {/* Header */}
           <div className="flex items-start justify-between px-5 py-4 border-b">
             <div>
@@ -254,7 +254,7 @@ export default function OrderPaymentModal({
 
             <button
               onClick={onClose}
-              className="text-gray-600 hover:text-black text-xl leading-none mt-1"
+              className="text-gray-600 hover:text-black text-xl leading-none mt-1 cursor-pointer"
             >
               ✕
             </button>
@@ -440,7 +440,7 @@ export default function OrderPaymentModal({
                         alt={pm.alt}
                         width={44}
                         height={44}
-                        className="object-contain"
+                        className="object-contain cursor-pointer"
                       />
                     </button>
                   );
@@ -465,7 +465,7 @@ export default function OrderPaymentModal({
                         onTouchStart={(e) => e.preventDefault()}
                         className={`h-7 rounded-lg border
                           text-sm font-semibold transition-all duration-150
-                          active:scale-90 active:bg-orange-50
+                          active:scale-90 active:bg-orange-50 cursor-pointer
                           ${
                             selected
                               ? "border-orange-500 text-orange-600 bg-orange-50"
@@ -571,7 +571,7 @@ export default function OrderPaymentModal({
                   onMouseDown={(e) => e.preventDefault()}
                   onTouchStart={(e) => e.preventDefault()}
                   onClick={() => handleKeypadPress(key)}
-                  className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center
+                  className={`h-14 rounded-full text-lg font-bold transition-all active:scale-90 flex items-center justify-center cursor-pointer
                     ${
                       ["10", "20"].includes(key)
                         ? "bg-blue-50 text-blue-600"
@@ -602,19 +602,19 @@ export default function OrderPaymentModal({
 
           {/* Footer */}
           <div className="px-5 py-4 border-t flex gap-3">
-            <button className="flex-1 h-14 rounded-xl bg-gray-900 text-white flex flex-col items-center justify-center gap-1 text-xs transition active:scale-95">
+            <button className="flex-1 h-14 rounded-xl bg-gray-900 text-white flex flex-col items-center justify-center gap-1 text-xs transition active:scale-95 cursor-pointer">
               <Printer size={18} />
               <span>Gift receipt</span>
             </button>
 
-            <button className="flex-1 h-14 rounded-xl bg-gray-900 text-white flex flex-col items-center justify-center gap-1 text-xs transition active:scale-95">
+            <button className="flex-1 h-14 rounded-xl bg-gray-900 text-white flex flex-col items-center justify-center gap-1 text-xs transition active:scale-95 cursor-pointer">
               <Mail size={18} />
               <span>Email</span>
             </button>
 
             <button
               onClick={onClose}
-              className="flex-1 h-14 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-white flex flex-col items-center justify-center gap-1 text-xs font-semibold transition active:scale-95"
+              className="flex-1 h-14 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-white flex flex-col items-center justify-center gap-1 text-xs font-semibold transition active:scale-95 cursor-pointer"
             >
               <Check size={18} />
               <span>Done</span>

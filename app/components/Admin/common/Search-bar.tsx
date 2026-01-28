@@ -8,6 +8,7 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  className?: string;
 
   // optional features
   debounceMs?: number;   // delay search input
@@ -26,6 +27,7 @@ export default function SearchBar({
   showFilter = false,
   onFilter,
   filterLabel = "Filter",
+  className = ""
 }: Props) {
 
 
@@ -63,7 +65,7 @@ export default function SearchBar({
   };
 
  return (
-  <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <div className={`flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden ${className}`}>
     
     {/* Left: search input */}
     <div className="flex items-center gap-2 px-3 py-2 flex-1">

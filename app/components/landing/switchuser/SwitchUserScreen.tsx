@@ -1,5 +1,5 @@
 import Image from "next/image";
-import TimeDisplay from "./Clock";
+import TimeDisplay from "../clock";
 import UserRow from "./UserRow";
 
 export default function SwitchUserScreen() {
@@ -7,7 +7,7 @@ export default function SwitchUserScreen() {
     <div className="relative min-h-screen w-full overflow-hidden text-white">
       {/* Background */}
       <Image
-        src="/lock-bg.png"
+        src="/landing.png"
         alt="Background"
         fill
         priority
