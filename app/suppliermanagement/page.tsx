@@ -8,8 +8,7 @@ import SupplierTable from "../components/Admin/suppliermanagement/SupplierTable"
 import StatCardGrid from "../components/Admin/suppliermanagement/StatCardGrid";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import SupplierPopUp from "../components/Admin/suppliermanagement/SupplierPopUp";
-
-
+import FilterPopup from "../components/Admin/common/FilterPopup"; 
 
 export type Supplier = {
   id: number;
@@ -20,8 +19,6 @@ export type Supplier = {
   address: string;
   regNo: string;
 };
-
-
 
 const suppliers: Supplier[] = [
   {
@@ -53,92 +50,120 @@ const suppliers: Supplier[] = [
   },
 ];
 
-
 export default function SupplierPage() {
   const [selectedType, setSelectedType] = useState<
     "All" | "Individual" | "Company"
   >("All");
 
-
   const [search, setSearch] = useState("");
+
   
-  // Popup state
   const [open, setOpen] = useState(false);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
 
   
-  const filteredSuppliers = useMemo(() => {
-    return suppliers.filter((s) => {
-      const matchesType =
-        selectedType === "All" || s.type === selectedType;
+  const [filterOpen, setFilterOpen] = useState(false);
 
-      const matchesSearch =
-        s.name.toLowerCase().includes(search.toLowerCase().trim());
+  
+  const filteredSuppliers = useMemo(() => {
+    return suppliersList.filter((s) => {
+      const matchesType = selectedType === "All" || s.type === selectedType;
+
+      const matchesSearch = s.name
+        .toLowerCase()
+        .includes(search.toLowerCase().trim());
 
       return matchesType && matchesSearch;
     });
-  }, [selectedType, search]);
+  }, [selectedType, search, suppliersList]);
 
   return (
     <DashboardLayout>
-      <div className="w-full space-y-6">
+      
+      <div className="w-full space-y-6 relative">
         <DateRangeBar />
         <StatCardGrid />
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search supplier by name"
-          debounceMs={300}
-          showFilter={true}
-        />
-           
-        <div className="grid grid-cols-3 gap-3">
-          
-          <ActionButton label="Delete Supplier" className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm
-                     transition"/>
-          <ActionButton label="Edit Supplier" className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm
-                     transition" />           
-          <ActionButton label="Add New Supplier" variant="primary" className="w-full rounded-full bg-orange-500 py-2
-                     text-xs font-semibold text-white
-                     hover:bg-orange-600
-                     transition" onClick={() => setOpen(true)} />
-                     <SupplierPopUp
-                            open={open}
-                            onClose={() => setOpen(false)}
-                            supplierId="A001"
-                            onSave={(vals) => {
-                              console.log(vals);
-                              setOpen(false);
-                               }
-                               }
-                             />
-        </div>   
-        
 
         
-        <div className="flex gap-6 px-2 text-sm font-medium">
-          {["All", "Individual", "Company"].map((type) => (
-            <label key={type} className="flex items-center gap-2 cursor-pointer text-black">
-              <input
-                type="radio"
-                name="supplierType"
-                value={type}
-                checked={selectedType === type}
-                onChange={() =>
-                  setSelectedType(type as "All" | "Individual" | "Company")
-                }
-                className="accent-orange-500"
-              />
-              {type}
-            </label>
-          ))}
+        <div className="relative">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search supplier by name"
+            debounceMs={300}
+            showFilter={true}
+            onFilter={() => setFilterOpen(true)} 
+          />
+
+          
+          <FilterPopup
+            open={filterOpen}
+            onClose={() => setFilterOpen(false)}
+            fields={[
+              {
+                name: "supplierType",
+                placeholder: "Select supplier type",
+                options: [
+                  { label: "All", value: "All" },
+                  { label: "Individual", value: "Individual" },
+                  { label: "Company", value: "Company" },
+                ],
+              },
+            ]}
+            onApply={(values) => {
+              const type = values.supplierType as
+                | "All"
+                | "Individual"
+                | "Company"
+                | "";
+
+              
+              if (!type) return;
+
+              setSelectedType(type);
+            }}
+          />
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <ActionButton
+            label="Delete Supplier"
+            className="w-full rounded-full border border-orange-400 bg-white py-2
+                     text-xs font-semibold text-orange-500
+                     hover:bg-orange-50 hover:shadow-sm
+                     transition"
+          />
+          <ActionButton
+            label="Edit Supplier"
+            className="w-full rounded-full border border-orange-400 bg-white py-2
+                     text-xs font-semibold text-orange-500
+                     hover:bg-orange-50 hover:shadow-sm
+                     transition"
+          />
+          <ActionButton
+            label="Add New Supplier"
+            variant="primary"
+            className="w-full rounded-full bg-orange-500 py-2
+                     text-xs font-semibold text-white
+                     hover:bg-orange-600
+                     transition"
+            onClick={() => setOpen(true)}
+          />
+
+          <SupplierPopUp
+            open={open}
+            onClose={() => setOpen(false)}
+            supplierId="A001"
+            onSave={(vals) => {
+              console.log(vals);
+              setOpen(false);
+            }}
+          />
         </div>
 
         
+        
+
         <SupplierTable suppliers={filteredSuppliers} />
       </div>
     </DashboardLayout>
