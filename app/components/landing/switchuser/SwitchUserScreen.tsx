@@ -1,5 +1,5 @@
 import Image from "next/image";
-import TimeDisplay from "./Clock";
+import TimeDisplay from "../clock";
 import UserRow from "./UserRow";
 
 export default function SwitchUserScreen() {

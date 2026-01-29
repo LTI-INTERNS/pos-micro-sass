@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import UserAvatar from "./UserAvatar";
 
 const users = [
@@ -12,6 +13,7 @@ const users = [
 ];
 
 export default function UserRow() {
+  const router = useRouter();
   return (
     <div className="relative mx-auto max-w-5xl bg-transparent">
       <div
@@ -29,11 +31,13 @@ export default function UserRow() {
           scroll-smooth
           scrollbar-hide
           bg-transparent
+          cursor-pointer
         "
       >
         {users.map((user) => (
           <div
             key={user.name}
+            onClick={() => router.push("/pinentry")}
             className="shrink-0 snap-center bg-transparent"
             style={{ width: 'calc((100% - 192px) / 5)' }}
           >
