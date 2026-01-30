@@ -25,6 +25,7 @@ const addRecExpenseFields: FieldConfig[] = [
 
 const AddRecExpensesPopup = ({ open, onClose, onSave }: AddRecExpensesPopupProps) => {
    const [latestValues, setLatestValues] = React.useState<Record<string, string>>({});
+   const [paymentType, setPaymentType] = React.useState<"cash" | "card" | "">("");
 
   return (
   
@@ -46,24 +47,44 @@ const AddRecExpensesPopup = ({ open, onClose, onSave }: AddRecExpensesPopupProps
         />
 
     <div className="mt-10 flex items-center justify-center gap-x-6 ">
-          <a href="#" className="flex h-20 w-full items-center justify-center rounded-md border border-gray-200"> <img src="/Popcard.png"  className="h-10 w-auto object-contain" alt="card" /> </a>
-          <a href="#" className="flex h-20 w-full items-center justify-center rounded-md border border-gray-200"> <img src="/Popcash.png" className="h-10 w-auto object-contain" alt="cash" /> </a>
+      <div
+        onClick={() => setPaymentType("card")}
+        className={`flex h-20 w-full cursor-pointer items-center justify-center rounded-md border
+          ${paymentType === "card" ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-200"}`}
+      >
+        <img
+          src="/Popcard.png"
+          className="h-10 w-auto object-contain"
+          alt="card"
+        />
+      </div>
+      <div
+        onClick={() => setPaymentType("cash")}
+        className={`flex h-20 w-full cursor-pointer items-center justify-center rounded-md border
+          ${paymentType === "cash" ? "border-orange-500 ring-2 ring-orange-200" : "border-gray-200"}`}
+      >
+        <img
+          src="/Popcash.png"
+          className="h-10 w-auto object-contain"
+          alt="cash"
+        />
+      </div>
     </div>
 
-      <div className="flex items-center justify-center">
-          <div className="w-105">
-            <PopupActions
-              actions={[
-                { label: "Cancel", onClick: onClose, variant: "secondary" },
-                {
-                  label: "Save",
-                  onClick: () => onSave(latestValues as any),
-                  variant: "primary",
-                },
-              ]}
-            />
-          </div>
-        </div>
+    <div className="flex items-center justify-center">
+      <div className="w-105">
+        <PopupActions
+          actions={[
+            { label: "Cancel", onClick: onClose, variant: "secondary" },
+            {
+              label: "Save",
+              onClick: () => onSave(latestValues as any),
+              variant: "primary",
+            },
+          ]}
+        />
+      </div>
+    </div>
 
 
    </div>
