@@ -1,21 +1,30 @@
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
-import { Product } from "@/app/productmanagement/data";
 
-const productColumns: Column<Product>[] = [
+export type Product = {
+  id: number;
+  name: string;
+  price: number;
+  discount: number;
+  tax: number;
+  stock: number;
+};
+type Props = {
+  products: Product[];
+};
+export default function ProductsTable({ products }: Props) {
+  const columns: Column<Product>[] = [
   { key: "id", label: "ID" },
   { key: "name", label: "Name" },
   { key: "price", label: "Price" },
   { key: "discount", label: "Discount" },
   { key: "tax", label: "Tax" },
-  { key: "stock", label: "Stock" },
-];
-
-export default function ProductsTable({ products }: { products: Product[] }) {
+  { key: "stock", label: "Stock" },];
   return (
     <CommonTable
       title="Products"
-      data={products}
-      columns={productColumns}
+      data={products} 
+      columns={columns}
+      emptyMessage="No Products found"
     />
   );
-}
+};

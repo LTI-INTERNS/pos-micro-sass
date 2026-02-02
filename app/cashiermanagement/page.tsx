@@ -17,6 +17,7 @@ import CashiersTable, {
 
 // ✅ IMPORTANT: AddCashierForm is a NAMED export
 import { AddCashierForm } from "../components/Admin/cashiermanagement/AddCashierForm";
+import FilterChips from "../components/Admin/common/FilterChips";
 
 const mockCashiers: Cashier[] = [
   {
@@ -53,6 +54,17 @@ export default function CashierManagementPage() {
     cashierNo: "",
     revenueRange: "",
   });
+      const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const handleRemoveFilter = (key: string) => {
+    setFilters((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+  };
 
   // Filter dropdown fields shown in popup
   const filterFields: SelectField[] = useMemo(() => {
@@ -160,6 +172,8 @@ export default function CashierManagementPage() {
             showFilter
             filterLabel="Filter"
             onFilter={() => setFilterOpen(true)}
+            isFilterApplied={isFilterApplied}
+            onClearFilters={clearAllFilters}
           />
 
           <FilterPopup
@@ -169,6 +183,8 @@ export default function CashierManagementPage() {
             onApply={(values) => setFilters(values)}
           />
         </div>
+
+        <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
         <CashierActionsBar
           onDeactivate={() => alert("Deactivate Cashier")}

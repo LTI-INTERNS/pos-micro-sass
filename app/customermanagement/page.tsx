@@ -8,8 +8,10 @@ import CustomerActionsBar from "@/app/components/Admin/customermanagement/custom
 import CustomersTable from "@/app/components/Admin/customermanagement/customers-table";
 import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
 import StatCardGrid from "@/app/components/Admin/customermanagement/customerStarGrid";
-import { filterRows } from "./filterRows";
 import { customersData } from "./data";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
+import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
+import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 type Customer = {
   id: number;
@@ -22,76 +24,93 @@ type Customer = {
 };
 
 export default function CustomersPage() {
-  const [query, setQuery] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [start, setStart] = useState<Date | undefined>();
+  const [end, setEnd] = useState<Date | undefined>();
+  const [search, setSearch] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
 
-  const [filters, setFilters] = useState<Record<string, string>>({
-    name: "",
-    promoCard: "",
+  const [filters, setFilters] = useState<{
+    name?: string;
+    promoCard?: string;
+  }>({});
+    const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const handleRemoveFilter = (key: string) => {
+    setFilters((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+  };
+
+  const nameOptions = getFilterOptions(customersData, "name");
+  const promoCardOptions = getFilterOptions(customersData, "promoCard");
+
+  const filteredCustomers = useTableFilters<Customer>({
+    data: customersData as Customer[],
+    search,
+    start,
+    end,
+    searchKeys: ["id", "name", "email", "promoCard"],
+    filters,
   });
-
-  const filterFields: SelectField[] = useMemo(() => {
-    const uniqueNames = Array.from(new Set(customersData.map((c: Customer) => c.name))).filter(Boolean);
-    const uniquePromoCards = Array.from(new Set(customersData.map((c: Customer) => c.promoCard))).filter(Boolean);
-
-    return [
-      {
-        name: "name",
-        placeholder: "Select Customer Name",
-        options: uniqueNames.map((n) => ({ label: n, value: n })),
-      },
-      {
-        name: "promoCard",
-        placeholder: "Select Promo Card",
-        options: uniquePromoCards.map((p) => ({ label: p, value: p })),
-      },
-    ];
-  }, []);
-
-  //  Search + popup filtering together
-  const filteredCustomers = useMemo(() => {
-    const searched = filterRows<Customer>(customersData as Customer[], query, [
-      "name",
-      "phone",
-      "email",
-      "promoCard",
-    ]);
-
-    return searched.filter((c) => {
-      if (filters.name && c.name !== filters.name) return false;
-      if (filters.promoCard && c.promoCard !== filters.promoCard) return false;
-      return true;
-    });
-  }, [query, filters]);
 
   return (
     <DashboardLayout>
-      <div className="w-full space-y-6">
-        <DateRangePicker />
+      <div className="w-full space-y-5">
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
+
         <StatCardGrid />
 
-        <div className="relative w-full">
+        <div className="relative">
           <SearchBar
-            value={query}
-            onChange={setQuery}
-            placeholder="Search customers..."
+            value={search}
+            onChange={setSearch}
+            placeholder="Search Customers..."
+            debounceMs={300}
             showFilter
-            filterLabel="Filter"
-            onFilter={() => setFilterOpen(true)}
+            onFilter={() => setShowFilter((v) => !v)}
+            isFilterApplied={isFilterApplied}
+            onClearFilters={clearAllFilters}
           />
 
           <FilterPopup
-            open={filterOpen}
-            onClose={() => setFilterOpen(false)}
-            fields={filterFields}
+            open={showFilter}
+            onClose={() => setShowFilter(false)}
             onApply={(values) => {
               setFilters(values);
-              setFilterOpen(false); 
+              setShowFilter(false);
             }}
+            fields={[
+              {
+                name: "name",
+                placeholder: "Customer Name",
+                options: nameOptions,
+              },
+              {
+                name: "promoCard",
+                placeholder: "Promo Card",
+                options: promoCardOptions,
+              },
+            ]}
+          />
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
+          <CustomerActionsBar
           />
         </div>
 
-        <CustomerActionsBar />
         <CustomersTable customers={filteredCustomers} />
       </div>
     </DashboardLayout>

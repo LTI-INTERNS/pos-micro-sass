@@ -16,6 +16,8 @@ type Props = {
   showFilter?: boolean;  // show filter button
   onFilter?: () => void; // open filter popup
   filterLabel?: string;  // button text
+  isFilterApplied?: boolean;
+  onClearFilters?: () => void;
 };
 
 export default function SearchBar({
@@ -27,6 +29,8 @@ export default function SearchBar({
   showFilter = false,
   onFilter,
   filterLabel = "Filter",
+  isFilterApplied = false,
+  onClearFilters,
   className = ""
 }: Props) {
 
@@ -92,13 +96,36 @@ export default function SearchBar({
     {/* Right: filter pill */}
     {showFilter && (
       <div className="px-3 py-2 border-l border-gray-200 flex items-center">
-        <ActionButton
-          label={filterLabel}
+        <div
           onClick={onFilter}
-          variant="outline"
-          fullWidth={false}
-          className="px-4 py-1 text-xs"
-        />
+          className={`
+            flex items-center cursor-pointer select-none
+            rounded-full py-2 text-xs font-semibold transition
+            ${isFilterApplied
+              ? "bg-orange-500 text-white hover:bg-orange-600"
+              : "border border-orange-400 bg-white text-orange-500 hover:bg-orange-50"}
+          `}
+        >
+          {/* Label */}
+          <span className="px-4">{filterLabel}</span>
+
+          {isFilterApplied && (
+            <>
+              {/* Divider */}
+              <span className="h-4 w-px bg-white/60" />
+              {/* Clear filters */}
+              <span
+                onClick={(e) => {
+                  e.stopPropagation(); // ⛔ don’t open popup
+                  onClearFilters?.();
+                }}
+                className="px-3 hover:bg-white/20 rounded-r-full"
+              >
+                <X size={12} />
+              </span>
+            </>
+          )}
+        </div>
       </div>
     )}
   </div>

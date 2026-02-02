@@ -20,6 +20,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Staff Management', path: '/staffmanagement' },
     { label: 'Customers Management', path: '/customermanagement' },
     { label: 'Products Management', path: '/productmanagement' },
+    { label: 'Order Management', path: '/ordermanagement' },
     { label: 'Cashier Management', path: '/cashiermanagement' },
     { label: 'Expenses Management', path: '/expensesmanagement' },
     { label: 'Profit Calculation', path: '/profitcalculation' },
