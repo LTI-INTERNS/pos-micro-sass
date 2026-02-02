@@ -6,24 +6,28 @@ export const statCards = [
     value: "342",
     percentage: "+4.2%",
     trend: "up",
+    caption: "vs last month",
   },
   {
     title: "Low Stock Products",
     value: "12",
     percentage: "-1.5%",
     trend: "down",
+    caption: "vs last month",
   },
   {
     title: "Total Sales",
     value: "$1,290",
     percentage: "+2.2%",
     trend: "up",
+    caption: "vs last month",
   },
   {
     title: "Expenses",
     value: "$1,940",
     percentage: "+4.0%",
     trend: "up",
+    caption: "vs last month",
   },
 ];
 
