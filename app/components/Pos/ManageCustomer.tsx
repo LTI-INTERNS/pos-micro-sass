@@ -88,8 +88,8 @@ export default function ManageCustomer({ onClose, onAddCustomer}: Props) {
       </div>
        <div className="flex justify-center gap-4 mt-8">
            <div className="flex justify-center gap-4 w-full max-w-md mx-auto">
-                <Buttons onClick={onClose} label="Cancel" className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50"/>
-                <Buttons onClick={onAddCustomer} label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600"/>
+                <Buttons onClick={onClose} label="Cancel" className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50 transition-all active:scale-90"/>
+                <Buttons onClick={onAddCustomer} label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-90"/>
            </div>
 
        </div>
