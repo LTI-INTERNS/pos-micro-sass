@@ -3,13 +3,13 @@ import StatCard from '@/app/components/Admin/common/StatCard';;
 const statCards = [
   {
     title: "Total Expenses",
-    value: "34,250 LKR",
+    value: "LKR 34,250",
     percentage: "+4.2%",
     trend: "up" as const,
   },
   {
     title: "New Expences",
-    value: "12,000 LKR",
+    value: "LKR 12,000",
     percentage: "-1.5%",
     trend: "down" as const,
   },
