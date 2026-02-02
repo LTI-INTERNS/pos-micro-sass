@@ -14,8 +14,12 @@ type AddProductPopupProps = {
     discount: string;
     tax: string;
     stock: string;
+    imageUrl?: string;
   }) => void;
 };
+
+const MAX_IMAGE_SIZE_MB = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg","image/jpg", "image/png"];
 
 const addProductFields: FieldConfig[] = [
   { name: "name", label: "Name", placeholder: "Enter name", type: "text" },
@@ -27,6 +31,66 @@ const addProductFields: FieldConfig[] = [
 
 export default function AddProductPopup({ open, onClose, onSave }: AddProductPopupProps) {
   const [latestValues, setLatestValues] = React.useState<Record<string, string>>({});
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+  const [imageError, setImageError] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+
+  const handleImageChange = (file: File | null) => {
+    setImageError(null);
+
+    if (!file) {
+      setImageFile(null);
+      setImagePreview(null);
+      return;
+    }
+
+    //Type validation
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setImageError("Only JPG, JPEG, or PNG images are allowed");
+      return;
+    }
+
+    //Size validation
+    const sizeInMB = file.size / (1024 * 1024);
+    if (sizeInMB > MAX_IMAGE_SIZE_MB) {
+      setImageError(`Image size must be less than ${MAX_IMAGE_SIZE_MB}MB`);
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+
+     if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSave = () => {
+    /** 
+     * Api logic for image upload can be added here
+     * For now, we just pass the image file name as imageUrl
+    */
+   const payload = {
+      ...latestValues,
+
+      // TEMP: image URL placeholder
+      imageUrl : imagePreview || "",
+  };
+
+    /** 
+     * Save `payload` to database
+     */
+
+    onSave(payload as any);
+  }
 
   return (
     <ModalShell open={open} title="Add New Product" onClose={onClose} widthClassName="w-[980px] max-w-[92vw]">
@@ -38,6 +102,47 @@ export default function AddProductPopup({ open, onClose, onSave }: AddProductPop
             onSave(values as any);
           }}
         />
+         <div className="space-y-2">
+          <label className="text-[12px] text-gray-500">Product Image</label>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={(e) => handleImageChange(e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-500
+              file:mr-4 file:rounded-full file:border-0
+              file:bg-orange-50 file:px-4 file:py-2
+              file:text-sm file:font-medium file:text-orange-600
+              hover:file:bg-orange-100 hover:file:cursor-pointer"
+          />
+
+          {/* Error Message */}
+          {imageError && (
+            <p className="text-xs text-red-500">{imageError}</p>
+          )}
+
+          {/* Preview with Remove */}
+          {imagePreview && (
+            <div className="relative mt-2 h-28 w-28">
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="h-full w-full rounded-lg object-cover border"
+              />
+
+              <button
+                type="button"
+                onClick={removeImage}
+                className="absolute -top-2 -right-2 h-6 w-6 rounded-full
+                  bg-black/70 text-white flex items-center justify-center
+                  text-xs hover:bg-black cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-center">
           <div className="w-[420px]">
