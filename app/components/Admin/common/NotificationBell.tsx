@@ -30,8 +30,8 @@ export default function NotificationBell() {
     },
     {
       id: 2,
-      message: "Low stock: Coca Cola 1L",
-      type: "warning",
+      message: "Request Coca Cola 1L",
+      type: "info",
       time: "10 mins ago",
       read: false,
       product: {
