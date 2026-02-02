@@ -6,22 +6,18 @@ import CustomerInfoPanel, {
 } from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
-import OrderPaymentModal from "../components/Pos/posdashboard/OrderPaymentModal"; // ✅ added
+import OrderPaymentModal from "../components/Pos/posdashboard/OrderPaymentModal";
 
 const page = () => {
   const [search, setSearch] = useState("");
   const [showCustomerPopup, setShowCustomerPopup] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-
-  
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<{
     orderNo: string;
     totalAmount: number;
     tipAmount: number;
   } | null>(null);
-
-  
   const orderNo = useMemo(() => {
     return `ORD-${new Date().getTime()}`;
   }, []);
@@ -56,35 +52,42 @@ const page = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex gap-6">
-        <div className="flex-1 flex flex-col">
-          <div className="pt-2">
+      
+      <div className="flex gap-6 h-[calc(100vh-96px)]">
+       
+        <div className="flex-1 flex flex-col overflow-hidden">
+          
+          <div className="pt-2 shrink-0">
             <SearchBar
               value={search}
               onChange={setSearch}
               placeholder="Search Name or ID"
               className="py-2"
             />
-          </div>
-
+          </div>   
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
             <FoodGrid search={search} onAdd={handleAddFood} />
           </div>
         </div>
 
-        <div className="w-md sticky h-[calc(100vh-96px)]">
+        
+        <div className="w-md sticky top-0 h-[calc(100vh-76px)]">
           <CustomerInfoPanel
             items={orderItems}
             onAddCustomer={() => setShowCustomerPopup(true)}
             onInc={(id) =>
               setOrderItems((prev) =>
-                prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it))
+                prev.map((it) =>
+                  it.id === id ? { ...it, qty: it.qty + 1 } : it
+                )
               )
             }
             onDec={(id) =>
               setOrderItems((prev) =>
                 prev
-                  .map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it))
+                  .map((it) =>
+                    it.id === id ? { ...it, qty: it.qty - 1 } : it
+                  )
                   .filter((it) => it.qty > 0)
               )
             }
@@ -93,7 +96,6 @@ const page = () => {
                 prev.map((it) => (it.id === id ? { ...it, qty } : it))
               )
             }
-            
             onPay={({ total }) => {
               setPaymentData({
                 orderNo,
@@ -114,8 +116,6 @@ const page = () => {
           />
         </div>
       )}
-
-      
       <OrderPaymentModal
         open={paymentOpen}
         onClose={() => setPaymentOpen(false)}
