@@ -40,6 +40,8 @@ export default function NotificationBell() {
         discount: "0",
         tax: "8",
         stock: "3",
+        branchName: "Main Branch",
+        branchManager: "John Doe",
       },
     },
     {
@@ -82,7 +84,11 @@ export default function NotificationBell() {
 
     // If product payload exists → open product popup
     if (n.product) {
-      setProductData(n.product);
+      setProductData({
+        ...n.product,
+        branchName: n.product.branchName || "",
+        branchManager: n.product.branchManager || "",
+      });
       setProductPopupOpen(true);
       return;
     }
@@ -132,7 +138,7 @@ export default function NotificationBell() {
         onClose={() => setProductPopupOpen(false)}
         initialValues={productData}
         onSave={(values) => {
-          console.log("Saved product from notification:", values);
+          console.log("check product from notification:", values);
           setProductPopupOpen(false);
         }}
       />

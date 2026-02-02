@@ -10,10 +10,13 @@ export type ProductNotifyValues = {
   discount: string;
   tax: string;
   stock: string;
+  branchName: string;
+  branchManager: string;
 };
 
 export type ProductNotifySubmit = ProductNotifyValues & {
   description: string; 
+  action: "APPROVED" | "REJECTED";
 };
 
 type Props = {
@@ -29,10 +32,13 @@ type Props = {
 
 function ReadOnlyRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid grid-cols-12 gap-3 items-center">
-      <p className="col-span-4 text-sm text-gray-500 font-medium">{label}</p>
+    <div className="grid grid-cols-12 gap-2 items-center">
+      <p className="col-span-4 text-sm text-gray-500 font-medium">
+        {label}
+      </p>
       <div className="col-span-8">
-        <div className="h-11 rounded-full border border-gray-200 bg-gray-100 px-5 flex items-center text-sm text-gray-700">
+        <div className="h-9 rounded-full border border-gray-200 bg-gray-100 px-4
+flex items-center text-sm text-gray-700">
           {value || "-"}
         </div>
       </div>
@@ -55,23 +61,31 @@ export default function ProductNotificationPopup({
 
   if (!open || !initialValues) return null;
 
-  const handleAccept = () => {
-    onSave({
-      ...initialValues,
-      description: description.trim(),
-    });
-  };
+const handleAccept = () => {
+  onSave({
+    ...initialValues,
+    description: "", // optional for accept
+    action: "APPROVED",
+  });
+};
+const handleReject = () => {
+  onSave({
+    ...initialValues,
+    description: description.trim(),
+    action: "REJECTED",
+  });
+};
 
   return (
     <ModalShell
-      open={open}
-      title="Product Notification"
-      onClose={onClose}
-      widthClassName="w-[980px] max-w-[92vw]"
-    >
-      <div className="space-y-6">
+   open={open}
+  title={`Product Approve Request From:-  ${initialValues.branchName} (${initialValues.branchManager})`}
+  onClose={onClose}
+  widthClassName="w-[760px] max-w-[90vw]"
+>
+      <div className="space-y-4">
         {/*  Read-only Product Details */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <ReadOnlyRow label="Name" value={initialValues.name} />
           <ReadOnlyRow label="Price" value={initialValues.price} />
           <ReadOnlyRow label="Discount" value={initialValues.discount} />
@@ -80,7 +94,7 @@ export default function ProductNotificationPopup({
         </div>
 
         {/* Only editable field: Description */}
-        <div className="grid grid-cols-12 gap-3">
+        <div className="grid grid-cols-12 gap-2">
           <label className="col-span-4 text-sm text-gray-500 font-medium pt-2">
             Description
           </label>
@@ -99,17 +113,21 @@ export default function ProductNotificationPopup({
         {/*  Actions */}
         <div className="flex items-center justify-center">
           <div className="w-[420px]">
-            <PopupActions
-              actions={[
-                { label: "Reject", onClick: onClose, variant: "secondary" },
-                {
-                  label: "Accept",
-                  onClick: handleAccept,
-                  variant: "primary",
-                  disabled: description.trim().length === 0, // optional: require description
-                },
-              ]}
-            />
+<PopupActions
+  actions={[
+    {
+      label: "Accept",
+      onClick: handleAccept,
+      variant: "secondary",
+    },
+    {
+      label: "Reject & Notify",
+      onClick: handleReject,
+      variant: "primary",
+      disabled: description.trim().length === 0, // reject needs reason
+    },
+  ]}
+/>
           </div>
         </div>
       </div>

@@ -15,6 +15,8 @@ export type Notification = {
     discount: string;
     tax: string;
     stock: string;
+    branchName?: string;
+    branchManager?:string;
   };
 };
 
