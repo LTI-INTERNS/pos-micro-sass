@@ -8,13 +8,25 @@ export type Notification = {
   type: NotificationType;
   time: string;
   read: boolean;
+
+    product?: {
+    name: string;
+    price: string;
+    discount: string;
+    tax: string;
+    stock: string;
+  };
 };
 
 type Props = {
   notifications: Notification[];
   onClose: () => void;
-  onMarkAsRead?: (id: number) => void; // optional (for later)
-  onMarkAllAsRead?: () => void; // optional (for later)
+
+  // optional features
+  onMarkAsRead?: (id: number) => void;
+  onMarkAllAsRead?: () => void;
+
+  onOpenMessage?: (n: Notification) => void;
 };
 
 const typeStyles: Record<NotificationType, string> = {
@@ -29,6 +41,7 @@ export default function NotificationPanel({
   onClose,
   onMarkAsRead,
   onMarkAllAsRead,
+  onOpenMessage,
 }: Props) {
   return (
     <>
@@ -64,7 +77,10 @@ export default function NotificationPanel({
             <button
               key={n.id}
               type="button"
-              onClick={() => onMarkAsRead?.(n.id)}
+              onClick={() => {
+                onMarkAsRead?.(n.id);
+               onOpenMessage?.(n);
+              }}
               className={`w-full text-left px-4 py-3 border-b border-l-4 text-sm ${
                 typeStyles[n.type]
               } ${!n.read ? "font-semibold" : "opacity-80"} hover:opacity-100`}

@@ -3,7 +3,6 @@
 import Clock from '../../Landing/clock';
 import { Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import LockButton from './LockButton';
 import NotificationBell from './NotificationBell';
 
 
@@ -40,8 +39,6 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
       
       <div className="flex items-center gap-4">
         <Clock variant="navbar" />
-        {/* 🔒 Lock Button */}
-         <LockButton redirectTo="/login" />
         <NotificationBell />
         <button
           onClick={handleLogout} 

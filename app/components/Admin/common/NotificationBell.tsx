@@ -3,11 +3,23 @@
 import { useMemo, useState } from "react";
 import { Bell } from "lucide-react";
 import NotificationPanel, { type Notification } from "./NotificationPanel";
+import NotificationMessagePopup from "./NotificationMessagePopup";
+
+import ProductNotificationPopup, {
+  type ProductNotifyValues,
+} from "../productmanagement/ProductNotificationPopup";
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
 
-  // ✅ mock notifications for now (replace with API later)
+  // message popup state
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [selected, setSelected] = useState<Notification | null>(null);
+
+  // product popup state
+  const [productPopupOpen, setProductPopupOpen] = useState(false);
+  const [productData, setProductData] = useState<ProductNotifyValues | null>(null);
+
   const [notifications, setNotifications] = useState<Notification[]>([
     {
       id: 1,
@@ -18,10 +30,17 @@ export default function NotificationBell() {
     },
     {
       id: 2,
-      message: "Product A stock is low",
+      message: "Low stock: Coca Cola 1L",
       type: "warning",
       time: "10 mins ago",
       read: false,
+      product: {
+        name: "Coca Cola 1L",
+        price: "450",
+        discount: "0",
+        tax: "8",
+        stock: "3",
+      },
     },
     {
       id: 3,
@@ -54,6 +73,25 @@ export default function NotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
+  // open correct popup depending on notification payload
+  const openMessagePopup = (n: Notification) => {
+    markAsRead(n.id);
+
+    // Close panel (clean UX)
+    setOpen(false);
+
+    // If product payload exists → open product popup
+    if (n.product) {
+      setProductData(n.product);
+      setProductPopupOpen(true);
+      return;
+    }
+
+    // otherwise open normal message popup
+    setSelected(n);
+    setPopupOpen(true);
+  };
+
   return (
     <div className="relative">
       <button
@@ -77,8 +115,27 @@ export default function NotificationBell() {
           onClose={() => setOpen(false)}
           onMarkAsRead={markAsRead}
           onMarkAllAsRead={markAllAsRead}
+          onOpenMessage={openMessagePopup}
         />
       )}
+
+      {/* normal notification popup */}
+      <NotificationMessagePopup
+        open={popupOpen}
+        data={selected}
+        onClose={() => setPopupOpen(false)}
+      />
+
+      {/*  product notification popup */}
+      <ProductNotificationPopup
+        open={productPopupOpen}
+        onClose={() => setProductPopupOpen(false)}
+        initialValues={productData}
+        onSave={(values) => {
+          console.log("Saved product from notification:", values);
+          setProductPopupOpen(false);
+        }}
+      />
     </div>
   );
 }
