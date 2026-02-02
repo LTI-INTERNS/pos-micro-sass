@@ -2,14 +2,14 @@ import StatCard from "@/app/components/Admin/common/StatCard";
 
 const statCards = [
   {
-    title: "All Products",
+    title: "All Orders",
     value: "342",
     percentage: "+2.5%",
     trend: "up" as const,
     caption: "vs last month",
   },
   {
-    title: "New Products",
+    title: "New Orders",
     value: "12",
     percentage: "+1.5%",
     trend: "down" as const,

@@ -2,12 +2,14 @@ import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
 import { Order } from "@/app/ordermanagement/data";
 
 const orderColumns: Column<Order>[] = [
-  { key: "id", label: "ID" },
-  { key: "name", label: "Name" },
-  { key: "price", label: "Price" },
-  { key: "discount", label: "Discount" },
-  { key: "tax", label: "Tax" },
-  { key: "stock", label: "Stock" },
+  { key: "id", label: "Order ID" },
+  { key: "dateTime", label: "Date & Time" },
+  { key: "branch", label: "Branch" },
+  { key: "cashier", label: "Cashier" },
+  { key: "paymenttype", label: "Payment" },
+  { key: "totalamount", label: "Total Amount", align: "right" },
+  { key: "status", label: "Status" },
+  { key: "action", label: "Action" },
 ];
 
 export default function OrdersTable({ orders }: { orders: Order[] }) {
