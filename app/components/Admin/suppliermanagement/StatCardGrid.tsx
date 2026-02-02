@@ -5,12 +5,14 @@ export const supplierStatCards = [
     value: "342",
     percentage: "+4.2%",
     trend: "up",
+    caption: "vs last month",
   },
   {
     title: "New Suppliers",
     value: "12",
     percentage: "-1.5%",
     trend: "down",
+    caption: "vs last month",
   },
   
 ];
@@ -26,6 +28,8 @@ export default function StatCardGrid() {
           value={card.value}
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
+          caption={card.caption}
+          showDetailButton={false}
         />
       ))}
     </div>

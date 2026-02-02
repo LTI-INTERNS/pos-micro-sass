@@ -6,12 +6,14 @@ const statCards = [
     value: "34,250 LKR",
     percentage: "+4.2%",
     trend: "up" as const,
+    caption: "vs last month",
   },
   {
     title: "New Expences",
     value: "12,000 LKR",
     percentage: "-1.5%",
     trend: "down" as const,
+    caption: "vs last month",
   },
 ];
   
@@ -25,6 +27,7 @@ export default function StatCardGrid() {
           value={card.value}
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
+          caption={card.caption}
           showDetailButton={false}
         />
       ))}
