@@ -4,6 +4,7 @@ type ActionButton = {
   label: string;
   onClick: () => void;
   variant?: "primary" | "secondary";
+  disabled?: boolean;
 };
 
 type PopupActionsProps = {
@@ -22,7 +23,7 @@ export default function PopupActions({ actions }: PopupActionsProps) {
             type="button"
             onClick={action.onClick}
             className={`
-              w-full rounded-full py-3 font-semibold transition active:scale-[0.98]
+              w-full rounded-full py-3 font-semibold transition-all active:scale-90
               ${
                 isPrimary
                   ? "bg-orange-500 text-white hover:bg-orange-600 cursor-pointer"

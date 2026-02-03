@@ -33,7 +33,7 @@ export default function ActionButton({
   };
 
   return (
-    <button onClick={onClick} className={`${base} ${styles[variant]} ${className}`}>
+    <button onClick={onClick} className={`${base} ${styles[variant]} ${className} transition-all active:scale-90`}>
       {label}
     </button>
   );

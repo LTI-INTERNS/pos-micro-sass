@@ -52,6 +52,11 @@ export default function AddStaffPopup({ onClose }: Props) {
       type: "email"
     },
     {
+      name: "phone",
+      label: "Phone",
+      placeholder: "Enter Phone number",
+    },
+    {
       name: "password",
       label: "Password",
       placeholder: "Enter password",
@@ -83,6 +88,7 @@ export default function AddStaffPopup({ onClose }: Props) {
           staffNo: "",
           position: "",
           email: "",
+          phone: "",
           password: "",
           pin: "",
         }}
