@@ -5,6 +5,13 @@ import ManageCustomer from "./ManageCustomer";
 import AddCustomerForm from "./posdashboard/AddCustomerForm";
 import { CustomerFormValues } from "@/app/components/Admin/common/AddCustomerModal";
 
+type Customer = {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+};
+
 type Props = {
   onClose: () => void;
   onCustomerSelected: (customer: CustomerFormValues) => void;
@@ -26,14 +33,25 @@ export default function ManageCustomersPopup({
             setShowManage(false);
             setShowAdd(true);
           }}
+          onCustomerSelected={(customer: Customer) => {
+            
+            onCustomerSelected({
+              name: customer.name,
+              phoneNumber: customer.phone,
+              email: customer.email,
+            });
+            onClose();
+          }}
         />
       )}
 
       <AddCustomerForm
         open={showAdd}
         onClose={onClose}
-        onSubmit={(customer: CustomerFormValues) => {
-          onCustomerSelected(customer); // 🔥 pass back to CustomerInfoPanel
+        onSubmit={(customer) => {
+          // Already CustomerFormValues
+          onCustomerSelected(customer);
+          onClose();
         }}
       />
     </div>
