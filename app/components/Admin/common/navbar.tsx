@@ -42,7 +42,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
         <NotificationBell />
         <button
           onClick={handleLogout} 
-          className="bg-orange-100 text-primary px-4 py-1 cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold">
+          className="bg-orange-100 text-primary px-4 py-1 hover:bg-orange-500 hover:text-white cursor-pointer rounded-full text-orange-500 text-[13px] font-semibold transition-all active:scale-90">
           Log Out
         </button>
       </div>
