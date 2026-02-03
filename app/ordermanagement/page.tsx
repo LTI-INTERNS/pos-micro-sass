@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/app/components/Admin/ordermanagement/orderStarCardGrid";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
 import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
 import OrdersTable from "@/app/components/Admin/ordermanagement/order-table";
-import { filterRows } from "./filterRows";
 import { ordersData } from "./data";
+import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
+import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 type Order = {
   id: number;
@@ -21,82 +23,95 @@ type Order = {
 };
 
 export default function DashboardPage() {
-  const [query, setQuery] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [start, setStart] = useState<Date | undefined>();
+  const [end, setEnd] = useState<Date | undefined>();
 
-  const [filters, setFilters] = useState<Record<string, string>>({
-    branch: "",
-    paymenttype: "",
-    status: "",
+  const [search, setSearch] = useState("");
+  const [showFilter, setShowFilter] = useState(false);
+
+  const [filters, setFilters] = useState<{
+    branch?: string;
+    paymenttype?: string;
+    status?: string;
+  }>({});
+
+  const isFilterApplied = Object.values(filters).some((v) => v && v.trim() !== "");
+
+  const handleRemoveFilter = (key: string) => {
+    setFilters((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+  };
+
+  const branchOptions = getFilterOptions(ordersData as Order[], "branch");
+  const paymentTypeOptions = getFilterOptions(ordersData as Order[], "paymenttype");
+  const statusOptions = getFilterOptions(ordersData as Order[], "status");
+
+  const filterFields: SelectField[] = [
+    {
+      name: "branch",
+      placeholder: "Select Branch",
+      options: branchOptions,
+    },
+    {
+      name: "paymenttype",
+      placeholder: "Select Payment Type",
+      options: paymentTypeOptions,
+    },
+    {
+      name: "status",
+      placeholder: "Select Status",
+      options: statusOptions,
+    },
+  ];
+
+  const filteredOrders = useTableFilters<Order>({
+    data: ordersData as Order[],
+    search,
+    start,
+    end,
+    searchKeys: ["id", "dateTime", "cashier",  "totalamount"],
+    filters,
   });
-
-  const filterFields: SelectField[] = useMemo(() => {
-    const uniqueBranches = Array.from(new Set(ordersData.map((o) => o.branch))).filter(Boolean) as string[];
-    const uniquePaymentTypes = Array.from(new Set(ordersData.map((o) => o.paymenttype))).filter(Boolean) as string[];
-    const uniqueStatuses = Array.from(new Set(ordersData.map((o) => o.status))).filter(Boolean) as string[];
-
-    return [
-      {
-        name: "branch",
-        placeholder: "Select Branch",
-        options: uniqueBranches.map((b) => ({ label: b, value: b })),
-      },
-      {
-        name: "paymenttype",
-        placeholder: "Select Payment Type",
-        options: uniquePaymentTypes.map((p) => ({ label: p, value: p })),
-      },
-      {
-        name: "status",
-        placeholder: "Select Status",
-        options: uniqueStatuses.map((s) => ({ label: s, value: s })),
-      },
-    ];
-  }, []);
-
-  const filteredOrders = useMemo(() => {
-    const searched = filterRows<Order>(ordersData as Order[], query, [
-      "id",
-      "dateTime",
-      "branch",
-      "cashier",
-      "paymenttype",
-      "totalamount",
-      "status",
-    ]);
-
-    return searched.filter((o) => {
-      if (filters.branch && o.branch !== filters.branch) return false;
-      if (filters.paymenttype && o.paymenttype !== filters.paymenttype) return false;
-      if (filters.status && o.status !== filters.status) return false;
-      return true;
-    });
-  }, [query, filters]);
 
   return (
     <DashboardLayout>
-      <div className="w-full space-y-6">
-        <DateRangePicker />
-
-        <div className="relative w-full">
+      <div className="w-full space-y-5">
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
+        <StatCardGrid />
+        <div className="relative">
           <SearchBar
-            value={query}
-            onChange={setQuery}
+            value={search}
+            onChange={setSearch}
             placeholder="Search orders..."
+            debounceMs={300}
             showFilter
-            filterLabel="Filter"
-            onFilter={() => setFilterOpen(true)}
+            onFilter={() => setShowFilter((v) => !v)}
+            isFilterApplied={isFilterApplied}
+            onClearFilters={clearAllFilters}
           />
 
           <FilterPopup
-            open={filterOpen}
-            onClose={() => setFilterOpen(false)}
-            fields={filterFields}
+            open={showFilter}
+            onClose={() => setShowFilter(false)}
             onApply={(values) => {
               setFilters(values);
-              setFilterOpen(false);
+              setShowFilter(false);
             }}
+            fields={filterFields}
           />
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
         </div>
 
         <OrdersTable orders={filteredOrders} />
