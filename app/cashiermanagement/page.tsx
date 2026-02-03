@@ -57,6 +57,17 @@ export default function CashierManagementPage() {
     revenueRange: "",
     status: "",
   });
+      const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const handleRemoveFilter = (key: string) => {
+    setFilters((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+  };
 
   // Filter dropdown fields shown in popup
   const filterFields: SelectField[] = useMemo(() => {
@@ -205,6 +216,8 @@ export default function CashierManagementPage() {
             onApply={(values) => setFilters(values)}
           />
         </div>
+
+        <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
         <CashierActionsBar
           onDeactivate={() => alert("Deactivate Cashier")}
