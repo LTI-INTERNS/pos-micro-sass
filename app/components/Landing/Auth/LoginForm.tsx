@@ -5,8 +5,14 @@ import { User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type LoginResponse =
-  | { ok: true; role: "admin" | "cashier"; emailVerified: boolean; email: string }
+  | {
+      ok: true;
+      role: "admin" | "cashier" | "superadmin";
+      emailVerified: boolean;
+      email: string;
+    }
   | { ok: false; message: string };
+
 
 export default function LoginForm() {
   const router = useRouter();
@@ -77,16 +83,25 @@ export default function LoginForm() {
         throw new Error(!data.ok ? data.message : "Login failed");
       }
 
-      if (!data.emailVerified) {
+
+      if (
+        (data.role === "admin" || data.role === "cashier") &&
+        !data.emailVerified
+      ){
         setNeedsVerify(true);
         setPendingEmail(data.email);
         setError("Your email is not verified. Please verify to continue.");
-        return; 
+      return; 
       }
 
       localStorage.removeItem("isLocked");
       setIsLocked(false);
-
+      if (data.role === "superadmin") {
+        router.push("/overview");
+        console.log("Superadmin logged in");
+        return;
+      }
+      
       if (data.role === "admin") {
         router.push("/overview");
         console.log("Admin logged in");
