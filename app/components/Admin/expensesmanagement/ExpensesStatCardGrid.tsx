@@ -9,7 +9,7 @@ const statCards = [
     caption: "vs last month",
   },
   {
-    title: "New Expences",
+    title: "New Expenses",
     value: "LKR 12,000",
     percentage: "-1.5%",
     trend: "down" as const,
