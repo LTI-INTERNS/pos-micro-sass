@@ -11,8 +11,6 @@ import { useTableFilters, getFilterOptions } from "../components/Admin/common/Fi
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
 import { productsData } from "./data";
-import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 
 export default function DashboardPage() {
@@ -56,19 +54,11 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full space-y-5">
-        <DateRangePicker
-          startDate={start}
-          endDate={end}
-          onChange={(s, e) => {
-            setStart(s);
-            setEnd(e);
-          }}
-        />
-
+      <div className="w-full space-y-6">
+        <DateRangePicker />
         <StatCardGrid />
 
-        <div className="relative">
+        <div className="relative w-full">
           <SearchBar
             value={search}
             onChange={setSearch}
@@ -89,7 +79,7 @@ export default function DashboardPage() {
             onClose={() => setFilterOpen(false)}
             onApply={(values) => {
               setFilters(values);
-              setShowFilter(false);
+              setFilterOpen(false); 
             }}
             fields={[
               {
@@ -120,8 +110,9 @@ export default function DashboardPage() {
             ]}
           />
         </div>
-        <FilterChips filters={filters} onRemove={handleRemoveFilter} />
+
         <ProductActionsBar />
+
         <ProductsTable products={filteredProducts} />
       </div>
     </DashboardLayout>
