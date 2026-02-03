@@ -15,20 +15,6 @@ const statCards = [
     trend: "down" as const,
     caption: "vs last month",
   },
-  {
-    title: "Low Stock",
-    value: "12",
-    percentage: "+1.5%",
-    trend: "down" as const,
-    caption: "vs last month",
-  },
-  {
-    title: "Available Stock",
-    value: "12",
-    percentage: "+1.5%",
-    trend: "down" as const,
-    caption: "vs last month",
-  },
 ];
 
 export default function StatCardGrid() {
