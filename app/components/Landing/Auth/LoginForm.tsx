@@ -5,7 +5,7 @@ import { User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type LoginResponse =
-  | { ok: true; role: "admin" | "cashier" }
+  | { ok: true; role: "admin" | "cashier"; emailVerified: boolean; email: string }
   | { ok: false; message: string };
 
 export default function LoginForm() {
