@@ -17,7 +17,7 @@ import CashiersTable, {
 
 // ✅ IMPORTANT: AddCashierForm is a NAMED export
 import { AddCashierForm } from "../components/Admin/cashiermanagement/AddCashierForm";
-import FilterChips from "../components/Admin/common/FilterChips";
+import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 const mockCashiers: Cashier[] = [
   {
@@ -28,6 +28,7 @@ const mockCashiers: Cashier[] = [
     email: "abc@email.com",
     passwordMasked: "*****",
     pinMasked: "****",
+    status: "Active"
   },
   {
     id: "002",
@@ -37,6 +38,7 @@ const mockCashiers: Cashier[] = [
     email: "john@email.com",
     passwordMasked: "*****",
     pinMasked: "****",
+    status: "Deactive"
   },
 ];
 
@@ -53,6 +55,7 @@ export default function CashierManagementPage() {
   const [filters, setFilters] = useState<Record<string, string>>({
     cashierNo: "",
     revenueRange: "",
+    status: "",
   });
       const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -71,6 +74,7 @@ export default function CashierManagementPage() {
     const uniqueCashierNos = Array.from(
       new Set(mockCashiers.map((c) => c.cashierNo))
     );
+    
 
     return [
       {
@@ -86,6 +90,14 @@ export default function CashierManagementPage() {
           { label: "100,000 and Above", value: "gte100k" },
         ],
       },
+      {
+        name: "status",
+        placeholder: "Select Status",
+        options: [
+          { label: "Active", value: "Active" },
+          { label: "Deactive", value: "Deactive" },
+        ],
+      }
     ];
   }, []);
 
@@ -114,6 +126,8 @@ export default function CashierManagementPage() {
         if (filters.revenueRange === "gte100k" && c.totalRevenue < 100000)
           return false;
 
+        if (filters.status && c.status !== filters.status) return false;
+
         return true;
       });
   }, [query, filters]);
@@ -127,6 +141,7 @@ export default function CashierManagementPage() {
       "Email",
       "Password",
       "Pin",
+      "status",
     ];
 
     const csvRows = [
@@ -140,6 +155,7 @@ export default function CashierManagementPage() {
           r.email,
           r.passwordMasked,
           r.pinMasked,
+          r.status,
         ]
           .map((v) => `"${String(v).replaceAll('"', '""')}"`)
           .join(",")
@@ -158,6 +174,18 @@ export default function CashierManagementPage() {
     URL.revokeObjectURL(url);
   }
 
+  const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const removeFilter = (key: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
+  };
+
+
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
@@ -173,7 +201,12 @@ export default function CashierManagementPage() {
             filterLabel="Filter"
             onFilter={() => setFilterOpen(true)}
             isFilterApplied={isFilterApplied}
-            onClearFilters={clearAllFilters}
+            onClearFilters={() => setFilters({})}
+          />
+
+          <FilterChips
+            filters={filters}
+            onRemove={removeFilter}
           />
 
           <FilterPopup

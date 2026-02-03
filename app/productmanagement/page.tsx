@@ -6,56 +6,53 @@ import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
 import StatCardGrid from "@/app/components/Admin/productmanagement/productStarCardGrid";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
 import ProductActionsBar from "@/app/components/Admin/productmanagement/product-actions";
-import FilterPopup from "@/app/components/Admin/common/FilterPopup";
+import FilterPopup from "../components/Admin/common/FilterPopup";
+import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import FilterChips from "@/app/components/Admin/common/FilterChips";
 import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
 import { productsData } from "./data";
 import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  discount: number;
-  tax: number;
-  stock: number;
-};
 
-export default function ProductsPage() {
-  const [start, setStart] = useState<Date | undefined>();
-  const [end, setEnd] = useState<Date | undefined>();
-
+export default function DashboardPage() {
   const [search, setSearch] = useState("");
-  const [showFilter, setShowFilter] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+
 
   const [filters, setFilters] = useState<{
+    category?: string;
+    discount?: string;
     tax?: string;
     stock?: string;
+    lowstock?: string;
   }>({});
-    const isFilterApplied = Object.values(filters).some(
+
+  const categoryOptions = getFilterOptions(productsData, "category");
+  const discountOptions = getFilterOptions(productsData, "discount");
+  const taxOptions = getFilterOptions(productsData, "tax");
+  const stockOptions = getFilterOptions(productsData, "stock");
+  const lowStockOptions = getFilterOptions(productsData, "lowstock");
+
+  const filteredProducts = useTableFilters({
+      data: productsData,
+      search,
+      searchKeys: ["id", "name", "category", "supplier"],
+      filters,
+    });
+
+  const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
   );
 
-  const handleRemoveFilter = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: "" }));
+  const removeFilter = (key: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
   };
 
-  const clearAllFilters = () => {
-    setFilters({});
-  };
 
-
-  const taxOptions = getFilterOptions(productsData, "tax");
-  const stockOptions = getFilterOptions(productsData, "stock");
-
-  const filteredProducts = useTableFilters<Product>({
-    data: productsData as Product[],
-    search,
-    start,
-    end,
-    searchKeys: ["id", "name", "price"],
-    filters,
-  });
 
   return (
     <DashboardLayout>
@@ -75,24 +72,51 @@ export default function ProductsPage() {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search Products..."
-            debounceMs={300}
+            placeholder="Search products..."
             showFilter
-            onFilter={() => setShowFilter((v) => !v)}
+            filterLabel="Filter"
+            onFilter={() => setFilterOpen(true)}
             isFilterApplied={isFilterApplied}
-            onClearFilters={clearAllFilters}
+            onClearFilters={() => setFilters({})}
+          />
+          <FilterChips
+            filters={filters}
+            onRemove={removeFilter}
           />
 
           <FilterPopup
-            open={showFilter}
-            onClose={() => setShowFilter(false)}
+            open={filterOpen}
+            onClose={() => setFilterOpen(false)}
             onApply={(values) => {
               setFilters(values);
               setShowFilter(false);
             }}
             fields={[
-              { name: "tax", placeholder: "Tax", options: taxOptions },
-              { name: "stock", placeholder: "Stock", options: stockOptions },
+              {
+                name: "category",
+                placeholder: "Category",
+                options: categoryOptions,
+              },
+              {
+                name: "discount",
+                placeholder: "Discount",
+                options: discountOptions,
+              },
+              {
+                name: "tax",
+                placeholder: "Tax",
+                options: taxOptions,
+              },
+              {
+                name: "stock",
+                placeholder: "Stock",
+                options: stockOptions,
+              },
+              { 
+                name: "lowstock",
+                placeholder: "Low Stock/ Availability",
+                options: lowStockOptions,
+              },
             ]}
           />
         </div>

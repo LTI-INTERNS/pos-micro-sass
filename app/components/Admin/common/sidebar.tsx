@@ -24,7 +24,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Cashier Management', path: '/cashiermanagement' },
     { label: 'Expenses Management', path: '/expensesmanagement' },
     { label: 'Profit Calculation', path: '/profitcalculation' },
-    { label: 'Recurring Expenses Management', path: '/recexpenses' },
     { label: 'Supplier Management', path: '/suppliermanagement' },
     { label: 'Reports', path: '/reports' },
     { label: 'Ai Prediction', path: '/aiprediction' },

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
 import ActionButon from "@/app/components/Admin/common/ActionButton";
 import BranchActionsBar from "@/app/components/Admin/branchmanagement/branches-actions";
@@ -61,16 +60,7 @@ export default function BranchesPage() {
 
   return (
     <DashboardLayout>
-      <div className="w-full space-y-5">
-        <DateRangePicker
-          startDate={start}
-          endDate={end}
-          onChange={(s, e) => {
-            setStart(s);
-            setEnd(e);
-          }}
-        />
-
+      <div className="w-full space-y-6">
         <StatCardGrid />
 
         <div className="relative">

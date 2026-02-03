@@ -113,10 +113,11 @@ export default function SearchBar({
             <>
               {/* Divider */}
               <span className="h-4 w-px bg-white/60" />
+
               {/* Clear filters */}
               <span
                 onClick={(e) => {
-                  e.stopPropagation(); // ⛔ don’t open popup
+                  e.stopPropagation(); 
                   onClearFilters?.();
                 }}
                 className="px-3 hover:bg-white/20 rounded-r-full"
