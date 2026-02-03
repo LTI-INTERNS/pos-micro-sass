@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
-import OrderActionsBar from "@/app/components/Admin/ordermanagement/order-actions";
 import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
 import OrdersTable from "@/app/components/Admin/ordermanagement/order-table";
 import { filterRows } from "./filterRows";
@@ -99,8 +98,6 @@ export default function DashboardPage() {
             }}
           />
         </div>
-
-        <OrderActionsBar />
 
         <OrdersTable orders={filteredOrders} />
       </div>
