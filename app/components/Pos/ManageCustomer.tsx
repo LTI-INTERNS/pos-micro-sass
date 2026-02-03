@@ -1,20 +1,21 @@
 "use client";
 
-import CommonTable , {Column} from "../Admin/common/CommonTable";
+import { useMemo, useState } from "react";
+import CommonTable, { Column } from "../Admin/common/CommonTable";
 import Buttons from "../Admin/common/ActionButton";
 import SearchBar from "../Admin/common/Search-bar";
-import { useState } from "react";
-
-type Props = {
-  onClose: () => void;
-  onAddCustomer: () => void;
-};
 
 type Customer = {
   id: number;
   name: string;
   phone: string;
   email: string;
+};
+
+type Props = {
+  onClose: () => void;
+  onAddCustomer: () => void;
+  onCustomerSelected: (customer: Customer) => void; 
 };
 
 const customers: Customer[] = [
@@ -39,51 +40,53 @@ const customers: Customer[] = [
 ];
 
 const columns: Column<Customer>[] = [
-  {
-    key: "name",
-    label: "CUSTOMER NAME",
-    align: "left",
-  },
-  
-  {
-    key: "phone",
-    label: "PHONE NUMBER ",
-    align: "left",
-  },
-  {
-    key: "email",
-    label: "EMAIL ADDRESS",
-    align: "left",
-  },
+  { key: "name", label: "CUSTOMER NAME" },
+  { key: "phone", label: "PHONE NUMBER" },
+  { key: "email", label: "EMAIL ADDRESS" },
 ];
-export default function ManageCustomer({ onClose, onAddCustomer}: Props) {
-    const [search, setSearch] = useState("");
+
+export default function ManageCustomer({
+  onClose,
+  onAddCustomer,
+  onCustomerSelected,
+}: Props) {
+  const [search, setSearch] = useState("");
+
+  const filteredCustomers = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+
+    return customers.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        c.email.toLowerCase().includes(q) ||
+        c.phone.includes(q)
+    );
+  }, [search]);
+
   return (
     <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto">
-      
       <h2 className="text-xl font-semibold text-slate-900 mb-6">
         Manage customer
       </h2>
 
-      <SearchBar value={search} onChange={setSearch} placeholder="Search Customer"
- />
+      <SearchBar
+        value={search}
+        onChange={setSearch}
+        placeholder="Search by name, email or phone"
+      />
 
-      <CommonTable columns={columns} data={customers} emptyMessage="No customers found" />
-
-      <div className="flex justify-center mt-6">
-        <div className="flex items-center border rounded-full overflow-hidden text-sm">
-          <button className="px-4 py-2 text-slate-400 flex items-center gap-2">
-            <img src="/Larrow.png" alt="Previous" className="w-3 h-2" />
-            <span>Previous</span>
-          </button>
-          <span className="px-4 py-2 font-semibold text-slate-900 border-x">
-            1
-          </span>
-          <button className="px-4 py-2 text-slate-400 flex items-center gap-2">
-            <span>Next</span>
-            <img src="/Rarrow.png" alt="Next" className="w-3 h-2" />
-            
-          </button>
+      {search.trim() !== "" && (
+        <div className="mt-6">
+          <CommonTable
+            columns={columns}
+            data={filteredCustomers}
+            emptyMessage="No customers found"
+            onRowClick={(customer) => {
+              onCustomerSelected(customer); 
+              onClose();
+            }}
+          />
         </div>
       </div>
        <div className="flex justify-center gap-4 mt-8">
@@ -91,9 +94,7 @@ export default function ManageCustomer({ onClose, onAddCustomer}: Props) {
                 <Buttons onClick={onClose} label="Cancel" className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50 transition-all active:scale-90"/>
                 <Buttons onClick={onAddCustomer} label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-90"/>
            </div>
-
-       </div>
-      
+      </div>
     </div>
   );
 }

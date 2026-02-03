@@ -11,18 +11,18 @@ export type Branch = {
 export const branchesData: Branch[] = [
   {
     id: 1,
-    name: "Nimal",
+    name: "colombo",
     phone: "0771234567",
-    address: "P01",
+    address: "colombo 01",
     regno: 10,
     email: "nimal@coca.lk",
     password: "password123",
   },
   {
     id: 2,
-    name: "Kamal",
+    name: "kandy",
     phone: "0719999999",
-    address: "P02",
+    address: "kandy",
     regno: 20,
     email: "kamal@coca.lk",
     password: "password123",

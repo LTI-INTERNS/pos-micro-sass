@@ -7,9 +7,10 @@ export type FieldConfig = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number" | "date" | "dropdown";
+  type?: "text" | "number" | "date" | "dropdown" | "password" | "email" | "tel";
   options?: { value: string; label: string }[];
   disabled?: boolean; 
+  required?: boolean;
 };
 
 type ReusableFormProps = {

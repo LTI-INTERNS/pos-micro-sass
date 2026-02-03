@@ -1,12 +1,22 @@
 "use client";
 
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
-import { Branch } from "@/app/branchmanagement/data";
 
-type BranchesTableProps = {
+export type Branch = {
+  id: number;
+  name: string;
+  phone: string;
+  address: string;
+  regno: number;
+  email: string;
+  password: string;
+};
+
+type Props = {
   branches: Branch[];
 };
 
+export default function BranchesTable({ branches }: Props) {
 const columns: Column<Branch>[] = [
   { key: "id", label: "ID" },
   { key: "name", label: "Name" },
@@ -17,8 +27,6 @@ const columns: Column<Branch>[] = [
   { key: "password", label: "Password", render: () => "••••••••" }, 
 ];
 
-// Simple table wrapper that expects pre-filtered branch data.
-export default function BranchesTable({ branches }: BranchesTableProps) {
   return (
     <CommonTable
       title="Branches"

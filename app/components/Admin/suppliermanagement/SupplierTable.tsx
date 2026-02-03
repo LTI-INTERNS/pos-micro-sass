@@ -6,8 +6,9 @@ type Supplier = {
   name: string;
   phone: number;
   email: string;
-  address: string;
+  coverarea: string;
   regNo: string;
+  branches: string[];
 };
 
 type Props = {
@@ -32,7 +33,8 @@ export default function SupplierTable({ suppliers }: Props) {
               <th className="px-6 py-2 text-left">Name</th>
               <th className="px-6 py-2 text-left">Phone</th>
               <th className="px-6 py-2 text-left">Email</th>
-              <th className="px-6 py-2 text-left">Address</th>
+              <th className="px-6 py-2 text-left">Cover Area</th>
+              <th className="px-6 py-2 text-left">Branches</th>
               <th className="px-6 py-2 text-left">Reg No</th>
             </tr>
           </thead>
@@ -48,14 +50,15 @@ export default function SupplierTable({ suppliers }: Props) {
                 <td className="px-6 py-3">{s.name}</td>
                 <td className="px-6 py-3">{s.phone}</td>
                 <td className="px-6 py-3">{s.email}</td>
-                <td className="px-6 py-3">{s.address}</td>
+                <td className="px-6 py-3">{s.coverarea}</td>
+                <td className="px-6 py-3">{s.branches.join(', ')}</td>
                 <td className="px-6 py-3">{s.regNo}</td>
               </tr>
             ))}
 
             {suppliers.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-5 text-center text-gray-400">
+                <td colSpan={8} className="px-6 py-5 text-center text-gray-400">
                   No suppliers found
                 </td>
               </tr>
