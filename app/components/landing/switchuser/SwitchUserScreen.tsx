@@ -1,8 +1,14 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 import TimeDisplay from "../clock";
 import UserRow from "./UserRow";
 
 export default function SwitchUserScreen() {
+  const router = useRouter();
+
   return (
     <div className="relative min-h-screen w-full overflow-hidden text-white">
       {/* Background */}
@@ -17,6 +23,15 @@ export default function SwitchUserScreen() {
       {/* Overlays */}
       <div className="absolute inset-0 bg-black/20" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+
+      
+      <button
+        onClick={() => router.push("/login")}
+        className="absolute top-6 left-6 z-10 flex items-center gap-2 px-4 py-2 rounded-full bg-gray/10 backdrop-blur-md hover:bg-white/20 border border-white/30 text-white"
+      >
+        <ArrowLeft size={18} />
+        Back
+      </button>
 
       {/* Content */}
       <div className="relative flex min-h-screen flex-col items-center justify-center px-4">

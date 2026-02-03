@@ -6,6 +6,7 @@ export type RecurringExpenses = {
   date: string;
   category: string;
   description: string;
+  amount: number;
   payment: string;
   addedby: string;
 };
@@ -31,6 +32,10 @@ export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
     {
       key: "description",
       label: "Description",
+    },
+    {
+      key: "amount",
+      label: "Amount (LKR)",
     },
     {
       key: "payment",

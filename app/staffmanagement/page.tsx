@@ -8,7 +8,7 @@ import SearchBar from "../components/Admin/common/Search-bar";
 import CommonTable, { Column } from "../components/Admin/common/CommonTable";
 import AddStaffPopup from "./popup/AddStaffPopup";
 import ActionButton from "../components/Admin/common/ActionButton";
-
+import FilterChips from "@/app/components/Admin/common/FilterChips";
 import FilterPopup from "../components/Admin/common/FilterPopup";
 import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
 import { useCSVExport } from "../components/Admin/common/csvExport";
@@ -19,8 +19,10 @@ type Staff = {
   id: string;
   name: string;
   staffNo: string;
+  branch: string;
   position: string;
   email: string;
+  phone: number;
   password: string;
   pin: string;
 };
@@ -39,8 +41,10 @@ export default function StaffManagementPage() {
     { key: "id", label: "ID" },
     { key: "name", label: "Name" },
     { key: "staffNo", label: "Staff No" },
+    { key: "branch", label: "Branch Name" },
     { key: "position", label: "Position" },
     { key: "email", label: "Email" },
+    { key: "phone", label: "Phone" },
     { key: "password", label: "Password" },
     { key: "pin", label: "Pin" },
   ];
@@ -49,7 +53,7 @@ export default function StaffManagementPage() {
   const filteredStaff = useTableFilters<Staff>({
     data: staffData,
     search,
-    searchKeys: ["id", "name", "staffNo", "position", "email"],
+    searchKeys: ["id", "name", "staffNo", "branch", "position", "email"],
     filters,
   });
 
@@ -61,6 +65,18 @@ export default function StaffManagementPage() {
       options: getFilterOptions(staffData, "position"),
     },
   ];
+
+  const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const removeFilter = (key: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
+  };
+
 
   return (
     <DashboardLayout>
@@ -77,6 +93,13 @@ export default function StaffManagementPage() {
             showFilter={true}
             filterLabel="Filter"
             onFilter={() => setShowFilter(true)}
+            isFilterApplied={isFilterApplied}
+            onClearFilters={() => setFilters({})}
+          />
+
+          <FilterChips
+            filters={filters}
+            onRemove={removeFilter}
           />
 
           {/* Filter Popup */}

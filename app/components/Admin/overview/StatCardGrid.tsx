@@ -11,6 +11,8 @@ export default function StatCardGrid() {
           value={card.value}
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
+          caption={card.caption}
+          showDetailButton={true}
         />
       ))}
     </div>
