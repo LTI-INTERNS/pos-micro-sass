@@ -12,13 +12,13 @@ type Props = {
 
   orderNo: string | number;
 
-  tipAmount: number; // initial/default tip from outside
-  totalAmount: number; // Base amount (does NOT include tip)
+  tipAmount: number; // kept for compatibility, but NOT used anymore
+  totalAmount: number; // Base amount
 
   currencyCode?: string; // default "LKR"
 };
 
-type ActiveField = "amount" | "tip" | null;
+type ActiveField = "amount" | null;
 
 function formatMoney(currency: string, amount: number) {
   const safe = Number.isFinite(amount) ? amount : 0;
@@ -73,45 +73,35 @@ export default function OrderPaymentModal({
   open,
   onClose,
   orderNo,
-  tipAmount,
+  // tipAmount is intentionally ignored now
   totalAmount,
   currencyCode = "LKR",
 }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
 
-  // Draft inputs
+  // Draft input
   const [amountDraft, setAmountDraft] = useState<string>("");
-  const [tipDraft, setTipDraft] = useState<string>("");
 
   // Committed values
   const [cashPaid, setCashPaid] = useState<number>(0);
   const [cardPaid, setCardPaid] = useState<number>(0);
-  const [tipAdded, setTipAdded] = useState<number>(0);
 
   // Focus / keypad target
   const [amountFocused, setAmountFocused] = useState(false);
-  const [tipFocused, setTipFocused] = useState(false);
   const [activeField, setActiveField] = useState<ActiveField>(null);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const tipInputRef = useRef<HTMLInputElement | null>(null);
 
   // Card tax rate
   const [cardTaxRate, setCardTaxRate] = useState<number>(0.03);
 
   // Discount popup
   const [discountOpen, setDiscountOpen] = useState(false);
-  const [selectedDiscountId, setSelectedDiscountId] = useState<string | null>(
-    null
-  );
+  const [selectedDiscountId, setSelectedDiscountId] = useState<string | null>(null);
 
   const discountOptions: DiscountOption[] = useMemo(
     () => [
-      {
-        id: "disc_broccoli_staff",
-        label: "Broccoli Staff (on total)",
-        percent: 50,
-      },
+      { id: "disc_broccoli_staff", label: "Broccoli Staff (on total)", percent: 50 },
       { id: "disc_better_homes", label: "Better homes (on total)", percent: 50 },
       { id: "disc_fly_dubai", label: "Fly Dubai (on total)", percent: 50 },
     ],
@@ -123,11 +113,6 @@ export default function OrderPaymentModal({
 
   const baseAmount = totalAmount;
 
-  const effectiveTip = useMemo(() => {
-    const baseTip = Number.isFinite(tipAmount) ? tipAmount : 0;
-    return baseTip + tipAdded;
-  }, [tipAmount, tipAdded]);
-
   const selectedDiscount = useMemo(() => {
     if (!selectedDiscountId) return null;
     return discountOptions.find((o) => o.id === selectedDiscountId) ?? null;
@@ -138,9 +123,10 @@ export default function OrderPaymentModal({
     return baseAmount * (selectedDiscount.percent / 100);
   }, [selectedDiscount, baseAmount]);
 
+  // ✅ Tip removed: netDue is only base - discount
   const netDue = useMemo(() => {
-    return baseAmount - discountValue + effectiveTip;
-  }, [baseAmount, discountValue, effectiveTip]);
+    return baseAmount - discountValue;
+  }, [baseAmount, discountValue]);
 
   const totalPaid = useMemo(() => cashPaid + cardPaid, [cashPaid, cardPaid]);
 
@@ -167,7 +153,6 @@ export default function OrderPaymentModal({
   }, [netDue, cardTax]);
 
   const showCurrencyInAmount = amountFocused;
-  const showCurrencyInTip = tipFocused;
 
   function commitCashOrCardPayment() {
     const n = parseFloat(amountDraft);
@@ -184,34 +169,16 @@ export default function OrderPaymentModal({
     setActiveField(null);
   }
 
-  function commitTip() {
-    const n = parseFloat(tipDraft);
-    if (!Number.isFinite(n) || n <= 0) return;
-
-    setTipAdded((p) => p + n);
-    setTipDraft("");
-    setTipFocused(false);
-    setActiveField(null);
-  }
-
   const handleKeypadPress = (key: string) => {
     if (!activeField) return;
 
     if (key === "Add") {
-      if (activeField === "amount") commitCashOrCardPayment();
-      if (activeField === "tip") commitTip();
+      commitCashOrCardPayment();
       return;
     }
 
-    if (activeField === "amount") {
-      inputRef.current?.focus();
-      setAmountDraft((prev) => handleKeypadValue(prev, key));
-    }
-
-    if (activeField === "tip") {
-      tipInputRef.current?.focus();
-      setTipDraft((prev) => handleKeypadValue(prev, key));
-    }
+    inputRef.current?.focus();
+    setAmountDraft((prev) => handleKeypadValue(prev, key));
   };
 
   function removeDiscount() {
@@ -222,9 +189,6 @@ export default function OrderPaymentModal({
   }
   function resetCardPaid() {
     setCardPaid(0);
-  }
-  function resetTipAdded() {
-    setTipAdded(0);
   }
 
   const amountLabel = isCard ? "Card payment received" : "Cash received";
@@ -246,9 +210,7 @@ export default function OrderPaymentModal({
           {/* Header */}
           <div className="flex items-start justify-between px-5 py-4 border-b">
             <div>
-              <h2 className="text-lg font-semibold text-black leading-none">
-                Order payment
-              </h2>
+              <h2 className="text-lg font-semibold text-black leading-none">Order payment</h2>
               <p className="text-sm text-gray-400 mt-1">Order #{orderNo}</p>
             </div>
 
@@ -275,9 +237,7 @@ export default function OrderPaymentModal({
                   onClear?: () => void;
                 }) => (
                   <div className="flex items-center justify-end gap-3 min-w-[180px]">
-                    <span className="font-semibold text-black tabular-nums">
-                      {value}
-                    </span>
+                    <span className="font-semibold text-black tabular-nums">{value}</span>
 
                     {/* Reserve space so all rows align */}
                     <span className="w-5 h-5 grid place-items-center">
@@ -300,15 +260,6 @@ export default function OrderPaymentModal({
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Base Amount</span>
                       <ValueCell value={formatMoney(currencyCode, baseAmount)} />
-                    </div>
-
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Tip Amount</span>
-                      <ValueCell
-                        value={formatMoney(currencyCode, effectiveTip)}
-                        showClear={tipAdded > 0}
-                        onClear={resetTipAdded}
-                      />
                     </div>
 
                     {selectedDiscount && (
@@ -336,18 +287,14 @@ export default function OrderPaymentModal({
                     {remainingToPay > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Remaining to Pay</span>
-                        <ValueCell
-                          value={formatMoney(currencyCode, remainingToPay)}
-                        />
+                        <ValueCell value={formatMoney(currencyCode, remainingToPay)} />
                       </div>
                     )}
 
                     {changeToGive > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Change to Give</span>
-                        <ValueCell
-                          value={formatMoney(currencyCode, changeToGive)}
-                        />
+                        <ValueCell value={formatMoney(currencyCode, changeToGive)} />
                       </div>
                     )}
 
@@ -362,22 +309,13 @@ export default function OrderPaymentModal({
 
                         {remainingToPay > 0 && (
                           <div className="flex justify-between text-sm">
-                            <span className="text-gray-500">
-                              Total remaining with tax
-                            </span>
-                            <ValueCell
-                              value={formatMoney(
-                                currencyCode,
-                                totalRemainingWithTax
-                              )}
-                            />
+                            <span className="text-gray-500">Total remaining with tax</span>
+                            <ValueCell value={formatMoney(currencyCode, totalRemainingWithTax)} />
                           </div>
                         )}
 
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">
-                            Card Payment Received
-                          </span>
+                          <span className="text-gray-500">Card Payment Received</span>
                           <ValueCell
                             value={formatMoney(currencyCode, cardPaid)}
                             showClear={cardPaid > 0}
@@ -388,9 +326,7 @@ export default function OrderPaymentModal({
                     )}
 
                     <div className="pt-3 border-t border-dashed flex justify-between text-sm">
-                      <span className="font-semibold text-gray-600">
-                        Grand Total
-                      </span>
+                      <span className="font-semibold text-gray-600">Grand Total</span>
                       <span className="text-orange-500 font-semibold text-[16px] tabular-nums">
                         {formatMoney(currencyCode, grandTotal)}
                       </span>
@@ -402,9 +338,7 @@ export default function OrderPaymentModal({
 
             {/* Payment method */}
             <div>
-              <p className="mb-2 text-sm font-semibold text-black">
-                Payment method
-              </p>
+              <p className="mb-2 text-sm font-semibold text-black">Payment method</p>
 
               <div className="grid grid-cols-4 gap-3">
                 {[
@@ -501,57 +435,13 @@ export default function OrderPaymentModal({
                   value={amountDraft}
                   onFocus={() => {
                     setAmountFocused(true);
-                    setTipFocused(false);
                     setActiveField("amount");
                   }}
                   onBlur={() => setAmountFocused(false)}
-                  onChange={(e) =>
-                    setAmountDraft(sanitizeAmountInput(e.target.value))
-                  }
+                  onChange={(e) => setAmountDraft(sanitizeAmountInput(e.target.value))}
                   className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
                     text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
-                    ${
-                      showCurrencyInAmount
-                        ? "text-left pl-20 pr-5"
-                        : "text-center px-5"
-                    }
-                  `}
-                />
-              </div>
-
-              <p className="mt-4 mb-2 text-sm font-semibold text-black">
-                Tip amount
-              </p>
-
-              <div className="relative">
-                {showCurrencyInTip && (
-                  <span className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">
-                    {currencyCode}
-                  </span>
-                )}
-
-                <input
-                  ref={tipInputRef}
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="Tip amount"
-                  value={tipDraft}
-                  onFocus={() => {
-                    setTipFocused(true);
-                    setAmountFocused(false);
-                    setActiveField("tip");
-                  }}
-                  onBlur={() => setTipFocused(false)}
-                  onChange={(e) =>
-                    setTipDraft(sanitizeAmountInput(e.target.value))
-                  }
-                  className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
-                    text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
-                    ${
-                      showCurrencyInTip
-                        ? "text-left pl-20 pr-5"
-                        : "text-center px-5"
-                    }
+                    ${showCurrencyInAmount ? "text-left pl-20 pr-5" : "text-center px-5"}
                   `}
                 />
               </div>
@@ -586,12 +476,7 @@ export default function OrderPaymentModal({
                   `}
                 >
                   {key === "⌫" ? (
-                    <Delete
-                      size={28}
-                      strokeWidth={2}
-                      color="#ffffff"
-                      fill="#f97316"
-                    />
+                    <Delete size={28} strokeWidth={2} color="#ffffff" fill="#f97316" />
                   ) : (
                     key
                   )}

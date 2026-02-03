@@ -169,7 +169,7 @@ export default function PinEntryPage() {
 
         <button
           disabled={pin.length !== 4}
-          className="w-full py-2 rounded-full bg-orange-500 hover:bg-orange-600 font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-2 rounded-full bg-orange-500 hover:bg-orange-600 font-semibold hover:bg-orange-500 hover:text-white cursor-pointer transition-all active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Unlock
         </button>
