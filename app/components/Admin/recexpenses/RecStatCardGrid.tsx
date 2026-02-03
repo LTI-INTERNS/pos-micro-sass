@@ -2,16 +2,18 @@ import StatCard from '@/app/components/Admin/common/StatCard';;
 
 const statCards = [
   {
-    title: "Total Recurring Expences",
-    value: "LKR 30,250",
+    title: "Total Profit",
+    value: "LKR 34,250",
     percentage: "+4.2%",
     trend: "up" as const,
+    caption: "vs last month",
   },
   {
-    title: "New Recurring Expences",
-    value: "LKR 20,000",
+    title: "New Expenses",
+    value: "LKR 12,000",
     percentage: "-1.5%",
     trend: "down" as const,
+    caption: "vs last month",
   },
 ];
   
@@ -25,6 +27,7 @@ export default function StatCardGrid() {
           value={card.value}
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
+          caption={card.caption}
           showDetailButton={false}
         />
       ))}

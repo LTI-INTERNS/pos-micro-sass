@@ -1,4 +1,5 @@
 import StatCard from '@/app/components/Admin/common/StatCard';
+import { ca } from 'date-fns/locale';
 
 const statCards = [
   {
@@ -6,6 +7,7 @@ const statCards = [
     value: "34",
     percentage: "+4.2%",
     trend: "up" as const,
+    caption: "vs last month",
   },
   {
     title: "Low Stock Branches",
@@ -25,7 +27,8 @@ export default function StatCardGrid() {
           value={card.value}
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
-          showDetailButton={false}
+          caption={card.caption}
+          showDetailButton={true}
         />
       ))}
     </div>

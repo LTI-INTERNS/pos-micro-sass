@@ -14,6 +14,14 @@ const users = [
 
 export default function UserRow() {
   const router = useRouter();
+
+  const handleSelectUser = (user: { name: string; img: string }) => {
+    // store selected cashier details (dummy session)
+    sessionStorage.setItem("cashier", JSON.stringify(user));
+
+    router.push("/pinentry");
+  };
+
   return (
     <div className="relative mx-auto max-w-5xl bg-transparent">
       <div
@@ -37,9 +45,9 @@ export default function UserRow() {
         {users.map((user) => (
           <div
             key={user.name}
-            onClick={() => router.push("/pinentry")}
+            onClick={() => handleSelectUser(user)}
             className="shrink-0 snap-center bg-transparent"
-            style={{ width: 'calc((100% - 192px) / 5)' }}
+            style={{ width: "calc((100% - 192px) / 5)" }}
           >
             <UserAvatar {...user} />
           </div>

@@ -163,7 +163,7 @@ export default function AddBranchForm({
                     placeholder="Enter phone number"
                     value={values.phoneNumber}
                     onChange={(next) => setField("phoneNumber", next)}
-                    type="text"
+                    type="tel"
                     />
                     {errors.phoneNumber && (
                     <p className="text-xs text-red-500 mt-1 px-3">{errors.phoneNumber}</p>
@@ -200,6 +200,7 @@ export default function AddBranchForm({
                     placeholder="Enter email address"
                     value={values.email}
                     onChange={(next) => setField("email", next)}
+                    type="email"
                     />
                     {errors.email && (
                     <p className="text-xs text-red-500 mt-1 px-3">{errors.email}</p>
@@ -213,7 +214,7 @@ export default function AddBranchForm({
                           placeholder="Enter Password"
                           value={values.password}
                           onChange={(next) => setField("password", next)}
-                          type="text"
+                          type="password"
                         />
                         {errors.password && (
                           <p className="text-xs text-red-500 mt-1 px-3">{errors.password}</p>
@@ -226,7 +227,7 @@ export default function AddBranchForm({
                           placeholder="Confirm Password"
                           value={values.confirmPassword}
                           onChange={(next) => setField("confirmPassword", next)}
-                          type="text"
+                          type="password"
                         />
                         {errors.confirmPassword && (
                           <p className="text-xs text-red-500 mt-1 px-3">{errors.confirmPassword}</p>

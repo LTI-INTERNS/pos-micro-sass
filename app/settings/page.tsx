@@ -48,9 +48,9 @@ export default function SettingsPage() {
             </div>
 
             <div className="px-6 flex-1 overflow-auto min-h-0">
-              <PasswordRow label="Current Password" placeholder="Enter name" />
-              <PasswordRow label="New Password" placeholder="Enter name" />
-              <PasswordRow label="Confirm Password" placeholder="Enter name" />
+              <PasswordRow label="Current Password" placeholder="Enter Current Password" />
+              <PasswordRow label="New Password" placeholder="Enter New Password" />
+              <PasswordRow label="Confirm Password" placeholder="Enter Confirm Password" />
             </div>
 
             <div className="px-6 py-2">
@@ -61,7 +61,7 @@ export default function SettingsPage() {
                            hover:bg-orange-50 transition"
                 onClick={() => alert("Change Password")}
               >
-                Edit Details
+                Change Password
               </button>
             </div>
           </section>

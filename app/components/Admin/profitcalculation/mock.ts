@@ -6,7 +6,7 @@ export const mockProfits: Profit[] = [
     date: "2025-10-25",
     category: "Inventory",
     description: "Cleaning Supply",
-    profit: "4500.00",
+    profit: "LKR 4500.00",
     payment: "Cash",
   },
   {
@@ -14,7 +14,7 @@ export const mockProfits: Profit[] = [
     date: "2025-10-25",
     category: "Inventory",
     description: "Cleaning Supply",
-    profit: "4500.00",
+    profit: "LKR 4500.00",
     payment: "Cash",
   },
   {
@@ -22,7 +22,7 @@ export const mockProfits: Profit[] = [
     date: "2025-10-25",
     category: "Inventory",
     description: "Cleaning Supplies",
-    profit: "4500.00",
+    profit: "LKR 4500.00",
     payment: "Card",
   },
   {
@@ -30,7 +30,7 @@ export const mockProfits: Profit[] = [
     date: "2025-11-25",
     category: "Inventory",
     description: "Cleaning Supply",
-    profit: "4500.00",
+    profit: "LKR 4500.00",
     payment: "Cash",
   },
   {
@@ -38,7 +38,7 @@ export const mockProfits: Profit[] = [
     date: "2025-12-25",
     category: "Inventory",
     description: "Cleaning Supply",
-    profit: "4500.00",
+    profit: "LKR 4500.00",
     payment: "Cash",
   },
 ];

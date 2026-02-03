@@ -1,42 +1,41 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/app/components/Admin/ordermanagement/orderStarCardGrid";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
-import CustomerActionsBar from "@/app/components/Admin/customermanagement/customer-actions";
-import CustomersTable from "@/app/components/Admin/customermanagement/customers-table";
 import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
-import StatCardGrid from "@/app/components/Admin/customermanagement/customerStarGrid";
-import { customersData } from "./data";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import OrdersTable from "@/app/components/Admin/ordermanagement/order-table";
+import { ordersData } from "./data";
 import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 
-type Customer = {
+type Order = {
   id: number;
-  name: string;
-  phone: string;
-  promoCard: string;
-  points: number;
-  email: string;
-  outstanding: number;
+  dateTime?: string;
+  branch?: string;
+  cashier?: string;
+  paymenttype?: string;
+  totalamount?: string;
+  status?: string;
+  action?: string;
 };
 
-export default function CustomersPage() {
+export default function DashboardPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
+
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
 
   const [filters, setFilters] = useState<{
-    name?: string;
-    promoCard?: string;
+    branch?: string;
+    paymenttype?: string;
+    status?: string;
   }>({});
-    const isFilterApplied = Object.values(filters).some(
-    (v) => v && v.trim() !== ""
-  );
+
+  const isFilterApplied = Object.values(filters).some((v) => v && v.trim() !== "");
 
   const handleRemoveFilter = (key: string) => {
     setFilters((prev) => ({ ...prev, [key]: "" }));
@@ -46,15 +45,34 @@ export default function CustomersPage() {
     setFilters({});
   };
 
-  const nameOptions = getFilterOptions(customersData, "name");
-  const promoCardOptions = getFilterOptions(customersData, "promoCard");
+  const branchOptions = getFilterOptions(ordersData as Order[], "branch");
+  const paymentTypeOptions = getFilterOptions(ordersData as Order[], "paymenttype");
+  const statusOptions = getFilterOptions(ordersData as Order[], "status");
 
-  const filteredCustomers = useTableFilters<Customer>({
-    data: customersData as Customer[],
+  const filterFields: SelectField[] = [
+    {
+      name: "branch",
+      placeholder: "Select Branch",
+      options: branchOptions,
+    },
+    {
+      name: "paymenttype",
+      placeholder: "Select Payment Type",
+      options: paymentTypeOptions,
+    },
+    {
+      name: "status",
+      placeholder: "Select Status",
+      options: statusOptions,
+    },
+  ];
+
+  const filteredOrders = useTableFilters<Order>({
+    data: ordersData as Order[],
     search,
     start,
     end,
-    searchKeys: ["id", "name", "email", "promoCard"],
+    searchKeys: ["id", "dateTime", "cashier",  "totalamount"],
     filters,
   });
 
@@ -69,14 +87,12 @@ export default function CustomersPage() {
             setEnd(e);
           }}
         />
-
         <StatCardGrid />
-
         <div className="relative">
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search Customers..."
+            placeholder="Search orders..."
             debounceMs={300}
             showFilter
             onFilter={() => setShowFilter((v) => !v)}
@@ -91,27 +107,14 @@ export default function CustomersPage() {
               setFilters(values);
               setShowFilter(false);
             }}
-            fields={[
-              {
-                name: "name",
-                placeholder: "Customer Name",
-                options: nameOptions,
-              },
-              {
-                name: "promoCard",
-                placeholder: "Promo Card",
-                options: promoCardOptions,
-              },
-            ]}
+            fields={filterFields}
           />
         </div>
         <div className="grid grid-cols-1 gap-3">
           <FilterChips filters={filters} onRemove={handleRemoveFilter} />
-          <CustomerActionsBar
-          />
         </div>
 
-        <CustomersTable customers={filteredCustomers} />
+        <OrdersTable orders={filteredOrders} />
       </div>
     </DashboardLayout>
   );

@@ -7,7 +7,7 @@ type FormFieldProps = {
   onChange: (next: string) => void;
 
 
-  type?: "text" | "number" | "date" | "dropdown" | "password";
+  type?: "text" | "number" | "date" | "dropdown" | "password" | "email" | "tel";
 
   options?: { value: string; label: string }[];
   disabled?: boolean;

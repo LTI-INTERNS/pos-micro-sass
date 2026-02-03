@@ -7,8 +7,6 @@ export type Column<T> = {
   label: string;
   align?: "left" | "right" | "center";
   render?: (row: T) => React.ReactNode;
-
-  // width?: string; // e.g. "140px" or "20%"
 };
 
 type Props<T> = {
@@ -16,6 +14,7 @@ type Props<T> = {
   data: T[];
   columns: Column<T>[];
   emptyMessage?: string;
+  onRowClick?: (row: T) => void; //  NEW (optional)
 };
 
 const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
@@ -24,11 +23,12 @@ const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
   center: "text-center",
 };
 
-function CommonTableInner<T>({
+function CommonTableInner<T extends { id?: string | number }>({
   title,
   data,
   columns,
   emptyMessage = "No data found",
+  onRowClick,
 }: Props<T>) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
@@ -48,7 +48,6 @@ function CommonTableInner<T>({
                 <th
                   key={String(col.key)}
                   className={`px-6 py-2 font-semibold ${ALIGN_CLASS[col.align ?? "left"]}`}
-                  // style={col.width ? { width: col.width } : undefined}
                 >
                   {col.label}
                 </th>
@@ -57,17 +56,20 @@ function CommonTableInner<T>({
           </thead>
 
           <tbody>
-            {data.map((row: any) => (
+            {data.map((row, index) => (
               <tr
-                key={row.id}
-                className="border-b border-gray-100 hover:bg-gray-50"
+                key={row.id ?? index}
+                onClick={() => onRowClick?.(row)}
+                className={`border-b border-gray-100 ${
+                  onRowClick
+                    ? "cursor-pointer hover:bg-orange-50"
+                    : "hover:bg-gray-50"
+                }`}
               >
                 {columns.map((col) => (
                   <td
                     key={String(col.key)}
-                    
                     className={`px-6 py-3 ${ALIGN_CLASS[col.align ?? "left"]} text-gray-700`}
-                    // style={col.width ? { width: col.width } : undefined}
                   >
                     {col.render
                       ? col.render(row)
@@ -91,7 +93,7 @@ function CommonTableInner<T>({
         </table>
       </div>
     </section>
-  ); 
+  );
 }
 
 const CommonTable = React.memo(CommonTableInner) as typeof CommonTableInner;

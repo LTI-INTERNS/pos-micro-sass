@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState ,useEffect } from "react";
 import { User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -10,11 +10,16 @@ type LoginResponse =
 
 export default function LoginForm() {
   const router = useRouter();
+  const [isLocked, setIsLocked] = useState(false);
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
+    useEffect(() => {
+    const locked = localStorage.getItem("isLocked") === "true";
+    setIsLocked(locked);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -37,6 +42,9 @@ export default function LoginForm() {
       if (!data.ok || !res.ok) {
         throw new Error(!data.ok ? data.message : "Login failed");
       }
+      localStorage.removeItem("isLocked");
+      setIsLocked(false);
+
       if (data.role === "admin") {
         router.push("/overview");
         console.log("Admin logged in");
@@ -75,6 +83,11 @@ export default function LoginForm() {
         <p className="text-center text-white text-sm">
           Lorem Ipsum has been the industry's standard dummy text ever since.
         </p>
+        {isLocked && (
+          <p className="text-orange-300 text-center text-sm">
+            Screen is locked. Please enter your credentials to continue.
+          </p>
+        )}
 
         {error && <p className="text-red-600 text-center">{error}</p>}
 
