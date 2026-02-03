@@ -7,11 +7,17 @@ const statCards = [
     percentage: "+4.2%",
     trend: "up" as const,
   },
+  {
+    title: "Low Stock Branches",
+    value: "Colombo, Nugegoda",
+    percentage: "-1.5%",
+    trend: "down" as const,
+  },
 ];
   
 export default function StatCardGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-1">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
       {statCards.map((card) => (
         <StatCard
           key={card.title}

@@ -6,6 +6,7 @@ export type Expenses = {
   date: string;
   category: string;
   description: string;
+  amount: number;
   payment: string;
   addedby: string;
 };
@@ -33,8 +34,12 @@ export default function ExpensesTable({ Expenses }: Props) {
       label: "Description",
     },
     {
+      key: "amount",
+      label: "Amount (LKR)",
+    },
+    {
       key: "payment",
-      label: "Payment",
+      label: "Payment Type",
     },
     {
       key: "addedby",

@@ -9,6 +9,7 @@ import StatCardGrid from "../components/Admin/suppliermanagement/StatCardGrid";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import SupplierPopUp from "../components/Admin/suppliermanagement/SupplierPopUp";
 import FilterPopup from "../components/Admin/common/FilterPopup"; 
+import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 export type Supplier = {
   id: number;
@@ -16,7 +17,8 @@ export type Supplier = {
   name: string;
   phone: number;
   email: string;
-  address: string;
+  coverarea: string;
+  branches: string[];
   regNo: string;
 };
 
@@ -27,7 +29,8 @@ const suppliers: Supplier[] = [
     name: "Kamal Perera",
     phone: 771234567,
     email: "kamal@gmail.com",
-    address: "Colombo",
+    coverarea: "Western Province",
+    branches: ["Colombo", "Negombo"],
     regNo: "SUP-001",
   },
   {
@@ -36,7 +39,8 @@ const suppliers: Supplier[] = [
     name: "ABC Traders",
     phone: 719876543,
     email: "abc@gmail.com",
-    address: "Kandy",
+    coverarea: "Southern Province",
+    branches: ["Galle", "Matara"],
     regNo: "SUP-002",
   },
   {
@@ -45,37 +49,52 @@ const suppliers: Supplier[] = [
     name: "Sunil Fernando",
     phone: 761112233,
     email: "sunil@gmail.com",
-    address: "Galle",
+    coverarea: "Central Province",
+    branches: ["Kandy", "Matale"],
     regNo: "SUP-003",
   },
 ];
 
 export default function SupplierPage() {
-  const [selectedType, setSelectedType] = useState<
-    "All" | "Individual" | "Company"
-  >("All");
-
   const [search, setSearch] = useState("");
 
-  
   const [open, setOpen] = useState(false);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
 
   
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<Record<string, string>>({});
+
+  const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const removeFilter = (key: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
+  };
 
   
   const filteredSuppliers = useMemo(() => {
     return suppliersList.filter((s) => {
-      const matchesType = selectedType === "All" || s.type === selectedType;
+      const matchesType = !filters.supplierType || s.type === filters.supplierType;
+
+      const matchesCoverArea =
+        !filters.coverarea ||
+        s.coverarea.toLowerCase().includes(filters.coverarea.toLowerCase().trim());
 
       const matchesSearch = s.name
         .toLowerCase()
         .includes(search.toLowerCase().trim());
 
-      return matchesType && matchesSearch;
+      return matchesType && matchesCoverArea && matchesSearch;
     });
-  }, [selectedType, search, suppliersList]);
+  }, [filters, search, suppliersList]);
+  
+
+  
 
   return (
     <DashboardLayout>
@@ -93,6 +112,12 @@ export default function SupplierPage() {
             debounceMs={300}
             showFilter={true}
             onFilter={() => setFilterOpen(true)} 
+            isFilterApplied={isFilterApplied}
+            onClearFilters={() => setFilters({})}
+          />
+          <FilterChips
+            filters={filters}
+            onRemove={removeFilter}
           />
 
           
@@ -104,23 +129,22 @@ export default function SupplierPage() {
                 name: "supplierType",
                 placeholder: "Select supplier type",
                 options: [
-                  { label: "All", value: "All" },
                   { label: "Individual", value: "Individual" },
                   { label: "Company", value: "Company" },
                 ],
               },
+              {
+                name: "coverarea",
+                placeholder: "Select cover area",
+                options: [
+                  { label: "Western Province", value: "Western Province" },
+                  { label: "Central Province", value: "Central Province" },
+                  { label: "Southern Province", value: "Southern Province" },
+                ],
+              },
             ]}
             onApply={(values) => {
-              const type = values.supplierType as
-                | "All"
-                | "Individual"
-                | "Company"
-                | "";
-
-              
-              if (!type) return;
-
-              setSelectedType(type);
+              setFilters((prev) => ({ ...prev, ...values }));
             }}
           />
         </div>
