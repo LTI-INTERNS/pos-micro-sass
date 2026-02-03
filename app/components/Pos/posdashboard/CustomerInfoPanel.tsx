@@ -20,7 +20,10 @@ type Props = {
   onInc?: (id: string) => void;
   onDec?: (id: string) => void;
   onSetQty?: (id: string, qty: number) => void;
+
+  // ✅ Parent should clear items when this is called
   onCancel?: () => void;
+
   onPay?: (summary: {
     subtotal: number;
     total: number;
@@ -44,7 +47,12 @@ export default function CustomerInfoPanel({
   const total = useMemo(() => subtotal, [subtotal]);
 
   const formatter = useMemo(
-    () => new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR", minimumFractionDigits: 2 }),
+    () =>
+      new Intl.NumberFormat("en-LK", {
+        style: "currency",
+        currency: "LKR",
+        minimumFractionDigits: 2,
+      }),
     []
   );
 
@@ -67,6 +75,25 @@ export default function CustomerInfoPanel({
     const qty = raw.trim() === "" ? 1 : clampPositiveInt(Number(raw));
     setQtyDraft((p) => ({ ...p, [id]: String(qty) }));
     onSetQty?.(id, qty);
+  }
+
+  // ✅ NEW: Cancel handler clears local + parent order state
+  function handleCancel() {
+    setSelectedCustomer(null);
+    setQtyDraft({});
+    setManageCustomerOpen(false);
+
+    // Parent should clear items array (order details)
+    onCancel?.();
+  }
+
+  // ✅ NEW: Pay handler prevents opening payment popup if total is 0
+  function handlePay() {
+    if (total <= 0) {
+      alert("Please add items to proceed with payment.");
+      return;
+    }
+    onPay?.({ subtotal, total, customer: selectedCustomer });
   }
 
   return (
@@ -93,7 +120,7 @@ export default function CustomerInfoPanel({
           ) : (
             <button
               onClick={() => setManageCustomerOpen(true)}
-              className="mt-4 w-full rounded-full bg-orange-50 text-orange-600 py-4 font-semibold hover:bg-orange-100 transition cursor-pointer"
+              className="mt-4 w-full rounded-full bg-orange-50 text-orange-600 py-4 font-semibold hover:bg-orange-100 transition cursor-pointer transition-all active:scale-90"
             >
               Add Customer
             </button>
@@ -120,7 +147,12 @@ export default function CustomerInfoPanel({
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <button onClick={() => onDec?.(it.id)} className="h-11 w-11 rounded-full bg-slate-200 text-xl text-slate-700 grid place-items-center">–</button>
+                      <button
+                        onClick={() => onDec?.(it.id)}
+                        className="h-11 w-11 rounded-full bg-slate-200 text-xl text-slate-700 grid place-items-center"
+                      >
+                        –
+                      </button>
 
                       <input
                         value={qtyDraft[it.id] ?? String(it.qty)}
@@ -134,7 +166,12 @@ export default function CustomerInfoPanel({
                         className="h-11 w-14 rounded-xl border border-slate-200 bg-white text-center font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-orange-200"
                       />
 
-                      <button onClick={() => onInc?.(it.id)} className="h-11 w-11 rounded-full bg-slate-900 text-xl text-white grid place-items-center">+</button>
+                      <button
+                        onClick={() => onInc?.(it.id)}
+                        className="h-11 w-11 rounded-full bg-slate-900 text-xl text-white grid place-items-center"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -154,8 +191,19 @@ export default function CustomerInfoPanel({
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  <button onClick={onCancel} className="rounded-full border border-orange-400 text-orange-600 font-semibold py-4">Cancel</button>
-                  <button onClick={() => onPay?.({ subtotal, total, customer: selectedCustomer })} className="rounded-full bg-orange-500 text-white font-semibold py-4">Pay Now</button>
+                  <button
+                    onClick={handleCancel}
+                    className="rounded-full border border-orange-400 text-orange-600 font-semibold py-4 cursor-pointer transition-all active:scale-90"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handlePay}
+                    className="rounded-full bg-orange-500 text-white font-semibold py-4 cursor-pointer transition-all active:scale-90"
+                  >
+                    Pay Now
+                  </button>
                 </div>
               </div>
             </>
