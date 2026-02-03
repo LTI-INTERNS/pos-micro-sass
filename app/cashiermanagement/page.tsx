@@ -15,7 +15,7 @@ import CashiersTable, {
   type Cashier,
 } from "../components/Admin/cashiermanagement/CashiersTable";
 
-// ✅ IMPORTANT: AddCashierForm is a NAMED export
+
 import { AddCashierForm } from "../components/Admin/cashiermanagement/AddCashierForm";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 
@@ -57,17 +57,6 @@ export default function CashierManagementPage() {
     revenueRange: "",
     status: "",
   });
-      const isFilterApplied = Object.values(filters).some(
-    (v) => v && v.trim() !== ""
-  );
-
-  const handleRemoveFilter = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: "" }));
-  };
-
-  const clearAllFilters = () => {
-    setFilters({});
-  };
 
   // Filter dropdown fields shown in popup
   const filterFields: SelectField[] = useMemo(() => {
@@ -105,7 +94,7 @@ export default function CashierManagementPage() {
     const q = query.trim().toLowerCase();
 
     return mockCashiers
-      // ✅ Search text filtering
+      // Search text filtering
       .filter((c) => {
         if (!q) return true;
         return (
@@ -115,7 +104,7 @@ export default function CashierManagementPage() {
           c.cashierNo.toLowerCase().includes(q)
         );
       })
-      // ✅ Popup dropdown filtering
+      // Popup dropdown filtering
       .filter((c) => {
         // Cashier No filter
         if (filters.cashierNo && c.cashierNo !== filters.cashierNo) return false;
@@ -217,19 +206,17 @@ export default function CashierManagementPage() {
           />
         </div>
 
-        <FilterChips filters={filters} onRemove={handleRemoveFilter} />
-
         <CashierActionsBar
           onDeactivate={() => alert("Deactivate Cashier")}
           onDelete={() => alert("Delete Cashier")}
           onEdit={() => alert("Edit Cashier")}
-          onAdd={() => setAddOpen(true)} // ✅ opens AddCashierForm popup
+          onAdd={() => setAddOpen(true)} // opens AddCashierForm popup
           onExport={() => exportCsv(filteredCashiers)}
         />
 
         <CashiersTable cashiers={filteredCashiers} />
 
-        {/* ✅ Add Cashier Popup */}
+        {/* Add Cashier Popup */}
         <AddCashierForm
           isOpen={addOpen}
           onClose={() => setAddOpen(false)}
