@@ -3,7 +3,7 @@ import StatCard from '@/app/components/Admin/common/StatCard';;
 const statCards = [
   {
     title: "Total Profit",
-    value: "34,250 LKR",
+    value: "LKR 34,250",
     percentage: "+4.2%",
     trend: "up" as const,
   },

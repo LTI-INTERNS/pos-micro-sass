@@ -9,6 +9,7 @@ import ReusableForm, {
 import PopupActions from "@/app/components/Admin/common/PopupActions";
 
 import { staffData } from "../mock/mockStaffData";
+import { text } from "stream/consumers";
 
 type Props = {
   onClose: () => void;
@@ -30,31 +31,37 @@ export default function AddStaffPopup({ onClose }: Props) {
       name: "name",
       label: "Name",
       placeholder: "Enter name",
+      type : "text"
     },
     {
       name: "staffNo",
       label: "Staff No",
       placeholder: "Enter staff number",
+      type: "number"
     },
     {
       name: "position",
       label: "Position",
       placeholder: "Enter position",
+      type: "text"
     },
     {
       name: "email",
       label: "Email",
       placeholder: "Enter email",
+      type: "email"
     },
     {
       name: "password",
       label: "Password",
       placeholder: "Enter password",
+      type: "password"
     },
     {
       name: "pin",
       label: "Pin",
       placeholder: "Enter PIN",
+      type: "password"
     },
   ];
 

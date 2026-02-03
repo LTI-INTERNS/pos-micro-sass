@@ -104,6 +104,7 @@ export default function AddCustomerModal({
           placeholder="Enter phone number"
           value={values.phoneNumber}
           onChange={(v) => setField("phoneNumber", v)}
+          type="number"
         />
         {errors.phoneNumber && (
           <p className="text-xs text-red-500 px-3">{errors.phoneNumber}</p>
@@ -114,6 +115,7 @@ export default function AddCustomerModal({
           placeholder="Enter email address"
           value={values.email}
           onChange={(v) => setField("email", v)}
+          type="email"
         />
         {errors.email && (
           <p className="text-xs text-red-500 px-3">{errors.email}</p>

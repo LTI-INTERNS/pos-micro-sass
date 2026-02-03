@@ -79,7 +79,7 @@ export default function PinEntryPage() {
 
   const goBack = () => {
     sessionStorage.removeItem("cashier");
-    router.push("/switch-user");
+    router.push("/switchuser");
   };
 
   

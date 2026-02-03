@@ -11,7 +11,7 @@ const customerColumns: Column<Customer>[] = [
     key: "outstanding",
     label: "Outstanding",
     align: "right",
-    render: (c) => `Rs. ${c.outstanding.toLocaleString()}`,
+    render: (c) => `LKR ${c.outstanding.toLocaleString()}`,
   },
 ];
 
