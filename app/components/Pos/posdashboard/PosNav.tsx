@@ -12,6 +12,12 @@ interface NavbarProps {
 const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   const router = useRouter();
 
+  const handleLock = () => {
+    // mark POS as locked
+    localStorage.setItem('isLocked', 'true');
+    router.push('/switchuser');
+  };
+
   const handleLogout = () => {
     router.push('/switchuser');
   };
