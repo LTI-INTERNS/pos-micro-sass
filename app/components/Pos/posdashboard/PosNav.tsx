@@ -44,6 +44,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
       </div>
 
       <div className="flex items-center gap-4">
+        <Clock variant="navbar" />
         {/* Previous Orders */}
         <button
           onClick={onOpenOrders}
@@ -52,9 +53,6 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
         >
           <History size={20} />
         </button>
-
-        <Clock variant="navbar" />
-
         <button
           onClick={handleLogout}
           className="bg-orange-100 text-orange-500 px-4 py-1 rounded-full text-[13px] font-semibold"
