@@ -3,13 +3,13 @@
 import { useMemo, useState } from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import SearchBar from "../components/Admin/common/Search-bar";
-import ActionButton from "../components/Admin/common/ActionButton";
+import SupplierActionsBar from "../components/Admin/suppliermanagement/SupplierActionBar";
 import SupplierTable from "../components/Admin/suppliermanagement/SupplierTable";
 import StatCardGrid from "../components/Admin/suppliermanagement/StatCardGrid";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
-import SupplierPopUp from "../components/Admin/suppliermanagement/SupplierPopUp";
 import FilterPopup from "../components/Admin/common/FilterPopup"; 
 import FilterChips from "@/app/components/Admin/common/FilterChips";
+
 
 export type Supplier = {
   id: number;
@@ -57,13 +57,12 @@ const suppliers: Supplier[] = [
 
 export default function SupplierPage() {
   const [search, setSearch] = useState("");
-
   const [open, setOpen] = useState(false);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
-
-  
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+
 
   const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -93,7 +92,11 @@ export default function SupplierPage() {
     });
   }, [filters, search, suppliersList]);
   
-
+  const handleDeleteSupplier = () => {
+    if (!selectedSupplier) return;
+    setSuppliersList((prev) => prev.filter((s) => s.id !== selectedSupplier.id));
+    setSelectedSupplier(null);
+  };
   
 
   return (
@@ -149,47 +152,16 @@ export default function SupplierPage() {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <ActionButton
-            label="Delete Supplier"
-            className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm
-                     transition"
+          <SupplierActionsBar
+            selectedSupplier={selectedSupplier}
+            onDelete={handleDeleteSupplier}
           />
-          <ActionButton
-            label="Edit Supplier"
-            className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm
-                     transition"
-          />
-          <ActionButton
-            label="Add New Supplier"
-            variant="primary"
-            className="w-full rounded-full bg-orange-500 py-2
-                     text-xs font-semibold text-white
-                     hover:bg-orange-600
-                     transition"
-            onClick={() => setOpen(true)}
-          />
-
-          <SupplierPopUp
-            open={open}
-            onClose={() => setOpen(false)}
-            supplierId="A001"
-            onSave={(vals) => {
-              console.log(vals);
-              setOpen(false);
-            }}
-          />
+          <SupplierTable
+          suppliers={filteredSuppliers}
+          selectedSupplier={selectedSupplier}
+          setSelectedSupplier={setSelectedSupplier}
+        />
         </div>
-
-        
-        
-
-        <SupplierTable suppliers={filteredSuppliers} />
-      </div>
     </DashboardLayout>
   );
 }

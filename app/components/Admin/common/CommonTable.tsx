@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 
 export type Column<T> = {
   key: keyof T;
@@ -14,7 +14,9 @@ type Props<T> = {
   data: T[];
   columns: Column<T>[];
   emptyMessage?: string;
-  onRowClick?: (row: T) => void; //  NEW (optional)
+  onRowClick?: (row: T) => void; 
+  selectedRowId?: string | number;   
+  onSelectRow?: (row: T) => void;   
 };
 
 const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
@@ -23,12 +25,28 @@ const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
   center: "text-center",
 };
 
+function useDoubleTap(onDoubleTap: () => void, delay = 300) {
+  const lastTapRef = useRef<number>(0);
+
+  const handleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < delay) {
+      onDoubleTap();
+    }
+    lastTapRef.current = now;
+  };
+
+  return handleTap;
+}
+
 function CommonTableInner<T extends { id?: string | number }>({
   title,
   data,
   columns,
   emptyMessage = "No data found",
   onRowClick,
+  selectedRowId,
+  onSelectRow,
 }: Props<T>) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
@@ -56,16 +74,23 @@ function CommonTableInner<T extends { id?: string | number }>({
           </thead>
 
           <tbody>
-            {data.map((row, index) => (
+            {data.map((row, index) => {
+              const isSelected = selectedRowId === row.id;
+              const handleDoubleTap = useDoubleTap(() => {
+                onSelectRow?.(row);
+              });
+
+              return (
+              
               <tr
                 key={row.id ?? index}
                 onClick={() => onRowClick?.(row)}
-                className={`border-b border-gray-100 ${
-                  onRowClick
-                    ? "cursor-pointer hover:bg-orange-50"
-                    : "hover:bg-gray-50"
-                }`}
-              >
+                onDoubleClick={() => onSelectRow?.(row)} // desktop
+                onTouchEnd={handleDoubleTap}            // mobile
+                className={`border-b border-gray-100 cursor-pointer 
+                    ${onSelectRow ? "hover:bg-orange-50" : "hover:bg-orange-100"} 
+                    ${isSelected ? "bg-orange-100" : ""}`}
+                >
                 {columns.map((col) => (
                   <td
                     key={String(col.key)}
@@ -77,7 +102,8 @@ function CommonTableInner<T extends { id?: string | number }>({
                   </td>
                 ))}
               </tr>
-            ))}
+              );
+            })}
 
             {data.length === 0 && (
               <tr>

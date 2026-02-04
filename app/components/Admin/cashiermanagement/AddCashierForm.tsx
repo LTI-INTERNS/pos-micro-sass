@@ -35,7 +35,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
 
   const [errors, setErrors] = React.useState<FormErrors>({});
 
-  // ✅ Generic field setter
   const setField = (name: keyof FormValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
@@ -43,7 +42,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     }
   };
 
-  // ✅ Numeric-only setter (used for Number & PIN)
   const setNumericField = (
     name: "number" | "pin",
     value: string,
@@ -140,7 +138,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           <p className="text-xs text-red-500 px-3">{errors.name}</p>
         )}
 
-        {/* ✅ Number (numeric only) */}
         <FormField
           label="Number"
           placeholder="Enter Number"
@@ -197,7 +194,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
         {errors.password && (
           <p className="text-xs text-red-500 px-3">{errors.password}</p>
         )}
-
         
         <FormField
           label="PIN"

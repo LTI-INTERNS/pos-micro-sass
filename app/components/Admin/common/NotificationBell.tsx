@@ -106,7 +106,7 @@ export default function NotificationBell() {
         className="relative bg-gray-100 hover:bg-gray-200 p-2 rounded-full"
         title="Notifications"
       >
-        <Bell size={18} />
+        <Bell className="text-gray-800 cursor-pointer" size={18} />
 
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">

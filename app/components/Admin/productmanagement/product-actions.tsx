@@ -3,34 +3,50 @@
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 import { useState } from "react";
 import AddProductPopup from "@/app/components/Admin/productmanagement/AddProductPopup";
+import DeletePopup from "../common/Deletepopup";
+import AddStockPopup from "./addStockPopup";
+import type { Product } from "@/app/productmanagement/data";
 
 type Props = {
-  onAdd?: () => void;
-  onEdit?: () => void;
+  selectedProduct: Product | null;
+  onAdd?: (qty: number) => void;
   onDelete?: () => void;
-  onDeactive?: () => void;
-  onExport?: () => void;
+  onEdit?: () => void;
 };
 
 export default function CashierActionsBar({
   onAdd,
   onEdit,
   onDelete,
-  onDeactive,
+  selectedProduct,
 }: Props) {
+  const [showAddStock, setShowAddStock] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
 
   return (
       <>
         <div className="flex items-center gap-5">
           <ActionButton
             label="Add to Stock"
-            onClick={onDeactive}
+            onClick={() => {
+              if (!selectedProduct) {
+                alert("Please Select a Product First!")
+                return;
+              }
+              setShowAddStock(true);
+            }}
           />
 
           <ActionButton
             label="Delete Product"
-            onClick={onDelete}
+            onClick={() => {
+              if (!selectedProduct) {
+                alert("Please select a product first!");
+                return;
+              }
+               setDeletePopupOpen(true);
+            }}
           />
 
           <ActionButton
@@ -44,6 +60,40 @@ export default function CashierActionsBar({
             onClick={() => setShowPopup(true)}
           />
         </div>
+
+        {selectedProduct && (
+          <DeletePopup
+            isOpen={deletePopupOpen}
+            onClose={() => setDeletePopupOpen(false)}
+            item={selectedProduct}
+            itemName="Product"
+            getDisplayText={(p) => (
+              <>
+                <br /><br />
+                ID - {p.id}<br />
+                Product Name - {p.name}<br />
+                Category - {p.category}<br />
+                Supplier - {p.supplier}
+              </>
+            )}
+            onConfirm={() => {
+              onDelete?.();
+              setDeletePopupOpen(false);
+            }}
+          />
+        )}
+
+        {selectedProduct && (
+          <AddStockPopup
+            product={selectedProduct}
+            isOpen={showAddStock}
+            onClose={() => setShowAddStock(false)}
+            onSave={(qty) => {
+              onAdd?.(qty);
+              setShowAddStock(false);
+            }}
+          />
+        )}
         
       {showPopup && (
         <AddProductPopup 

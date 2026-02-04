@@ -25,7 +25,6 @@ type Order = {
 export default function DashboardPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
-
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
 
@@ -72,7 +71,8 @@ export default function DashboardPage() {
     search,
     start,
     end,
-    searchKeys: ["id", "dateTime", "cashier",  "totalamount"],
+    dateKey: "dateTime",
+    searchKeys: ["id", "cashier"],
     filters,
   });
 
@@ -88,6 +88,7 @@ export default function DashboardPage() {
           }}
         />
         <StatCardGrid />
+
         <div className="relative">
           <SearchBar
             value={search}
@@ -99,6 +100,7 @@ export default function DashboardPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={clearAllFilters}
           />
+          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
           <FilterPopup
             open={showFilter}
@@ -109,9 +111,6 @@ export default function DashboardPage() {
             }}
             fields={filterFields}
           />
-        </div>
-        <div className="grid grid-cols-1 gap-3">
-          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
         </div>
 
         <OrdersTable orders={filteredOrders} />
