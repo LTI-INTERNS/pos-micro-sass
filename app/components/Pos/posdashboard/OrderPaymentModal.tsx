@@ -210,7 +210,6 @@ export default function OrderPaymentModal({
   const grandTotal = useMemo(() => netDue + cardTaxApplied, [netDue, cardTaxApplied]);
 
   // ✅ If card is involved, do not show (and do not compute) change-to-give
-  // (Previously you saw change because the old math subtracted gross card payment from net due.)
   const cardInvolved = isCard || cardPaid > 0;
   const changeToGive = useMemo(() => {
     if (cardInvolved) return 0;
@@ -285,11 +284,28 @@ export default function OrderPaymentModal({
 
   const amountLabel = isCard ? "Card payment received" : "Cash received";
 
-  // Hide "Cash Paid" row when card selected AND cashPaid is 0.00
-  const showCashPaidRow = !(isCard && cashPaid === 0);
+  // ✅ NEW: if card payment already covered the bill, and user switches to Cash,
+  // hide "Cash Paid" row (when cashPaid is 0).
+  const cardCoveredBill = cardPaid > 0 && remainingToPay <= 0;
+
+  // Hide "Cash Paid" row when:
+  // - card selected AND cashPaid is 0.00 (existing)
+  // - OR card already covered bill AND switched to Cash AND cashPaid is 0.00 (new)
+  const showCashPaidRow = !(
+    (isCard && cashPaid === 0) ||
+    (!isCard && cardCoveredBill && cashPaid === 0)
+  );
 
   // Show card breakdown if any card amount exists, or if card selected and still remaining
   const showCardBreakdown = cardPaid > 0 || (isCard && remainingToPay > 0);
+
+  // ✅ NEW (display-only): if card selected and there is remaining amount,
+  // show the *expected* tax on remaining instead of 0.00 (when cardPaid is still 0).
+  const cardTaxForDisplay = useMemo(() => {
+    if (cardPaid > 0) return cardTaxApplied;
+    if (isCard && remainingToPay > 0) return remainingCardTax;
+    return 0;
+  }, [cardPaid, cardTaxApplied, isCard, remainingToPay, remainingCardTax]);
 
   if (!open) return null;
 
@@ -372,7 +388,7 @@ export default function OrderPaymentModal({
                       </div>
                     )}
 
-                    {/* Cash Paid (hidden when card selected and cash=0) */}
+                    {/* Cash Paid (hidden when rules apply) */}
                     {showCashPaidRow && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Cash Paid</span>
@@ -392,7 +408,7 @@ export default function OrderPaymentModal({
                       </div>
                     )}
 
-                    {/* ✅ Change to give must NOT be visible when card involved (and now it won't compute either) */}
+                    {/* ✅ Change to give must NOT be visible when card involved */}
                     {!cardInvolved && changeToGive > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Change to Give</span>
@@ -406,8 +422,8 @@ export default function OrderPaymentModal({
                           <span className="text-gray-500">
                             Card Tax ({Math.round(cardTaxRate * 100)}%)
                           </span>
-                          {/* ✅ Keep tax even after fully paid */}
-                          <ValueCell value={formatMoney(currencyCode, cardTaxApplied)} />
+                          {/* ✅ Display expected tax when card selected + remaining exists, otherwise show actual applied tax */}
+                          <ValueCell value={formatMoney(currencyCode, cardTaxForDisplay)} />
                         </div>
 
                         {remainingToPay > 0 && (
