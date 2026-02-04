@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 
 export type Column<T> = {
   key: keyof T;
@@ -24,6 +24,20 @@ const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
   right: "text-right",
   center: "text-center",
 };
+
+function useDoubleTap(onDoubleTap: () => void, delay = 300) {
+  const lastTapRef = useRef<number>(0);
+
+  const handleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < delay) {
+      onDoubleTap();
+    }
+    lastTapRef.current = now;
+  };
+
+  return handleTap;
+}
 
 function CommonTableInner<T extends { id?: string | number }>({
   title,
@@ -62,15 +76,20 @@ function CommonTableInner<T extends { id?: string | number }>({
           <tbody>
             {data.map((row, index) => {
               const isSelected = selectedRowId === row.id;
+              const handleDoubleTap = useDoubleTap(() => {
+                onSelectRow?.(row);
+              });
+
               return (
               
               <tr
                 key={row.id ?? index}
                 onClick={() => onRowClick?.(row)}
+                onDoubleClick={() => onSelectRow?.(row)} // desktop
+                onTouchEnd={handleDoubleTap}            // mobile
                 className={`border-b border-gray-100 cursor-pointer 
                     ${onSelectRow ? "hover:bg-orange-50" : "hover:bg-orange-100"} 
                     ${isSelected ? "bg-orange-100" : ""}`}
-                  onDoubleClick={() => onSelectRow?.(row)}
                 >
                 {columns.map((col) => (
                   <td
