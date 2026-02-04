@@ -3,7 +3,7 @@
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
 
 export type Branch = {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   address: string;
@@ -14,9 +14,11 @@ export type Branch = {
 
 type Props = {
   branches: Branch[];
+  selectedBranch: Branch | null;
+  setSelectedBranch: (b: Branch | null) => void;
 };
 
-export default function BranchesTable({ branches }: Props) {
+export default function BranchesTable({ branches, selectedBranch, setSelectedBranch, }: Props) {
 const columns: Column<Branch>[] = [
   { key: "id", label: "ID" },
   { key: "name", label: "Name" },
@@ -33,6 +35,11 @@ const columns: Column<Branch>[] = [
       data={branches}
       columns={columns}
       emptyMessage="No branches found"
+      selectedRowId={selectedBranch?.id}
+      onSelectRow={(row) => {
+        if (selectedBranch?.id === row.id) setSelectedBranch(null);
+        else setSelectedBranch(row);
+      }}
     />
   );
 }
