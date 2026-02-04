@@ -11,12 +11,13 @@ import { useTableFilters, getFilterOptions } from "../components/Admin/common/Fi
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
 import { productsData } from "./data";
-
+import type { Product } from "./data";
 
 export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
-
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [products, setProducts] = useState<Product[]>(productsData);
 
   const [filters, setFilters] = useState<{
     category?: string;
@@ -49,8 +50,6 @@ export default function DashboardPage() {
       [key]: "",
     }));
   };
-
-
 
   return (
     <DashboardLayout>
@@ -111,9 +110,32 @@ export default function DashboardPage() {
           />
         </div>
 
-        <ProductActionsBar />
+        <ProductActionsBar
+          selectedProduct={selectedProduct}
+          onDelete={() => {
+            if (!selectedProduct) return;
+            setProducts((prev) =>
+              prev.filter((p) => p.id !== selectedProduct.id)
+            );
+            setSelectedProduct(null);
+          }}
+          onAdd={(qty) => {
+            if (!selectedProduct) return;
+            setProducts((prev: Product[]) =>
+              prev.map((p: Product) =>
+                p.id === selectedProduct.id
+                  ? { ...p, stock: p.stock + qty }
+                  : p
+              )
+            );
+          }}
+        />
 
-        <ProductsTable products={filteredProducts} />
+        <ProductsTable
+          products={filteredProducts}
+          selectedProduct={selectedProduct}
+          setSelectedProduct={setSelectedProduct}
+        />
       </div>
     </DashboardLayout>
   );
