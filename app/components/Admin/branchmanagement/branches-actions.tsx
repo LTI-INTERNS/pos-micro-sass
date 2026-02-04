@@ -3,21 +3,31 @@
 import { useState } from "react";
 import ActionButton from "@/app/components/Admin/common/ActionButton";  
 import AddBranchForm from "@/app/components/Admin/branchmanagement/AddBranchForm";
+import DeletePopup from "../common/Deletepopup";
+import type { Branch } from "./branches-table";
 
 type Props = {
+  selectedBranch: Branch | null;
   onEdit?: () => void;
   onDelete?: () => void;
 };
 
-export default function BranchActionsBar({ onEdit, onDelete }: Props) {
+export default function BranchActionsBar({ selectedBranch, onEdit, onDelete }: Props) {
   const [showPopup, setShowPopup] = useState(false);
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
 
   return (
     <>
         <div className="grid grid-cols-3 gap-3">
           <ActionButton
             label="Delete Branch"
-            onClick={onDelete}
+            onClick={() => {
+            if (!selectedBranch) {
+              alert("Please select a Branch first!");
+              return;
+            }
+            setDeletePopupOpen(true);
+        }}
           />
           <ActionButton
             label="Edit Branch"
@@ -35,6 +45,26 @@ export default function BranchActionsBar({ onEdit, onDelete }: Props) {
           onClose={() => setShowPopup(false)}
           branchId=""
           onSubmit={() => setShowPopup(false)}
+        />
+      )}
+      {selectedBranch && (
+        <DeletePopup
+          isOpen={deletePopupOpen}
+          onClose={() => setDeletePopupOpen(false)}
+          item={selectedBranch}
+          itemName="Branch"
+          getDisplayText={(c) => (
+            <>
+              <br /><br />
+              Reg.No - {c.regno}<br />
+              Branch Name - {c.name}<br />
+              Address - {c.address}
+            </>
+          )}
+          onConfirm={() => {
+            onDelete?.();
+            setDeletePopupOpen(false);
+          }}
         />
       )}
     
