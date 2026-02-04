@@ -1,15 +1,12 @@
 "use client";
 
 import { useState } from "react";
-
 import ModalShell from "@/app/components/Admin/common/ModalShell";
 import ReusableForm, {
   FieldConfig,
 } from "@/app/components/Admin/common/ReusableForm";
 import PopupActions from "@/app/components/Admin/common/PopupActions";
-
 import { staffData } from "../mock/mockStaffData";
-import { text } from "stream/consumers";
 
 type Props = {
   onClose: () => void;
@@ -18,7 +15,7 @@ type Props = {
 export default function AddStaffPopup({ onClose }: Props) {
   const [open, setOpen] = useState(true);
 
-  // Auto-generate next staff ID (UI only)
+
   const nextId = (staffData.length + 1).toString();
 
   const fields: FieldConfig[] = [
