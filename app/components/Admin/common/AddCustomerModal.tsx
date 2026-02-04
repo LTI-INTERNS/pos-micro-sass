@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import ActionButton from "./ActionButton";
+import * as React from "react";
+import ModalShell from "./ModalShell";
+import FormField from "./FormField";
+import PopupActions from "./PopupActions";
 
 export type CustomerFormValues = {
   name: string;
@@ -10,31 +12,41 @@ export type CustomerFormValues = {
   email?: string;
 };
 
-type Props = {
+type FormErrors = Partial<Record<keyof CustomerFormValues, string>>;
+
+type AddCustomerModalProps = {
   open: boolean;
+  title?: string;
+  submitLabel?: string;
   onClose: () => void;
   onSubmit: (values: CustomerFormValues) => void;
 };
 
-export default function AddCustomerModal({ open, onClose, onSubmit }: Props) {
-  const [values, setValues] = useState<CustomerFormValues>({
+export default function AddCustomerModal({
+  open,
+  title = "New customer",
+  submitLabel = "Add customer",
+  onClose,
+  onSubmit,
+}: AddCustomerModalProps) {
+  const [values, setValues] = React.useState<CustomerFormValues>({
     name: "",
     phoneNumber: "",
     phoneNumber2: "",
     email: "",
   });
 
-  const [errors, setErrors] = useState<Partial<CustomerFormValues>>({});
+  const [errors, setErrors] = React.useState<FormErrors>({});
 
-  if (!open) return null;
-
-  const handleChange = (field: keyof CustomerFormValues, value: string) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  const setField = (name: keyof CustomerFormValues, value: string) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
-  const validate = () => {
-    const newErrors: Partial<CustomerFormValues> = {};
+  const validateForm = () => {
+    const newErrors: FormErrors = {};
 
     if (!values.name.trim()) {
       newErrors.name = "Name is required";
@@ -42,13 +54,20 @@ export default function AddCustomerModal({ open, onClose, onSubmit }: Props) {
 
     if (!values.phoneNumber.trim()) {
       newErrors.phoneNumber = "Phone number is required";
-    } else if (values.phoneNumber.length !== 10) {
+    } else if (!/^\d{10}$/.test(values.phoneNumber.replace(/\D/g, ""))) {
       newErrors.phoneNumber = "Phone number must be exactly 10 digits";
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (values.email && !emailRegex.test(values.email)) {
-      newErrors.email = "Please enter a valid email address";
+    if (values.phoneNumber2?.trim()) {
+      if (!/^\d{10}$/.test(values.phoneNumber2.replace(/\D/g, ""))) {
+        newErrors.phoneNumber2 = "Phone number must be exactly 10 digits";
+      }
+    }
+
+    if (values.email?.trim()) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+        newErrors.email = "Please enter a valid email address";
+      }
     }
 
     setErrors(newErrors);
@@ -56,140 +75,104 @@ export default function AddCustomerModal({ open, onClose, onSubmit }: Props) {
   };
 
   const handleSubmit = () => {
-    if (!validate()) return;
+    if (!validateForm()) return;
 
     onSubmit({
       name: values.name.trim(),
       phoneNumber: values.phoneNumber.trim(),
-      phoneNumber2: values.phoneNumber2?.trim(),
-      email: values.email?.trim(),
+      phoneNumber2: values.phoneNumber2?.trim() || undefined,
+      email: values.email?.trim() || undefined,
     });
 
+    resetForm();
+  };
+
+  const handleCancel = () => {
+    onClose();
+    resetForm();
+  };
+
+  const resetForm = () => {
     setValues({
       name: "",
       phoneNumber: "",
       phoneNumber2: "",
       email: "",
     });
+    setErrors({});
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md p-6">
-        <h2 className="text-xl font-semibold mb-6 text-center text-black">
-          Add New Customer
-        </h2>
+    <ModalShell
+      open={open}
+      title={title}
+      onClose={handleCancel}
+      widthClassName="w-[600px] max-w-[92vw]"
+    >
+      <form className="space-y-1 mt-[-10px]">
+        <FormField
+          label="Name *"
+          placeholder="Enter name"
+          value={values.name}
+          onChange={(v) => setField("name", v)}
+        />
+        {errors.name && (
+          <p className="text-xs text-red-500 px-3">{errors.name}</p>
+        )}
 
-        {/* Name */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1 text-black">
-            Name *
-          </label>
-          <input
-            type="text"
-            placeholder="Enter customer name"
-            value={values.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-            className="w-full rounded-lg px-3 py-2 outline-none
-              border border-gray-300
-              text-gray-500 placeholder:text-gray-400
-              focus:border-orange-400
-              focus:ring-2 focus:ring-orange-400"
-          />
-          {errors.name && (
-            <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-          )}
-        </div>
+        <FormField
+          label="Phone number 1 *"
+          placeholder="Enter phone number"
+          value={values.phoneNumber}
+          onChange={(v) =>
+            setField("phoneNumber", v.replace(/\D/g, "").slice(0, 10))
+          }
+        />
+        {errors.phoneNumber && (
+          <p className="text-xs text-red-500 px-3">{errors.phoneNumber}</p>
+        )}
 
-        {/* Phone number 1 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1 text-black">
-            Phone number 1 *
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Enter customer phone number1"
-            value={values.phoneNumber}
-            onChange={(e) => {
-              const onlyNumbers = e.target.value.replace(/\D/g, "");
-              if (onlyNumbers.length <= 10) {
-                handleChange("phoneNumber", onlyNumbers);
-              }
-            }}
-            className="w-full rounded-lg px-3 py-2 outline-none
-              border border-gray-300
-              text-gray-500 placeholder:text-gray-400
-              focus:border-orange-400
-              focus:ring-2 focus:ring-orange-400"
-          />
-          {errors.phoneNumber && (
-            <p className="text-red-500 text-xs mt-1">
-              {errors.phoneNumber}
-            </p>
-          )}
-        </div>
+        <FormField
+          label="Phone number 2 (optional)"
+          placeholder="Enter phone number"
+          value={values.phoneNumber2 ?? ""}
+          onChange={(v) =>
+            setField("phoneNumber2", v.replace(/\D/g, "").slice(0, 10))
+          }
+        />
+        {errors.phoneNumber2 && (
+          <p className="text-xs text-red-500 px-3">{errors.phoneNumber2}</p>
+        )}
 
-        {/* Phone number 2 */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-1 text-black">
-            Phone number 2 (optional)
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Enter customer phone number2"
-            value={values.phoneNumber2}
-            onChange={(e) => {
-              const onlyNumbers = e.target.value.replace(/\D/g, "");
-              if (onlyNumbers.length <= 10) {
-                handleChange("phoneNumber2", onlyNumbers);
-              }
-            }}
-            className="w-full rounded-lg px-3 py-2 outline-none
-              border border-gray-300
-              text-gray-500 placeholder:text-gray-400
-              focus:border-orange-400
-              focus:ring-2 focus:ring-orange-400"
-          />
-        </div>
+        <FormField
+          label="Email (optional)"
+          placeholder="Enter email address"
+          value={values.email ?? ""}
+          onChange={(v) => setField("email", v)}
+        />
+        {errors.email && (
+          <p className="text-xs text-red-500 px-3">{errors.email}</p>
+        )}
 
-        {/* Email */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium mb-1 text-black">
-            Email (optional)
-          </label>
-          <input
-            type="email"
-            placeholder="Enter customer e-mail"
-            value={values.email}
-            onChange={(e) => handleChange("email", e.target.value)}
-            className="w-full rounded-lg px-3 py-2 outline-none
-              border border-gray-300
-              text-gray-500 placeholder:text-gray-400
-              focus:border-orange-400
-              focus:ring-2 focus:ring-orange-400"
-          />
-          {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-          )}
+        <div className="flex justify-center pt-4">
+          <div className="w-[420px]">
+            <PopupActions
+              actions={[
+                {
+                  label: "Cancel",
+                  variant: "secondary",
+                  onClick: handleCancel,
+                },
+                {
+                  label: submitLabel,
+                  variant: "primary",
+                  onClick: handleSubmit,
+                },
+              ]}
+            />
+          </div>
         </div>
-
-        {/* Actions */}
-        <div className="flex gap-4">
-          <ActionButton
-            label="Cancel"
-            onClick={onClose}
-            className="flex-1 border border-orange-400 text-orange-500 rounded-full"
-          />
-          <ActionButton
-            label="Add Customer"
-            onClick={handleSubmit}
-            variant="primary"
-            className="flex-1 rounded-full"
-          />
-        </div>
-      </div>
-    </div>
+      </form>
+    </ModalShell>
   );
 }

@@ -1,12 +1,18 @@
 "use client";
 
-import { useState ,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type LoginResponse =
-  | { ok: true; role: "admin" | "cashier" }
+  | {
+      ok: true;
+      role: "admin" | "cashier" | "superadmin";
+      emailVerified: boolean;
+      email: string;
+    }
   | { ok: false; message: string };
+
 
 export default function LoginForm() {
   const router = useRouter();
@@ -16,18 +22,52 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
-    useEffect(() => {
+  const [needsVerify, setNeedsVerify] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMsg, setResendMsg] = useState("");
+
+  useEffect(() => {
     const locked = localStorage.getItem("isLocked") === "true";
     setIsLocked(locked);
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+
+    setNeedsVerify(false);
+    setResendMsg("");
+  };
+
+  const resendVerification = async () => {
+    setResendLoading(true);
+    setResendMsg("");
+
+    try {
+      const res = await fetch("/api/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: pendingEmail }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error((data as any)?.message || "Failed to resend verification email");
+      }
+
+      setResendMsg("Verification email sent. Please check your inbox.");
+    } catch (err: any) {
+      setResendMsg(err.message || "Something went wrong");
+    } finally {
+      setResendLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setResendMsg(""); 
     setLoading(true);
 
     try {
@@ -36,22 +76,40 @@ export default function LoginForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      
-      const data =  ( await res.json()) as LoginResponse;
+
+      const data = (await res.json()) as LoginResponse;
 
       if (!data.ok || !res.ok) {
         throw new Error(!data.ok ? data.message : "Login failed");
       }
+
+
+      if (
+        (data.role === "admin" || data.role === "cashier") &&
+        !data.emailVerified
+      ){
+        setNeedsVerify(true);
+        setPendingEmail(data.email);
+        setError("Your email is not verified. Please verify to continue.");
+      return; 
+      }
+
       localStorage.removeItem("isLocked");
       setIsLocked(false);
-
+      if (data.role === "superadmin") {
+        router.push("/overview");
+        console.log("Superadmin logged in");
+        return;
+      }
+      
       if (data.role === "admin") {
         router.push("/overview");
         console.log("Admin logged in");
         return;
       }
+
       if (data.role === "cashier") {
-         router.push("/switchuser");
+        router.push("/switchuser");
         console.log("User logged in");
         return;
       }
@@ -76,13 +134,12 @@ export default function LoginForm() {
       </div>
 
       <div className="flex-1 flex flex-col justify-center space-y-4">
-        <h2 className="text-xl font-bold text-center text-white">
-          Login form
-        </h2>
+        <h2 className="text-xl font-bold text-center text-white">Login form</h2>
 
         <p className="text-center text-white text-sm">
           Lorem Ipsum has been the industry's standard dummy text ever since.
         </p>
+
         {isLocked && (
           <p className="text-orange-300 text-center text-sm">
             Screen is locked. Please enter your credentials to continue.
@@ -90,6 +147,31 @@ export default function LoginForm() {
         )}
 
         {error && <p className="text-red-600 text-center">{error}</p>}
+
+        {/*ADDED: verify email box */}
+        {needsVerify && (
+          <div className="bg-white/10 border border-white/20 rounded-lg p-4 text-sm text-white">
+            <p className="mb-2">
+              Please verify your email to continue:{" "}
+              <span className="font-semibold">{pendingEmail}</span>
+            </p>
+
+            <button
+              type="button"
+              onClick={resendVerification}
+              disabled={resendLoading || !pendingEmail}
+              className="text-orange-400 font-semibold hover:underline disabled:opacity-60"
+            >
+              {resendLoading ? "Sending..." : "Resend verification email"}
+            </button>
+
+            {resendMsg && (
+              <p className="mt-2 text-xs text-white/80">
+                {resendMsg}
+              </p>
+            )}
+          </div>
+        )}
 
         <div>
           <label className="block text-sm text-gray-400 mb-1">Username</label>
@@ -137,32 +219,33 @@ export default function LoginForm() {
         <button
           type="button"
           onClick={() => setShowAgreement(true)}
-    className="hover:underline text-sm">
+          className="hover:underline text-sm"
+        >
           End user agreement.
         </button>
-</div>{showAgreement && (
+      </div>
+
+      {showAgreement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-lg w-full max-w-md p-6 relative">
-      <h3 className="text-lg font-semibold mb-3">
-        End User Agreement
-      </h3>
+            <h3 className="text-lg font-semibold mb-3">End User Agreement</h3>
 
-      <p className="text-sm text-gray-600 mb-4">
-       This system is for authorized employees only. By continuing, you agree to
-  follow company policies, maintain data confidentiality, and use the system
-  responsibly.
-      </p>
+            <p className="text-sm text-gray-600 mb-4">
+              This system is for authorized employees only. By continuing, you agree to
+              follow company policies, maintain data confidentiality, and use the system
+              responsibly.
+            </p>
 
-      <button
-        type="button"
-        onClick={() => setShowAgreement(false)}
-        className="w-full bg-orange-600 text-white rounded-md py-2"
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
-</form>
+            <button
+              type="button"
+              onClick={() => setShowAgreement(false)}
+              className="w-full bg-orange-600 text-white rounded-md py-2"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </form>
   );
 }
