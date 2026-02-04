@@ -4,6 +4,7 @@ import * as React from "react";
 import ModalShell from "@/app/components/Admin/common/ModalShell";
 import PopupActions from "@/app/components/Admin/common/PopupActions";
 import FormField from "@/app/components/Admin/common/FormField";
+import { branchesData } from "@/app/branchmanagement/data";
 
 type FormValues = {
   branchId: string;
@@ -31,8 +32,11 @@ export default function AddBranchForm({
   branchId,
   onSubmit,
 }: AddBranchFormProps) {
+
+    const nextId = (branchesData.length + 1).toString();
+  
     const [values, setValues] = React.useState<Record<string, string>>({
-        branchId: "A001",
+        branchId: nextId,
         name: "",
         phoneNumber: "",
         address: "",
@@ -136,7 +140,6 @@ export default function AddBranchForm({
                     type="text"
                     value={values.branchId}
                     disabled
-                    placeholder="A001"
                     className="
                         w-full rounded-full border border-gray-200 px-4 py-2 outline-none
                         bg-gray-100 text-gray-400 cursor-not-allowed
