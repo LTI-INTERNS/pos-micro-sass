@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
@@ -9,9 +9,9 @@ import CustomersTable from "@/app/components/Admin/customermanagement/customers-
 import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
 import StatCardGrid from "@/app/components/Admin/customermanagement/customerStarGrid";
 import { customersData } from "./data";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
 import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
+
 
 type Customer = {
   id: number;
@@ -29,12 +29,22 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [showAddCustomer, setShowAddCustomer] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>(customersData);
+  
 
   const [filters, setFilters] = useState<{
-    name?: string;
-    promoCard?: string;
+    outstandingRange?: string;
   }>({});
-    const isFilterApplied = Object.values(filters).some(
+
+  const handleDeleteCustomer = () => {
+    if (!selectedCustomer) return;
+
+    setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
+    setSelectedCustomer(null);
+  };
+
+  const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
   );
 
@@ -46,8 +56,17 @@ export default function CustomersPage() {
     setFilters({});
   };
 
-  const nameOptions = getFilterOptions(customersData, "name");
-  const promoCardOptions = getFilterOptions(customersData, "promoCard");
+  const filterFields: SelectField[] = [
+    {
+      name: "outstandingRange",
+      placeholder: "Select Outstanding Range",
+      options: [
+        { label: "Below 50,000", value: "lt50k" },
+        { label: "50,000 - 100,000", value: "50k-100k" },
+        { label: "Above 100,000", value: "gt100k" },
+      ],
+    },
+  ];
 
   const filteredCustomers = useTableFilters<Customer>({
     data: customersData as Customer[],
@@ -56,6 +75,20 @@ export default function CustomersPage() {
     end,
     searchKeys: ["id", "name", "email", "promoCard"],
     filters,
+  }).filter((c) => {
+    if (!filters.outstandingRange) return true;
+
+    if (filters.outstandingRange === "lt50k" && c.outstanding >= 50000)
+      return false;
+    if (
+      filters.outstandingRange === "50k-100k" &&
+      (c.outstanding < 50000 || c.outstanding > 100000)
+    )
+      return false;
+    if (filters.outstandingRange === "gt100k" && c.outstanding <= 100000)
+      return false;
+
+    return true;
   });
 
   return (
@@ -83,6 +116,10 @@ export default function CustomersPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={clearAllFilters}
           />
+          <FilterChips
+            filters={filters}
+            onRemove={handleRemoveFilter}
+          />
 
           <FilterPopup
             open={showFilter}
@@ -91,27 +128,19 @@ export default function CustomersPage() {
               setFilters(values);
               setShowFilter(false);
             }}
-            fields={[
-              {
-                name: "name",
-                placeholder: "Customer Name",
-                options: nameOptions,
-              },
-              {
-                name: "promoCard",
-                placeholder: "Promo Card",
-                options: promoCardOptions,
-              },
-            ]}
+            fields={filterFields}
           />
         </div>
-        <div className="grid grid-cols-1 gap-3">
-          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
-          <CustomerActionsBar
-          />
-        </div>
+        <CustomerActionsBar
+          selectedCustomer={selectedCustomer}
+          onDelete={handleDeleteCustomer}
+        />
 
-        <CustomersTable customers={filteredCustomers} />
+        <CustomersTable
+          customers={filteredCustomers}
+          selectedCustomer={selectedCustomer}
+          setSelectedCustomer={setSelectedCustomer}
+        />
       </div>
     </DashboardLayout>
   );
