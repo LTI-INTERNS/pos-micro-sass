@@ -42,7 +42,7 @@ export default function ModalShell({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
+            className="rounded-full p-2 text-gray-500 hover:bg-gray-100 cursor-pointer"
             aria-label="Close"
           >
             ✕
