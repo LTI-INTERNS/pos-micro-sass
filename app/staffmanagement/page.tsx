@@ -152,12 +152,9 @@ export default function StaffManagementPage() {
           emptyMessage="No staff found"
           selectedRowId={selectedStaff?.id}
           onSelectRow={(row) => {
-           if (selectedStaff?.id === row.id) {
-              setSelectedStaff(null);      // deselect
-            } else {
-              setSelectedStaff(row);      // select
-            }
+            setSelectedStaff(row);
           }}
+
         />
       </div>
 
