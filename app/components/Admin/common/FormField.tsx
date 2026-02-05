@@ -23,7 +23,7 @@ export default function FormField({
   disabled = false,
 }: FormFieldProps) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-2">
       <label className="text-[12px] text-gray-500">{label}</label>
 
       {type === "dropdown" ? (

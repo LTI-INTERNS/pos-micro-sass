@@ -5,11 +5,12 @@ import ActionButton from "@/app/components/Admin/common/ActionButton";
 import AddCustomerForm from "@/app/components/Admin/customermanagement/AddCustomerForm";
 import DeletePopup from "../common/Deletepopup";
 import type { Customer } from "./customers-table";
+import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
 
 type Props = {
   selectedCustomer: Customer | null;
   onAdd?: () => void;
-  onEdit?: () => void;
+  onEdit?: (customer: Customer) => void;
   onDelete?: () => void;
 };
 
@@ -20,6 +21,16 @@ export default function CustomerActionsBar({
 }: Props) {
   const [showPopup, setShowPopup] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
+  const [editPopupOpen, setEditPopupOpen] = useState(false);
+
+  const editFields: EditField[] = [
+  { name: "name", label: "Customer Name", type: "text" },
+  { name: "phone", label: "Phone", type: "number" },
+  { name: "promoCard", label: "Promo Code", type: "text" },
+  { name: "points", label: "Points", type: "number" },
+  { name: "email", label: "Email", type: "text" },
+  { name: "outstanding", label: "Outstanding", type: "number" },
+];
 
   return (
     <div className="grid grid-cols-3 gap-3">
@@ -36,7 +47,13 @@ export default function CustomerActionsBar({
 
       <ActionButton
         label="Edit Customer"
-        onClick={onEdit}
+        onClick={() => {
+          if (!selectedCustomer) {
+            alert("Please select a customer first!");
+            return;
+          }
+          setEditPopupOpen(true);
+        }}
       />
 
       <ActionButton
@@ -71,6 +88,21 @@ export default function CustomerActionsBar({
           }}
         />
       )}
+
+      {selectedCustomer && editPopupOpen && (
+      <EditEntityModal<Customer>
+        open={editPopupOpen}
+        title="Edit Customer"
+        initialValues={selectedCustomer}
+        fields={editFields}
+        onClose={() => setEditPopupOpen(false)}
+        onSave={(updatedCustomer) => {
+          onEdit?.(updatedCustomer); // Pass updated customer to parent
+          setEditPopupOpen(false);
+        }}
+      />
+    )}
+
     </div>
   );
 }

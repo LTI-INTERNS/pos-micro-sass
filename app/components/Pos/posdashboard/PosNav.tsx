@@ -1,12 +1,12 @@
 'use client';
 
 import Clock from '../../Landing/clock';
-import { Menu, History } from 'lucide-react';
+import { Menu, History, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface NavbarProps {
   toggleSidebar: () => void;
-  onOpenOrders: () => void; // NEW
+  onOpenOrders: () => void; 
 }
 
 const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
@@ -19,7 +19,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   };
 
   const handleLogout = () => {
-    router.push('/switchuser');
+    router.push('/login');
   };
 
   return (
@@ -48,14 +48,24 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
         {/* Previous Orders */}
         <button
           onClick={onOpenOrders}
-          className="p-2 rounded-full hover:bg-orange-100 text-orange-500"
+          className="p-2 rounded-full hover:bg-orange-100 text-orange-500 cursor-pointer"
           title="Previous Orders"
         >
           <History size={20} />
         </button>
         <button
+          onClick={handleLock}
+          title="Lock POS"
+          className="flex items-center gap-2 bg-gray-100 hover:bg-orange-500 hover:text-white cursor-pointer
+                     text-orange-500 px-3 py-1 rounded-full text-[13px] font-semibold transition-all active:scale-90"
+        >
+          <Lock size={14} />
+          Lock
+        </button>
+        <button
           onClick={handleLogout}
-          className="bg-orange-100 text-orange-500 px-4 py-1 rounded-full text-[13px] font-semibold"
+          className="bg-orange-100 text-primary px-4 py-1 hover:bg-orange-500 hover:text-white cursor-pointer
+                     rounded-full text-orange-500 text-[13px] font-semibold transition-all active:scale-90"
         >
           Log Out
         </button>

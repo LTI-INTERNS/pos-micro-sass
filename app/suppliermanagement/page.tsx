@@ -155,7 +155,14 @@ export default function SupplierPage() {
           <SupplierActionsBar
             selectedSupplier={selectedSupplier}
             onDelete={handleDeleteSupplier}
+            onEdit={(updatedSupplier: Supplier) => {
+              setSuppliersList((prev) =>
+                prev.map((s) => (s.id === updatedSupplier.id ? updatedSupplier : s))
+              );
+              setSelectedSupplier(updatedSupplier);
+            }}
           />
+          
           <SupplierTable
           suppliers={filteredSuppliers}
           selectedSupplier={selectedSupplier}

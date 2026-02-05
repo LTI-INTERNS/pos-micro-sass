@@ -134,6 +134,14 @@ export default function CustomersPage() {
         <CustomerActionsBar
           selectedCustomer={selectedCustomer}
           onDelete={handleDeleteCustomer}
+          onEdit={(updatedCustomer) => {
+            setCustomers((prev) =>
+              prev.map((c) =>
+                c.id === updatedCustomer.id ? updatedCustomer : c
+              )
+            );
+            setSelectedCustomer(updatedCustomer);
+          }}
         />
 
         <CustomersTable

@@ -11,6 +11,7 @@ import { AddCashierForm } from "../components/Admin/cashiermanagement/AddCashier
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 import DeactivateCashierPopup from "../components/Admin/cashiermanagement/DeactivateCashierPopup";
 import DeletePopup from "../components/Admin/common/Deletepopup"
+import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
 
 const mockCashiers: Cashier[] = [
   {
@@ -42,6 +43,8 @@ export default function CashierManagementPage() {
   const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null);
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
+  const [editPopupOpen, setEditPopupOpen] = useState(false);
+
 
   const [filters, setFilters] = useState<Record<string, string>>({
     cashierNo: "",
@@ -163,6 +166,12 @@ export default function CashierManagementPage() {
     }));
   };
 
+  const editFields: EditField[] = [
+    { name: "name", label: "Name" },
+    { name: "cashierNo", label: "Cashier No" },
+    { name: "email", label: "Email" },
+  ];
+
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
@@ -208,7 +217,14 @@ export default function CashierManagementPage() {
             }
             setDeletePopupOpen(true);
           }}
-          onEdit={() => alert("Edit Cashier")}
+          onEdit={() => {
+            if (!selectedCashier) {
+              alert("Please select a cashier first!");
+              return;
+            }
+            setEditPopupOpen(true);
+          }}
+
           onAdd={() => setAddOpen(true)} // opens AddCashierForm popup
           onExport={() => exportCsv(filteredCashiers)}
         />
@@ -263,6 +279,27 @@ export default function CashierManagementPage() {
             }}
           />
         )}
+
+        {selectedCashier && editPopupOpen && (
+          <EditEntityModal<Cashier>
+            open={editPopupOpen}
+            title="Edit Cashier"
+            initialValues={selectedCashier}
+            fields={editFields}
+            onClose={() => setEditPopupOpen(false)}
+            onSave={(updatedCashier) => {
+              // Update mockCashiers array
+              const index = mockCashiers.findIndex(c => c.id === selectedCashier.id);
+              if (index >= 0) {
+                mockCashiers[index] = updatedCashier;
+              }
+
+              setSelectedCashier(updatedCashier); // update selection
+              setEditPopupOpen(false);
+            }}
+          />
+        )}
+
 
       </div>
     </DashboardLayout>

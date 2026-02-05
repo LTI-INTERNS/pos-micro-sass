@@ -82,8 +82,10 @@ export default function ManageCustomer({
             columns={columns}
             data={filteredCustomers}
             emptyMessage="No customers found"
-            onRowClick={(customer) => {
-              onCustomerSelected(customer); 
+            onSelectRow={(customer) => {
+              if (!customer) return;
+
+              onCustomerSelected(customer);
               onClose();
             }}
           />
