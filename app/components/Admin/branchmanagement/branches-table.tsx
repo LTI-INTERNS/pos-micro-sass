@@ -37,8 +37,7 @@ const columns: Column<Branch>[] = [
       emptyMessage="No branches found"
       selectedRowId={selectedBranch?.id}
       onSelectRow={(row) => {
-        if (selectedBranch?.id === row.id) setSelectedBranch(null);
-        else setSelectedBranch(row);
+        setSelectedBranch(row);
       }}
     />
   );
