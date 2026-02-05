@@ -15,8 +15,8 @@ export type Cashier = {
 
 type Props = {
   cashiers: Cashier[];
-  selectedRowId?: string;                // NEW
-  onSelectRow?: (row: Cashier) => void;  // NEW
+  selectedRowId?: string;                
+  onSelectRow?: (row: Cashier | null) => void;
 };
 
 export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: Props) {
@@ -71,10 +71,7 @@ export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: 
       columns={columns}
       emptyMessage="No cashiers found"
       selectedRowId={selectedRowId}
-      onSelectRow={(row) => {
-        if (row.id === selectedRowId) onSelectRow?.(null as any);
-        else onSelectRow?.(row);
-      }}
-    />
-  );
+      onSelectRow={onSelectRow}
+      />
+    );
 }
