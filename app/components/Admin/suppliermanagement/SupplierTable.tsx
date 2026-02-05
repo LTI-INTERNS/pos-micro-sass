@@ -47,8 +47,7 @@ export default function SupplierTable({
       emptyMessage="No suppliers found"
       selectedRowId={selectedSupplier?.id}
       onSelectRow={(row) => {
-        if (selectedSupplier?.id === row.id) setSelectedSupplier(null);
-        else setSelectedSupplier(row);
+        setSelectedSupplier(row);
       }}
     />
   );
