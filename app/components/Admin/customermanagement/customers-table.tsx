@@ -34,12 +34,8 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
       emptyMessage="No Customers found"
       selectedRowId={selectedCustomer?.id}
       onSelectRow={(row) => {
-        if (selectedCustomer?.id === row.id) {
-          setSelectedCustomer(null);
-        } else {
-          setSelectedCustomer(row);
-        }
-      }} 
+        setSelectedCustomer(row);
+      }}
     />
   );
 }
