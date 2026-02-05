@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Delete, Printer, Mail, Check, X } from "lucide-react";
+import { Delete, Check, X } from "lucide-react";
 
 import DiscountPopup, { DiscountOption } from "./DiscountPopup";
 
@@ -40,6 +40,9 @@ type Props = {
   currencyCode?: string; // default "LKR"
 
   onDone?: (summary: PaymentSummary) => void;
+
+  // ✅ NEW: when coming back from confirmation, allow editing even if fully paid
+  forceEditable?: boolean;
 };
 
 type ActiveField = "amount" | null;
@@ -100,6 +103,7 @@ export default function OrderPaymentModal({
   totalAmount,
   currencyCode = "LKR",
   onDone,
+  forceEditable = false,
 }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
 
@@ -121,8 +125,17 @@ export default function OrderPaymentModal({
   // Auto-open discount popup once per modal open
   const [hasPromptedDiscount, setHasPromptedDiscount] = useState(false);
 
-  // "nice animation" when value is auto-corrected
+  // animation when value is auto-corrected
   const [amountNudge, setAmountNudge] = useState(false);
+
+  // ✅ Remaining glow pulse (no bounce)
+  const [remainingNudge, setRemainingNudge] = useState(false);
+
+  // ✅ Done button pulse
+  const [donePulse, setDonePulse] = useState(false);
+
+  // remember last card type for split label
+  const [lastCardMethod, setLastCardMethod] = useState<"Visa" | "Master" | null>(null);
 
   const discountOptions: DiscountOption[] = useMemo(
     () => [
@@ -133,11 +146,37 @@ export default function OrderPaymentModal({
     []
   );
 
+  // rounding helpers
+  const round2 = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
+  const EPS = 0.005;
+
+  function resetAll() {
+    setSelectedMethod("Cash");
+    setAmountDraft("");
+    setCashPaid(0);
+    setCardPaid(0);
+    setCardTaxRate(0.03);
+
+    setAmountFocused(false);
+    setActiveField(null);
+
+    setSelectedDiscountId(null);
+
+    setDiscountOpen(false);
+    setHasPromptedDiscount(false);
+
+    setAmountNudge(false);
+    setRemainingNudge(false);
+    setDonePulse(false);
+
+    setLastCardMethod(null);
+
+    inputRef.current?.blur();
+  }
+
+  // Discount prompt only when opening
   useEffect(() => {
-    if (!open) {
-      setHasPromptedDiscount(false);
-      return;
-    }
+    if (!open) return;
 
     if (!hasPromptedDiscount) {
       setDiscountOpen(true);
@@ -148,7 +187,7 @@ export default function OrderPaymentModal({
   const isCard = selectedMethod === "Visa" || selectedMethod === "Master";
   const showCardPercentages = isCard;
 
-  // ✅ If user switches back to Cash, clear any suggested/corrected card value
+  // When switching to Cash, clear draft focus (keep your behavior)
   useEffect(() => {
     if (selectedMethod === "Cash") {
       setAmountDraft("");
@@ -156,6 +195,9 @@ export default function OrderPaymentModal({
       setActiveField(null);
       setAmountNudge(false);
       inputRef.current?.blur();
+    }
+    if (selectedMethod === "Visa" || selectedMethod === "Master") {
+      setLastCardMethod(selectedMethod);
     }
   }, [selectedMethod]);
 
@@ -173,70 +215,91 @@ export default function OrderPaymentModal({
 
   const netDue = useMemo(() => baseAmount - discountValue, [baseAmount, discountValue]);
 
-  // ✅ IMPORTANT FIX:
-  // Treat cardPaid as GROSS (includes tax). Only its BASE portion reduces the NET due.
   const cardBasePaid = useMemo(() => {
     if (cardPaid <= 0) return 0;
     const denom = 1 + cardTaxRate;
-    if (denom <= 0) return cardPaid;
-    return cardPaid / denom;
+    if (denom <= 0) return round2(cardPaid);
+    return round2(cardPaid / denom);
   }, [cardPaid, cardTaxRate]);
 
   const cardTaxApplied = useMemo(() => {
-    const tax = cardPaid - cardBasePaid;
-    return tax > 0 ? tax : 0;
+    const tax = round2(cardPaid - cardBasePaid);
+    return tax > EPS ? tax : 0;
   }, [cardPaid, cardBasePaid]);
 
-  // NET remaining (excluding tax)
-  const remainingNet = useMemo(() => netDue - (cashPaid + cardBasePaid), [netDue, cashPaid, cardBasePaid]);
+  const remainingNet = useMemo(() => {
+    return round2(netDue - (cashPaid + cardBasePaid));
+  }, [netDue, cashPaid, cardBasePaid]);
 
-  const remainingToPay = useMemo(() => (remainingNet > 0 ? remainingNet : 0), [remainingNet]);
+  const remainingToPay = useMemo(() => (remainingNet > EPS ? remainingNet : 0), [remainingNet]);
 
-  // If still remaining and card selected, the tax to apply on the remaining amount
+  const isFullyPaid = remainingToPay <= 0;
+
+  // ✅ IMPORTANT: lock only when fully paid AND NOT in forceEditable mode
+  const lockInputs = isFullyPaid && !forceEditable;
+
+  // Done auto-pulse every 2s while fully paid (and not editable)
+  useEffect(() => {
+    if (!open) return;
+    if (!isFullyPaid) return;
+    if (forceEditable) return;
+
+    const tick = () => {
+      setDonePulse(true);
+      window.setTimeout(() => setDonePulse(false), 520);
+    };
+
+    tick();
+    const id = window.setInterval(tick, 2000);
+    return () => window.clearInterval(id);
+  }, [open, isFullyPaid, forceEditable]);
+
   const remainingCardTax = useMemo(() => {
     if (!isCard) return 0;
     if (remainingToPay <= 0) return 0;
-    return remainingToPay * cardTaxRate;
+    const t = round2(remainingToPay * cardTaxRate);
+    return t > EPS ? t : 0;
   }, [isCard, remainingToPay, cardTaxRate]);
 
   const totalRemainingWithTax = useMemo(() => {
     if (remainingToPay <= 0) return 0;
-    return remainingToPay + remainingCardTax;
+    return round2(remainingToPay + remainingCardTax);
   }, [remainingToPay, remainingCardTax]);
 
   const totalPaid = useMemo(() => cashPaid + cardPaid, [cashPaid, cardPaid]);
 
-  // ✅ Grand total should keep the card tax even after payment is completed
   const grandTotal = useMemo(() => netDue + cardTaxApplied, [netDue, cardTaxApplied]);
 
-  // ✅ If card is involved, do not show (and do not compute) change-to-give
-  // (Previously you saw change because the old math subtracted gross card payment from net due.)
   const cardInvolved = isCard || cardPaid > 0;
   const changeToGive = useMemo(() => {
     if (cardInvolved) return 0;
     return remainingNet < 0 ? -remainingNet : 0;
   }, [cardInvolved, remainingNet]);
 
-  // Remaining to Pay visibility rule (your previous rule)
   const showRemainingToPay =
     remainingToPay > 0 && (Boolean(selectedDiscount) || (cashPaid > 0 && cashPaid < baseAmount));
 
   const showCurrencyInAmount = amountFocused;
 
+  function fireRemainingNudge() {
+    setRemainingNudge(true);
+    window.setTimeout(() => setRemainingNudge(false), 700);
+  }
+
   function commitCashOrCardPayment() {
+    if (lockInputs) return;
+
     const n = parseFloat(amountDraft);
     if (!Number.isFinite(n) || n <= 0) return;
 
     if (isCard) {
       const maxAllowed = totalRemainingWithTax;
 
-      // If nothing remaining, just clear the draft
       if (maxAllowed <= 0) {
         setAmountDraft("");
         return;
       }
 
-      // ✅ No alert. Just suggest/correct + animate.
       if (n > maxAllowed) {
         const suggested = maxAllowed.toFixed(2);
         setAmountDraft(suggested);
@@ -247,7 +310,6 @@ export default function OrderPaymentModal({
         return;
       }
 
-      // Add gross card payment (includes tax)
       setCardPaid((p) => p + n);
     } else {
       setCashPaid((p) => p + n);
@@ -256,13 +318,12 @@ export default function OrderPaymentModal({
     setAmountDraft("");
     setAmountFocused(false);
     setActiveField(null);
-
-    // Unfocus input after Add
     inputRef.current?.blur();
   }
 
   const handleKeypadPress = (key: string) => {
     if (!activeField) return;
+    if (lockInputs) return;
 
     if (key === "Add") {
       commitCashOrCardPayment();
@@ -277,26 +338,57 @@ export default function OrderPaymentModal({
     setSelectedDiscountId(null);
   }
   function resetCashPaid() {
+    if (lockInputs) return;
     setCashPaid(0);
   }
   function resetCardPaid() {
+    if (lockInputs) return;
     setCardPaid(0);
   }
 
   const amountLabel = isCard ? "Card payment received" : "Cash received";
 
-  // Hide "Cash Paid" row when card selected AND cashPaid is 0.00
-  const showCashPaidRow = !(isCard && cashPaid === 0);
+  const cardCoveredBill = cardPaid > 0 && remainingToPay <= 0;
 
-  // Show card breakdown if any card amount exists, or if card selected and still remaining
+  const showCashPaidRow = !(
+    (isCard && cashPaid === 0) ||
+    (!isCard && cardCoveredBill && cashPaid === 0)
+  );
+
   const showCardBreakdown = cardPaid > 0 || (isCard && remainingToPay > 0);
 
-  if (!open) return null;
+  const cardTaxForDisplay = useMemo(() => {
+    if (cardPaid > 0) return cardTaxApplied;
+    if (isCard && remainingToPay > 0) return remainingCardTax;
+    return 0;
+  }, [cardPaid, cardTaxApplied, isCard, remainingToPay, remainingCardTax]);
+
+  const paymentMethodLabel = useMemo(() => {
+    const hasCash = cashPaid > EPS;
+    const hasCard = cardPaid > EPS;
+
+    const cardLabel =
+      lastCardMethod ??
+      (selectedMethod === "Visa" || selectedMethod === "Master" ? selectedMethod : null);
+
+    if (hasCash && hasCard) return `Cash + ${cardLabel ?? "Card"}`;
+    if (hasCard) return cardLabel ?? "Card";
+    return "Cash";
+  }, [cashPaid, cardPaid, lastCardMethod, selectedMethod]);
 
   return (
     <>
-      <div className="fixed inset-0 px-6 z-50 flex justify-end bg-black/30">
-        <div className="h-full w-md bg-white shadow-xl flex flex-col">
+      <div
+        className={`fixed inset-0 px-6 z-50 flex justify-end bg-black/30 transition-opacity duration-200 ${
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!open}
+      >
+        <div
+          className={`h-full w-md bg-white shadow-xl flex flex-col transform transition-transform duration-200 ${
+            open ? "translate-x-0" : "translate-x-4"
+          }`}
+        >
           {/* Header */}
           <div className="flex items-start justify-between px-5 py-4 border-b">
             <div>
@@ -305,7 +397,11 @@ export default function OrderPaymentModal({
             </div>
 
             <button
-              onClick={onClose}
+              onClick={() => {
+                // X resets + closes
+                resetAll();
+                onClose();
+              }}
               className="text-gray-600 hover:text-black text-xl leading-none mt-1 cursor-pointer"
             >
               ✕
@@ -350,7 +446,6 @@ export default function OrderPaymentModal({
                       <ValueCell value={formatMoney(currencyCode, baseAmount)} />
                     </div>
 
-                    {/* Discount details ONLY when selected */}
                     {selectedDiscount && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">
@@ -364,35 +459,31 @@ export default function OrderPaymentModal({
                       </div>
                     )}
 
-                    {/* ✅ CASH MODE: Remaining to Pay above Cash Paid (same as before) */}
                     {!isCard && showRemainingToPay && (
-                      <div className="flex justify-between text-sm">
+                      <div className={`flex justify-between text-sm ${remainingNudge ? "remaining-glow" : ""}`}>
                         <span className="text-gray-500">Remaining to Pay</span>
                         <ValueCell value={formatMoney(currencyCode, remainingToPay)} />
                       </div>
                     )}
 
-                    {/* Cash Paid (hidden when card selected and cash=0) */}
                     {showCashPaidRow && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Cash Paid</span>
                         <ValueCell
                           value={formatMoney(currencyCode, cashPaid)}
-                          showClear={cashPaid > 0}
+                          showClear={cashPaid > 0 && !lockInputs}
                           onClear={resetCashPaid}
                         />
                       </div>
                     )}
 
-                    {/* ✅ CARD MODE: Remaining to Pay must appear under Cash Paid */}
                     {isCard && showRemainingToPay && (
-                      <div className="flex justify-between text-sm">
+                      <div className={`flex justify-between text-sm ${remainingNudge ? "remaining-glow" : ""}`}>
                         <span className="text-gray-500">Remaining to Pay</span>
                         <ValueCell value={formatMoney(currencyCode, remainingToPay)} />
                       </div>
                     )}
 
-                    {/* ✅ Change to give must NOT be visible when card involved (and now it won't compute either) */}
                     {!cardInvolved && changeToGive > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Change to Give</span>
@@ -406,11 +497,10 @@ export default function OrderPaymentModal({
                           <span className="text-gray-500">
                             Card Tax ({Math.round(cardTaxRate * 100)}%)
                           </span>
-                          {/* ✅ Keep tax even after fully paid */}
-                          <ValueCell value={formatMoney(currencyCode, cardTaxApplied)} />
+                          <ValueCell value={formatMoney(currencyCode, cardTaxForDisplay)} />
                         </div>
 
-                        {remainingToPay > 0 && (
+                        {isCard && remainingToPay > 0 && (
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-500">Total remaining with tax</span>
                             <ValueCell value={formatMoney(currencyCode, totalRemainingWithTax)} />
@@ -421,7 +511,7 @@ export default function OrderPaymentModal({
                           <span className="text-gray-500">Card Payment Received</span>
                           <ValueCell
                             value={formatMoney(currencyCode, cardPaid)}
-                            showClear={cardPaid > 0}
+                            showClear={cardPaid > 0 && !lockInputs}
                             onClear={resetCardPaid}
                           />
                         </div>
@@ -504,9 +594,7 @@ export default function OrderPaymentModal({
 
             {/* Inputs */}
             <div>
-              <p className="mb-2 text-sm font-semibold text-black">
-                Input amount ({amountLabel})
-              </p>
+              <p className="mb-2 text-sm font-semibold text-black">Input amount ({amountLabel})</p>
 
               <div className="relative">
                 {showCurrencyInAmount && (
@@ -522,21 +610,25 @@ export default function OrderPaymentModal({
                   placeholder="Input amount"
                   value={amountDraft}
                   onFocus={() => {
+                    if (lockInputs) return;
                     setAmountFocused(true);
                     setActiveField("amount");
                   }}
                   onBlur={() => setAmountFocused(false)}
-                  onChange={(e) => setAmountDraft(sanitizeAmountInput(e.target.value))}
+                  onChange={(e) => {
+                    if (lockInputs) return;
+                    setAmountDraft(sanitizeAmountInput(e.target.value));
+                  }}
                   className={`w-full h-14 rounded-full border border-gray-400 outline-none focus:border-orange-400
                     text-gray-600 font-semibold placeholder:text-gray-400 placeholder:font-normal
                     ${showCurrencyInAmount ? "text-left pl-20 pr-5" : "text-center px-5"}
-                    ${amountNudge ? "shake" : ""}`}
+                    ${amountNudge ? "shake" : ""} ${lockInputs ? "opacity-70" : ""}`}
                 />
               </div>
             </div>
 
             {/* Keypad */}
-            <div className="grid grid-cols-4 gap-3 text-black">
+            <div className={`grid grid-cols-4 gap-3 text-black ${lockInputs ? "opacity-70" : ""}`}>
               {[
                 "1",
                 "2",
@@ -572,7 +664,7 @@ export default function OrderPaymentModal({
                         : key === "Add"
                         ? "bg-gray-100 text-gray-800 font-normal"
                         : "bg-gray-100 text-gray-800"
-                    }`}
+                    } ${lockInputs ? "pointer-events-none" : ""}`}
                 >
                   {key === "⌫" ? (
                     <Delete size={28} strokeWidth={2} color="#ffffff" fill="#f97316" />
@@ -584,23 +676,18 @@ export default function OrderPaymentModal({
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer (only Done) */}
           <div className="px-5 py-4 border-t flex gap-3">
-            <button className="flex-1 h-14 rounded-xl bg-gray-900 text-white flex flex-col items-center justify-center gap-1 text-xs transition active:scale-95 cursor-pointer">
-              <Printer size={18} />
-              <span>Get receipt</span>
-            </button>
-
-            <button className="flex-1 h-14 rounded-xl bg-gray-900 text-white flex flex-col items-center justify-center gap-1 text-xs transition active:scale-95 cursor-pointer">
-              <Mail size={18} />
-              <span>Email</span>
-            </button>
-
             <button
               onClick={() => {
+                if (!isFullyPaid) {
+                  fireRemainingNudge();
+                  return;
+                }
+
                 onDone?.({
                   orderNo,
-                  paymentMethod: selectedMethod,
+                  paymentMethod: paymentMethodLabel,
                   currencyCode,
 
                   baseAmount,
@@ -619,9 +706,12 @@ export default function OrderPaymentModal({
 
                   grandTotal,
                 });
+
                 onClose();
               }}
-              className="flex-1 h-14 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-white flex flex-col items-center justify-center gap-1 text-xs font-semibold transition active:scale-95 cursor-pointer"
+              className={`flex-1 h-14 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-white flex flex-col items-center justify-center gap-1 text-xs font-semibold transition active:scale-95 cursor-pointer ${
+                donePulse ? "done-pulse" : ""
+              }`}
             >
               <Check size={18} />
               <span>Done</span>
@@ -642,7 +732,6 @@ export default function OrderPaymentModal({
         title="Select discount"
       />
 
-      {/* local CSS for "nice animation" */}
       <style jsx>{`
         .shake {
           animation: shake 420ms ease-in-out;
@@ -665,6 +754,46 @@ export default function OrderPaymentModal({
           }
           100% {
             transform: translateX(0);
+          }
+        }
+
+        /* ✅ glow only (no bounce/scale) */
+        .remaining-glow {
+          border-radius: 10px;
+          padding: 10px 10px;
+          margin: -6px -6px;
+          background: rgba(249, 115, 22, 0.08);
+          animation: remainingGlow 700ms ease-in-out;
+        }
+        @keyframes remainingGlow {
+          0% {
+            box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.0);
+          }
+          40% {
+            box-shadow: 0 0 0 10px rgba(249, 115, 22, 0.08),
+              0 12px 30px rgba(249, 115, 22, 0.16);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.0);
+          }
+        }
+
+        .done-pulse {
+          animation: donePulse 520ms ease-in-out;
+          box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.55);
+        }
+        @keyframes donePulse {
+          0% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.55);
+          }
+          45% {
+            transform: scale(1.03);
+            box-shadow: 0 0 0 12px rgba(249, 115, 22, 0);
+          }
+          100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(249, 115, 22, 0);
           }
         }
       `}</style>
