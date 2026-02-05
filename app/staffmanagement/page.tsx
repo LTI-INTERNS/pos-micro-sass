@@ -13,6 +13,7 @@ import { useTableFilters, getFilterOptions } from "../components/Admin/common/Fi
 import { useCSVExport } from "../components/Admin/common/csvExport";
 import { staffData } from "./mock/mockStaffData";
 import DeletePopup from "../components/Admin/common/Deletepopup"
+import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
 
 type Staff = {
   id: string;
@@ -33,6 +34,8 @@ export default function StaffManagementPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
+  const [editPopupOpen, setEditPopupOpen] = useState(false);
+
 
   const exportCSV = useCSVExport();
 
@@ -78,6 +81,16 @@ export default function StaffManagementPage() {
       [key]: "",
     }));
   };
+
+  const editFields: EditField[] = [
+  { name: "name", label: "Name", type: "text" },
+  { name: "staffNo", label: "Staff No", type: "text" },
+  { name: "branch", label: "Branch", type: "text" },
+  { name: "position", label: "Position", type: "text" },
+  { name: "email", label: "Email", type: "text" },
+  { name: "phone", label: "Phone", type: "number" },
+];
+
 
   return (
     <DashboardLayout>
@@ -128,7 +141,15 @@ export default function StaffManagementPage() {
             className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
             label="Edit Staff"
             variant="outline"
+            onClick={() => {
+              if (!selectedStaff) {
+                alert("Please select a staff first!");
+                return;
+              }
+              setEditPopupOpen(true);
+            }}
           />
+
 
           <ActionButton
             className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
@@ -183,6 +204,26 @@ export default function StaffManagementPage() {
           }}
         />
       )}
+
+      {selectedStaff && editPopupOpen && (
+        <EditEntityModal<Staff>
+          open={editPopupOpen}
+          title="Edit Staff"
+          initialValues={selectedStaff}
+          fields={editFields}
+          onClose={() => setEditPopupOpen(false)}
+          onSave={(updatedValues) => {
+            // Update staffData array
+            const index = staffData.findIndex(s => s.id === selectedStaff.id);
+            if (index >= 0) {
+              staffData[index] = updatedValues;
+            }
+            setSelectedStaff(updatedValues); // update selected staff
+            setEditPopupOpen(false);
+          }}
+        />
+      )}
+
     </DashboardLayout>
   );
 }
