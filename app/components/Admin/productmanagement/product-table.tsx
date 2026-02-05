@@ -29,12 +29,8 @@ export default function ProductsTable({ products, selectedProduct, setSelectedPr
       emptyMessage="No Product found"
       selectedRowId={selectedProduct?.id}
       onSelectRow={(row) => {
-        if (selectedProduct?.id === row.id) {
-          setSelectedProduct(null);
-        } else {
-          setSelectedProduct(row);
-        }
-      }} 
+        setSelectedProduct(row);
+      }}
     />
   );
 }
