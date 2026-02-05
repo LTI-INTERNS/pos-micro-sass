@@ -6,8 +6,8 @@ export type Product = {
   price: number;
   discount: number;
   tax: number;
-  stock: string;
-  lowstock: string;
+  stock: number;
+  lowstock: number;
 };
 
 export const productsData: Product[] = [
@@ -19,8 +19,8 @@ export const productsData: Product[] = [
     price: 100,
     discount: 5,
     tax: 10,
-    stock: "100",
-    lowstock: "10",
+    stock: 100,
+    lowstock: 10,
   },
   {
     id: "002",
@@ -30,8 +30,8 @@ export const productsData: Product[] = [
     price: 550,
     discount: 5,
     tax: 10,
-    stock: "In Stock",
-    lowstock: "Available",
+    stock: 20,
+    lowstock: 30,
   },
   {
     id: "003",
@@ -41,8 +41,8 @@ export const productsData: Product[] = [
     price: 80,
     discount: 5,
     tax: 10,
-    stock: "20",
-    lowstock: "10",
+    stock: 20,
+    lowstock: 10,
   },
   {
     id: "004",
@@ -52,8 +52,8 @@ export const productsData: Product[] = [
     price: 750,
     discount: 5,
     tax: 10,
-    stock: "In Stock",
-    lowstock: "Available",
+    stock: 50,
+    lowstock: 30,
   },
   {
     id: "005",
@@ -63,7 +63,7 @@ export const productsData: Product[] = [
     price: 650,
     discount: 5,
     tax: 10,
-    stock: "In Stock",
-    lowstock: "Available",
+    stock: 200,
+    lowstock: 50,
   }, 
 ];
