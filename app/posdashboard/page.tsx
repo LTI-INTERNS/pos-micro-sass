@@ -41,6 +41,7 @@ function OrderCompletePopup({
           <div className="relative mx-auto w-20 h-20 grid place-items-center">
             {/* orange animated glow */}
             <span className="absolute inset-0 rounded-full glow" />
+            <span className="absolute inset-[-14px] rounded-full glow-strong" />
             <div className="w-16 h-16 rounded-full bg-orange-400 grid place-items-center relative z-10">
               <Check className="text-white" size={34} />
             </div>
@@ -53,35 +54,37 @@ function OrderCompletePopup({
 
           <p className="text-slate-500">The order has been successfully completed.</p>
 
-          <button
-            onClick={onClose}
-            className="mt-7 w-full h-12 rounded-xl border border-orange-300 text-orange-600 font-semibold hover:bg-orange-50 transition active:scale-95"
-          >
-            OK
-          </button>
+          <div className="mt-7 flex justify-center">
+            <button
+              onClick={onClose}
+              className="px-8 py-3 h-12 min-w-[200px] rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
+            >
+              OK
+            </button>
+          </div>
         </div>
 
         <style jsx>{`
-          .glow {
-            background: radial-gradient(circle, rgba(249, 115, 22, 0.35), rgba(249, 115, 22, 0) 60%);
-            filter: blur(2px);
-            animation: glowPulse 1.6s ease-in-out infinite;
-          }
-          @keyframes glowPulse {
-            0% {
-              transform: scale(0.95);
-              opacity: 0.55;
+            .glow {
+              background: radial-gradient(
+                circle,
+                rgba(249, 115, 22, 0.7),
+                rgba(249, 115, 22, 0) 65%
+              );
+              filter: blur(10px);
             }
-            50% {
-              transform: scale(1.18);
-              opacity: 0.95;
+
+            .glow-strong {
+              background: radial-gradient(
+                circle,
+                rgba(249, 115, 22, 0.5),
+                rgba(249, 115, 22, 0) 80%
+              );
+              filter: blur(26px);
             }
-            100% {
-              transform: scale(0.95);
-              opacity: 0.55;
-            }
-          }
-        `}</style>
+          `}</style>
+
+
       </div>
     </div>
   );
