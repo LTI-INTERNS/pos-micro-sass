@@ -14,7 +14,8 @@ type Props<T> = {
   data: T[];
   columns: Column<T>[];
   emptyMessage?: string;
-  onRowClick?: (row: T) => void; //  NEW (optional)
+  selectedRowId?: string | number;
+  onSelectRow?: (row: T | null) => void; // allow deselect
 };
 
 const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
@@ -28,7 +29,8 @@ function CommonTableInner<T extends { id?: string | number }>({
   data,
   columns,
   emptyMessage = "No data found",
-  onRowClick,
+  selectedRowId,
+  onSelectRow,
 }: Props<T>) {
   return (
     <section className="bg-white rounded-xl border border-gray-100">
@@ -47,7 +49,9 @@ function CommonTableInner<T extends { id?: string | number }>({
               {columns.map((col) => (
                 <th
                   key={String(col.key)}
-                  className={`px-6 py-2 font-semibold ${ALIGN_CLASS[col.align ?? "left"]}`}
+                  className={`px-6 py-2 font-semibold ${
+                    ALIGN_CLASS[col.align ?? "left"]
+                  }`}
                 >
                   {col.label}
                 </th>
@@ -56,28 +60,41 @@ function CommonTableInner<T extends { id?: string | number }>({
           </thead>
 
           <tbody>
-            {data.map((row, index) => (
-              <tr
-                key={row.id ?? index}
-                onClick={() => onRowClick?.(row)}
-                className={`border-b border-gray-100 ${
-                  onRowClick
-                    ? "cursor-pointer hover:bg-orange-50"
-                    : "hover:bg-gray-50"
-                }`}
-              >
-                {columns.map((col) => (
-                  <td
-                    key={String(col.key)}
-                    className={`px-6 py-3 ${ALIGN_CLASS[col.align ?? "left"]} text-gray-700`}
-                  >
-                    {col.render
-                      ? col.render(row)
-                      : String(row[col.key])}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {data.map((row, index) => {
+              const isSelected = selectedRowId === row.id;
+
+              return (
+                <tr
+                  key={row.id ?? index}
+                  onClick={() => {
+                    if (!onSelectRow) return;
+
+                    // toggle select / deselect
+                    if (isSelected) {
+                      onSelectRow(null);
+                    } else {
+                      onSelectRow(row);
+                    }
+                  }}
+                  className={`border-b border-gray-100 cursor-pointer
+                    hover:bg-orange-50
+                    ${isSelected ? "bg-orange-100" : ""}`}
+                >
+                  {columns.map((col) => (
+                    <td
+                      key={String(col.key)}
+                      className={`px-6 py-3 ${
+                        ALIGN_CLASS[col.align ?? "left"]
+                      } text-gray-700`}
+                    >
+                      {col.render
+                        ? col.render(row)
+                        : String(row[col.key])}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
 
             {data.length === 0 && (
               <tr>

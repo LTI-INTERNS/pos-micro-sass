@@ -51,7 +51,6 @@ export default function ExpensesContent() {
       }));
     };
 
-
   const exportCSV = useCSVExport<Expenses>();
   
   return (

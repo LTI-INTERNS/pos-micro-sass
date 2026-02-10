@@ -12,8 +12,10 @@ export type Customer = {
 };
 type Props = {
   customers: Customer[];
+  selectedCustomer: Customer | null;
+  setSelectedCustomer: (c: Customer | null) => void;
 };
-export default function CustomerTable({ customers }: Props) {
+export default function CustomerTable({ customers, selectedCustomer, setSelectedCustomer }: Props) {
   const columns: Column<Customer>[] = [
     {key: "id",label: "ID",},
     {key: "name",label: "Name",},
@@ -30,6 +32,10 @@ export default function CustomerTable({ customers }: Props) {
       data={customers} 
       columns={columns}
       emptyMessage="No Customers found"
+      selectedRowId={selectedCustomer?.id}
+      onSelectRow={(row) => {
+        setSelectedCustomer(row);
+      }}
     />
   );
 }

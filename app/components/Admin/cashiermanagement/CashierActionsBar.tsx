@@ -1,5 +1,7 @@
 "use client";
 
+import ActionButton from "../common/ActionButton";
+
 type Props = {
   onDeactivate?: () => void;
   onDelete?: () => void;
@@ -16,53 +18,36 @@ export default function CashierActionsBar({
   onExport,
 }: Props) {
   return (
-    
-      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
-        <button
-          onClick={onDeactivate}
-          className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
-        >
-          Deactivate Cashier
-        </button>
+    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+      <ActionButton
+        label="Activate / Deactivate Cashier"
+        onClick={onDeactivate}
+        variant="outline"
+      />
 
-        <button
-          onClick={onDelete}
-          className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
-        >
-          Delete Cashier
-        </button>
+      <ActionButton
+        label="Delete Cashier"
+        onClick={onDelete}
+        variant="outline"
+      />
 
-        <button
-          onClick={onEdit}
-          className="w-full rounded-full border border-orange-400 bg-white py-2
-                     text-xs font-semibold text-orange-500
-                     hover:bg-orange-50 hover:shadow-sm transition cursor-pointer"
-        >
-          Edit Cashier
-        </button>
+      <ActionButton
+        label="Edit Cashier"
+        onClick={onEdit}
+        variant="outline"
+      />
 
-        <button
-          onClick={onAdd}
-          className="w-full rounded-full bg-orange-500 py-2
-                     text-xs font-semibold text-white
-                     hover:bg-orange-600 transition cursor-pointer"
-        >
-          Add New Cashier
-        </button>
+      <ActionButton
+        label="Add New Cashier"
+        onClick={onAdd}
+        variant="primary"
+      />
 
-        <button
-          onClick={onExport}
-          className="w-full rounded-full bg-orange-500 py-2
-                     text-xs font-semibold text-white
-                     hover:bg-orange-600 transition cursor-pointer"
-        >
-          Export CSV
-        </button>
-      </div>
-    
+      <ActionButton
+        label="Export CSV"
+        onClick={onExport}
+        variant="primary"
+      />
+    </div>
   );
 }

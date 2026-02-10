@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import SearchBar from "../components/Admin/common/Search-bar";
@@ -12,8 +11,9 @@ import FilterChips from "@/app/components/Admin/common/FilterChips";
 import FilterPopup from "../components/Admin/common/FilterPopup";
 import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
 import { useCSVExport } from "../components/Admin/common/csvExport";
-
 import { staffData } from "./mock/mockStaffData";
+import DeletePopup from "../components/Admin/common/Deletepopup"
+import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
 
 type Staff = {
   id: string;
@@ -31,9 +31,11 @@ export default function StaffManagementPage() {
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
-
-  // Store applied dropdown filters
   const [filters, setFilters] = useState<Record<string, string>>({});
+  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
+  const [editPopupOpen, setEditPopupOpen] = useState(false);
+
 
   const exportCSV = useCSVExport();
 
@@ -49,7 +51,6 @@ export default function StaffManagementPage() {
     { key: "pin", label: "Pin" },
   ];
 
-  //  Apply search + dropdown filter using reusable logic
   const filteredStaff = useTableFilters<Staff>({
     data: staffData,
     search,
@@ -57,12 +58,16 @@ export default function StaffManagementPage() {
     filters,
   });
 
-  //  Generate position dropdown dynamically
   const filterFields = [
     {
       name: "position",
       placeholder: "Position",
       options: getFilterOptions(staffData, "position"),
+    },
+    {
+      name: "branch",
+      placeholder: "Branch",
+      options: getFilterOptions(staffData, "branch"),
     },
   ];
 
@@ -77,13 +82,21 @@ export default function StaffManagementPage() {
     }));
   };
 
+  const editFields: EditField[] = [
+  { name: "name", label: "Name", type: "text" },
+  { name: "staffNo", label: "Staff No", type: "text" },
+  { name: "branch", label: "Branch", type: "text" },
+  { name: "position", label: "Position", type: "text" },
+  { name: "email", label: "Email", type: "text" },
+  { name: "phone", label: "Phone", type: "number" },
+];
+
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <DateRangeBar />
-
-        {/* Search Bar */}
+        
         <div className="relative">
           <SearchBar
             value={search}
@@ -101,8 +114,7 @@ export default function StaffManagementPage() {
             filters={filters}
             onRemove={removeFilter}
           />
-
-          {/* Filter Popup */}
+          
           <FilterPopup
             open={showFilter}
             onClose={() => setShowFilter(false)}
@@ -110,20 +122,34 @@ export default function StaffManagementPage() {
             onApply={(values) => setFilters(values)}
           />
         </div>
-
-        {/* Action Buttons */}
+        
         <div className="flex flex-wrap gap-3 mt-4">
           <ActionButton
             className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
             label="Delete Staff"
             variant="outline"
+            onClick={() => {
+            if (!selectedStaff) {
+              alert("Please select a cashier first!");
+              return;
+            }
+            setDeletePopupOpen(true);
+          }}
           />
 
           <ActionButton
             className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
             label="Edit Staff"
             variant="outline"
+            onClick={() => {
+              if (!selectedStaff) {
+                alert("Please select a staff first!");
+                return;
+              }
+              setEditPopupOpen(true);
+            }}
           />
+
 
           <ActionButton
             className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
@@ -132,7 +158,6 @@ export default function StaffManagementPage() {
             onClick={() => setShowPopup(true)}
           />
 
-          {/*  Export Filtered CSV */}
           <ActionButton
             className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
             label="Export CSV"
@@ -141,19 +166,64 @@ export default function StaffManagementPage() {
           />
         </div>
 
-        {/* Table */}
         <CommonTable
           title="Staff List"
           data={filteredStaff}
           columns={columns}
           emptyMessage="No staff found"
+          selectedRowId={selectedStaff?.id}
+          onSelectRow={(row) => {
+            setSelectedStaff(row);
+          }}
+
         />
       </div>
 
-      {/* Add Staff Popup */}
       {showPopup && (
         <AddStaffPopup onClose={() => setShowPopup(false)} />
+      )} 
+      {selectedStaff && (
+        <DeletePopup
+          isOpen={deletePopupOpen}
+          onClose={() => setDeletePopupOpen(false)}
+          item={selectedStaff}
+          itemName="Staff"
+          getDisplayText={(c) => (
+          <><br /><br />
+            ID - {c.id}<br />
+            Staff Name- {c.name}<br />
+            Branch - {c.branch}<br />
+            position - {c.position}
+          </>
+          )}
+          onConfirm={() => {
+            const index = staffData.findIndex(c => c.id === selectedStaff.id);
+            if (index >= 0) staffData.splice(index, 1);
+            setSelectedStaff(null);
+            setDeletePopupOpen(false);
+          }}
+        />
       )}
+
+      {selectedStaff && editPopupOpen && (
+        <EditEntityModal<Staff>
+          open={editPopupOpen}
+          title="Edit Staff"
+          initialValues={selectedStaff}
+          fields={editFields}
+          onClose={() => setEditPopupOpen(false)}
+          onSave={(updatedValues) => {
+            // Update staffData array
+            const index = staffData.findIndex(s => s.id === selectedStaff.id);
+            if (index >= 0) {
+              staffData[index] = updatedValues;
+            }
+            setSelectedStaff(updatedValues); // update selected staff
+            setEditPopupOpen(false);
+          }}
+        />
+      )}
+
     </DashboardLayout>
   );
 }

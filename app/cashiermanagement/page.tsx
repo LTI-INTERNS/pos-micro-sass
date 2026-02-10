@@ -1,23 +1,17 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import SearchBar from "../components/Admin/common/Search-bar";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
-
-import FilterPopup, {
-  type SelectField,
-} from "../components/Admin/common/FilterPopup";
-
+import FilterPopup, {type SelectField,} from "../components/Admin/common/FilterPopup";
 import CashierActionsBar from "../components/Admin/cashiermanagement/CashierActionsBar";
-import CashiersTable, {
-  type Cashier,
-} from "../components/Admin/cashiermanagement/CashiersTable";
-
-
+import CashiersTable, {type Cashier,} from "../components/Admin/cashiermanagement/CashiersTable";
 import { AddCashierForm } from "../components/Admin/cashiermanagement/AddCashierForm";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
+import DeactivateCashierPopup from "../components/Admin/cashiermanagement/DeactivateCashierPopup";
+import DeletePopup from "../components/Admin/common/Deletepopup"
+import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
 
 const mockCashiers: Cashier[] = [
   {
@@ -44,26 +38,24 @@ const mockCashiers: Cashier[] = [
 
 export default function CashierManagementPage() {
   const [query, setQuery] = useState("");
-
-  // Filter popup open/close
   const [filterOpen, setFilterOpen] = useState(false);
-
-  // Add cashier popup open/close
   const [addOpen, setAddOpen] = useState(false);
+  const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null);
+  const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
+  const [editPopupOpen, setEditPopupOpen] = useState(false);
 
-  // Selected filter values
+
   const [filters, setFilters] = useState<Record<string, string>>({
     cashierNo: "",
     revenueRange: "",
     status: "",
   });
 
-  // Filter dropdown fields shown in popup
   const filterFields: SelectField[] = useMemo(() => {
     const uniqueCashierNos = Array.from(
       new Set(mockCashiers.map((c) => c.cashierNo))
     );
-    
 
     return [
       {
@@ -94,7 +86,7 @@ export default function CashierManagementPage() {
     const q = query.trim().toLowerCase();
 
     return mockCashiers
-      // Search text filtering
+      
       .filter((c) => {
         if (!q) return true;
         return (
@@ -104,12 +96,12 @@ export default function CashierManagementPage() {
           c.cashierNo.toLowerCase().includes(q)
         );
       })
-      // Popup dropdown filtering
+      
       .filter((c) => {
-        // Cashier No filter
+       
         if (filters.cashierNo && c.cashierNo !== filters.cashierNo) return false;
 
-        // Revenue Range filter
+       
         if (filters.revenueRange === "lt100k" && c.totalRevenue >= 100000)
           return false;
         if (filters.revenueRange === "gte100k" && c.totalRevenue < 100000)
@@ -174,13 +166,17 @@ export default function CashierManagementPage() {
     }));
   };
 
+  const editFields: EditField[] = [
+    { name: "name", label: "Name" },
+    { name: "cashierNo", label: "Cashier No" },
+    { name: "email", label: "Email" },
+  ];
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
         <DateRangeBar />
 
-        {/* Search + Filter (FilterPopup positioned relative to this wrapper) */}
         <div className="relative w-full">
           <SearchBar
             placeholder="Search Cashier..."
@@ -207,20 +203,104 @@ export default function CashierManagementPage() {
         </div>
 
         <CashierActionsBar
-          onDeactivate={() => alert("Deactivate Cashier")}
-          onDelete={() => alert("Delete Cashier")}
-          onEdit={() => alert("Edit Cashier")}
+         onDeactivate={() => {
+            if (!selectedCashier) {
+              alert("Please select a cashier first!");
+              return;
+            }
+            setDeactivatePopupOpen(true);
+          }}
+          onDelete={() => {
+            if (!selectedCashier) {
+              alert("Please select a cashier first!");
+              return;
+            }
+            setDeletePopupOpen(true);
+          }}
+          onEdit={() => {
+            if (!selectedCashier) {
+              alert("Please select a cashier first!");
+              return;
+            }
+            setEditPopupOpen(true);
+          }}
+
           onAdd={() => setAddOpen(true)} // opens AddCashierForm popup
           onExport={() => exportCsv(filteredCashiers)}
         />
 
-        <CashiersTable cashiers={filteredCashiers} />
+        <CashiersTable
+          cashiers={filteredCashiers}
+          selectedRowId={selectedCashier?.id}
+          onSelectRow={(row) => setSelectedCashier(row)}
+        />
 
-        {/* Add Cashier Popup */}
         <AddCashierForm
           isOpen={addOpen}
           onClose={() => setAddOpen(false)}
         />
+
+        <DeactivateCashierPopup
+          isOpen={deactivatePopupOpen}
+          onClose={() => setDeactivatePopupOpen(false)}
+          cashier={selectedCashier ?? undefined}
+          onConfirm={() => {
+            if (!selectedCashier) return;
+
+            const updatedStatus = selectedCashier.status === "Active" ? "Deactive" : "Active";
+
+            // update mockCashiers state or call API
+            mockCashiers.forEach((c) => {
+              if (c.id === selectedCashier.id) c.status = updatedStatus;
+            });
+
+            setSelectedCashier({ ...selectedCashier, status: updatedStatus });
+            setDeactivatePopupOpen(false);
+          }}
+        />
+
+        {selectedCashier && (
+          <DeletePopup
+            isOpen={deletePopupOpen}
+            onClose={() => setDeletePopupOpen(false)}
+            item={selectedCashier}
+            itemName="Cashier"
+            getDisplayText={(c) => (
+            <><br /><br />
+              ID - {c.id}<br />
+              Cashier Name- {c.name}
+            </>
+            )}
+            onConfirm={() => {
+              const index = mockCashiers.findIndex(c => c.id === selectedCashier.id);
+              if (index >= 0) mockCashiers.splice(index, 1);
+              setSelectedCashier(null);
+              setDeletePopupOpen(false);
+            }}
+          />
+        )}
+
+        {selectedCashier && editPopupOpen && (
+          <EditEntityModal<Cashier>
+            open={editPopupOpen}
+            title="Edit Cashier"
+            initialValues={selectedCashier}
+            fields={editFields}
+            onClose={() => setEditPopupOpen(false)}
+            onSave={(updatedCashier) => {
+              // Update mockCashiers array
+              const index = mockCashiers.findIndex(c => c.id === selectedCashier.id);
+              if (index >= 0) {
+                mockCashiers[index] = updatedCashier;
+              }
+
+              setSelectedCashier(updatedCashier); // update selection
+              setEditPopupOpen(false);
+            }}
+          />
+        )}
+
+
       </div>
     </DashboardLayout>
   );

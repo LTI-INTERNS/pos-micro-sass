@@ -10,13 +10,25 @@ import FilterPopup from "../components/Admin/common/FilterPopup";
 import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
-import { productsData } from "./data";
+import AddProductPopup from "@/app/components/Admin/productmanagement/AddProductPopup";
+import AddStockPopup from "@/app/components/Admin/productmanagement/addStockPopup";
+import DeletePopup from "@/app/components/Admin/common/Deletepopup";
+import EditEntityModal from "@/app/components/Admin/common/EditPopup";
 
+import { productsData } from "./data";
+import type { Product } from "./data";
 
 export default function DashboardPage() {
+  const [products, setProducts] = useState<Product[]>(productsData);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
 
+  const [editOpen, setEditOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addStockOpen, setAddStockOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const [filters, setFilters] = useState<{
     category?: string;
@@ -26,18 +38,12 @@ export default function DashboardPage() {
     lowstock?: string;
   }>({});
 
-  const categoryOptions = getFilterOptions(productsData, "category");
-  const discountOptions = getFilterOptions(productsData, "discount");
-  const taxOptions = getFilterOptions(productsData, "tax");
-  const stockOptions = getFilterOptions(productsData, "stock");
-  const lowStockOptions = getFilterOptions(productsData, "lowstock");
-
   const filteredProducts = useTableFilters({
-      data: productsData,
-      search,
-      searchKeys: ["id", "name", "category", "supplier"],
-      filters,
-    });
+    data: products,
+    search,
+    searchKeys: ["id", "name", "category", "supplier"],
+    filters,
+  });
 
   const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -49,8 +55,6 @@ export default function DashboardPage() {
       [key]: "",
     }));
   };
-
-
 
   return (
     <DashboardLayout>
@@ -82,39 +86,105 @@ export default function DashboardPage() {
               setFilterOpen(false); 
             }}
             fields={[
-              {
-                name: "category",
-                placeholder: "Category",
-                options: categoryOptions,
-              },
-              {
-                name: "discount",
-                placeholder: "Discount",
-                options: discountOptions,
-              },
-              {
-                name: "tax",
-                placeholder: "Tax",
-                options: taxOptions,
-              },
-              {
-                name: "stock",
-                placeholder: "Stock",
-                options: stockOptions,
-              },
-              { 
-                name: "lowstock",
-                placeholder: "Low Stock/ Availability",
-                options: lowStockOptions,
-              },
-            ]}
+            { name: "category", placeholder: "Category", options: getFilterOptions(products, "category") },
+            { name: "discount", placeholder: "Discount", options: getFilterOptions(products, "discount") },
+            { name: "tax", placeholder: "Tax", options: getFilterOptions(products, "tax") },
+            { name: "stock", placeholder: "Stock", options: getFilterOptions(products, "stock") },
+            { name: "lowstock", placeholder: "Low Stock", options: getFilterOptions(products, "lowstock") },
+          ]}
           />
         </div>
 
-        <ProductActionsBar />
+        <ProductActionsBar
+          selectedProduct={selectedProduct}
+          onAddStock={() => setAddStockOpen(true)}
+          onDelete={() => setDeleteOpen(true)}
+          onEdit={() => setEditOpen(true)}
+          onAddNew={() => setAddOpen(true)}
+        />
 
-        <ProductsTable products={filteredProducts} />
+        <ProductsTable
+          products={filteredProducts}
+          selectedProduct={selectedProduct}
+          setSelectedProduct={setSelectedProduct}
+        />
       </div>
+
+      {/* ADD */}
+      <AddProductPopup
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onSave={(newProduct) => {
+          setProducts((prev) => [...prev, newProduct]);
+          setAddOpen(false);
+        }}
+      />
+
+      {/* EDIT */}
+      <EditEntityModal<Product>
+        open={editOpen}
+        title="Edit Product"
+        initialValues={selectedProduct}
+        onClose={() => setEditOpen(false)}
+        onSave={(updated) => {
+          setProducts((prev) =>
+            prev.map((p) =>
+              p.id === updated.id ? updated : p
+            )
+          );
+          setEditOpen(false);
+        }}
+        fields={[
+          { name: "name", label: "Product Name" },
+          { name: "price", label: "Price", type: "number" },
+          { name: "discount", label: "Discount" },
+          { name: "tax", label: "Tax" },
+          { name: "stock", label: "Stock", type: "number" },
+        ]}
+      />
+
+      {/* ADD STOCK */}
+      {selectedProduct && (
+        <AddStockPopup
+          product={selectedProduct}
+          isOpen={addStockOpen}
+          onClose={() => setAddStockOpen(false)}
+          onSave={(qty) => {
+            setProducts((prev) =>
+              prev.map((p) =>
+                p.id === selectedProduct.id
+                  ? { ...p, stock: p.stock + qty }
+                  : p
+              )
+            );
+            setAddStockOpen(false);
+          }}
+        />
+      )}
+
+      {/* DELETE */}
+      {selectedProduct && (
+        <DeletePopup
+          isOpen={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          item={selectedProduct}
+          itemName="Product"
+          getDisplayText={(p) => (
+            <>
+              ID - {p.id}<br />
+              Name - {p.name}<br />
+              Category - {p.category}
+            </>
+          )}
+          onConfirm={() => {
+            setProducts((prev) =>
+              prev.filter((p) => p.id !== selectedProduct.id)
+            );
+            setSelectedProduct(null);
+            setDeleteOpen(false);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }

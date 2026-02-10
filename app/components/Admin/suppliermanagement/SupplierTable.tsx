@@ -1,6 +1,8 @@
 "use client";
 
-type Supplier = {
+import CommonTable, { Column } from "../common/CommonTable";
+
+export type Supplier = {
   id: number;
   type: "Individual" | "Company";
   name: string;
@@ -13,59 +15,40 @@ type Supplier = {
 
 type Props = {
   suppliers: Supplier[];
+  selectedSupplier: Supplier | null;
+  setSelectedSupplier: (s: Supplier | null) => void;
 };
 
-export default function SupplierTable({ suppliers }: Props) {
+export default function SupplierTable({
+  suppliers,
+  selectedSupplier,
+  setSelectedSupplier,
+}: Props) {
+  const columns: Column<Supplier>[] = [
+    { key: "id", label: "ID" },
+    { key: "type", label: "Type" },
+    { key: "name", label: "Name" },
+    { key: "phone", label: "Phone" },
+    { key: "email", label: "Email" },
+    { key: "coverarea", label: "Cover Area" },
+    { 
+      key: "branches", 
+      label: "Branches",
+      render: (row) => row.branches.join(", ")
+    },
+    { key: "regNo", label: "Reg No" },
+  ];
+
   return (
-    <section className="bg-white rounded-xl border border-gray-100">
-      <div className="px-6 py-3">
-        <h2 className="text-xs font-semibold text-gray-900">
-          Suppliers
-        </h2>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-t border-b border-gray-100 text-gray-500">
-              <th className="px-6 py-2 text-left">ID</th>
-              <th className="px-6 py-2 text-left">Type</th>
-              <th className="px-6 py-2 text-left">Name</th>
-              <th className="px-6 py-2 text-left">Phone</th>
-              <th className="px-6 py-2 text-left">Email</th>
-              <th className="px-6 py-2 text-left">Cover Area</th>
-              <th className="px-6 py-2 text-left">Branches</th>
-              <th className="px-6 py-2 text-left">Reg No</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {suppliers.map((s) => (
-              <tr
-                key={s.id}
-                className="border-b border-gray-100 hover:bg-gray-50 text-black"
-              >
-                <td className="px-6 py-3">{s.id}</td>
-                <td className="px-6 py-3">{s.type}</td>
-                <td className="px-6 py-3">{s.name}</td>
-                <td className="px-6 py-3">{s.phone}</td>
-                <td className="px-6 py-3">{s.email}</td>
-                <td className="px-6 py-3">{s.coverarea}</td>
-                <td className="px-6 py-3">{s.branches.join(', ')}</td>
-                <td className="px-6 py-3">{s.regNo}</td>
-              </tr>
-            ))}
-
-            {suppliers.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-6 py-5 text-center text-gray-400">
-                  No suppliers found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <CommonTable
+      title="Suppliers"
+      data={suppliers}
+      columns={columns}
+      emptyMessage="No suppliers found"
+      selectedRowId={selectedSupplier?.id}
+      onSelectRow={(row) => {
+        setSelectedSupplier(row);
+      }}
+    />
   );
 }

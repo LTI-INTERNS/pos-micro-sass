@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
-import ActionButon from "@/app/components/Admin/common/ActionButton";
 import BranchActionsBar from "@/app/components/Admin/branchmanagement/branches-actions";
 import BranchesTable from "@/app/components/Admin/branchmanagement/branches-table";
 import StatCardGrid from "@/app/components/Admin/branchmanagement/branchStarCardGrid";
@@ -13,7 +12,7 @@ import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 type Branch = {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   address: string;
@@ -25,9 +24,9 @@ type Branch = {
 export default function BranchesPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
-
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
   const [filters, setFilters] = useState<{
     name?: string;
@@ -58,6 +57,13 @@ export default function BranchesPage() {
     filters,
   });
 
+  const handleDeleteBranch = () => {
+    if (!selectedBranch) return;
+    const index = branchesData.findIndex((b) => b.id === selectedBranch.id);
+    if (index >= 0) branchesData.splice(index, 1);
+    setSelectedBranch(null);
+  };
+
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
@@ -74,6 +80,7 @@ export default function BranchesPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={clearAllFilters}
           />
+          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
           <FilterPopup
             open={showFilter}
@@ -88,10 +95,17 @@ export default function BranchesPage() {
             ]}
           />
         </div>
-        <FilterChips filters={filters} onRemove={handleRemoveFilter} />
+        
+        <BranchActionsBar
+          selectedBranch={selectedBranch}
+          onDelete={handleDeleteBranch}
+        />
 
-        <BranchActionsBar />
-        <BranchesTable branches={filteredBranches} />
+        <BranchesTable
+          branches={filteredBranches}
+          selectedBranch={selectedBranch}
+          setSelectedBranch={setSelectedBranch}
+        />
       </div>
     </DashboardLayout>
   );

@@ -10,6 +10,7 @@ import ProfitTable, {Profit} from "../components/Admin/profitcalculation/ProfitT
 import StatCardGrid from "../components/Admin/profitcalculation/ProfitStatCardGrid";
 import { mockProfits } from "../components/Admin/profitcalculation/mock";
 import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import FilterChips from "../components/Admin/common/FilterChips";
 import { useCSVExport } from "../components/Admin/common/csvExport";
 
 export default function ProfitPage() {
@@ -36,6 +37,16 @@ export default function ProfitPage() {
     filters,
   });
 
+  const isFilterApplied = Object.values(filters).some(
+      (v) => v && v.trim() !== ""
+    );
+
+    const removeFilter = (key: string) => {
+      setFilters((prev) => ({
+        ...prev,
+        [key]: "",
+      }));
+    };
 
   const exportToCSV = useCSVExport<Profit>(); 
 
@@ -60,8 +71,16 @@ export default function ProfitPage() {
             debounceMs={300}
             showClear
             showFilter
-            onFilter={() => setShowFilter((v) => !v)}
+            onFilter={() => setShowFilter(true)}
+            isFilterApplied={isFilterApplied}
+            onClearFilters={() => setFilters({})}
           />
+
+          <FilterChips
+            filters={filters}
+            onRemove={removeFilter}
+          />
+
           <FilterPopup
               open={showFilter}
               onClose={() => setShowFilter(false)}
