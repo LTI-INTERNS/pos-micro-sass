@@ -1,19 +1,31 @@
 type GlassShellProps = {
   children: React.ReactNode;
-  className?: string;
+  fullScreen?: boolean;
 };
 
 export default function GlassShell({
   children,
-  className = "",
+  fullScreen = true,
 }: GlassShellProps) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white px-4">
-      <div
-        className={`w-full max-w-6xl bg-white/80 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl ${className}`}
-      >
-        {children}
-      </div>
-    </div>
+<div
+  className="
+    relative
+    bg-black/25
+    backdrop-blur-3xl
+    border border-white/20
+    rounded-3xl
+    shadow-[0_0_60px_rgba(0,0,0,0.7)]
+    before:absolute before:inset-0
+    before:rounded-3xl
+    before:bg-gradient-to-br
+    before:from-white/10
+    before:to-transparent
+    before:pointer-events-none
+  "
+>
+  {children}
+</div>
+
   );
 }
