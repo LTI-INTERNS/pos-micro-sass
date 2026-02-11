@@ -29,6 +29,7 @@ export default function LoginPage() {
             <div className="mt-8 text-white">Login Form Here</div>
           </div>
         }
+        showDivider={true}
       />
     </GlassBackground>
   );
