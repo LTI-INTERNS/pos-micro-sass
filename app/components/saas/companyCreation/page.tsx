@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -13,6 +13,47 @@ import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormF
 
 import LogoUploadPill from "@/app/components/saas/common/LogoUploadPill";
 
+type Errors = {
+  companyName?: string;
+  address?: string;
+  contact?: string;
+  email?: string;
+  logo?: string;
+};
+
+type Touched = {
+  companyName?: boolean;
+  address?: boolean;
+  contact?: boolean;
+  email?: boolean;
+  logo?: boolean;
+};
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+
+// Sri Lanka phone formatter: 0771234567 -> +94 77 123 4567
+function formatPhone(input: string) {
+  let value = input.replace(/[^\d+]/g, "");
+
+  // Convert 0XXXXXXXXX -> +94XXXXXXXXX
+  if (value.startsWith("0")) value = "+94" + value.slice(1);
+
+  // Only format if it's +94...
+  if (!value.startsWith("+94")) return value;
+
+  const digits = value.replace("+94", "");
+  const p1 = digits.slice(0, 2); // 77
+  const p2 = digits.slice(2, 5); // 123
+  const p3 = digits.slice(5, 9); // 4567
+
+  return `+94 ${p1}${p2 ? " " + p2 : ""}${p3 ? " " + p3 : ""}`.trim();
+}
+
+function isValidPhone(input: string) {
+  const cleaned = input.replace(/\s/g, "");
+  return /^\+94\d{9}$/.test(cleaned);
+}
+
 export default function CompanyCreatePage() {
   const router = useRouter();
 
@@ -22,6 +63,8 @@ export default function CompanyCreatePage() {
   const [email, setEmail] = useState("");
   const [logo, setLogo] = useState<File | null>(null);
 
+  const [errors, setErrors] = useState<Errors>({});
+  const [touched, setTouched] = useState<Touched>({});
   const [formError, setFormError] = useState("");
 
   const bullets = useMemo(
@@ -29,18 +72,74 @@ export default function CompanyCreatePage() {
     []
   );
 
+  const markTouched = (field: keyof Touched) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const validate = () => {
+    const next: Errors = {};
+
+    const name = companyName.trim();
+    const addr = address.trim();
+    const phone = contact.trim();
+    const mail = email.trim();
+
+    if (!name) next.companyName = "Company name is required";
+    else if (name.length < 3)
+      next.companyName = "Company name must be at least 3 characters";
+
+    if (!addr) next.address = "Address is required";
+    else if (addr.length < 6) next.address = "Address must be at least 6 characters";
+
+    if (!phone) next.contact = "Contact number is required";
+    else if (!isValidPhone(phone))
+      next.contact = "Enter a valid number (e.g., 0771234567 or +94771234567)";
+
+    if (!mail) next.email = "Email is required";
+    else if (!emailRegex.test(mail)) next.email = "Enter a valid email address";
+
+    // OPTIONAL logo required:
+    // if (!logo) next.logo = "Company logo is required";
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  // Auto validate silently to control button state
+  useEffect(() => {
+    validate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyName, address, contact, email, logo]);
+
+  const isFormValid =
+    companyName.trim().length >= 3 &&
+    address.trim().length >= 6 &&
+    isValidPhone(contact) &&
+    emailRegex.test(email.trim());
+  // if logo required:
+  // && !!logo
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
 
-    if (!companyName.trim()) return setFormError("Company name is required");
-    if (!address.trim()) return setFormError("Address is required");
-    if (!contact.trim()) return setFormError("Contact number is required");
-    if (!email.trim()) return setFormError("Email is required");
+    // mark all as touched so errors appear
+    setTouched({
+      companyName: true,
+      address: true,
+      contact: true,
+      email: true,
+      logo: true,
+    });
+
+    const ok = validate();
+    if (!ok) {
+      setFormError("Please fix the highlighted fields.");
+      return;
+    }
 
     // TODO: call API
-    // logo is available in state if needed
-    router.push("/company/select");
+    router.push("/components/saas/businessType"); 
   };
 
   return (
@@ -54,7 +153,6 @@ export default function CompanyCreatePage() {
               className="min-h-[520px] flex flex-col justify-between"
             >
               <div className="flex justify-center">
-                {/* Put your image in /public/company-illustration.png */}
                 <div className="relative w-[420px] h-[270px]">
                   <Image
                     src="/creationcompanylogo.svg"
@@ -82,43 +180,100 @@ export default function CompanyCreatePage() {
         right={
           <div className="w-full max-w-lg">
             <form onSubmit={onSubmit} className="space-y-6">
-              <InputField
-                label="Company Name"
-                placeholder="Coca Enterprises"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-              />
+              {/* Company Name */}
+              <div>
+                <InputField
+                  label="Company Name"
+                  placeholder="Coca Enterprises"
+                  value={companyName}
+                  onChange={(e) => {
+                    setCompanyName(e.target.value);
+                    if (formError) setFormError("");
+                  }}
+                  onBlur={() => markTouched("companyName")}
+                />
+                {touched.companyName && errors.companyName && (
+                  <FormErrorMessage message={errors.companyName} />
+                )}
+              </div>
 
-              <InputField
-                label="Address"
-                placeholder="used for invoices and reports"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-              />
+              {/* Address */}
+              <div>
+                <InputField
+                  label="Address"
+                  placeholder="used for invoices and reports"
+                  value={address}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    if (formError) setFormError("");
+                  }}
+                  onBlur={() => markTouched("address")}
+                />
+                {touched.address && errors.address && (
+                  <FormErrorMessage message={errors.address} />
+                )}
+              </div>
 
-              <InputField
-                label="Contact Number"
-                placeholder="+94 xxxxxxxxxx"
-                value={contact}
-                onChange={(e) => setContact(e.target.value)}
-              />
+              {/* Contact */}
+              <div>
+                <InputField
+                  label="Contact Number"
+                  placeholder="+94 77 123 4567"
+                  value={contact}
+                  onChange={(e) => {
+                    setContact(formatPhone(e.target.value));
+                    if (formError) setFormError("");
+                  }}
+                  onBlur={() => markTouched("contact")}
+                />
+                {touched.contact && errors.contact && (
+                  <FormErrorMessage message={errors.contact} />
+                )}
+              </div>
 
-              <InputField
-                label="Email"
-                type="email"
-                placeholder="We’ll send important system alerts here"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+              {/* Email */}
+              <div>
+                <InputField
+                  label="Email"
+                  type="email"
+                  placeholder="We’ll send important system alerts here"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (formError) setFormError("");
+                  }}
+                  onBlur={() => markTouched("email")}
+                />
+                {touched.email && errors.email && (
+                  <FormErrorMessage message={errors.email} />
+                )}
+              </div>
 
-              <LogoUploadPill onFileChange={setLogo} />
+              {/* Logo */}
+              <div>
+                <LogoUploadPill
+                  onFileChange={(f) => {
+                    setLogo(f);
+                    if (formError) setFormError("");
+                  }}
+                />
+                {touched.logo && errors.logo && (
+                  <FormErrorMessage message={errors.logo} />
+                )}
+              </div>
 
               {formError && <FormErrorMessage message={formError} />}
 
-              <PrimaryButton type="submit" className="py-4 text-base">
+              <PrimaryButton
+                type="submit"
+                disabled={!isFormValid}
+                className={[
+                  "py-4 text-base transition",
+                  !isFormValid ? "opacity-50 cursor-not-allowed" : "",
+                ].join(" ")}
+              >
                 Create Company
               </PrimaryButton>
-
             </form>
           </div>
         }
