@@ -1,20 +1,35 @@
-import GlassShell from "@/app/components/saas/common/layout/GlassShell";
+import GlassBackground from "@/app/components/saas/common/GlassBackground";
+import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 
 export default function LoginPage() {
   return (
-    <div className="relative min-h-screen bg-[url('/saasbackground.png')] bg-cover bg-center flex items-center justify-center">
-      
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60"></div>
+    <GlassBackground backgroundImage="/saasbackground.png">
+      <SplitPanelLayout
+        left={
+          <div className="w-full">
+            <h2 className="text-3xl font-semibold text-white">Welcome Back</h2>
+            <p className="mt-3 text-white/70">
+              Manage your POS business with MicroSaaS.
+            </p>
 
-      {/* Glass content */}
-      <div className="relative z-10 w-full max-w-5xl">
-        <GlassShell fullScreen={false}>
-          <div className="p-16">
-            Login Form Here
+            <div className="mt-10 space-y-3 text-white/70">
+              <div>✅ Fast checkout</div>
+              <div>✅ Multi-branch ready</div>
+              <div>✅ Reports & analytics</div>
+            </div>
           </div>
-        </GlassShell>
-      </div>
-    </div>
+        }
+        right={
+          <div className="w-full max-w-md">
+            <h1 className="text-2xl font-semibold text-white">Sign In</h1>
+            <p className="mt-2 text-white/70">
+              Enter your credentials to continue.
+            </p>
+
+            <div className="mt-8 text-white">Login Form Here</div>
+          </div>
+        }
+      />
+    </GlassBackground>
   );
 }
