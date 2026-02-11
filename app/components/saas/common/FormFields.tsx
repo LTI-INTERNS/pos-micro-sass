@@ -63,6 +63,7 @@ type InputFieldProps = BaseProps & {
   type?: string;
   placeholder?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
 };
 
 export function InputField({
@@ -73,6 +74,7 @@ export function InputField({
   error,
   value,
   onChange,
+  onBlur,
   variant = "glass",
 }: InputFieldProps) {
   return (
@@ -82,6 +84,7 @@ export function InputField({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        onBlur={onBlur}
         className={getInputStyles(error, variant)}
       />
     </FieldWrapper>
