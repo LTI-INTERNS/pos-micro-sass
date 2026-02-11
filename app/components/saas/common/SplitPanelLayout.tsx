@@ -1,39 +1,42 @@
+"use client";
+
+import React from "react";
+
 type SplitPanelLayoutProps = {
   left?: React.ReactNode;
   right: React.ReactNode;
-
-  /** optional sizes */
+  showDivider?: boolean;
   leftClassName?: string;
   rightClassName?: string;
-
-  /** show left on mobile? (default false like most auth screens) */
-  showLeftOnMobile?: boolean;
 };
 
 export default function SplitPanelLayout({
   left,
   right,
+  showDivider = true,
   leftClassName = "",
   rightClassName = "",
-  showLeftOnMobile = false,
 }: SplitPanelLayoutProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2">
-      {/* Left */}
+      {/* LEFT PANEL */}
       {left && (
         <div
           className={[
-            showLeftOnMobile ? "flex" : "hidden",
-            "md:flex items-center justify-center p-10",
-            "border-b md:border-b-0 md:border-r border-white/15",
+            "relative flex items-center justify-center p-10", 
+            showDivider ? "border-b border-white/10 md:border-b-0" : "",
             leftClassName,
           ].join(" ")}
         >
           {left}
+          
+          {showDivider && (
+            <div className="hidden md:block absolute right-0 top-10 bottom-10 w-px bg-gradient-to-b from-transparent via-white/40 to-transparent" />
+          )}
         </div>
       )}
 
-      {/* Right */}
+      {/* RIGHT PANEL */}
       <div
         className={[
           "flex items-center justify-center p-10",
