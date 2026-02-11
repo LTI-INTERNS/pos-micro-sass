@@ -4,39 +4,32 @@ type Role = "admin" | "cashier" | "superadmin";
 
 const USERS: Record<
   string,
-  { password: string; role: Role; email: string; emailVerified: boolean }
+  { password: string; role: Role; emailVerified: boolean }
 > = {
-  superadmin: {
+  "superadmin@coca.lk": {
     password: "123",
     role: "superadmin",
-    email: "superadmin@coca.lk",
-    emailVerified: true, 
+    emailVerified: true,
   },
-  admin: {
+  "admin@coca.lk": {
     password: "123",
     role: "admin",
-    email: "admin@coca.lk",
-    emailVerified: false, 
+    emailVerified: false,
   },
-  cashier: {
+  "cashier@coca.lk": {
     password: "123",
     role: "cashier",
-    email: "cashier@coca.lk",
-    emailVerified: false, 
+    emailVerified: false,
   },
 };
 
-
-// ADDED: shared verified status store (dev only)
 const verifiedStore =
   (globalThis as any).__verifiedEmails ?? new Map<string, boolean>();
 (globalThis as any).__verifiedEmails = verifiedStore;
 
 export async function POST(req: Request) {
-  const { username, password } = await req.json();
-
-  const user = USERS[username];
-
+  const { email, password } = await req.json(); 
+  const user = USERS[email];              
   if (!user || user.password !== password) {
     return NextResponse.json(
       { ok: false, message: "Invalid credentials" },
@@ -47,7 +40,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     role: user.role,
-    email: user.email,
-    emailVerified: verifiedStore.get(user.email) ?? user.emailVerified,
+    email,
+    emailVerified: verifiedStore.get(email) ?? user.emailVerified,
   });
 }
