@@ -1,8 +1,27 @@
 import React from 'react'
+import CommonLayout from '../components/saas/common/CommonLayout'
+import GlassBackground from '../components/saas/common/GlassBackground'
+import PlanCardGrid from '../components/saas/subscriptionPlan/PlanCardGrid'
+import Navbar from '../components/saas/common/Navbar'
+import StepProgressBar from '../components/saas/common/StepProgressBar'
 
 const Page = () => {
   return (
-    <div>Page</div>
+    <CommonLayout navbar={<Navbar />}>
+        <div className="h-20" /> 
+        <StepProgressBar currentStep={3} steps={[
+    { id: "1", label: "Account" },
+    { id: "2", label: "Business" },
+    { id: "3", label: "Subscription" },
+    { id: "4", label: "Checkout" },
+  ]} />
+      <GlassBackground>
+        <div className="container mx-auto py-20">
+          <h1 className="text-4xl font-bold text-center text-white mb-12">Select Your Subscription Plan</h1>
+          <PlanCardGrid />
+        </div>
+      </GlassBackground>
+    </CommonLayout>
   )
 }
 
