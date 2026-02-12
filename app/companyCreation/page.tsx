@@ -3,6 +3,10 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
+
+import CommonLayout from "@/app/components/saas/common/CommonLayout";
+import Navbar from "@/app/components/saas/common/Navbar";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
@@ -105,10 +109,9 @@ export default function CompanyCreatePage() {
     return Object.keys(next).length === 0;
   };
 
-  // Auto validate silently to control button state
   useEffect(() => {
     validate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [companyName, address, contact, email, logo]);
 
   const isFormValid =
@@ -139,145 +142,189 @@ export default function CompanyCreatePage() {
     }
 
     // TODO: call API
-    router.push("/saasbusinessType"); 
+    router.push("/saasbusinessType");
   };
 
   return (
-    <GlassBackground backgroundImage="/saasbg.png">
-      <SplitPanelLayout
-        left={
-          <div className="w-full max-w-xl">
-            <Card
-              variant="gradient"
-              padding="lg"
-              className="min-h-[520px] flex flex-col justify-between"
-            >
-              <div className="flex justify-center">
-                <div className="relative w-[420px] h-[270px]">
-                  <Image
-                    src="/creationcompanylogo.svg"
-                    alt="Company illustration"
-                    fill
-                    className="object-contain"
-                    priority
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                {bullets.map((b) => (
-                  <div key={b} className="flex items-center gap-4">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40">
-                      ✓
-                    </span>
-                    <span className="text-white font-semibold">{b}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-        }
-        right={
-          <div className="w-full max-w-lg">
-            <form onSubmit={onSubmit} className="space-y-6">
-              {/* Company Name */}
-              <div>
-                <InputField
-                  label="Company Name"
-                  placeholder="Coca Enterprises"
-                  value={companyName}
-                  onChange={(e) => {
-                    setCompanyName(e.target.value);
-                    if (formError) setFormError("");
-                  }}
-                  onBlur={() => markTouched("companyName")}
-                />
-                {touched.companyName && errors.companyName && (
-                  <FormErrorMessage message={errors.companyName} />
-                )}
-              </div>
-
-              {/* Address */}
-              <div>
-                <InputField
-                  label="Address"
-                  placeholder="used for invoices and reports"
-                  value={address}
-                  onChange={(e) => {
-                    setAddress(e.target.value);
-                    if (formError) setFormError("");
-                  }}
-                  onBlur={() => markTouched("address")}
-                />
-                {touched.address && errors.address && (
-                  <FormErrorMessage message={errors.address} />
-                )}
-              </div>
-
-              {/* Contact */}
-              <div>
-                <InputField
-                  label="Contact Number"
-                  placeholder="+94 77 123 4567"
-                  value={contact}
-                  onChange={(e) => {
-                    setContact(formatPhone(e.target.value));
-                    if (formError) setFormError("");
-                  }}
-                  onBlur={() => markTouched("contact")}
-                />
-                {touched.contact && errors.contact && (
-                  <FormErrorMessage message={errors.contact} />
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <InputField
-                  label="Email"
-                  type="email"
-                  placeholder="We’ll send important system alerts here"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (formError) setFormError("");
-                  }}
-                  onBlur={() => markTouched("email")}
-                />
-                {touched.email && errors.email && (
-                  <FormErrorMessage message={errors.email} />
-                )}
-              </div>
-
-              {/* Logo */}
-              <div>
-                <LogoUploadPill
-                  onFileChange={(f) => {
-                    setLogo(f);
-                    if (formError) setFormError("");
-                  }}
-                />
-                {touched.logo && errors.logo && (
-                  <FormErrorMessage message={errors.logo} />
-                )}
-              </div>
-
-              {formError && <FormErrorMessage message={formError} />}
-
-              <PrimaryButton
-                type="submit"
-                disabled={!isFormValid}
-                className={[
-                  "py-4 text-base transition",
-                  !isFormValid ? "opacity-50 cursor-not-allowed" : "",
-                ].join(" ")}
+    <CommonLayout
+      navbar={
+        <Navbar
+          logoSrc="/logo.png"
+          middleContent={
+            <>
+              <Link className="hover:text-orange-300 transition" href="/">
+                Home
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/about">
+                About
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/features">
+                Features
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/growth">
+                Growth
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/testimonials">
+                Testimonials
+              </Link>
+            </>
+          }
+          rightContent={
+            <>
+              <Link
+                href="/saaslogin"
+                className="px-5 py-2 rounded-full border border-orange-400/70 text-white text-sm font-semibold hover:bg-white/10 transition"
               >
-                Create Company
-              </PrimaryButton>
-            </form>
-          </div>
-        }
-      />
-    </GlassBackground>
+                Sign In
+              </Link>
+              <Link
+                href="/saasregistration"
+                className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition"
+              >
+                Sign Up
+              </Link>
+            </>
+          }
+        />
+      }
+    >
+      {/* space under fixed navbar */}
+      <div className="pt-20 pb-15 px-4">
+        <GlassBackground backgroundImage="/saasbg.png" showFrame>
+          <SplitPanelLayout
+            leftClassName="!p-6 lg:!p-8"
+            rightClassName="!p-6 lg:!p-8"
+            left={
+              <div className="w-full max-w-xl">
+                <Card
+                  variant="gradient"
+                  padding="lg"
+                  className="min-h-[460px] flex flex-col justify-between"
+                >
+                  <div className="flex justify-center">
+                    <div className="relative w-[380px] h-[230px]">
+                      <Image
+                        src="/creationcompanylogo.svg"
+                        alt="Company illustration"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 space-y-4">
+                    {bullets.map((b) => (
+                      <div key={b} className="flex items-center gap-4">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40">
+                          ✓
+                        </span>
+                        <span className="text-white font-semibold">{b}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            }
+            right={
+              <div className="w-full max-w-lg">
+                <form onSubmit={onSubmit} className="space-y-6">
+                  {/* Company Name */}
+                  <div>
+                    <InputField
+                      label="Company Name"
+                      name="companyName"
+                      placeholder="Coca Enterprises"
+                      value={companyName}
+                      onChange={(e) => {
+                        setCompanyName(e.target.value);
+                        if (formError) setFormError("");
+                      }}
+                      onBlur={() => markTouched("companyName")}
+                      error={touched.companyName ? errors.companyName : ""}
+                    />
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <InputField
+                      label="Address"
+                      name="address"
+                      placeholder="used for invoices and reports"
+                      value={address}
+                      onChange={(e) => {
+                        setAddress(e.target.value);
+                        if (formError) setFormError("");
+                      }}
+                      onBlur={() => markTouched("address")}
+                      error={touched.address ? errors.address : ""}
+                    />
+                  </div>
+
+                  {/* Contact */}
+                  <div>
+                    <InputField
+                      label="Contact Number"
+                      name="contact"
+                      placeholder="+94 77 123 4567"
+                      value={contact}
+                      onChange={(e) => {
+                        setContact(formatPhone(e.target.value));
+                        if (formError) setFormError("");
+                      }}
+                      onBlur={() => markTouched("contact")}
+                      error={touched.contact ? errors.contact : ""}
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <InputField
+                      label="Email"
+                      name="email"
+                      type="email"
+                      placeholder="We’ll send important system alerts here"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (formError) setFormError("");
+                      }}
+                      onBlur={() => markTouched("email")}
+                      error={touched.email ? errors.email : ""}
+                    />
+                  </div>
+
+                  {/* Logo */}
+                  <div>
+                    <LogoUploadPill
+                      onFileChange={(f) => {
+                        setLogo(f);
+                        if (formError) setFormError("");
+                      }}
+                    />
+                    {touched.logo && errors.logo && (
+                      <FormErrorMessage message={errors.logo} />
+                    )}
+                  </div>
+
+                  {formError && <FormErrorMessage message={formError} />}
+
+                  <PrimaryButton
+                    type="submit"
+                    disabled={!isFormValid}
+                    className={[
+                      "py-4 text-base transition",
+                      !isFormValid ? "opacity-50 cursor-not-allowed" : "",
+                    ].join(" ")}
+                  >
+                    Create Company
+                  </PrimaryButton>
+                </form>
+              </div>
+            }
+          />
+        </GlassBackground>
+      </div>
+    </CommonLayout>
   );
 }
