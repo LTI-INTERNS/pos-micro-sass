@@ -7,27 +7,21 @@ type WrapperProps = {
   label: string;
   required?: boolean;
   error?: string;
+  htmlFor?: string;
   children: React.ReactNode;
 };
 
-function FieldWrapper({
-  label,
-  required,
-  error,
-  children,
-}: WrapperProps) {
+function FieldWrapper({ label, required, error, htmlFor, children }: WrapperProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm text-white">
+      <label className="text-sm text-white" htmlFor={htmlFor}>
         {label}
         {required && <span className="text-red-400 ml-1">*</span>}
       </label>
 
       {children}
 
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
     </div>
   );
 }
@@ -35,6 +29,7 @@ function FieldWrapper({
 // Base Input Field
 type BaseProps = {
   label: string;
+  name?: string;
   required?: boolean;
   error?: string;
   value?: string;
@@ -42,8 +37,7 @@ type BaseProps = {
 };
 
 function getInputStyles(error?: string, variant: "glass" | "solid" = "glass") {
-  const base =
-    "w-full px-5 py-3 rounded-full focus:outline-none transition";
+  const base = "w-full px-5 py-3 rounded-full focus:outline-none transition";
 
   const glass =
     "bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-white/40";
@@ -51,11 +45,7 @@ function getInputStyles(error?: string, variant: "glass" | "solid" = "glass") {
   const solid =
     "bg-white text-black border border-gray-300 focus:ring-2 focus:ring-orange-400";
 
-  return [
-    base,
-    variant === "glass" ? glass : solid,
-    error ? "border-red-400" : "",
-  ].join(" ");
+  return [base, variant === "glass" ? glass : solid, error ? "border-red-400" : ""].join(" ");
 }
 
 // Input Field
@@ -68,6 +58,7 @@ type InputFieldProps = BaseProps & {
 
 export function InputField({
   label,
+  name,
   type = "text",
   placeholder = "",
   required = false,
@@ -78,8 +69,10 @@ export function InputField({
   variant = "glass",
 }: InputFieldProps) {
   return (
-    <FieldWrapper label={label} required={required} error={error}>
+    <FieldWrapper label={label} required={required} error={error} htmlFor={name}>
       <input
+        id={name}
+        name={name}
         type={type}
         placeholder={placeholder}
         value={value}
@@ -107,6 +100,7 @@ type TextAreaProps = BaseProps & {
 
 export function TextAreaField({
   label,
+  name,
   placeholder = "",
   required = false,
   error,
@@ -118,8 +112,10 @@ export function TextAreaField({
   showCount = false,
 }: TextAreaProps) {
   return (
-    <FieldWrapper label={label} required={required} error={error}>
+    <FieldWrapper label={label} required={required} error={error} htmlFor={name}>
       <textarea
+        id={name}
+        name={name}
         rows={rows}
         maxLength={maxLength}
         value={value}
@@ -151,6 +147,7 @@ type SelectProps = BaseProps & {
 
 export function SelectField({
   label,
+  name,
   options,
   required = false,
   error,
@@ -159,8 +156,10 @@ export function SelectField({
   variant = "glass",
 }: SelectProps) {
   return (
-    <FieldWrapper label={label} required={required} error={error}>
+    <FieldWrapper label={label} required={required} error={error} htmlFor={name}>
       <select
+        id={name}
+        name={name}
         value={value}
         onChange={onChange}
         className={getInputStyles(error, variant)}
@@ -179,18 +178,17 @@ export function SelectField({
 // Checkbox Field
 type CheckboxProps = {
   label: string;
+  name?: string;
   checked?: boolean;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-export function CheckboxField({
-  label,
-  checked,
-  onChange,
-}: CheckboxProps) {
+export function CheckboxField({ label, name, checked, onChange }: CheckboxProps) {
   return (
     <label className="flex items-center space-x-3 text-white text-sm">
       <input
+        id={name}
+        name={name}
         type="checkbox"
         checked={checked}
         onChange={onChange}
@@ -201,49 +199,39 @@ export function CheckboxField({
   );
 }
 
-//File Upload Field
+// File Upload Field
 type FileUploadProps = {
   label: string;
+  name?: string; 
   onChange?: (file: File | null) => void;
 };
 
-export function FileUploadField({
-  label,
-  onChange,
-}: FileUploadProps) {
+export function FileUploadField({ label, name, onChange }: FileUploadProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm text-white">{label}</label>
+      <label className="text-sm text-white" htmlFor={name}>
+        {label}
+      </label>
 
       <input
+        id={name}
+        name={name}
         type="file"
         accept="image/*"
-        onChange={(e) =>
-          onChange?.(e.target.files ? e.target.files[0] : null)
-        }
+        onChange={(e) => onChange?.(e.target.files ? e.target.files[0] : null)}
         className="w-full px-5 py-4 rounded-full bg-white text-black"
       />
     </div>
   );
 }
 
-
-//Field Row (For Payment Layout)
-export function FieldRow({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Field Row (For Payment Layout)
+export function FieldRow({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-2 gap-4">{children}</div>;
 }
 
-
-//Global Form Error Message Component
-export function FormErrorMessage({
-  message,
-}: {
-  message: string;
-}) {
+// Global Form Error Message Component
+export function FormErrorMessage({ message }: { message: string }) {
   return (
     <div className="p-3 rounded-xl bg-red-500/20 border border-red-400 text-red-300 text-sm">
       {message}

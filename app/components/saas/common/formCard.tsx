@@ -59,7 +59,7 @@ export default function Card({
   const variants: Record<CardVariant, string> = {
     glass: [
       "bg-white/10 backdrop-blur-md",
-      "border border-white/20",
+      "border border-white/15",
       "text-white",
     ].join(" "),
 
@@ -100,10 +100,9 @@ export default function Card({
       {/*Image Overlay */}
       {variant === "image" && (
         <div
-          className={[
-            "absolute inset-0",
-            blur ? "backdrop-blur-md" : "",
-          ].join(" ")}
+          className={["absolute inset-0", blur ? "backdrop-blur-md" : ""].join(
+            " "
+          )}
           style={{
             backgroundColor: `rgba(0,0,0,${overlayOpacity})`,
           }}
