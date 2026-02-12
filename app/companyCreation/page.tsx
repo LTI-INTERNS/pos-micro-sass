@@ -11,7 +11,7 @@ import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
 
-import LogoUploadPill from "@/app/components/saas/common/LogoUploadPill";
+import LogoUploadPill from "@/app/components/saas/companyCreation/LogoUploadPill";
 
 type Errors = {
   companyName?: string;
@@ -139,7 +139,7 @@ export default function CompanyCreatePage() {
     }
 
     // TODO: call API
-    router.push("/components/saas/businessType"); 
+    router.push("/saasbusinessType"); 
   };
 
   return (

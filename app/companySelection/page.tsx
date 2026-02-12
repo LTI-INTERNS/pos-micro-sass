@@ -7,7 +7,7 @@ import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 
-import CompanySelectItem from "@/app/components/saas/common/CompanySelectItem";
+import CompanySelectItem from "@/app/components/saas/companySelection/CompanySelectItem";
 
 type Company = {
   id: string;
@@ -62,7 +62,7 @@ export default function CompanySelectPage() {
             <div className="w-full max-w-md">
               <PrimaryButton
                 className="py-4 text-base"
-                onClick={() => router.push("/components/saas/companyCreation")}
+                onClick={() => router.push("/companyCreation")}
               >
                 Create Company
               </PrimaryButton>
