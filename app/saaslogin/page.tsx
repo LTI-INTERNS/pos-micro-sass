@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 
+import Navigation from "@/app/components/saas/landing/Navigation";
+import Footer from "@/app/components/saas/common/Footer";
+
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 
@@ -58,6 +61,9 @@ export default function LoginPage() {
   }
 
   return (
+        <>
+        <div className="min-h-screen bg-[url('/background.png')] bg-cover bg-center">
+          <Navigation/>
     <GlassBackground backgroundImage="/saasbackground.png">
       <SplitPanelLayout
         left={
@@ -134,5 +140,8 @@ export default function LoginPage() {
         }
       />
     </GlassBackground>
+    </div>
+      <Footer/>
+    </>
   );
 }
