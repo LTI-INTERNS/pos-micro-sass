@@ -11,7 +11,7 @@ type AuthLayoutProps = {
 };
 
 export default function AuthLayout({
-  backgroundImage = "/saasbackground.png",
+  backgroundImage = "/saasbg.png",
   illustrationSrc,
   children,
 }: AuthLayoutProps) {

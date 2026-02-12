@@ -11,7 +11,7 @@ type RegisterAuthLayoutProps = {
 
 export default function RegisterAuthLayout({
   children,
-  backgroundImage = "/saasbackground.png",
+  backgroundImage = "/saasbg.png",
 }: RegisterAuthLayoutProps) {
   return (
     <GlassBackground backgroundImage={backgroundImage}>
