@@ -7,7 +7,7 @@ import Image from "next/image";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 
-import Card from "@/app/components/saas/common/FormCard";
+import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
 

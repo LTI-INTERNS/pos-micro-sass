@@ -3,8 +3,7 @@
 import React from "react";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import Card from "@/app/components/saas/common/FormCard";
-
+import Card from "@/app/components/saas/common/formCard";
 type RegisterAuthLayoutProps = {
   children: React.ReactNode;
   backgroundImage?: string;
