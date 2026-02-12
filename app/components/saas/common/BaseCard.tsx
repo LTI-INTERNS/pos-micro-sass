@@ -52,7 +52,7 @@ export default function BaseCard({
         {children}
 
         
-        <div className="space-y-3">
+        <div className="space-y-10">
           {features.map((f, i) => (
             <div key={i} className="flex items-center gap-3 border-b pb-2">
               {f.available ? (
