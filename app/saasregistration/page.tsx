@@ -1,29 +1,39 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 
-import RegisterAuthLayout from "@/app/components/saas/auth/RegisterAuthLayout";
-
-import { InputField, PasswordField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
+import CommonLayout from "@/app/components/saas/common/CommonLayout";
+import Navbar from "@/app/components/saas/common/Navbar";
+import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
+import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import {
+  InputField,
+  PasswordField,
+  FormErrorMessage,
+} from "@/app/components/saas/common/FormFields";
+
+import { registerAction } from "./auth";
 
 export default function RegisterPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
+  const [submitted, setSubmitted] = useState(false);
   const [touched, setTouched] = useState({
     name: false,
     email: false,
-    pw: false,
-    pw2: false,
+    password: false,
+    confirmPassword: false,
   });
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [pw2, setPw2] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [formError, setFormError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -33,95 +43,214 @@ export default function RegisterPage() {
     if (!email.trim()) e.email = "Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Enter a valid email";
 
-    if (!pw) e.pw = "Password is required";
-    else if (pw.length < 6) e.pw = "Password must be at least 6 characters";
+    if (!password) e.password = "Password is required";
+    else if (password.length < 6) e.password = "Password must be at least 6 characters";
 
-    if (!pw2) e.pw2 = "Confirm password is required";
-    else if (pw2 !== pw) e.pw2 = "Passwords do not match";
+    if (!confirmPassword) e.confirmPassword = "Confirm password is required";
+    else if (confirmPassword !== password) e.confirmPassword = "Passwords do not match";
 
     return e;
-  }, [name, email, pw, pw2]);
+  }, [name, email, password, confirmPassword]);
 
   const canSubmit = Object.keys(errors).length === 0;
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setFormError("");
     setSubmitted(true);
+    setFormError("");
+    setSuccess("");
 
     if (!canSubmit) {
       setFormError("Please fix the errors and try again.");
       return;
     }
 
-    alert("Registered (demo) ✅");
+    const fd = new FormData();
+    fd.set("name", name);
+    fd.set("email", email);
+    fd.set("password", password);
+    fd.set("confirmPassword", confirmPassword);
+
+    startTransition(async () => {
+      const res = await registerAction(fd);
+
+      if (!res.ok) {
+        setFormError(res.message);
+        return;
+      }
+
+      setSuccess(res.message);
+
+      // optional redirect after success
+      // window.location.href = "/saaslogin";
+    });
   }
 
   return (
-    <RegisterAuthLayout>
-      <h2 className="text-center text-3xl font-bold text-white mb-8">
-        Sign Up
-      </h2>
-
-      <form onSubmit={onSubmit} className="space-y-5">
-        {formError && <FormErrorMessage message={formError} />}
-
-        <InputField
-          label="Name"
-          placeholder="Coca PVT (LTD)"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => setTouched((t) => ({ ...t, name: true }))}
-          error={(submitted || touched.name) ? errors.name : ""}
+    <CommonLayout
+      navbar={
+        <Navbar
+          logoSrc="/logo.png"
+          middleContent={
+            <>
+              <Link className="hover:text-orange-300 transition" href="/">
+                Home
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/about">
+                About
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/features">
+                Features
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/growth">
+                Growth
+              </Link>
+              <Link className="hover:text-orange-300 transition" href="/testimonials">
+                Testimonials
+              </Link>
+            </>
+          }
+          rightContent={
+            <>
+              <Link
+                href="/saaslogin"
+                className="px-5 py-2 rounded-full border border-orange-400/70 text-white text-sm font-semibold hover:bg-white/10 transition"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/saasregistration"
+                className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition"
+              >
+                Sign Up
+              </Link>
+            </>
+          }
         />
+      }
+    >
+      {/*space under fixed navbar */}
+      <div className="pt-24 pb-20 px-4">
+       <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
+            <div className="py-6 px-10">
+            <SplitPanelLayout
+              showDivider
+              left={
+                <div className="flex items-center justify-center w-full">
+                  {/* Left promo card */}
+                  <Card variant="gradient" padding="lg" radius="2xl" className="w-full max-w-md">
+                    <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
+                      Start your POS <br />
+                      journey today.
+                    </h1>
 
-        <InputField
-          label="Email"
-          placeholder="ABC123@gmail.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-          error={(submitted || touched.email) ? errors.email : ""}
-        />
+                    <p className="mt-6 text-white/90 text-sm leading-6">
+                      Running a retail business is easier with LankaTech POS. We help you sell better,
+                      manage your entire business, and join the digital revolution.
+                    </p>
 
-        <PasswordField
-          label="Password"
-          placeholder="******"
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
-          onBlur={() => setTouched((t) => ({ ...t, pw: true }))}
-          error={(submitted || touched.pw) ? errors.pw : ""}
-        />
+                    <div className="mt-8 h-px w-full bg-white/40" />
 
-        <PasswordField
-          label="Confirm Password"
-          placeholder="******"
-          value={pw2}
-          onChange={(e) => setPw2(e.target.value)}
-          onBlur={() => setTouched((t) => ({ ...t, pw2: true }))}
-          error={(submitted || touched.pw2) ? errors.pw2 : ""}
-        />
+                    <div className="mt-8">
+                      <h3 className="text-2xl font-bold">Need assistance?</h3>
+                      <div className="mt-4 text-white/90 text-sm leading-6">
+                        <p>+94 123 456 789</p>
+                        <p>info@lankatechinnovations.com</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              }
+              right={
+                <div className="w-full max-w-md mx-auto">
+                  <h2 className="text-center text-3xl font-bold text-white mb-8">
+                    Sign Up
+                  </h2>
 
-        <PrimaryButton type="submit" disabled={!canSubmit}>
-          Sign Up
-        </PrimaryButton>
+                  <form onSubmit={onSubmit} className="space-y-5">
+                    {formError && <FormErrorMessage message={formError} />}
+                    {success && (
+                      <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white">
+                        {success}
+                      </div>
+                    )}
 
-        <div className="text-center text-sm text-white/70 pt-2">
-          Already have an account?{" "}
-          <Link href="/saaslogin" className="text-white font-semibold underline">
-            Sign In
-          </Link>
+                    <div className="space-y-4">
+                      <InputField
+                        label="Name"
+                        name="name"
+                        placeholder="ABC PVT (LTD)"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        onBlur={() => setTouched((t) => ({ ...t, name: true }))}
+                        error={submitted || touched.name ? errors.name : ""}
+                      />
+
+                      <InputField
+                        label="Email"
+                        name="email"
+                        type="email"
+                        placeholder="abc123@gmail.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                        error={submitted || touched.email ? errors.email : ""}
+                      />
+
+                      <PasswordField
+                        label="Password"
+                        name="password"
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+                        error={submitted || touched.password ? errors.password : ""}
+                      />
+
+                      <PasswordField
+                        label="Confirm Password"
+                        name="confirmPassword"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onBlur={() =>
+                          setTouched((t) => ({ ...t, confirmPassword: true }))
+                        }
+                        error={submitted || touched.confirmPassword ? errors.confirmPassword : ""}
+                      />
+                    </div>
+
+                    <PrimaryButton type="submit" disabled={!canSubmit || isPending}>
+                      {isPending ? "Signing Up..." : "Sign Up"}
+                    </PrimaryButton>
+
+                    <div className="pt-3 text-center text-sm text-white/60 space-y-2">
+                      <p>
+                        Already have an account?{" "}
+                        <Link
+                          href="/saaslogin"
+                          className="text-white font-semibold hover:text-orange-300 transition"
+                        >
+                          Sign In
+                        </Link>
+                      </p>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-center gap-8 text-xs text-white/45">
+                      <Link href="/terms" className="hover:text-white transition">
+                        Terms
+                      </Link>
+                      <Link href="/privacy" className="hover:text-white transition">
+                        Privacy
+                      </Link>
+                    </div>
+                  </form>
+                </div>
+              }
+            />
+          </div>
         </div>
-
-        <div className="flex items-center justify-center gap-8 text-xs text-white/60">
-          <Link href="/terms" className="hover:text-white">
-            Terms of Services
-          </Link>
-          <Link href="/privacy" className="hover:text-white">
-            Privacy Policy
-          </Link>
-        </div>
-      </form>
-    </RegisterAuthLayout>
+      </div>
+    </CommonLayout>
   );
 }
