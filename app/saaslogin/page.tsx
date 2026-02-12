@@ -107,7 +107,7 @@ export default function LoginPage() {
                 <p>
                   Don’t have an account?{" "}
                   <Link
-                    href="/components/saas/registration"
+                    href="/saasregistration"
                     className="text-white font-semibold underline"
                   >
                     Sign Up

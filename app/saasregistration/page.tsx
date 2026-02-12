@@ -108,7 +108,7 @@ export default function RegisterPage() {
 
         <div className="text-center text-sm text-white/70 pt-2">
           Already have an account?{" "}
-          <Link href="/components/saas/login" className="text-white font-semibold underline">
+          <Link href="/saaslogin" className="text-white font-semibold underline">
             Sign In
           </Link>
         </div>
