@@ -1,9 +1,10 @@
 "use client";
 
+import CommonLayout from "@/app/components/saas/common/CommonLayout";
+import Navigation from "@/app/components/saas/companyCreation/Navigation";
+
 import GlassPolicyLayout from "@/app/components/saas/common/GlassPolicyLayout";
-import GlassAccordion, {
-  type AccordionItem,
-} from "@/app/components/saas/common/GlassAccordion";
+import GlassAccordion, { type AccordionItem } from "@/app/components/saas/common/GlassAccordion";
 
 export default function TermsPage() {
   const items: AccordionItem[] = [
@@ -82,9 +83,7 @@ export default function TermsPage() {
             You are responsible for collecting customer data lawfully (e.g.,
             consent where required).
           </li>
-          <li>
-            We protect customer data as described in our Privacy Policy.
-          </li>
+          <li>We protect customer data as described in our Privacy Policy.</li>
         </ul>
       ),
     },
@@ -104,8 +103,10 @@ export default function TermsPage() {
   ];
 
   return (
-    <GlassPolicyLayout title="Terms of Service" backgroundImage="/saasbackground.png">
-      <GlassAccordion items={items} defaultOpenId="intro" />
-    </GlassPolicyLayout>
+    <CommonLayout navbar={<Navigation />}>
+      <GlassPolicyLayout title="Terms of Service" backHref="/">
+        <GlassAccordion items={items} defaultOpenId="intro" />
+      </GlassPolicyLayout>
+    </CommonLayout>
   );
 }

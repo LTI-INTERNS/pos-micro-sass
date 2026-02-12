@@ -1,9 +1,10 @@
 "use client";
 
+import CommonLayout from "@/app/components/saas/common/CommonLayout";
+import Navigation from "@/app/components/saas/companyCreation/Navigation";
+
 import GlassPolicyLayout from "@/app/components/saas/common/GlassPolicyLayout";
-import GlassAccordion, {
-  type AccordionItem,
-} from "@/app/components/saas/common/GlassAccordion";
+import GlassAccordion, { type AccordionItem } from "@/app/components/saas/common/GlassAccordion";
 
 export default function PrivacyPage() {
   const items: AccordionItem[] = [
@@ -11,14 +12,12 @@ export default function PrivacyPage() {
       id: "intro",
       title: "Introduction",
       content: (
-        <>
-          <p>
-            We respect your privacy and are committed to protecting personal
-            data. This Privacy Policy explains how our POS micro-SaaS platform
-            collects, uses, stores, and protects information when used by Retail
-            stores, Restaurants/Cafés, and Grocery/Supermarket businesses.
-          </p>
-        </>
+        <p>
+          We respect your privacy and are committed to protecting personal
+          data. This Privacy Policy explains how our POS micro-SaaS platform
+          collects, uses, stores, and protects information when used by Retail
+          stores, Restaurants/Cafés, and Grocery/Supermarket businesses.
+        </p>
       ),
     },
     {
@@ -74,9 +73,7 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-2">
           <li>We retain data as long as needed to provide the service.</li>
           <li>Some data may be retained for legal/tax/compliance reasons.</li>
-          <li>
-            You may request export of your data (where supported in the app).
-          </li>
+          <li>You may request export of your data (where supported in the app).</li>
         </ul>
       ),
     },
@@ -94,8 +91,10 @@ export default function PrivacyPage() {
   ];
 
   return (
-    <GlassPolicyLayout title="Privacy Policy" backgroundImage="/saasbackground.png">
-      <GlassAccordion items={items} defaultOpenId="intro" />
-    </GlassPolicyLayout>
+    <CommonLayout navbar={<Navigation />}>
+      <GlassPolicyLayout title="Privacy Policy" backHref="/">
+        <GlassAccordion items={items} defaultOpenId="intro" />
+      </GlassPolicyLayout>
+    </CommonLayout>
   );
 }

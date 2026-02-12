@@ -11,7 +11,7 @@ export type AccordionItem = {
 type GlassAccordionProps = {
   items: AccordionItem[];
 
-  /** if you want first item open by default (like screenshots) */
+  /** first item open by default */
   defaultOpenId?: string;
 
   /** optional class */
@@ -44,11 +44,9 @@ export default function GlassAccordion({
               onClick={() => toggle(item.id)}
               className="w-full flex items-center justify-between py-4 text-left"
             >
-              <div className="flex items-center gap-3">
-                <span className="text-white/90 text-sm sm:text-base">
-                  {index + 1}. {item.title}
-                </span>
-              </div>
+              <span className="text-white/90 text-sm sm:text-base">
+                {index + 1}. {item.title}
+              </span>
 
               <span className="text-white/70 text-xl font-light select-none">
                 {isOpen ? "–" : "+"}

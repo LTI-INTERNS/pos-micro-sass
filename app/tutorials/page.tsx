@@ -1,9 +1,10 @@
 "use client";
 
+import CommonLayout from "@/app/components/saas/common/CommonLayout";
+import Navigation from "@/app/components/saas/companyCreation/Navigation";
+
 import GlassPolicyLayout from "@/app/components/saas/common/GlassPolicyLayout";
-import GlassAccordion, {
-  type AccordionItem,
-} from "@/app/components/saas/common/GlassAccordion";
+import GlassAccordion, { type AccordionItem } from "@/app/components/saas/common/GlassAccordion";
 
 export default function TutorialsPage() {
   const items: AccordionItem[] = [
@@ -17,21 +18,14 @@ export default function TutorialsPage() {
             first sale, and generating a receipt.
           </p>
 
-          {/* Optional thumbnail like your UI */}
           <div className="flex items-center gap-4 pt-2">
             <div className="w-28 h-16 rounded-lg overflow-hidden border border-white/20 bg-black/20">
-              {/* Put an image in /public/tutorials/getting-started.png */}
               <img
-            //   C:\Users\unity\Desktop\LTI Project\pos-micro-sass\public\saas\tutorials\get started.png
-                src="saas/tutorials/get started.png"
+                src="/saas/tutorials/get-started.png"
                 alt="Getting Started"
                 className="w-full h-full object-cover"
               />
             </div>
-
-            {/* <p className="text-white/60 text-sm">
-              Tip: keep this as short “micro tutorial” cards.
-            </p> */}
           </div>
         </div>
       ),
@@ -44,7 +38,7 @@ export default function TutorialsPage() {
           <li>Admin: setup, staff permissions, branches, products.</li>
           <li>Cashier: billing flow, refunds, customer selection.</li>
           <li>Manager: reports, shift summaries, stock alerts.</li>
-        </ul>    
+        </ul>
       ),
     },
     {
@@ -107,8 +101,10 @@ export default function TutorialsPage() {
   ];
 
   return (
-    <GlassPolicyLayout title="Tutorials" backgroundImage="/saasbackground.png">
-      <GlassAccordion items={items} defaultOpenId="getting-started" />
-    </GlassPolicyLayout>
+    <CommonLayout navbar={<Navigation />}>
+      <GlassPolicyLayout title="Tutorials" backHref="/">
+        <GlassAccordion items={items} defaultOpenId="getting-started" />
+      </GlassPolicyLayout>
+    </CommonLayout>
   );
 }
