@@ -32,7 +32,7 @@ export default function CompanySelectPage() {
   const [selectedId, setSelectedId] = useState<string>(companies[0]?.id ?? "");
 
   return (
-    <GlassBackground backgroundImage="/saasbackground.png">
+    <GlassBackground backgroundImage="/saasbg.png">
       <SplitPanelLayout
         left={
           <div className="w-full max-w-lg">

@@ -143,7 +143,7 @@ export default function CompanyCreatePage() {
   };
 
   return (
-    <GlassBackground backgroundImage="/saasbackground.png">
+    <GlassBackground backgroundImage="/saasbg.png">
       <SplitPanelLayout
         left={
           <div className="w-full max-w-xl">
