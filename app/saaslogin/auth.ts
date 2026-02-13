@@ -40,12 +40,15 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
   }
 
   // demo session cookie
-  cookies().set("lt_session", Buffer.from(email).toString("base64"), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-  });
+const cookieStore = await cookies();
+
+cookieStore.set("lt_session", Buffer.from(email).toString("base64"), {
+  httpOnly: true,
+  sameSite: "lax",
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+});
+
 
   return { ok: true, message: "Signed in successfully" };
 }
