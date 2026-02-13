@@ -13,7 +13,10 @@ import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
-import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
+import {
+  InputField,
+  FormErrorMessage,
+} from "@/app/components/saas/common/FormFields";
 
 import LogoUploadPill from "@/app/components/saas/companyCreation/LogoUploadPill";
 
@@ -93,7 +96,8 @@ export default function CompanyCreatePage() {
       next.companyName = "Company name must be at least 3 characters";
 
     if (!addr) next.address = "Address is required";
-    else if (addr.length < 6) next.address = "Address must be at least 6 characters";
+    else if (addr.length < 6)
+      next.address = "Address must be at least 6 characters";
 
     if (!phone) next.contact = "Contact number is required";
     else if (!isValidPhone(phone))
@@ -111,7 +115,7 @@ export default function CompanyCreatePage() {
 
   useEffect(() => {
     validate();
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyName, address, contact, email, logo]);
 
   const isFormValid =
@@ -126,7 +130,6 @@ export default function CompanyCreatePage() {
     e.preventDefault();
     setFormError("");
 
-    // mark all as touched so errors appear
     setTouched({
       companyName: true,
       address: true,
@@ -164,7 +167,10 @@ export default function CompanyCreatePage() {
               <Link className="hover:text-orange-300 transition" href="/growth">
                 Growth
               </Link>
-              <Link className="hover:text-orange-300 transition" href="/testimonials">
+              <Link
+                className="hover:text-orange-300 transition"
+                href="/testimonials"
+              >
                 Testimonials
               </Link>
             </>
@@ -188,7 +194,6 @@ export default function CompanyCreatePage() {
         />
       }
     >
-      {/* space under fixed navbar */}
       <div className="pt-20 pb-15 px-4">
         <GlassBackground backgroundImage="/saasbg.png" showFrame>
           <SplitPanelLayout
@@ -229,72 +234,73 @@ export default function CompanyCreatePage() {
             right={
               <div className="w-full max-w-lg">
                 <form onSubmit={onSubmit} className="space-y-6">
-                  {/* Company Name */}
-                  <div>
-                    <InputField
-                      label="Company Name"
-                      name="companyName"
-                      placeholder="Coca Enterprises"
-                      value={companyName}
-                      onChange={(e) => {
-                        setCompanyName(e.target.value);
-                        if (formError) setFormError("");
-                      }}
-                      onBlur={() => markTouched("companyName")}
-                      error={touched.companyName ? errors.companyName : ""}
-                    />
-                  </div>
+                  <InputField
+                    id="companyName"
+                    label="Company Name"
+                    name="companyName"
+                    placeholder="Coca Enterprises"
+                    value={companyName}
+                    required
+                    autoComplete="organization"
+                    onChange={(e) => {
+                      setCompanyName(e.target.value);
+                      if (formError) setFormError("");
+                    }}
+                    onBlur={() => markTouched("companyName")}
+                    error={touched.companyName ? errors.companyName : ""}
+                  />
 
-                  {/* Address */}
-                  <div>
-                    <InputField
-                      label="Address"
-                      name="address"
-                      placeholder="used for invoices and reports"
-                      value={address}
-                      onChange={(e) => {
-                        setAddress(e.target.value);
-                        if (formError) setFormError("");
-                      }}
-                      onBlur={() => markTouched("address")}
-                      error={touched.address ? errors.address : ""}
-                    />
-                  </div>
+                  <InputField
+                    id="companyAddress"
+                    label="Address"
+                    name="address"
+                    placeholder="Used for invoices and reports"
+                    value={address}
+                    required
+                    autoComplete="street-address"
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      if (formError) setFormError("");
+                    }}
+                    onBlur={() => markTouched("address")}
+                    error={touched.address ? errors.address : ""}
+                  />
 
-                  {/* Contact */}
-                  <div>
-                    <InputField
-                      label="Contact Number"
-                      name="contact"
-                      placeholder="+94 77 123 4567"
-                      value={contact}
-                      onChange={(e) => {
-                        setContact(formatPhone(e.target.value));
-                        if (formError) setFormError("");
-                      }}
-                      onBlur={() => markTouched("contact")}
-                      error={touched.contact ? errors.contact : ""}
-                    />
-                  </div>
+                  <InputField
+                    id="companyContact"
+                    label="Contact Number"
+                    name="contact"
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="+94 77 123 4567"
+                    value={contact}
+                    required
+                    autoComplete="tel"
+                    onChange={(e) => {
+                      setContact(formatPhone(e.target.value));
+                      if (formError) setFormError("");
+                    }}
+                    onBlur={() => markTouched("contact")}
+                    error={touched.contact ? errors.contact : ""}
+                  />
 
-                  {/* Email */}
-                  <div>
-                    <InputField
-                      label="Email"
-                      name="email"
-                      type="email"
-                      placeholder="We’ll send important system alerts here"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        if (formError) setFormError("");
-                      }}
-                      onBlur={() => markTouched("email")}
-                      error={touched.email ? errors.email : ""}
-                    />
-                  </div>
+                  <InputField
+                    id="companyEmail"
+                    label="Email"
+                    name="email"
+                    type="email"
+                    placeholder="We’ll send important system alerts here"
+                    value={email}
+                    required
+                    autoComplete="email"
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (formError) setFormError("");
+                    }}
+                    onBlur={() => markTouched("email")}
+                    error={touched.email ? errors.email : ""}
+                  />
 
-                  {/* Logo */}
                   <div>
                     <LogoUploadPill
                       onFileChange={(f) => {
@@ -324,17 +330,17 @@ export default function CompanyCreatePage() {
             }
           />
         </GlassBackground>
-                    {/* Bottom nav (< Back / Next>) */}
-            <div className="mt-10 flex items-center justify-center">
-              <div className="flex w-full max-w-xl items-center justify-between text-white">
-                <button className="font-semibold hover:opacity-80">
-                  {"< Back"}
-                </button>
-                <button className="font-semibold hover:opacity-80">
-                  {"Next>"}
-                </button>
-              </div>
-            </div>
+
+        <div className="mt-10 flex items-center justify-center">
+          <div className="flex w-full max-w-xl items-center justify-between text-white">
+            <button type="button" className="font-semibold hover:opacity-80">
+              {"< Back"}
+            </button>
+            <button type="button" className="font-semibold hover:opacity-80">
+              {"Next>"}
+            </button>
+          </div>
+        </div>
       </div>
     </CommonLayout>
   );
