@@ -147,6 +147,12 @@ export default function CompanyCreatePage() {
     // TODO: call API
     router.push("/saasbusinessType");
   };
+    const handleBack = () => {
+    router.push("/saaslogin");
+  };
+  const handleNext = () => {
+    router.push("/saasbusinessType");
+  };
 
   return (
     <CommonLayout
@@ -333,11 +339,11 @@ export default function CompanyCreatePage() {
 
         <div className="mt-10 flex items-center justify-center">
           <div className="flex w-full max-w-xl items-center justify-between text-white">
-            <button type="button" className="font-semibold hover:opacity-80">
+            <button onClick={handleBack} className="font-semibold hover:opacity-80">
               {"< Back"}
             </button>
-            <button type="button" className="font-semibold hover:opacity-80">
-              {"Next>"}
+            <button onClick={handleNext} className="font-semibold hover:opacity-80">
+              {"Next >"}
             </button>
           </div>
         </div>
