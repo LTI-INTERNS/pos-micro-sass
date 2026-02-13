@@ -152,7 +152,7 @@ export default function LoginPage() {
                     className="w-[420px] h-[460px] rounded-3xl bg-gradient-to-b from-orange-500 to-orange-600 flex items-center justify-center shadow-xl"
                   >
                     <img
-                      src="/login logo.png"
+                      src="/logIn.png"
                       alt="Login Illustration"
                       className="w-[300px] h-auto object-contain"
                     />
