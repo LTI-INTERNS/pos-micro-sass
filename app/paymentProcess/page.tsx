@@ -1,14 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
+import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField } from "@/app/components/saas/common/FormFields";
 import Navbar from "@/app/components/saas/common/Navbar";
-import Footer from "@/app/components/saas/common/Footer";
 
 type PaymentMethod = "mastercard" | "visa";
 
@@ -21,61 +20,59 @@ export default function PaymentProcessPage() {
   const [expDate, setExpDate] = useState("mm/dd");
   const [cvv, setCvv] = useState("000");
 
-const summary = useMemo(
-  () => ({
-    customer: {
-      name: "Nimal Perera",
-      address: "No. 45, Galle Road, Dehiwala, Sri Lanka",
-      email: "nimal.perera@gmail.com",
-    },
-    company: {
-      name: "Perera Retail (Pvt) Ltd",
-      address: "128 High Level Road, Nugegoda, Sri Lanka",
-      contact: "+94 77 456 7890",
-      email: "info@pereraretail.lk",
-    },
-    order: {
-      type: "Retail Business",
-      plan: "Pro Plan – Monthly",
-      branchesRemaining: "3 Branches",
-      email: "billing@pereraretail.lk",
-    },
-    total: 1000,
-    currency: "$",
-  }),
-  []
-);
-  // Button actions
+  const summary = useMemo(
+    () => ({
+      customer: {
+        name: "Nimal Perera",
+        address: "No. 45, Galle Road, Dehiwala, Sri Lanka",
+        email: "nimal.perera@gmail.com",
+      },
+      company: {
+        name: "Perera Retail (Pvt) Ltd",
+        address: "128 High Level Road, Nugegoda, Sri Lanka",
+        contact: "+94 77 456 7890",
+        email: "info@pereraretail.lk",
+      },
+      order: {
+        type: "Retail Business",
+        plan: "Pro Plan – Monthly",
+        branchesRemaining: "3 Branches",
+        email: "billing@pereraretail.lk",
+      },
+      total: 1000,
+      currency: "$",
+    }),
+    []
+  );
+
   const handleBack = () => {
     router.push("/subscriptionPlan");
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Top Navbar */}
-      <Navbar
-        middleContent={
-          <span className="text-white font-semibold">
-            Micro-saas Registration Dashboard
-          </span>
-        }
-        rightContent={
-          <button className="rounded-full bg-orange-500 px-6 py-2 text-white font-semibold hover:brightness-110">
-            Log Out
-          </button>
-        }
-      />
+    <CommonLayout
+      navbar={
+        <Navbar
+          middleContent={
+            <span className="text-white font-semibold">
+              Micro-saas Registration Dashboard
+            </span>
+          }
+          rightContent={
+            <button className="rounded-full bg-orange-500 px-6 py-2 text-white font-semibold hover:brightness-110">
+              Log Out
+            </button>
+          }
+        />
+      }
+    >
+      {/* Overlay + Content (keeps same dark/glass style) */}
+      <div className="relative">
+        {/* Dark overlay (like GlassBackground) */}
+        <div className="absolute inset-0 bg-black/60" />
 
-      {/* Page Background */}
-      <main className="flex-1">
-        <GlassBackground
-          backgroundImage="/saasbg.png"
-          showFrame={false}
-          constrained={false}
-          className="pt-24 pb-10"
-        >
+        <div className="relative z-10 pt-24 pb-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-8">
-            {/* Main Glass Container */}
             <Card
               variant="glass"
               padding="lg"
@@ -84,20 +81,18 @@ const summary = useMemo(
               className="w-full"
             >
               <div className="flex flex-col md:flex-row items-stretch gap-10">
-                {/* LEFT - Payment Details */}
+                {/* LEFT */}
                 <div className="w-full md:w-[417px]">
                   <h2 className="text-2xl font-bold text-white">
                     Payment Details
                   </h2>
 
-                  {/* Payment Logos row */}
                   <div className="mt-8 flex gap-6 justify-center md:justify-start">
                     <PaymentLogoButton
                       label="MasterCard"
                       selected={method === "mastercard"}
                       onClick={() => setMethod("mastercard")}
                     >
-                      {/* Simple MasterCard circles */}
                       <div className="relative h-6 w-12">
                         <span className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-red-500/90" />
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-yellow-400/90 mix-blend-screen" />
@@ -115,7 +110,6 @@ const summary = useMemo(
                     </PaymentLogoButton>
                   </div>
 
-                  {/* Form */}
                   <div className="mt-8 space-y-6">
                     <InputField
                       label="Name on Card"
@@ -154,19 +148,18 @@ const summary = useMemo(
                   </div>
                 </div>
 
-                {/* CENTER DIVIDER */}
+                {/* DIVIDER */}
                 <div className="hidden md:flex items-center">
                   <div className="h-full w-1 bg-[#B0B0B0]/80 rounded-full" />
                 </div>
 
-                {/* RIGHT - Shipping Details Orange Panel */}
+                {/* RIGHT */}
                 <div className="w-full md:flex-1">
                   <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-2xl">
                     <h2 className="text-[32px] leading-tight font-bold">
                       Shipping Details
                     </h2>
 
-                    {/* Customer Information */}
                     <section className="mt-8">
                       <h3 className="text-[20px] font-bold">
                         Customer Information
@@ -178,7 +171,6 @@ const summary = useMemo(
                       </div>
                     </section>
 
-                    {/* Company Information */}
                     <section className="mt-7">
                       <h3 className="text-[20px] font-bold">
                         Company Information
@@ -191,7 +183,6 @@ const summary = useMemo(
                       </div>
                     </section>
 
-                    {/* Order Details */}
                     <section className="mt-7">
                       <h3 className="text-[20px] font-bold">Order Details</h3>
                       <div className="mt-4 space-y-1 text-[16px] font-normal opacity-95">
@@ -202,7 +193,6 @@ const summary = useMemo(
                       </div>
                     </section>
 
-                    {/* Total Row */}
                     <div className="mt-10 flex items-center justify-between">
                       <span className="text-[20px] font-bold">Total</span>
                       <span className="text-[20px] font-bold">
@@ -214,24 +204,18 @@ const summary = useMemo(
               </div>
             </Card>
 
- {/* Bottom nav */}
-<div className="mt-10 flex items-center justify-center">
-  <div className="flex w-full max-w-xl items-center justify-between text-white">
-    
-    {/* Back */}
-    <button onClick={handleBack} className="font-semibold hover:opacity-80">
-      {"< Back"}
-    </button>
-  </div>
-</div>
-
+            {/* Bottom nav */}
+            <div className="mt-10 flex items-center justify-center">
+              <div className="flex w-full max-w-xl items-center justify-between text-white">
+                <button onClick={handleBack} className="font-semibold hover:opacity-80">
+                  {"< Back"}
+                </button>
+              </div>
+            </div>
           </div>
-        </GlassBackground>
-      </main>
-
-      {/* Footer */}
-      <Footer />
-    </div>
+        </div>
+      </div>
+    </CommonLayout>
   );
 }
 
