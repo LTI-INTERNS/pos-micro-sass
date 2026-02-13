@@ -1,53 +1,171 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
-import { InputField } from "@/app/components/saas/common/FormFields";
+import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
 import Navbar from "@/app/components/saas/common/Navbar";
+
+import { tempCheckoutData } from "@/app/components/saas/paymentProcess/tempCheckoutData";
 
 type PaymentMethod = "mastercard" | "visa";
 
+type Summary = {
+  customer: { name: string; address: string; email: string };
+  company: { name: string; address: string; contact: string; email: string };
+  order: { type: string; plan: string; branchesRemaining: string; email: string };
+  total: number;
+  currency: string;
+};
+
+type Errors = {
+  nameOnCard?: string;
+  cardNumber?: string;
+  expDate?: string;
+  cvv?: string;
+};
+
+type Touched = {
+  nameOnCard?: boolean;
+  cardNumber?: boolean;
+  expDate?: boolean;
+  cvv?: boolean;
+};
+
+
+function formatCardNumber(v: string) {
+  const digits = v.replace(/\D/g, "").slice(0, 16);
+  return digits.replace(/(\d{4})(?=\d)/g, "$1-");
+}
+function formatExpDate(v: string) {
+  const digits = v.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+function formatCvc(v: string) {
+  return v.replace(/\D/g, "").slice(0, 4);
+}
+
+function getFieldError(
+  field: keyof Errors,
+  values: { nameOnCard: string; cardNumber: string; expDate: string; cvv: string }
+) {
+  const { nameOnCard, cardNumber, expDate, cvv } = values;
+
+  switch (field) {
+    case "nameOnCard":
+      if (!nameOnCard.trim()) return "Name on card is required";
+      if (nameOnCard.trim().length < 3) return "Enter a valid name";
+      return "";
+    case "cardNumber": {
+      const digits = cardNumber.replace(/-/g, "");
+      if (!digits) return "Card number is required";
+      if (!/^\d{16}$/.test(digits)) return "Card number must be 16 digits";
+      return "";
+    }
+    case "expDate":
+      if (!expDate.trim()) return "Expiry date is required";
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expDate)) return "Use MM/YY format";
+      return "";
+    case "cvv":
+      if (!cvv.trim()) return "CVC is required";
+      if (!/^\d{3,4}$/.test(cvv)) return "CVC must be 3 or 4 digits";
+      return "";
+    default:
+      return "";
+  }
+}
+
+function LineText({ children }: { children: React.ReactNode }) {
+  return <div className="leading-6">{children}</div>;
+}
+
 export default function PaymentProcessPage() {
   const router = useRouter();
+
   const [method, setMethod] = useState<PaymentMethod>("mastercard");
 
-  const [nameOnCard, setNameOnCard] = useState("John Smith");
-  const [cardNumber, setCardNumber] = useState("0000-0000-0000-0000");
-  const [expDate, setExpDate] = useState("mm/dd");
-  const [cvv, setCvv] = useState("000");
+  // Payment fields
+  const [nameOnCard, setNameOnCard] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expDate, setExpDate] = useState("");
+  const [cvv, setCvv] = useState("");
 
-  const summary = useMemo(
-    () => ({
-      customer: {
-        name: "Nimal Perera",
-        address: "No. 45, Galle Road, Dehiwala, Sri Lanka",
-        email: "nimal.perera@gmail.com",
-      },
-      company: {
-        name: "Perera Retail (Pvt) Ltd",
-        address: "128 High Level Road, Nugegoda, Sri Lanka",
-        contact: "+94 77 456 7890",
-        email: "info@pereraretail.lk",
-      },
-      order: {
-        type: "Retail Business",
-        plan: "Pro Plan – Monthly",
-        branchesRemaining: "3 Branches",
-        email: "billing@pereraretail.lk",
-      },
-      total: 1000,
-      currency: "$",
-    }),
-    []
-  );
+  const [errors, setErrors] = useState<Errors>({});
+  const [touched, setTouched] = useState<Touched>({});
+  const [formError, setFormError] = useState("");
 
-  const handleBack = () => {
-    router.push("/subscriptionPlan");
-  };
+  const summary = tempCheckoutData;
+
+  //const [summary, setSummary] = useState<Summary | null>(null);
+  
+ // useEffect(() => {
+  //  const raw = localStorage.getItem("checkout_summary");
+  //  if (!raw) return;
+
+ //   try {
+  //    const parsed = JSON.parse(raw) as Summary;
+ //     setSummary(parsed);
+//    } catch {
+ //     setSummary(null);
+//    }
+ // }, []);
+
+  const values = useMemo(() => ({ nameOnCard, cardNumber, expDate, cvv }), [
+    nameOnCard,
+    cardNumber,
+    expDate,
+    cvv,
+  ]);
+
+  function validateField(field: keyof Errors) {
+    const msg = getFieldError(field, values);
+    setErrors((prev) => ({ ...prev, [field]: msg || undefined }));
+    return !msg;
+  }
+
+  function markTouched(field: keyof Touched) {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  }
+
+  function validateAll() {
+    const fields: (keyof Errors)[] = ["nameOnCard", "cardNumber", "expDate", "cvv"];
+    const next: Errors = {};
+    let ok = true;
+
+    for (const f of fields) {
+      const msg = getFieldError(f, values);
+      if (msg) ok = false;
+      next[f] = msg || undefined;
+    }
+
+    setErrors(next);
+    return ok;
+  }
+
+  const isFormValid =
+    !getFieldError("nameOnCard", values) &&
+    !getFieldError("cardNumber", values) &&
+    !getFieldError("expDate", values) &&
+    !getFieldError("cvv", values);
+
+  function handleSubmit() {
+    setFormError("");
+
+    setTouched({ nameOnCard: true, cardNumber: true, expDate: true, cvv: true });
+
+    if (!validateAll()) {
+      setFormError("Please fix the highlighted fields.");
+      return;
+    }
+
+    alert("Payment Successful ✅ (Demo)");
+  }
+
+  const handleBack = () => router.push("/subscriptionPlan");
 
   return (
     <CommonLayout
@@ -59,89 +177,103 @@ export default function PaymentProcessPage() {
             </span>
           }
           rightContent={
-            <button className="rounded-full bg-orange-500 px-6 py-2 text-white font-semibold hover:brightness-110">
+            <button
+              type="button"
+              className="rounded-full bg-orange-500 px-6 py-2 text-white font-semibold"
+            >
               Log Out
             </button>
           }
         />
       }
     >
-      {/* Overlay + Content (keeps same dark/glass style) */}
       <div className="relative">
-        {/* Dark overlay (like GlassBackground) */}
         <div className="absolute inset-0 bg-black/60" />
 
         <div className="relative z-10 pt-24 pb-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-8">
-            <Card
-              variant="glass"
-              padding="lg"
-              radius="2xl"
-              elevation="lg"
-              className="w-full"
-            >
+            <Card variant="glass" padding="lg" className="w-full">
               <div className="flex flex-col md:flex-row items-stretch gap-10">
                 {/* LEFT */}
                 <div className="w-full md:w-[417px]">
-                  <h2 className="text-2xl font-bold text-white">
-                    Payment Details
-                  </h2>
-
-                  <div className="mt-8 flex gap-6 justify-center md:justify-start">
-                    <PaymentLogoButton
-                      label="MasterCard"
-                      selected={method === "mastercard"}
-                      onClick={() => setMethod("mastercard")}
-                    >
-                      <div className="relative h-6 w-12">
-                        <span className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-red-500/90" />
-                        <span className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-yellow-400/90 mix-blend-screen" />
-                      </div>
-                    </PaymentLogoButton>
-
-                    <PaymentLogoButton
-                      label="VISA"
-                      selected={method === "visa"}
-                      onClick={() => setMethod("visa")}
-                    >
-                      <span className="text-blue-600 font-extrabold tracking-widest">
-                        VISA
-                      </span>
-                    </PaymentLogoButton>
-                  </div>
+                  <h2 className="text-2xl font-bold text-white">Payment Details</h2>
 
                   <div className="mt-8 space-y-6">
                     <InputField
+                      id="nameOnCard"
+                      name="nameOnCard"
                       label="Name on Card"
+                      required
                       variant="solid"
                       value={nameOnCard}
                       onChange={(e) => setNameOnCard(e.target.value)}
+                      onBlur={() => {
+                        markTouched("nameOnCard");
+                        validateField("nameOnCard");
+                      }}
+                      error={touched.nameOnCard ? errors.nameOnCard : ""}
                     />
+
                     <InputField
+                      id="cardNumber"
+                      name="cardNumber"
                       label="Card Number"
+                      required
                       variant="solid"
+                      inputMode="numeric"
+                      placeholder="0000-0000-0000-0000"
                       value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
+                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                      onBlur={() => {
+                        markTouched("cardNumber");
+                        validateField("cardNumber");
+                      }}
+                      error={touched.cardNumber ? errors.cardNumber : ""}
                     />
 
                     <div className="grid grid-cols-2 gap-5">
                       <InputField
+                        id="expDate"
+                        name="expDate"
                         label="Valid Through"
+                        required
                         variant="solid"
+                        inputMode="numeric"
+                        placeholder="MM/YY"
                         value={expDate}
-                        onChange={(e) => setExpDate(e.target.value)}
+                        onChange={(e) => setExpDate(formatExpDate(e.target.value))}
+                        onBlur={() => {
+                          markTouched("expDate");
+                          validateField("expDate");
+                        }}
+                        error={touched.expDate ? errors.expDate : ""}
                       />
+
                       <InputField
+                        id="cvc"
+                        name="cvc"
                         label="CVC Code"
+                        required
                         variant="solid"
+                        type="password"
+                        inputMode="numeric"
+                        placeholder="***"
                         value={cvv}
-                        onChange={(e) => setCvv(e.target.value)}
+                        onChange={(e) => setCvv(formatCvc(e.target.value))}
+                        onBlur={() => {
+                          markTouched("cvv");
+                          validateField("cvv");
+                        }}
+                        error={touched.cvv ? errors.cvv : ""}
                       />
                     </div>
 
+                    {formError && <FormErrorMessage message={formError} />}
+
                     <PrimaryButton
                       className="w-full py-4 text-base"
-                      onClick={() => alert("Pay Now (demo) ✅")}
+                      onClick={handleSubmit}
+                      disabled={!isFormValid}
                     >
                       Pay Now
                     </PrimaryButton>
@@ -153,100 +285,74 @@ export default function PaymentProcessPage() {
                   <div className="h-full w-1 bg-[#B0B0B0]/80 rounded-full" />
                 </div>
 
-                {/* RIGHT */}
+                {/* RIGHT (dynamic) */}
                 <div className="w-full md:flex-1">
                   <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-2xl">
                     <h2 className="text-[32px] leading-tight font-bold">
                       Shipping Details
                     </h2>
 
-                    <section className="mt-8">
-                      <h3 className="text-[20px] font-bold">
-                        Customer Information
-                      </h3>
-                      <div className="mt-4 space-y-1 text-[16px] font-normal opacity-95">
-                        <LineText>{summary.customer.name}</LineText>
-                        <LineText>{summary.customer.address}</LineText>
-                        <LineText>{summary.customer.email}</LineText>
+                    {!summary ? (
+                      <div className="mt-8 text-white/80 text-sm">
+                        Loading details...
                       </div>
-                    </section>
+                    ) : (
+                      <>
+                        <section className="mt-8">
+                          <h3 className="text-[20px] font-bold">
+                            Customer Information
+                          </h3>
+                          <div className="mt-4 space-y-1 text-[16px] opacity-95">
+                            <LineText>{summary.customer.name}</LineText>
+                            <LineText>{summary.customer.address}</LineText>
+                            <LineText>{summary.customer.email}</LineText>
+                          </div>
+                        </section>
 
-                    <section className="mt-7">
-                      <h3 className="text-[20px] font-bold">
-                        Company Information
-                      </h3>
-                      <div className="mt-4 space-y-1 text-[16px] font-normal opacity-95">
-                        <LineText>{summary.company.name}</LineText>
-                        <LineText>{summary.company.address}</LineText>
-                        <LineText>{summary.company.contact}</LineText>
-                        <LineText>{summary.company.email}</LineText>
-                      </div>
-                    </section>
+                        <section className="mt-7">
+                          <h3 className="text-[20px] font-bold">
+                            Company Information
+                          </h3>
+                          <div className="mt-4 space-y-1 text-[16px] opacity-95">
+                            <LineText>{summary.company.name}</LineText>
+                            <LineText>{summary.company.address}</LineText>
+                            <LineText>{summary.company.contact}</LineText>
+                            <LineText>{summary.company.email}</LineText>
+                          </div>
+                        </section>
 
-                    <section className="mt-7">
-                      <h3 className="text-[20px] font-bold">Order Details</h3>
-                      <div className="mt-4 space-y-1 text-[16px] font-normal opacity-95">
-                        <LineText>{summary.order.type}</LineText>
-                        <LineText>{summary.order.plan}</LineText>
-                        <LineText>{summary.order.branchesRemaining}</LineText>
-                        <LineText>{summary.order.email}</LineText>
-                      </div>
-                    </section>
+                        <section className="mt-7">
+                          <h3 className="text-[20px] font-bold">Order Details</h3>
+                          <div className="mt-4 space-y-1 text-[16px] opacity-95">
+                            <LineText>{summary.order.type}</LineText>
+                            <LineText>{summary.order.plan}</LineText>
+                            <LineText>{summary.order.branchesRemaining}</LineText>
+                            <LineText>{summary.order.email}</LineText>
+                          </div>
+                        </section>
 
-                    <div className="mt-10 flex items-center justify-between">
-                      <span className="text-[20px] font-bold">Total</span>
-                      <span className="text-[20px] font-bold">
-                        {summary.currency} {summary.total}
-                      </span>
-                    </div>
+                        <div className="mt-10 flex items-center justify-between">
+                          <span className="text-[20px] font-bold">Total</span>
+                          <span className="text-[20px] font-bold">
+                            {summary.currency} {summary.total}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             </Card>
 
             {/* Bottom nav */}
-            <div className="mt-10 flex items-center justify-center">
-              <div className="flex w-full max-w-xl items-center justify-between text-white">
-                <button onClick={handleBack} className="font-semibold hover:opacity-80">
-                  {"< Back"}
-                </button>
-              </div>
+            <div className="mt-10 flex justify-start text-white">
+              <button onClick={handleBack} className="font-semibold hover:opacity-80">
+                {"< Back"}
+              </button>
             </div>
           </div>
         </div>
       </div>
     </CommonLayout>
   );
-}
-
-function PaymentLogoButton({
-  children,
-  selected,
-  onClick,
-  label,
-}: {
-  children: React.ReactNode;
-  selected: boolean;
-  onClick: () => void;
-  label: string;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onClick}
-      className={[
-        "h-12 w-28 rounded-xl flex items-center justify-center",
-        "bg-white/95",
-        "transition",
-        selected ? "ring-2 ring-orange-400" : "ring-1 ring-black/10",
-      ].join(" ")}
-    >
-      {children}
-    </button>
-  );
-}
-
-function LineText({ children }: { children: React.ReactNode }) {
-  return <div className="leading-6">{children}</div>;
 }
