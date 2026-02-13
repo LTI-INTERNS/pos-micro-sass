@@ -22,7 +22,7 @@ const usersStore: Map<string, UserRecord> =
 (globalThis as any).__LT_USERS_STORE = usersStore;
 
 function hashPassword(password: string) {
-  // demo hash (NOT production)
+  // demo hash 
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 

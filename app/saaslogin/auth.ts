@@ -9,14 +9,13 @@ type LoginResult =
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
-// ✅ Must match register store key name
 type UserRecord = { name: string; email: string; passwordHash: string; createdAt: number };
 const usersStore: Map<string, UserRecord> =
   (globalThis as any).__LT_USERS_STORE ?? new Map<string, UserRecord>();
 (globalThis as any).__LT_USERS_STORE = usersStore;
 
 function hashPassword(password: string) {
-  // demo hash (NOT production)
+  // demo hash
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
