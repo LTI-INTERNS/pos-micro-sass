@@ -16,6 +16,8 @@ import {
 
 import { registerAction } from "./auth";
 
+type RegisterFields = "name" | "email" | "password" | "confirmPassword";
+
 export default function RegisterPage() {
   const [isPending, startTransition] = useTransition();
 
@@ -35,6 +37,11 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // ✅ FIX: correct typing for server field errors (prevents `[res.field]` TS error)
+  const [serverFieldError, setServerFieldError] = useState<
+    Partial<Record<RegisterFields, string>>
+  >({});
+
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
 
@@ -44,7 +51,8 @@ export default function RegisterPage() {
     else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Enter a valid email";
 
     if (!password) e.password = "Password is required";
-    else if (password.length < 6) e.password = "Password must be at least 6 characters";
+    else if (password.length < 6)
+      e.password = "Password must be at least 6 characters";
 
     if (!confirmPassword) e.confirmPassword = "Confirm password is required";
     else if (confirmPassword !== password) e.confirmPassword = "Passwords do not match";
@@ -59,6 +67,9 @@ export default function RegisterPage() {
     setSubmitted(true);
     setFormError("");
     setSuccess("");
+
+    // clear old server errors on new submit
+    setServerFieldError({});
 
     if (!canSubmit) {
       setFormError("Please fix the errors and try again.");
@@ -76,6 +87,22 @@ export default function RegisterPage() {
 
       if (!res.ok) {
         setFormError(res.message);
+
+        // ✅ show field error under correct input (typed safe)
+        const field = res.field as RegisterFields | undefined;
+        if (field) {
+          setServerFieldError((prev) => ({
+            ...prev,
+            [field]: res.message,
+          }));
+          setTouched({
+            name: true,
+            email: true,
+            password: true,
+            confirmPassword: true,
+          });
+        }
+
         return;
       }
 
@@ -131,8 +158,8 @@ export default function RegisterPage() {
     >
       {/*space under fixed navbar */}
       <div className="pt-24 pb-20 px-4">
-       <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
-            <div className="py-6 px-10">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
+          <div className="py-6 px-10">
             <SplitPanelLayout
               showDivider
               left={
@@ -177,46 +204,97 @@ export default function RegisterPage() {
 
                     <div className="space-y-4">
                       <InputField
+                        id="reg-name"
                         label="Name"
                         name="name"
+                        required
+                        autoComplete="name"
                         placeholder="ABC PVT (LTD)"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          if (serverFieldError.name) {
+                            setServerFieldError((prev) => ({ ...prev, name: undefined }));
+                          }
+                        }}
                         onBlur={() => setTouched((t) => ({ ...t, name: true }))}
-                        error={submitted || touched.name ? errors.name : ""}
+                        error={
+                          submitted || touched.name
+                            ? serverFieldError.name || errors.name
+                            : ""
+                        }
                       />
 
                       <InputField
+                        id="reg-email"
                         label="Email"
                         name="email"
                         type="email"
+                        required
+                        autoComplete="email"
                         placeholder="abc123@gmail.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (serverFieldError.email) {
+                            setServerFieldError((prev) => ({ ...prev, email: undefined }));
+                          }
+                        }}
                         onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                        error={submitted || touched.email ? errors.email : ""}
+                        error={
+                          submitted || touched.email
+                            ? serverFieldError.email || errors.email
+                            : ""
+                        }
                       />
 
                       <PasswordField
+                        id="reg-password"
                         label="Password"
                         name="password"
+                        required
+                        autoComplete="new-password"
                         placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (serverFieldError.password) {
+                            setServerFieldError((prev) => ({ ...prev, password: undefined }));
+                          }
+                        }}
                         onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-                        error={submitted || touched.password ? errors.password : ""}
+                        error={
+                          submitted || touched.password
+                            ? serverFieldError.password || errors.password
+                            : ""
+                        }
                       />
 
                       <PasswordField
+                        id="reg-confirm-password"
                         label="Confirm Password"
                         name="confirmPassword"
+                        required
+                        autoComplete="new-password"
                         placeholder="••••••••"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (serverFieldError.confirmPassword) {
+                            setServerFieldError((prev) => ({
+                              ...prev,
+                              confirmPassword: undefined,
+                            }));
+                          }
+                        }}
                         onBlur={() =>
                           setTouched((t) => ({ ...t, confirmPassword: true }))
                         }
-                        error={submitted || touched.confirmPassword ? errors.confirmPassword : ""}
+                        error={
+                          submitted || touched.confirmPassword
+                            ? serverFieldError.confirmPassword || errors.confirmPassword
+                            : ""
+                        }
                       />
                     </div>
 
