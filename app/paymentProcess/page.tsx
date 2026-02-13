@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import Card from "@/app/components/saas/common/formCard";
@@ -12,6 +13,7 @@ import Footer from "@/app/components/saas/common/Footer";
 type PaymentMethod = "mastercard" | "visa";
 
 export default function PaymentProcessPage() {
+  const router = useRouter();
   const [method, setMethod] = useState<PaymentMethod>("mastercard");
 
   const [nameOnCard, setNameOnCard] = useState("John Smith");
@@ -43,10 +45,18 @@ const summary = useMemo(
   }),
   []
 );
+  // ✅ Button actions
+  const handleBack = () => {
+    // Goes to previous page in browser history
+    router.push("/companyCreation");
+
+    // OR controlled navigation:
+    // router.push("/previous-step");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top Navbar (like screenshot) */}
+      {/* Top Navbar */}
       <Navbar
         middleContent={
           <span className="text-white font-semibold">
@@ -84,14 +94,14 @@ const summary = useMemo(
                     Payment Details
                   </h2>
 
-                  {/* Payment Logos row (like screenshot) */}
+                  {/* Payment Logos row */}
                   <div className="mt-8 flex gap-6 justify-center md:justify-start">
                     <PaymentLogoButton
                       label="MasterCard"
                       selected={method === "mastercard"}
                       onClick={() => setMethod("mastercard")}
                     >
-                      {/* Simple MasterCard circles (no external asset needed) */}
+                      {/* Simple MasterCard circles */}
                       <div className="relative h-6 w-12">
                         <span className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-red-500/90" />
                         <span className="absolute left-5 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-yellow-400/90 mix-blend-screen" />
@@ -148,7 +158,7 @@ const summary = useMemo(
                   </div>
                 </div>
 
-                {/* CENTER DIVIDER (matches JSON: 4px, rgb(176,176,176)) */}
+                {/* CENTER DIVIDER */}
                 <div className="hidden md:flex items-center">
                   <div className="h-full w-1 bg-[#B0B0B0]/80 rounded-full" />
                 </div>
@@ -208,22 +218,22 @@ const summary = useMemo(
               </div>
             </Card>
 
-            {/* Bottom nav (< Back / Next>) like JSON */}
-            <div className="mt-10 flex items-center justify-center">
-              <div className="flex w-full max-w-xl items-center justify-between text-white">
-                <button className="font-semibold hover:opacity-80">
-                  {"< Back"}
-                </button>
-                <button className="font-semibold hover:opacity-80">
-                  {"Next>"}
-                </button>
-              </div>
-            </div>
+ {/* Bottom nav */}
+<div className="mt-10 flex items-center justify-center">
+  <div className="flex w-full max-w-xl items-center justify-between text-white">
+    
+    {/* Back */}
+    <button onClick={handleBack} className="font-semibold hover:opacity-80">
+      {"< Back"}
+    </button>
+  </div>
+</div>
+
           </div>
         </GlassBackground>
       </main>
 
-      {/* Footer (like screenshot) */}
+      {/* Footer */}
       <Footer />
     </div>
   );
