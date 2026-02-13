@@ -33,15 +33,14 @@ export default function CompanySelectPage() {
     []
   );
 
-  // keep selected highlight 
+  // keep selected highlight
   const [selectedId, setSelectedId] = useState<string>(companies[0]?.id ?? "");
 
   function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
-
     router.push(`/dashboard?company=${companyId}`);
   }
-    //  Button actions
+
   const handleBack = () => {
     router.push("/saaslogin");
   };
@@ -68,7 +67,10 @@ export default function CompanySelectPage() {
               <Link className="hover:text-orange-300 transition" href="/growth">
                 Growth
               </Link>
-              <Link className="hover:text-orange-300 transition" href="/testimonials">
+              <Link
+                className="hover:text-orange-300 transition"
+                href="/testimonials"
+              >
                 Testimonials
               </Link>
             </>
@@ -93,7 +95,7 @@ export default function CompanySelectPage() {
       }
     >
       {/* space under fixed navbar */}
-      <div className="pt-15 pb-16 px-4">
+      <div className="pt-5 pb-16 px-4">
         <GlassBackground backgroundImage="/saasbg.png" showFrame={false}>
           <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
             <div className="py-8 px-10">
@@ -131,7 +133,8 @@ export default function CompanySelectPage() {
                           Create a new company
                         </h3>
                         <p className="mt-2 text-sm text-white/70">
-                          Don’t see your company? Create one and start configuring your system.
+                          Don’t see your company? Create one and start
+                          configuring your system.
                         </p>
 
                         <div className="mt-6">
@@ -146,7 +149,9 @@ export default function CompanySelectPage() {
 
                       <div className="text-xs text-white/50 text-center">
                         Need help?{" "}
-                        <span className="text-white/70">info@lankatechinnovations.com</span>
+                        <span className="text-white/70">
+                          info@lankatechinnovations.com
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -155,20 +160,19 @@ export default function CompanySelectPage() {
             </div>
           </div>
         </GlassBackground>
-         {/* Bottom nav */}
-<div className="mt-10 flex items-center justify-center">
-  <div className="flex w-full max-w-xl items-center justify-between text-white">
-    
-    {/* Back */}
-    <button onClick={handleBack} className="font-semibold hover:opacity-80">
-      {"< Back"}
-    </button>
-        <button onClick={handleNext} className="font-semibold hover:opacity-80">
-      {"< Back"}
-    </button>
-  </div>
-</div>
 
+        {/* Bottom nav */}
+        <div className="mt-10 flex items-center justify-center">
+          <div className="flex w-full max-w-xl items-center justify-between text-white">
+            <button onClick={handleBack} className="font-semibold hover:opacity-80">
+              {"< Back"}
+            </button>
+
+            <button onClick={handleNext} className="font-semibold hover:opacity-80">
+              {"Next >"}
+            </button>
+          </div>
+        </div>
       </div>
     </CommonLayout>
   );
