@@ -45,13 +45,9 @@ const summary = useMemo(
   }),
   []
 );
-  // ✅ Button actions
+  // Button actions
   const handleBack = () => {
-    // Goes to previous page in browser history
-    router.push("/companyCreation");
-
-    // OR controlled navigation:
-    // router.push("/previous-step");
+    router.push("/subscriptionPlan");
   };
 
   return (

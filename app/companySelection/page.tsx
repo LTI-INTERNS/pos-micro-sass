@@ -33,15 +33,21 @@ export default function CompanySelectPage() {
     []
   );
 
-  // keep selected highlight (optional)
+  // keep selected highlight 
   const [selectedId, setSelectedId] = useState<string>(companies[0]?.id ?? "");
 
   function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
 
-    // ✅ Navigate immediately on select
     router.push(`/dashboard?company=${companyId}`);
   }
+    //  Button actions
+  const handleBack = () => {
+    router.push("/saaslogin");
+  };
+  const handleNext = () => {
+    router.push("/businessType");
+  };
 
   return (
     <CommonLayout
@@ -149,14 +155,20 @@ export default function CompanySelectPage() {
             </div>
           </div>
         </GlassBackground>
-                    {/* Bottom nav (< Back ) */}
-            <div className="mt-10 flex items-center justify-center">
-              <div className="flex w-full max-w-xl items-center justify-between text-white">
-                <button className="font-semibold hover:opacity-80">
-                  {"< Back"}
-                </button>
-              </div>
-            </div>
+         {/* Bottom nav */}
+<div className="mt-10 flex items-center justify-center">
+  <div className="flex w-full max-w-xl items-center justify-between text-white">
+    
+    {/* Back */}
+    <button onClick={handleBack} className="font-semibold hover:opacity-80">
+      {"< Back"}
+    </button>
+        <button onClick={handleNext} className="font-semibold hover:opacity-80">
+      {"< Back"}
+    </button>
+  </div>
+</div>
+
       </div>
     </CommonLayout>
   );
