@@ -324,6 +324,17 @@ export default function CompanyCreatePage() {
             }
           />
         </GlassBackground>
+                    {/* Bottom nav (< Back / Next>) */}
+            <div className="mt-10 flex items-center justify-center">
+              <div className="flex w-full max-w-xl items-center justify-between text-white">
+                <button className="font-semibold hover:opacity-80">
+                  {"< Back"}
+                </button>
+                <button className="font-semibold hover:opacity-80">
+                  {"Next>"}
+                </button>
+              </div>
+            </div>
       </div>
     </CommonLayout>
   );
