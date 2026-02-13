@@ -2,6 +2,8 @@
 
 import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navbar from "@/app/components/saas/common/Navbar";
@@ -18,6 +20,8 @@ import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { loginAction } from "./auth";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [isPending, startTransition] = useTransition();
 
   const [submitted, setSubmitted] = useState(false);
@@ -28,6 +32,11 @@ export default function LoginPage() {
 
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const [serverFieldError, setServerFieldError] = useState<{
+    email?: string;
+    pw?: string;
+  }>({});
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
@@ -49,6 +58,8 @@ export default function LoginPage() {
     setFormError("");
     setSuccess("");
 
+    setServerFieldError({});
+
     if (!canSubmit) {
       setFormError("Please fix the errors and try again.");
       return;
@@ -63,13 +74,21 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setFormError(res.message);
+
+        if (res.field === "email") setServerFieldError({ email: res.message });
+        if (res.field === "password") setServerFieldError({ pw: res.message });
+
+
+        setTouched({ email: true, pw: true });
+
         return;
       }
 
-      setSuccess(res.message);
-
-      // optional redirect after success
-      // window.location.href = "/sasslanding";
+       setSuccess(res.message);
+ 
+        
+          router.push("/companyCreation");
+         
     });
   }
 
@@ -92,7 +111,10 @@ export default function LoginPage() {
               <Link className="hover:text-orange-300 transition" href="/growth">
                 Growth
               </Link>
-              <Link className="hover:text-orange-300 transition" href="/testimonials">
+              <Link
+                className="hover:text-orange-300 transition"
+                href="/testimonials"
+              >
                 Testimonials
               </Link>
             </>
@@ -153,23 +175,48 @@ export default function LoginPage() {
 
                     <div className="space-y-4">
                       <InputField
+                        id="login-email"
                         label="Email"
                         name="email"
+                        type="email"
+                        autoComplete="email"
                         placeholder="ABC123@gmail.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+
+                          if (serverFieldError.email) {
+                            setServerFieldError((prev) => ({ ...prev, email: undefined }));
+                          }
+                        }}
                         onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                        error={submitted || touched.email ? errors.email : ""}
+                        error={
+                          submitted || touched.email
+                            ? serverFieldError.email || errors.email
+                            : ""
+                        }
                       />
 
                       <PasswordField
+                        id="login-password"
                         label="Password"
                         name="password"
+                        autoComplete="current-password"
                         placeholder="******"
                         value={pw}
-                        onChange={(e) => setPw(e.target.value)}
+                        onChange={(e) => {
+                          setPw(e.target.value);
+   
+                          if (serverFieldError.pw) {
+                            setServerFieldError((prev) => ({ ...prev, pw: undefined }));
+                          }
+                        }}
                         onBlur={() => setTouched((t) => ({ ...t, pw: true }))}
-                        error={submitted || touched.pw ? errors.pw : ""}
+                        error={
+                          submitted || touched.pw
+                            ? serverFieldError.pw || errors.pw
+                            : ""
+                        }
                       />
                     </div>
 
