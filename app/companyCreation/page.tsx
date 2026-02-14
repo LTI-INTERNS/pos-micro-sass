@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navbar from "@/app/components/saas/common/Navbar";
+import Navigation from "@/app/components/saas/companyCreation/Navigation";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
@@ -19,6 +19,7 @@ import {
 } from "@/app/components/saas/common/FormFields";
 
 import LogoUploadPill from "@/app/components/saas/companyCreation/LogoUploadPill";
+import StepProgressBar from "../components/saas/common/StepProgressBar";
 
 type Errors = {
   companyName?: string;
@@ -151,57 +152,25 @@ export default function CompanyCreatePage() {
     router.push("/saaslogin");
   };
   const handleNext = () => {
-    router.push("/saasbusinessType");
+    router.push("/businesstype");
   };
 
   return (
-    <CommonLayout
-      navbar={
-        <Navbar
-          logoSrc="/logo.png"
-          middleContent={
-            <>
-              <Link className="hover:text-orange-300 transition" href="/">
-                Home
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/about">
-                About
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/features">
-                Features
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/growth">
-                Growth
-              </Link>
-              <Link
-                className="hover:text-orange-300 transition"
-                href="/testimonials"
-              >
-                Testimonials
-              </Link>
-            </>
-          }
-          rightContent={
-            <>
-              <Link
-                href="/saaslogin"
-                className="px-5 py-2 rounded-full border border-orange-400/70 text-white text-sm font-semibold hover:bg-white/10 transition"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/saasregistration"
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition"
-              >
-                Sign Up
-              </Link>
-            </>
-          }
-        />
-      }
-    >
-      <div className="pt-20 pb-15 px-4">
-        <GlassBackground backgroundImage="/saasbg.png" showFrame>
+    <CommonLayout navbar={<Navigation />} >
+      {/* Spacer for fixed navbar */}
+      <div className="h-20" />
+
+      <StepProgressBar
+        currentStep={1}
+        steps={[
+          { id: "1", label: "Account" },
+          { id: "2", label: "Business" },
+          { id: "3", label: "Subscription" },
+          { id: "4", label: "Checkout" },
+        ]}
+      />
+        
+        <GlassBackground>
           <SplitPanelLayout
             leftClassName="!p-6 lg:!p-8"
             rightClassName="!p-6 lg:!p-8"
@@ -239,7 +208,7 @@ export default function CompanyCreatePage() {
             }
             right={
               <div className="w-full max-w-lg">
-                <form onSubmit={onSubmit} className="space-y-6">
+                <form onSubmit={onSubmit} className="space-y-3">
                   <InputField
                     id="companyName"
                     label="Company Name"
@@ -337,17 +306,16 @@ export default function CompanyCreatePage() {
           />
         </GlassBackground>
 
-        <div className="mt-10 flex items-center justify-center">
+        <div className="mt-10 flex items-center justify-center mb-20">
           <div className="flex w-full max-w-xl items-center justify-between text-white">
-            <button onClick={handleBack} className="font-semibold hover:opacity-80">
+            <button onClick={handleBack} className="font-semibold hover:opacity-80 cursor-pointer">
               {"< Back"}
             </button>
-            <button onClick={handleNext} className="font-semibold hover:opacity-80">
+            <button onClick={handleNext} className="font-semibold hover:opacity-80 cursor-pointer">
               {"Next >"}
             </button>
           </div>
         </div>
-      </div>
     </CommonLayout>
   );
 }
