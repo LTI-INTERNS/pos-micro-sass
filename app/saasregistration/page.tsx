@@ -4,7 +4,7 @@ import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navbar from "@/app/components/saas/common/Navbar";
+import Navigation from "@/app/components/saas/landing/Navigation";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
@@ -114,52 +114,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <CommonLayout
-      navbar={
-        <Navbar
-          logoSrc="/logo.png"
-          middleContent={
-            <>
-              <Link className="hover:text-orange-300 transition" href="/">
-                Home
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/about">
-                About
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/features">
-                Features
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/growth">
-                Growth
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/testimonials">
-                Testimonials
-              </Link>
-            </>
-          }
-          rightContent={
-            <>
-              <Link
-                href="/saaslogin"
-                className="px-5 py-2 rounded-full border border-orange-400/70 text-white text-sm font-semibold hover:bg-white/10 transition"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/saasregistration"
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition"
-              >
-                Sign Up
-              </Link>
-            </>
-          }
-        />
-      }
-    >
+    <CommonLayout navbar={<Navigation />} >
       {/*space under fixed navbar */}
       <div className="pt-24 pb-20 px-4">
         <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
-          <div className="py-6 px-10">
+          <div>
             <SplitPanelLayout
               showDivider
               left={
