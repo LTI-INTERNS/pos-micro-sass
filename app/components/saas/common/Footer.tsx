@@ -35,13 +35,15 @@ export default function Footer() {
 
           {/* LEFT - LOGO */}
           <div>
-            <Image
-              src="/logo.png"
-              alt="Logo"
-              width={200}
-              height={50}
-              className="w-auto h-10"
-            />
+            <Link href="https://lankatechinnovations.com/">
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={200}
+                height={50}
+                className="w-auto h-10"
+              />
+            </Link>
           </div>
 
           {/* RIGHT SIDE SECTIONS */}
