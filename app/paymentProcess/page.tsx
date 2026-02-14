@@ -7,7 +7,8 @@ import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
-import Navbar from "@/app/components/saas/common/Navbar";
+import Navigation from "@/app/components/saas/companyCreation/Navigation";
+import StepProgressBar from "../components/saas/common/StepProgressBar";
 
 import { tempCheckoutData } from "@/app/components/saas/paymentProcess/tempCheckoutData";
 
@@ -165,30 +166,23 @@ export default function PaymentProcessPage() {
     alert("Payment Successful ✅ (Demo)");
   }
 
-  const handleBack = () => router.push("/subscriptionPlan");
+  const handleBack = () => router.push("/subscription");
 
   return (
-    <CommonLayout
-      navbar={
-        <Navbar
-          middleContent={
-            <span className="text-white font-semibold">
-              Micro-saas Registration Dashboard
-            </span>
-          }
-          rightContent={
-            <button
-              type="button"
-              className="rounded-full bg-orange-500 px-6 py-2 text-white font-semibold"
-            >
-              Log Out
-            </button>
-          }
-        />
-      }
-    >
+    <CommonLayout navbar={<Navigation />} >
+      <div className="h-20" />
+
+      <StepProgressBar
+        currentStep={4}
+        steps={[
+          { id: "1", label: "Account" },
+          { id: "2", label: "Business" },
+          { id: "3", label: "Subscription" },
+          { id: "4", label: "Checkout" },
+        ]}
+      />
+      
       <div className="relative">
-        <div className="absolute inset-0 bg-black/60" />
 
         <div className="relative z-10 pt-24 pb-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-8">
@@ -345,8 +339,8 @@ export default function PaymentProcessPage() {
             </Card>
 
             {/* Bottom nav */}
-            <div className="mt-10 flex justify-start text-white">
-              <button onClick={handleBack} className="font-semibold hover:opacity-80">
+            <div className="mt-10 ml-50 flex justify-start text-white">
+              <button onClick={handleBack} className="font-semibold hover:opacity-80 cursor-pointer">
                 {"< Back"}
               </button>
             </div>
