@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Facebook, Instagram, Twitter, ArrowUp } from "lucide-react";
+import Link from "next/link"
+import { Facebook, Music2, ArrowUp, Linkedin } from "lucide-react";
 
 export default function Footer() {
   const scrollToTop = () => {
@@ -50,8 +51,16 @@ export default function Footer() {
             <div>
               <h4 className="font-semibold mb-4">Products</h4>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li className="hover:text-white cursor-pointer">Tutorials</li>
-                <li className="hover:text-white cursor-pointer">Pricing</li>
+                <li className="hover:text-white cursor-pointer">
+                  <Link href="/tutorials" className="hover:text-white transition">
+                    Tutorials
+                  </Link>
+                </li>
+                <li className="hover:text-white cursor-pointer">
+                  <Link href="/pricing" className="hover:text-white transition">
+                    Pricing
+                  </Link>
+                  </li>
               </ul>
             </div>
 
@@ -59,8 +68,15 @@ export default function Footer() {
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li className="hover:text-white cursor-pointer">About Us</li>
-                <li className="hover:text-white cursor-pointer">Contact Us</li>
+                <li className="hover:text-white cursor-pointer">
+                    <Link href="/aboutus" className="hover:text-white transition">
+                    About Us
+                    </Link>
+                  </li>
+                <li className="hover:text-white cursor-pointer">
+                  <Link href="/contactus" className="hover:text-white transition">
+                    Contact Us
+                  </Link></li>
               </ul>
             </div>
 
@@ -68,15 +84,33 @@ export default function Footer() {
             <div>
               <h4 className="font-semibold mb-4">FOLLOW US</h4>
               <div className="flex justify-end gap-3">
-                <div className="p-2 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer">
+                <Link
+                  href="https://web.facebook.com/lankatechinnovations"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer"
+                >
                   <Facebook size={16} />
-                </div>
-                <div className="p-2 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer">
-                  <Twitter size={16} />
-                </div>
-                <div className="p-2 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer">
-                  <Instagram size={16} />
-                </div>
+                </Link>
+
+                <Link
+                  href="https://www.linkedin.com/company/100231289/admin/dashboard/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer"
+                >
+                  <Linkedin size={16} />
+                </Link>
+
+                <Link
+                  href="https://www.tiktok.com/@lankatech_innovations"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer"
+                >
+                  <Music2 size={16} />
+                </Link>
+
               </div>
             </div>
 
@@ -91,10 +125,14 @@ export default function Footer() {
 
           <div className="flex items-center gap-6">
             <span className="hover:text-white cursor-pointer">
-              Terms of Service
+              <Link href="/terms" className="hover:text-white transition">
+                Terms of Servive
+              </Link>
             </span>
-            <span className="hover:text-white cursor-pointer">
-              Privacy Policy
+            <span>
+              <Link href="/privacy" className="hover:text-white transition">
+                Privacy Policy
+              </Link>
             </span>
             {/* Scroll To Top Button */}
             <span>
