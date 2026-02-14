@@ -4,7 +4,7 @@ import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navbar from "@/app/components/saas/common/Navbar";
+import Navbar from '../components/saas/landing/Navigation'
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField, TextAreaField } from "@/app/components/saas/common/FormFields";
@@ -109,31 +109,7 @@ export default function ContactUsPage() {
   };
 
   return (
-    <CommonLayout
-      navbar={
-        <Navbar
-          middleContent={
-            <div className="hidden md:flex items-center gap-8 text-white/90">
-              <span className="hover:text-white cursor-pointer">Home</span>
-              <span className="hover:text-white cursor-pointer">About</span>
-              <span className="hover:text-white cursor-pointer">Features</span>
-              <span className="hover:text-white cursor-pointer">Growth</span>
-              <span className="hover:text-white cursor-pointer">Testimonials</span>
-            </div>
-          }
-          rightContent={
-            <div className="flex items-center gap-3">
-              <button className="rounded-full border border-orange-400 px-6 py-2 text-orange-200 font-semibold hover:bg-white/10">
-                Sign In
-              </button>
-              <button className="rounded-full bg-orange-500 px-6 py-2 text-white font-semibold hover:brightness-110">
-                Sign Up
-              </button>
-            </div>
-          }
-        />
-      }
-    >
+    <CommonLayout navbar={<Navbar />}>
       <div className="relative">
         <div className="absolute inset-0 bg-black/60" />
 
