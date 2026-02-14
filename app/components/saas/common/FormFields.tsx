@@ -22,7 +22,7 @@ function FieldWrapper({
   wrapperClassName = "",
 }: FieldWrapperProps) {
   return (
-    <div className={["space-y-2", wrapperClassName].join(" ")}>
+    <div className={["space-y-1", wrapperClassName].join(" ")}>
       {label && (
         <label className="text-sm text-white" htmlFor={htmlFor}>
           {label}
@@ -46,7 +46,7 @@ function buildInputStyles(
   extra?: string
 ) {
   const base =
-    "w-full px-5 py-3 rounded-full focus:outline-none transition";
+    "w-full px-5 py-2 rounded-full focus:outline-none transition";
 
   const glass =
     "bg-white/10 text-white border border-white/20 focus:ring-2 focus:ring-white/40";
