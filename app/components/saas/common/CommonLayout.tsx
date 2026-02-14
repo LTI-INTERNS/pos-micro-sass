@@ -8,6 +8,7 @@ type Props = {
 export default function CommonLayout({ children, navbar }: Props) {
   return (
     <div className="min-h-screen flex flex-col">
+
       {/* NAVBAR VARIANT */}
       {navbar}
 
