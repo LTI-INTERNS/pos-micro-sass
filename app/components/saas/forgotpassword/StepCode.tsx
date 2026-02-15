@@ -120,7 +120,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
             </svg>
           </button>
         )}
-        <h2 className="text-xl font-semibold text-white mb-3">
+        <h2 className="text-2xl font-semibold text-white mb-3">
           Enter Verification Code
         </h2>
       </div>
