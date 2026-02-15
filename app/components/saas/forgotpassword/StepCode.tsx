@@ -64,6 +64,11 @@ export default function StepCode({ email, onNext, onBack }: Props) {
   };
 
   const handleResend = () => {
+    if (timer > 0) {
+      setError(`Please wait ${timer} seconds before resending the code.`);
+      return;
+    }
+
     setCode(["", "", "", "", "", ""]);
     setTimer(45);
     setError("");
