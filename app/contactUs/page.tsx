@@ -8,6 +8,7 @@ import Navbar from '../components/saas/landing/Navigation'
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField, TextAreaField } from "@/app/components/saas/common/FormFields";
+import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
 import { MapPin, Phone, Mail } from "lucide-react";
 
@@ -28,9 +29,9 @@ type Touched = {
 export default function ContactUsPage() {
   const router = useRouter();
 
-  const [name, setName] = useState("John Smith");
-  const [email, setEmail] = useState("example@gmail.com");
-  const [subject, setSubject] = useState("subject");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const maxLen = 1000;
 
@@ -113,16 +114,17 @@ export default function ContactUsPage() {
       <div className="relative">
         <div className="absolute inset-0 bg-black/60" />
 
-        <div className="relative z-10 px-4 sm:px-8 pt-28 pb-16">
-          <div className="mx-auto max-w-6xl">
-            <Card variant="glass" padding="lg" radius="2xl" elevation="lg" className="w-full">
-              <div className="flex items-center justify-between mb-10">
-                <button
-                  onClick={() => router.back()}
-                  className="text-white font-semibold hover:opacity-80"
-                >
-                  {"< Back"}
-                </button>
+    <div className="relative z-10 px-4 sm:px-8 pt-28 pb-16">
+      <div className="mx-auto max-w-6xl">
+        <GlassBackground>
+          <div className="p-10">
+            <div className="flex items-center justify-between mb-10">
+              <button
+                onClick={() => router.back()}
+                className="text-white font-semibold hover:opacity-80"
+              >
+                {"< Back"}
+              </button>
 
                 <div className="text-white font-bold text-[20px]">Get In Touch</div>
                 <div className="w-[64px]" />
@@ -141,7 +143,7 @@ export default function ContactUsPage() {
                     />
                   </div>
 
-                  <div className="mt-8 text-white/90 text-[16px]">Contact Information</div>
+                  <div className="mt-8 text-white/90 text-[16px] font-semibold">Contact Information</div>
 
                   <div className="mt-4 space-y-4 pl-3">
                     <div className="flex items-start gap-3 text-white/80">
@@ -168,10 +170,10 @@ export default function ContactUsPage() {
                   </div>
                 </div>
 
-                {/* Divider */}
-                <div className="hidden md:flex items-center">
-                  <div className="h-full w-1 bg-[#B0B0B0]/80 rounded-full" />
-                </div>
+              {/* Divider */}
+              <div className="hidden md:flex items-center">
+                <div className="h-full w-[1px] bg-white/20" />
+              </div>
 
                 {/* RIGHT */}
                 <div className="w-full md:flex-1">
@@ -181,9 +183,9 @@ export default function ContactUsPage() {
                     <InputField
                       id="contact-name"
                       label="Your Name*"
-                      variant="solid"
                       value={name}
                       autoComplete="name"
+                      placeholder="Enter your full name"
                       onChange={(e) => {
                         const v = e.target.value;
                         setName(v);
@@ -200,9 +202,9 @@ export default function ContactUsPage() {
                       id="contact-email"
                       label="Email Address*"
                       type="email"
-                      variant="solid"
                       value={email}
                       autoComplete="email"
+                      placeholder="Enter your email address"
                       onChange={(e) => {
                         const v = e.target.value;
                         setEmail(v);
@@ -218,7 +220,7 @@ export default function ContactUsPage() {
                     <InputField
                       id="contact-subject"
                       label="Subject*"
-                      variant="solid"
+                      placeholder="What is this about?"
                       value={subject}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -243,7 +245,6 @@ export default function ContactUsPage() {
                         <TextAreaField
                           id="contact-message"
                           label=""
-                          variant="solid"
                           value={message}
                           maxLength={maxLen}
                           onChange={(e) => {
@@ -278,10 +279,11 @@ export default function ContactUsPage() {
                   </div>
                 </div>
               </div>
-            </Card>
           </div>
-        </div>
+        </GlassBackground>
       </div>
-    </CommonLayout>
+    </div>
+  </div>
+</CommonLayout>
   );
 }
