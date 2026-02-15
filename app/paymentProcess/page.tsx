@@ -1,14 +1,16 @@
+//payment process
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
 import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
 import Navigation from "@/app/components/saas/companyCreation/Navigation";
 import StepProgressBar from "../components/saas/common/StepProgressBar";
+import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
+import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
 import { tempCheckoutData } from "@/app/components/saas/paymentProcess/tempCheckoutData";
 
@@ -181,172 +183,165 @@ export default function PaymentProcessPage() {
           { id: "4", label: "Checkout" },
         ]}
       />
-      
-      <div className="relative">
+    <GlassBackground>  
+      <div className="px-4 py-8">
+      <div className="mx-auto max-w-6xl rounded-3xl">
 
-        <div className="relative z-10 pt-24 pb-10">
-          <div className="mx-auto max-w-6xl px-4 sm:px-8">
-            <Card variant="glass" padding="lg" className="w-full">
-              <div className="flex flex-col md:flex-row items-stretch gap-10">
-                {/* LEFT */}
-                <div className="w-full md:w-[417px]">
-                  <h2 className="text-2xl font-bold text-white">Payment Details</h2>
+    <SplitPanelLayout
+      showDivider
+      left={
+        <div className="w-full max-w-md mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-8">
+            Payment Details
+          </h2>
 
-                  <div className="mt-8 space-y-6">
-                    <InputField
-                      id="nameOnCard"
-                      name="nameOnCard"
-                      label="Name on Card"
-                      required
-                      variant="solid"
-                      value={nameOnCard}
-                      onChange={(e) => setNameOnCard(e.target.value)}
-                      onBlur={() => {
-                        markTouched("nameOnCard");
-                        validateField("nameOnCard");
-                      }}
-                      error={touched.nameOnCard ? errors.nameOnCard : ""}
-                    />
+          <div className="space-y-6">
+            <InputField
+              id="nameOnCard"
+              name="nameOnCard"
+              label="Name on Card"
+              required
+              variant="solid"
+              value={nameOnCard}
+              onChange={(e) => setNameOnCard(e.target.value)}
+              onBlur={() => {
+                markTouched("nameOnCard");
+                validateField("nameOnCard");
+              }}
+              error={touched.nameOnCard ? errors.nameOnCard : ""}
+            />
 
-                    <InputField
-                      id="cardNumber"
-                      name="cardNumber"
-                      label="Card Number"
-                      required
-                      variant="solid"
-                      inputMode="numeric"
-                      placeholder="0000-0000-0000-0000"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                      onBlur={() => {
-                        markTouched("cardNumber");
-                        validateField("cardNumber");
-                      }}
-                      error={touched.cardNumber ? errors.cardNumber : ""}
-                    />
+            <InputField
+              id="cardNumber"
+              name="cardNumber"
+              label="Card Number"
+              required
+              variant="solid"
+              inputMode="numeric"
+              placeholder="0000-0000-0000-0000"
+              value={cardNumber}
+              onChange={(e) =>
+                setCardNumber(formatCardNumber(e.target.value))
+              }
+              onBlur={() => {
+                markTouched("cardNumber");
+                validateField("cardNumber");
+              }}
+              error={touched.cardNumber ? errors.cardNumber : ""}
+            />
 
-                    <div className="grid grid-cols-2 gap-5">
-                      <InputField
-                        id="expDate"
-                        name="expDate"
-                        label="Valid Through"
-                        required
-                        variant="solid"
-                        inputMode="numeric"
-                        placeholder="MM/YY"
-                        value={expDate}
-                        onChange={(e) => setExpDate(formatExpDate(e.target.value))}
-                        onBlur={() => {
-                          markTouched("expDate");
-                          validateField("expDate");
-                        }}
-                        error={touched.expDate ? errors.expDate : ""}
-                      />
+            <div className="grid grid-cols-2 gap-5">
+              <InputField
+                id="expDate"
+                name="expDate"
+                label="Valid Through"
+                required
+                variant="solid"
+                inputMode="numeric"
+                placeholder="MM/YY"
+                value={expDate}
+                onChange={(e) =>
+                  setExpDate(formatExpDate(e.target.value))
+                }
+                onBlur={() => {
+                  markTouched("expDate");
+                  validateField("expDate");
+                }}
+                error={touched.expDate ? errors.expDate : ""}
+              />
 
-                      <InputField
-                        id="cvc"
-                        name="cvc"
-                        label="CVC Code"
-                        required
-                        variant="solid"
-                        type="password"
-                        inputMode="numeric"
-                        placeholder="***"
-                        value={cvv}
-                        onChange={(e) => setCvv(formatCvc(e.target.value))}
-                        onBlur={() => {
-                          markTouched("cvv");
-                          validateField("cvv");
-                        }}
-                        error={touched.cvv ? errors.cvv : ""}
-                      />
-                    </div>
+              <InputField
+                id="cvc"
+                name="cvc"
+                label="CVC Code"
+                required
+                variant="solid"
+                type="password"
+                inputMode="numeric"
+                placeholder="***"
+                value={cvv}
+                onChange={(e) => setCvv(formatCvc(e.target.value))}
+                onBlur={() => {
+                  markTouched("cvv");
+                  validateField("cvv");
+                }}
+                error={touched.cvv ? errors.cvv : ""}
+              />
+            </div>
 
-                    {formError && <FormErrorMessage message={formError} />}
+            {formError && <FormErrorMessage message={formError} />}
 
-                    <PrimaryButton
-                      className="w-full py-4 text-base"
-                      onClick={handleSubmit}
-                      disabled={!isFormValid}
-                    >
-                      Pay Now
-                    </PrimaryButton>
-                  </div>
-                </div>
+            <PrimaryButton
+              className="w-full py-4 text-base"
+              onClick={handleSubmit}
+              disabled={!isFormValid}
+            >
+              Pay Now
+            </PrimaryButton>
+          </div>
+        </div>
+      }
+      right={
+        <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
+          <h2 className="text-[28px] font-bold mb-6">
+            Shipping Details
+          </h2>
 
-                {/* DIVIDER */}
-                <div className="hidden md:flex items-center">
-                  <div className="h-full w-1 bg-[#B0B0B0]/80 rounded-full" />
-                </div>
+          {!summary ? (
+            <div className="text-white/80 text-sm">
+              Loading details...
+            </div>
+          ) : (
+            <>
+              <section className="space-y-1">
+                <h3 className="text-lg font-semibold">
+                  Customer Information
+                </h3>
+                <LineText>{summary.customer.name}</LineText>
+                <LineText>{summary.customer.address}</LineText>
+                <LineText>{summary.customer.email}</LineText>
+              </section>
 
-                {/* RIGHT (dynamic) */}
-                <div className="w-full md:flex-1">
-                  <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-2xl">
-                    <h2 className="text-[32px] leading-tight font-bold">
-                      Shipping Details
-                    </h2>
+              <section className="mt-6 space-y-1">
+                <h3 className="text-lg font-semibold">
+                  Company Information
+                </h3>
+                <LineText>{summary.company.name}</LineText>
+                <LineText>{summary.company.address}</LineText>
+                <LineText>{summary.company.contact}</LineText>
+                <LineText>{summary.company.email}</LineText>
+              </section>
 
-                    {!summary ? (
-                      <div className="mt-8 text-white/80 text-sm">
-                        Loading details...
-                      </div>
-                    ) : (
-                      <>
-                        <section className="mt-8">
-                          <h3 className="text-[20px] font-bold">
-                            Customer Information
-                          </h3>
-                          <div className="mt-4 space-y-1 text-[16px] opacity-95">
-                            <LineText>{summary.customer.name}</LineText>
-                            <LineText>{summary.customer.address}</LineText>
-                            <LineText>{summary.customer.email}</LineText>
-                          </div>
-                        </section>
+              <section className="mt-6 space-y-1">
+                <h3 className="text-lg font-semibold">
+                  Order Details
+                </h3>
+                <LineText>{summary.order.type}</LineText>
+                <LineText>{summary.order.plan}</LineText>
+                <LineText>{summary.order.branchesRemaining}</LineText>
+                <LineText>{summary.order.email}</LineText>
+              </section>
 
-                        <section className="mt-7">
-                          <h3 className="text-[20px] font-bold">
-                            Company Information
-                          </h3>
-                          <div className="mt-4 space-y-1 text-[16px] opacity-95">
-                            <LineText>{summary.company.name}</LineText>
-                            <LineText>{summary.company.address}</LineText>
-                            <LineText>{summary.company.contact}</LineText>
-                            <LineText>{summary.company.email}</LineText>
-                          </div>
-                        </section>
-
-                        <section className="mt-7">
-                          <h3 className="text-[20px] font-bold">Order Details</h3>
-                          <div className="mt-4 space-y-1 text-[16px] opacity-95">
-                            <LineText>{summary.order.type}</LineText>
-                            <LineText>{summary.order.plan}</LineText>
-                            <LineText>{summary.order.branchesRemaining}</LineText>
-                            <LineText>{summary.order.email}</LineText>
-                          </div>
-                        </section>
-
-                        <div className="mt-10 flex items-center justify-between">
-                          <span className="text-[20px] font-bold">Total</span>
-                          <span className="text-[20px] font-bold">
-                            {summary.currency} {summary.total}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+              <div className="mt-8 flex justify-between font-bold text-lg">
+                <span>Total</span>
+                <span>
+                  {summary.currency} {summary.total}
+                </span>
               </div>
-            </Card>
-
-            {/* Bottom nav */}
-            <div className="mt-10 ml-50 flex justify-start text-white">
+            </>
+          )}
+        </div>
+      }
+    />
+  </div>
+</div>
+</GlassBackground>
+        {/* Bottom nav */}
+            <div className="mt-10 ml-50 flex justify-start text-white mb-20" >
               <button onClick={handleBack} className="font-semibold hover:opacity-80 cursor-pointer">
                 {"< Back"}
               </button>
             </div>
-          </div>
-        </div>
-      </div>
     </CommonLayout>
   );
 }
