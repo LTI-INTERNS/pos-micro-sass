@@ -42,13 +42,13 @@ export default function GlassAccordion({
             <button
               type="button"
               onClick={() => toggle(item.id)}
-              className="w-full flex items-center justify-between py-4 text-left"
+              className="w-full flex items-center justify-between py-4 text-left cursor-pointer"
             >
-              <span className="text-white/90 text-sm sm:text-base">
-                {index + 1}. {item.title}
+              <span className="text-white/90 text-sm sm:text-base ">
+                {item.title}
               </span>
 
-              <span className="text-white/70 text-xl font-light select-none">
+              <span className="text-white/70 text-xl font-light select-none ">
                 {isOpen ? "–" : "+"}
               </span>
             </button>

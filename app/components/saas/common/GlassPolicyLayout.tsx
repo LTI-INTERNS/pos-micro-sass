@@ -6,15 +6,9 @@ import GlassBackground from "./GlassBackground";
 
 type GlassPolicyLayoutProps = {
   title: string;
-
-  /**
-   * OPTIONAL:
-   * If you use CommonLayout (background already exists), you can skip this.
-   * If you want GlassPolicyLayout to control its own background, pass it.
-   */
   backgroundImage?: string;
 
-  /** If provided, back button will go to this route */
+  /** fallback route if no history */
   backHref?: string;
 
   /** default true */
@@ -25,38 +19,52 @@ type GlassPolicyLayoutProps = {
 
   /** Optional extra wrapper classes */
   className?: string;
+
+  /** max height of the scrollable content area (default: 70vh) */
+  contentMaxHeight?: string | number;
+
+  /** fixed max width for the card (default: 960px) */
+  cardMaxWidthPx?: number;
 };
 
 export default function GlassPolicyLayout({
   title,
   backgroundImage,
-  backHref,
+  backHref = "/", // fallback if no history
   showBack = true,
   children,
   className = "",
+  contentMaxHeight = "70vh",
+  cardMaxWidthPx = 960,
 }: GlassPolicyLayoutProps) {
   const router = useRouter();
 
   const handleBack = () => {
-    if (backHref) router.push(backHref);
-    else router.back();
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push(backHref);
   };
 
   const Content = (
     <div className={`w-full px-4 sm:px-6 md:px-10 py-10 ${className}`}>
-      {/* BIG CENTER GLASS CARD */}
-      <div className="mx-auto w-full max-w-6xl rounded-3xl border border-white/25 bg-black/35 backdrop-blur-md shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
+      {/* FIXED WIDTH CENTER GLASS CARD */}
+      <div
+        className="mx-auto w-full rounded-3xl border border-white/25 bg-black/35 backdrop-blur-md shadow-[0_0_0_1px_rgba(255,255,255,0.08)]"
+        style={{ maxWidth: `${cardMaxWidthPx}px` }}
+      >
         <div className="p-6 sm:p-10">
           {/* Header */}
-          <div className="relative flex items-center justify-center mb-8">
+          <div className="relative flex items-center justify-center mb-6">
             {showBack && (
               <button
                 onClick={handleBack}
                 className="absolute left-0 text-white/80 hover:text-white text-sm flex items-center gap-2"
                 type="button"
               >
-                <span className="text-xl leading-none">‹</span>
-                <span>Back</span>
+                <span className="text-xl leading-none cursor-pointer">‹</span>
+                <span className="cursor-pointer">Back</span>
               </button>
             )}
 
@@ -65,15 +73,23 @@ export default function GlassPolicyLayout({
             </h1>
           </div>
 
-          {/* Content */}
-          <div className="text-white/85">{children}</div>
+          {/* Scrollable content (scrollbar hidden) */}
+          <div className="relative">
+            <div
+              className="text-white/85 overflow-y-auto scrollbar-hide pr-2"
+              style={{ maxHeight: contentMaxHeight }}
+            >
+              {children}
+            </div>
+
+            {/* Optional subtle fade to hint scroll (remove if you don't want it) */}
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-black/35 to-transparent rounded-b-3xl" />
+          </div>
         </div>
       </div>
     </div>
   );
 
-  // ✅ If backgroundImage is provided, use GlassBackground
-  // ✅ Otherwise, just render the centered glass card (for CommonLayout usage)
   if (backgroundImage) {
     return <GlassBackground>{Content}</GlassBackground>;
   }

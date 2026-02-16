@@ -137,7 +137,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
       </div>
 
 
-      <div className="text-white/90 text-xs">
+      <div className="text-white/90 text-center text-xs">
         <p>
           We sent a 6-digit code to{" "}
           <span className="text-orange-400 font-medium">{email}</span>.

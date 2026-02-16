@@ -9,6 +9,7 @@ import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navigation from "@/app/components/saas/landing/Navigation";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import Card from "@/app/components/saas/common/formCard";
+import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
 import {
   InputField,
@@ -95,8 +96,8 @@ export default function LoginPage() {
   return (
     <CommonLayout navbar={<Navigation />} >
       {/*space under fixed navbar */}
-      <div className="pt-24 pb-20 px-4">
-        <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
+      <div className="pt-5 pb-20 px-4">
+        <GlassBackground>
           <div>
             <SplitPanelLayout
               showDivider
@@ -214,7 +215,7 @@ export default function LoginPage() {
               }
             />
           </div>
-        </div>
+        </GlassBackground>
       </div>
     </CommonLayout>
   );
