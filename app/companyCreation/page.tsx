@@ -5,7 +5,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navigation from "@/app/components/saas/companyCreation/Navigation";
@@ -147,7 +146,7 @@ export default function CompanyCreatePage() {
     }
 
     // TODO: call API
-    router.push("/saasbusinessType");
+    router.push("/businesstype");
   };
     const handleBack = () => {
     router.push("/saaslogin");
@@ -162,7 +161,7 @@ export default function CompanyCreatePage() {
   <div className="h-20" />
 
   <StepProgressBar
-    currentStep={2}
+    currentStep={1}
     steps={[
       { id: "1", label: "Account" },
       { id: "2", label: "Business" },
@@ -172,14 +171,13 @@ export default function CompanyCreatePage() {
   />
   <GlassBackground>
   <div className="px-4 py-8">
-    <div className="mx-auto max-w-6xl rounded-3xl border">
       
       <SplitPanelLayout
         showDivider
         right={
           <div className="w-full max-w-md mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-8">
-              Company Information
+            <h2 className="text-2xl text-center font-bold text-white mb-8">
+              Company Creation
             </h2>
 
             <form onSubmit={onSubmit} className="space-y-6">
@@ -302,7 +300,6 @@ export default function CompanyCreatePage() {
         }
       />
     </div>
-  </div>
 </GlassBackground>
   {/* Bottom nav */}
   <div className="mt-10 ml-50 flex justify-start text-white mb-20">
