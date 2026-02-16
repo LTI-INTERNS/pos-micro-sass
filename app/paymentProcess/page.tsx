@@ -200,8 +200,8 @@ export default function PaymentProcessPage() {
               id="nameOnCard"
               name="nameOnCard"
               label="Name on Card"
+              placeholder="Enter Name"
               required
-              variant="solid"
               value={nameOnCard}
               onChange={(e) => setNameOnCard(e.target.value)}
               onBlur={() => {
@@ -216,7 +216,6 @@ export default function PaymentProcessPage() {
               name="cardNumber"
               label="Card Number"
               required
-              variant="solid"
               inputMode="numeric"
               placeholder="0000-0000-0000-0000"
               value={cardNumber}
@@ -236,7 +235,6 @@ export default function PaymentProcessPage() {
                 name="expDate"
                 label="Valid Through"
                 required
-                variant="solid"
                 inputMode="numeric"
                 placeholder="MM/YY"
                 value={expDate}
@@ -255,7 +253,6 @@ export default function PaymentProcessPage() {
                 name="cvc"
                 label="CVC Code"
                 required
-                variant="solid"
                 type="password"
                 inputMode="numeric"
                 placeholder="***"
