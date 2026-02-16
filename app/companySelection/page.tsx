@@ -92,7 +92,7 @@ export default function CompanySelectPage() {
                         <div className="mt-6">
                           <PrimaryButton
                             className="py-4 text-base"
-                            onClick={() => router.push("/companyCreation")}
+                            onClick={() => router.push("/companycreation")}
                           >
                             Create Company
                           </PrimaryButton>
