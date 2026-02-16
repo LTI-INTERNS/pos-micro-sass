@@ -121,7 +121,7 @@ export default function ContactUsPage() {
             <div className="flex items-center justify-between mb-10">
               <button
                 onClick={() => router.back()}
-                className="text-white font-semibold hover:opacity-80"
+                className="text-white font-semibold hover:opacity-80 cursor-pointer "
               >
                 {"< Back"}
               </button>
