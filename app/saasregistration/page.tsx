@@ -8,6 +8,7 @@ import Navigation from "@/app/components/saas/landing/Navigation";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import Card from "@/app/components/saas/common/formCard";
 import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import {
   InputField,
   PasswordField,
@@ -37,7 +38,6 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // ✅ FIX: correct typing for server field errors (prevents `[res.field]` TS error)
   const [serverFieldError, setServerFieldError] = useState<
     Partial<Record<RegisterFields, string>>
   >({});
@@ -88,7 +88,6 @@ export default function RegisterPage() {
       if (!res.ok) {
         setFormError(res.message);
 
-        // ✅ show field error under correct input (typed safe)
         const field = res.field as RegisterFields | undefined;
         if (field) {
           setServerFieldError((prev) => ({
@@ -116,8 +115,8 @@ export default function RegisterPage() {
   return (
     <CommonLayout navbar={<Navigation />} >
       {/*space under fixed navbar */}
-      <div className="pt-24 pb-20 px-4">
-        <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
+      <div className="pt-10 pb-20 px-4">
+        <GlassBackground>
           <div>
             <SplitPanelLayout
               showDivider
@@ -286,7 +285,7 @@ export default function RegisterPage() {
               }
             />
           </div>
-        </div>
+        </GlassBackground>
       </div>
     </CommonLayout>
   );

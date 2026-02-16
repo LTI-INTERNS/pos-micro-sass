@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navbar from "@/app/components/saas/common/Navbar";
+import Navigation from "@/app/components/saas/companyCreation/Navigation";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
@@ -49,56 +49,10 @@ export default function CompanySelectPage() {
   };
 
   return (
-    <CommonLayout
-      navbar={
-        <Navbar
-          logoSrc="/logo.png"
-          middleContent={
-            <>
-              <Link className="hover:text-orange-300 transition" href="/">
-                Home
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/about">
-                About
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/features">
-                Features
-              </Link>
-              <Link className="hover:text-orange-300 transition" href="/growth">
-                Growth
-              </Link>
-              <Link
-                className="hover:text-orange-300 transition"
-                href="/testimonials"
-              >
-                Testimonials
-              </Link>
-            </>
-          }
-          rightContent={
-            <>
-              <Link
-                href="/saaslogin"
-                className="px-5 py-2 rounded-full border border-orange-400/70 text-white text-sm font-semibold hover:bg-white/10 transition"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/saasregistration"
-                className="px-5 py-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition"
-              >
-                Sign Up
-              </Link>
-            </>
-          }
-        />
-      }
-    >
-      {/* space under fixed navbar */}
-      <div className="pt-5 pb-16 px-4">
-        <GlassBackground backgroundImage="/saasbg.png" showFrame={false}>
-          <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
-            <div className="py-8 px-10">
+ <CommonLayout navbar={<Navigation />}>
+      <div className="pt-10 pb-5 px-4">
+        <GlassBackground >
+            <div>
               <SplitPanelLayout
                 showDivider
                 leftClassName="!p-6 lg:!p-8"
@@ -158,7 +112,7 @@ export default function CompanySelectPage() {
                 }
               />
             </div>
-          </div>
+          
         </GlassBackground>
 
         {/* Bottom nav */}
