@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/saas/common/ActionButton";
 import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
 import Navigation from "@/app/components/saas/companyCreation/Navigation";
 import StepProgressBar from "../components/saas/common/StepProgressBar";
@@ -371,13 +371,13 @@ export default function PaymentProcessPage() {
 
             {formError && <FormErrorMessage message={formError} />}
 
-            <PrimaryButton
+            <ActionButton
               className="w-full py-4 text-base"
               onClick={handleSubmit}
               disabled={!isFormValid}
             >
               Pay Now
-            </PrimaryButton>
+            </ActionButton>
           </div>
         </div>
       }

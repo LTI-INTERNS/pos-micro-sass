@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navbar from '../components/saas/landing/Navigation'
 import Card from "@/app/components/saas/common/formCard";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/saas/common/ActionButton";
 import { InputField, TextAreaField } from "@/app/components/saas/common/FormFields";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
@@ -249,7 +249,7 @@ export default function ContactUsPage() {
                         }
                       />
 
-                      <PrimaryButton
+                      <ActionButton
                         className={[
                           "w-full rounded-full py-4 text-base",
                           isFormValid && !submitting
@@ -260,7 +260,7 @@ export default function ContactUsPage() {
                         disabled={!isFormValid || submitting}
                       >
                         {submitting ? "Sending..." : "Send Message"}
-                      </PrimaryButton>
+                      </ActionButton>
                     </div>
                   </div>
 
