@@ -177,7 +177,7 @@ export default function ContactUsPage() {
 
                 {/* RIGHT */}
                 <div className="w-full md:flex-1">
-                  <h2 className="text-white font-bold text-[24px]">Send Us a Message</h2>
+                  <h2 className="text-white font-bold text-[24px]">Send us a Message</h2>
 
                   <div className="mt-8 space-y-6 max-w-[420px]">
                     <InputField

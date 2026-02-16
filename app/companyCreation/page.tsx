@@ -147,7 +147,7 @@ export default function CompanyCreatePage() {
     }
 
     // TODO: call API
-    router.push("/saasbusinessType");
+    router.push("/businesstype");
   };
     const handleBack = () => {
     router.push("/saaslogin");
@@ -178,8 +178,8 @@ export default function CompanyCreatePage() {
         showDivider
         right={
           <div className="w-full max-w-md mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-8">
-              Company Information
+            <h2 className="text-2xl text-center font-bold text-white mb-8">
+              Company Creation
             </h2>
 
             <form onSubmit={onSubmit} className="space-y-6">
@@ -304,12 +304,23 @@ export default function CompanyCreatePage() {
     </div>
   </div>
 </GlassBackground>
-  {/* Bottom nav */}
-  <div className="mt-10 ml-50 flex justify-start text-white mb-20">
-    <button onClick={handleBack} className="font-semibold hover:opacity-80 cursor-pointer">
-      {"< Back"}
-    </button>
-  </div>
+      <div className="mt-10 flex items-center justify-center mb-20">
+          <div className="flex w-full max-w-xl items-center justify-between text-white">
+            <button
+              onClick={handleBack}
+              className="font-semibold hover:opacity-80 cursor-pointer"
+            >
+              {"< Back"}
+            </button>
+
+            <button
+              onClick={handleNext}
+              className="font-semibold hover:opacity-80 cursor-pointer"
+            >
+              {"Next >"}
+            </button>
+          </div>
+        </div>
 </CommonLayout>
   );
 }
