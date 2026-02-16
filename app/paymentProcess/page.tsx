@@ -436,7 +436,6 @@ export default function PaymentProcessPage() {
   </div>
 </div>
 </GlassBackground>
-        {/* Bottom nav */}
             <div className="mt-10 ml-50 flex justify-start text-white mb-20" >
               <button onClick={handleBack} className="font-semibold hover:opacity-80 cursor-pointer">
                 {"< Back"}
