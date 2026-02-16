@@ -10,8 +10,8 @@ const page = () => {
     <CommonLayout navbar={<Navbar />}>
         <div className="h-20" /> {/* Spacer for fixed navbar */}
       <GlassBackground>
-        <div className="container mx-auto py-20">
-          <h1 className="text-4xl font-bold text-center text-white mb-12">Pricing</h1>
+        <div className="container mx-auto py-15">
+          <h1 className="text-3xl font-bold text-center text-white mb-20">Pricing</h1>
           <PricingCardGrid />
         </div>
       </GlassBackground>
