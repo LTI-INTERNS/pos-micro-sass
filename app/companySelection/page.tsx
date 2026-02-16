@@ -41,10 +41,6 @@ export default function CompanySelectPage() {
     router.push(`/dashboard?company=${companyId}`);
   }
 
-  const handleBack = () => {
-    router.push("/saaslogin");
-  };
-
 
   return (
  <CommonLayout navbar={<Navigation />}>
@@ -112,15 +108,6 @@ export default function CompanySelectPage() {
             </div>
           
         </GlassBackground>
-
-        {/* Bottom nav */}
-        <div className="mt-10 flex items-center justify-center pb-10">
-          <div className="flex w-full max-w-xl items-center justify-between text-white">
-            <button onClick={handleBack} className="font-semibold hover:opacity-80">
-              {"< Back"}
-            </button>
-          </div>
-        </div>
       </div>
     </CommonLayout>
   );
