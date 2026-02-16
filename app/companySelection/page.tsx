@@ -88,7 +88,7 @@ export default function CompanySelectPage() {
                         <div className="mt-6">
                           <PrimaryButton
                             className="py-4 text-base"
-                            onClick={() => router.push("/companycreation")}
+                            onClick={() => router.push("/companyCreation")}
                           >
                             Create Company
                           </PrimaryButton>
@@ -108,6 +108,19 @@ export default function CompanySelectPage() {
             </div>
           
         </GlassBackground>
+
+        {/* Bottom nav */}
+        <div className="mt-10 flex items-center justify-center">
+          <div className="flex w-full max-w-xl items-center justify-between text-white">
+            <button onClick={handleBack} className="font-semibold hover:opacity-80">
+              {"< Back"}
+            </button>
+
+            <button onClick={handleNext} className="font-semibold hover:opacity-80">
+              {"Next >"}
+            </button>
+          </div>
+        </div>
       </div>
     </CommonLayout>
   );

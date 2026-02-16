@@ -5,7 +5,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navigation from "@/app/components/saas/companyCreation/Navigation";
@@ -172,7 +171,6 @@ export default function CompanyCreatePage() {
   />
   <GlassBackground>
   <div className="px-4 py-8">
-    <div className="mx-auto max-w-6xl rounded-3xl border">
       
       <SplitPanelLayout
         showDivider
@@ -302,7 +300,6 @@ export default function CompanyCreatePage() {
         }
       />
     </div>
-  </div>
 </GlassBackground>
       <div className="mt-10 flex items-center justify-center mb-20">
           <div className="flex w-full max-w-xl items-center justify-between text-white">
