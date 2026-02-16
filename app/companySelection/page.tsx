@@ -94,11 +94,10 @@ export default function CompanySelectPage() {
         />
       }
     >
-      {/* space under fixed navbar */}
-      <div className="pt-5 pb-16 px-4">
-        <GlassBackground backgroundImage="/saasbg.png" showFrame={false}>
-          <div className="mx-auto max-w-6xl rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-[0_0_40px_rgba(255,115,0,0.15)]">
-            <div className="py-8 px-10">
+
+      <div className="pt-10 pb-5 px-4">
+        <GlassBackground >
+            <div>
               <SplitPanelLayout
                 showDivider
                 leftClassName="!p-6 lg:!p-8"
@@ -158,7 +157,7 @@ export default function CompanySelectPage() {
                 }
               />
             </div>
-          </div>
+          
         </GlassBackground>
 
         {/* Bottom nav */}
