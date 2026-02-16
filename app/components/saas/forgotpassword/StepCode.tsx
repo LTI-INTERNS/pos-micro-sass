@@ -64,6 +64,11 @@ export default function StepCode({ email, onNext, onBack }: Props) {
   };
 
   const handleResend = () => {
+    if (timer > 0) {
+      setError(`Please wait ${timer} seconds before resending the code.`);
+      return;
+    }
+
     setCode(["", "", "", "", "", ""]);
     setTimer(45);
     setError("");
@@ -120,7 +125,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
             </svg>
           </button>
         )}
-        <h2 className="text-xl font-semibold text-white mb-3">
+        <h2 className="text-2xl font-semibold text-white mb-3">
           Enter Verification Code
         </h2>
       </div>
@@ -132,7 +137,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
       </div>
 
 
-      <div className="text-white/90 text-xs">
+      <div className="text-white/90 text-center text-xs">
         <p>
           We sent a 6-digit code to{" "}
           <span className="text-orange-400 font-medium">{email}</span>.

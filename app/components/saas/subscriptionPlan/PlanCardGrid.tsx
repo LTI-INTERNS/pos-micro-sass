@@ -4,7 +4,7 @@ import BaseCard from '../common/BaseCard'
 
 const PlanCardGrid = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start px-5" >
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start px-15" >
             <BaseCard
           title="FREE"
           price="$0.00"
