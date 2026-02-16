@@ -114,7 +114,7 @@ export default function ContactUsPage() {
       <div className="relative">
         <div className="absolute inset-0 bg-black/60" />
 
-    <div className="relative z-10 px-4 sm:px-8 pt-28 pb-16">
+    <div className="relative z-10 px-4 sm:px-8 pt-20 pb-16">
       <div className="mx-auto max-w-6xl">
         <GlassBackground>
           <div className="p-10">
