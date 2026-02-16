@@ -33,7 +33,7 @@ export default function BaseCard({
     <div className="w-full rounded-2xl border border-orange-400 shadow-lg overflow-hidden bg-white/10 backdrop-blur-lg">
 
      
-      <div className="bg-linear-to-b from-orange-500 to-orange-400 text-white text-center py-10 relative rounded-b-2xl">
+      <div className="bg-linear-to-b from-orange-500 to-orange-400 text-white text-center py-20 relative rounded-b-2xl">
         {icon && <div className="flex justify-center ">{icon}</div>}
         {title && <h2 className="text-xl font-bold">{title}</h2>}
 
