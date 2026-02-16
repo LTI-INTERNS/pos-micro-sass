@@ -14,7 +14,7 @@ import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
 import { tempCheckoutData } from "@/app/components/saas/paymentProcess/tempCheckoutData";
 
-type PaymentMethod = "mastercard" | "visa";
+type PaymentMethod = "mastercard" | "visa" | "amex" | "discover";
 
 type Summary = {
   customer: { name: string; address: string; email: string };
@@ -86,10 +86,110 @@ function LineText({ children }: { children: React.ReactNode }) {
   return <div className="leading-6">{children}</div>;
 }
 
+function CardTypeSelector({
+  selected,
+  onSelect,
+}: {
+  selected: PaymentMethod;
+  onSelect: (method: PaymentMethod) => void;
+}) {
+  const cardTypes: { type: PaymentMethod }[] = [
+    { type: "visa" },
+    { type: "mastercard" },
+  ];
+
+  const CardIcon = ({ type }: { type: PaymentMethod }) => {
+    if (type === "visa") {
+      return (
+        <svg viewBox="0 0 48 16" className="h-6">
+          <text
+            x="0"
+            y="14"
+            fontSize="14"
+            fontWeight="bold"
+            fill="#1A1F71"
+          >
+            VISA
+          </text>
+        </svg>
+      );
+    }
+
+    if (type === "mastercard") {
+      return (
+        <svg viewBox="0 0 48 30" className="h-6">
+          <circle cx="18" cy="15" r="10" fill="#EB001B" />
+          <circle cx="30" cy="15" r="10" fill="#F79E1B" />
+        </svg>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="space-y-3">
+      <label className="text-sm font-medium text-white">
+        Card Type <span className="text-red-400">*</span>
+      </label>
+
+      {/* Center container */}
+      <div className="flex justify-left">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xs sm:max-w-md">
+          {cardTypes.map((card) => {
+            const isSelected = selected === card.type;
+
+            return (
+              <button
+                key={card.type}
+                type="button"
+                onClick={() => onSelect(card.type)}
+                className={`
+                  rounded-lg
+                  px-3 py-2
+                  flex items-center justify-between
+                  transition-all duration-200
+                  border
+                  active:scale-[0.97]
+                  ${
+                    isSelected
+                      ? "border-white bg-white shadow-md"
+                      : "border-white/20 bg-white hover:bg-white/90"
+                  }
+                `}
+              >
+                <CardIcon type={card.type} />
+
+                <div
+                  className={`
+                    w-4 h-4 rounded-full border-2
+                    flex items-center justify-center
+                    ${
+                      isSelected
+                        ? "border-blue-600"
+                        : "border-gray-400"
+                    }
+                  `}
+                >
+                  {isSelected && (
+                    <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 export default function PaymentProcessPage() {
   const router = useRouter();
 
-  const [method, setMethod] = useState<PaymentMethod>("mastercard");
+  const [method, setMethod] = useState<PaymentMethod>("visa");
 
   // Payment fields
   const [nameOnCard, setNameOnCard] = useState("");
@@ -165,7 +265,7 @@ export default function PaymentProcessPage() {
       return;
     }
 
-    alert("Payment Successful ✅ (Demo)");
+    alert(`Payment Successful ✅ (Demo) - Paid with ${method.toUpperCase()}`);
   }
 
   const handleBack = () => router.push("/subscription");
@@ -196,6 +296,9 @@ export default function PaymentProcessPage() {
           </h2>
 
           <div className="space-y-6">
+            {/* Card Type Selector */}
+            <CardTypeSelector selected={method} onSelect={setMethod} />
+
             <InputField
               id="nameOnCard"
               name="nameOnCard"
