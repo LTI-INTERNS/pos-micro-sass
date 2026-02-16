@@ -301,23 +301,17 @@ export default function CompanyCreatePage() {
       />
     </div>
 </GlassBackground>
-      <div className="mt-10 flex items-center justify-center mb-20">
-          <div className="flex w-full max-w-xl items-center justify-between text-white">
-            <button
-              onClick={handleBack}
-              className="font-semibold hover:opacity-80 cursor-pointer"
-            >
-              {"< Back"}
-            </button>
+<div className="mt-10 flex items-center justify-center mb-20">
+  <div className="flex w-full max-w-xl justify-end text-white">
+    <button
+      onClick={handleNext}
+      className="font-semibold hover:opacity-80 cursor-pointer"
+    >
+      {"Next >"}
+    </button>
+  </div>
+</div>
 
-            <button
-              onClick={handleNext}
-              className="font-semibold hover:opacity-80 cursor-pointer"
-            >
-              {"Next >"}
-            </button>
-          </div>
-        </div>
 </CommonLayout>
   );
 }
