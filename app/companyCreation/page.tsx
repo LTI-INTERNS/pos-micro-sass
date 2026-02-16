@@ -162,7 +162,7 @@ export default function CompanyCreatePage() {
   <div className="h-20" />
 
   <StepProgressBar
-    currentStep={2}
+    currentStep={1}
     steps={[
       { id: "1", label: "Account" },
       { id: "2", label: "Business" },
