@@ -15,9 +15,6 @@ export default function GlassBackground({
     <div
       className="relative min-h-screen w-full flex items-center justify-center bg-cover bg-center px-4 sm:px-6 md:px-10 py-10"
     >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60"></div>
-
       {/* Glass Container with border glow */}
       <div className="relative z-10 w-full max-w-6xl">
         

@@ -17,7 +17,7 @@ export default function Navbar({
   logoAlt = "Logo",
 }: NavbarProps) {
   return (
-    <nav className="fixed top-0 left-0 w-full z-50 bg-[#995518]/70 backdrop-blur-md supports-[backdrop-filter]:bg-[#995518]/20 px-6 py-3">
+    <nav className="fixed top-0 left-0 w-full z-[100] bg-[#995518]/70 backdrop-blur-md supports-[backdrop-filter]:bg-[#995518]/20 px-6 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         
         {/* LEFT - LOGO */}
