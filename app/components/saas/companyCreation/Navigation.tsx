@@ -39,7 +39,7 @@ export default function Navigation({
       logoAlt={logoAlt}
       middleContent={
         <>
-          <h2>Micro-Sass Registration Dashboard</h2>
+          <h2>Micro-Saas Registration Dashboard</h2>
         </>
       }
       rightContent={
