@@ -4,10 +4,10 @@ import BaseCard from '../common/BaseCard'
 
 const PlanCardGrid = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start px-15" >
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start px-15" >
             <BaseCard
           title="FREE"
-          price="$0.00"
+          price="$0.00/mo"
           features={[
             { label: "Basic POS", available: true },
             { label: "Single Branch", available: true },
@@ -16,11 +16,11 @@ const PlanCardGrid = () => {
             { label: "Priority Support", available: false },
           ]}
           showButton ={true}
-          buttonLabel="Get Started"
+          buttonLabel="Select"
         />
         <BaseCard
           title="PRO"
-          price="$29.99"
+          price="$29.99/mo"
           features={[
             { label: "Advanced POS", available: true },
             { label: "Multiple Branches", available: true },
@@ -29,11 +29,11 @@ const PlanCardGrid = () => {
             { label: "Priority Support", available: true },
           ]}
           showButton ={true}
-          buttonLabel="Get Started"
+          buttonLabel="Select"
         />
         <BaseCard
           title="ENTERPRISE"
-          price="$99.99"
+          price="$99.99/mo"
           features={[
             { label: "Enterprise POS", available: true },
             { label: "Unlimited Branches", available: true },
@@ -42,7 +42,7 @@ const PlanCardGrid = () => {
             { label: "24/7 Support", available: true },
           ]}
           showButton ={true}
-          buttonLabel="Get Started"
+          buttonLabel="Select"
         />
         </div>
   )
