@@ -44,13 +44,11 @@ export default function CompanySelectPage() {
   const handleBack = () => {
     router.push("/saaslogin");
   };
-  const handleNext = () => {
-    router.push("/businessType");
-  };
+
 
   return (
  <CommonLayout navbar={<Navigation />}>
-      <div className="pt-10 pb-5 px-4">
+      <div className="pt-10 pb-10 px-4">
         <GlassBackground >
             <div>
               <SplitPanelLayout
@@ -116,14 +114,10 @@ export default function CompanySelectPage() {
         </GlassBackground>
 
         {/* Bottom nav */}
-        <div className="mt-10 flex items-center justify-center">
+        <div className="mt-10 flex items-center justify-center pb-10">
           <div className="flex w-full max-w-xl items-center justify-between text-white">
             <button onClick={handleBack} className="font-semibold hover:opacity-80">
               {"< Back"}
-            </button>
-
-            <button onClick={handleNext} className="font-semibold hover:opacity-80">
-              {"Next >"}
             </button>
           </div>
         </div>
