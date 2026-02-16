@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 type Props = {
@@ -16,6 +17,7 @@ export default function StepEmail({
   onNext,
   onCancel,
 }: Props) {
+  const router = useRouter();
   const [error, setError] = useState<string>("");
 
   // simple email regex
@@ -37,16 +39,25 @@ export default function StepEmail({
     onNext();
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      
+      router.push("/saaslogin");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="text-center mb-2">
-        <h2 className="text-xl font-semibold text-white mb-3">
+        <h2 className="text-2xl font-semibold text-white mb-3">
           Forgot Password?
         </h2>
         <br />
         <br />
-        <p className="text-white/80 text-xs">
+        <p className="text-white/80 text-sm">
           No worries, we'll send you reset instructions
         </p>
         <br />
@@ -61,7 +72,7 @@ export default function StepEmail({
         <input
           type="email"
           placeholder="example@yourdomain.com"
-          className={`w-full px-4 py-2 rounded-full bg-white/10 border text-white text-xs placeholder-white/50 transition-colors
+          className={`w-full px-4 py-3 rounded-full bg-white/10 border text-white text-xs placeholder-white/50 transition-colors
             ${
               error
                 ? "border-red-400 focus:border-red-400"
@@ -88,7 +99,7 @@ export default function StepEmail({
           label="Cancel"
           variant="outline"
           fullWidth={false}
-          onClick={onCancel || (() => setEmail(""))}
+          onClick={handleCancel}
           className="flex-1 !rounded-full !bg-transparent !border-orange-500/50 !text-orange-400 hover:!bg-orange-500/10"
         />
 

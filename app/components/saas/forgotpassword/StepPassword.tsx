@@ -74,7 +74,7 @@ export default function StepPassword({
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center mb-10">
-        <h2 className="text-xl font-semibold text-white">
+        <h2 className="text-2xl font-semibold text-white">
           Reset Your Password
         </h2>
       </div>
@@ -87,7 +87,7 @@ export default function StepPassword({
           <input
             type="password"
             placeholder="Enter new password"
-            className={`w-full px-4 py-2 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
+            className={`w-full px-4 py-3 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
               ${
                 error
                   ? "border-red-400 focus:border-red-400"
@@ -106,7 +106,7 @@ export default function StepPassword({
           <input
             type="password"
             placeholder="Confirm password"
-            className={`w-full px-4 py-2 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
+            className={`w-full px-4 py-3 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
               ${
                 error
                   ? "border-red-400 focus:border-red-400"
