@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 type Props = {
@@ -15,6 +16,8 @@ export default function StepPassword({
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const validatePassword = () => {
     if (!newPassword || !confirmPassword) {
@@ -22,28 +25,13 @@ export default function StepPassword({
       return false;
     }
 
-    if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long");
-      return false;
-    }
+   const passwordRegex =
+    /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
 
-    if (!/[A-Z]/.test(newPassword)) {
-      setError("Password must contain at least one uppercase letter");
-      return false;
-    }
-
-    if (!/[a-z]/.test(newPassword)) {
-      setError("Password must contain at least one lowercase letter");
-      return false;
-    }
-
-    if (!/[0-9]/.test(newPassword)) {
-      setError("Password must contain at least one number");
-      return false;
-    }
-
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
-      setError("Password must contain at least one special character");
+    if (!passwordRegex.test(newPassword)) {
+      setError(
+        "Password must contain at least 8 characters, including an uppercase letter, a lowercase letter, a number, and a special character"
+      );
       return false;
     }
 
@@ -84,38 +72,64 @@ export default function StepPassword({
           <label className="text-white/90 text-sm font-medium">
             New Password
           </label>
-          <input
-            type="password"
-            placeholder="Enter new password"
-            className={`w-full px-4 py-3 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
-              ${
-                error
-                  ? "border-red-400 focus:border-red-400"
-                  : "border-white/20 focus:border-orange-400"
-              }
-              focus:outline-none`}
-            value={newPassword}
-            onChange={(e) => {setNewPassword(e.target.value); setError("");}}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter new password"
+              className={`w-full px-4 py-3 pr-12 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
+                ${
+                  error
+                    ? "border-red-400 focus:border-red-400"
+                    : "border-white/20 focus:border-orange-400"
+                }
+                focus:outline-none`}
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setError("");
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-white/90 text-sm font-medium">
             Confirm Password
           </label>
-          <input
-            type="password"
-            placeholder="Confirm password"
-            className={`w-full px-4 py-3 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
-              ${
-                error
-                  ? "border-red-400 focus:border-red-400"
-                  : "border-white/20 focus:border-orange-400"
-              }
-              focus:outline-none`}
-            value={confirmPassword}
-            onChange={(e) => {setConfirmPassword(e.target.value); setError("");}}
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Confirm password"
+              className={`w-full px-4 py-3 pr-12 rounded-full bg-white/10 border text-white text-sm placeholder-white/50 transition-colors
+                ${
+                  error
+                    ? "border-red-400 focus:border-red-400"
+                    : "border-white/20 focus:border-orange-400"
+                }
+                focus:outline-none`}
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setError("");
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
         </div>
       </div>
 
