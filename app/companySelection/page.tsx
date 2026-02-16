@@ -74,7 +74,7 @@ export default function CompanySelectPage() {
                   </div>
                 }
                 right={
-                  <div className="w-full flex items-center justify-center">
+                  <div className="w-full flex items-center justify-center mt-15">
                     <div className="w-full max-w-md space-y-4">
                       <div className="rounded-2xl border border-white/15 bg-white/5 p-6">
                         <h3 className="text-xl font-semibold text-white">
