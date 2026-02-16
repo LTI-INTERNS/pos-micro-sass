@@ -182,7 +182,8 @@ export default function ContactUsPage() {
                   <div className="mt-8 space-y-6 max-w-[420px]">
                     <InputField
                       id="contact-name"
-                      label="Your Name*"
+                      label="Your Name"
+                      required
                       value={name}
                       autoComplete="name"
                       placeholder="Enter your full name"
@@ -200,7 +201,8 @@ export default function ContactUsPage() {
 
                     <InputField
                       id="contact-email"
-                      label="Email Address*"
+                      label="Email Address"
+                      required
                       type="email"
                       value={email}
                       autoComplete="email"
@@ -219,8 +221,9 @@ export default function ContactUsPage() {
 
                     <InputField
                       id="contact-subject"
-                      label="Subject*"
+                      label="Subject"
                       placeholder="What is this about?"
+                      required
                       value={subject}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -237,7 +240,7 @@ export default function ContactUsPage() {
                     <div>
                       <div className="flex items-center justify-between">
                         <label className="text-white/90 text-[16px]">
-                          Your Message* ({Math.min(message.length, maxLen)}/{maxLen})
+                          Your Message ({Math.min(message.length, maxLen)}/{maxLen})
                         </label>
                       </div>
 
@@ -245,6 +248,7 @@ export default function ContactUsPage() {
                         <TextAreaField
                           id="contact-message"
                           label=""
+                          required
                           value={message}
                           maxLength={maxLen}
                           onChange={(e) => {
