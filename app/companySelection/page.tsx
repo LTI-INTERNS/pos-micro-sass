@@ -49,7 +49,7 @@ export default function CompanySelectPage() {
   };
 
   return (
- <CommonLayout navbar={<Navigation />}>
+ <CommonLayout navbar={<Navigation title="Company Selection"/>}>
       <div className="pt-10 pb-5 px-4">
         <GlassBackground >
             <div>
