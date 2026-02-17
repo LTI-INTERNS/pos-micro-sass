@@ -169,7 +169,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
     //
     // For now, both are set to true (happy path):
     setPaymentSuccess(true);
-    setRegistrationSuccess(false);
+    setRegistrationSuccess(true);
     // --------------------------------------------------------
 
     setShowSuccess(true);
