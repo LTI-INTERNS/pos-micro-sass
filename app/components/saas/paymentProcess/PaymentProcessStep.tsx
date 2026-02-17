@@ -194,7 +194,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                       name="nameOnCard"
                       label="Name on Card"
                       required
-                      variant="solid"
                       value={nameOnCard}
                       onChange={(e) => setNameOnCard(e.target.value)}
                       onBlur={() => {
@@ -209,7 +208,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                       name="cardNumber"
                       label="Card Number"
                       required
-                      variant="solid"
                       inputMode="numeric"
                       placeholder="0000-0000-0000-0000"
                       value={cardNumber}
@@ -229,7 +227,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                         name="expDate"
                         label="Valid Through"
                         required
-                        variant="solid"
                         inputMode="numeric"
                         placeholder="MM/YY"
                         value={expDate}
@@ -248,7 +245,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                         name="cvc"
                         label="CVC Code"
                         required
-                        variant="solid"
                         type="password"
                         inputMode="numeric"
                         placeholder="***"

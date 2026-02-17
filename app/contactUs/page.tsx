@@ -247,6 +247,28 @@ export default function ContactUsPage() {
                             : undefined
                         }
                       />
+                         <div className="mt-3">
+                        <TextAreaField
+                          id="contact-message"
+                          label=""
+                          required
+                          value={message}
+                          maxLength={maxLen}
+                          onChange={(e) => {
+                            const v = e.target.value.slice(0, maxLen);
+                            setMessage(v);
+                            if (touched.message)
+                              setErrors((p) => ({ ...p, ...validate({ message: v }) }));
+                          }}
+                          onBlur={() => {
+                            markTouched("message");
+                            setErrors((p) => ({ ...p, ...validate() }));
+                          }}
+                          error={touched.message ? (errors.message ?? currentErrors.message) : undefined}
+                          placeholder="Tell us about your Thought"
+                          className="min-h-[125px]"
+                        />
+                    </div>
 
                       <ActionButton
                         className={[

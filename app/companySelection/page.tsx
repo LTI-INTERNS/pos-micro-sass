@@ -9,7 +9,7 @@ import Navigation from "@/app/components/saas/companyCreation/Navigation";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import ActionButton from "@/app/components/saas/common/ActionButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 import CompanySelectItem from "@/app/components/saas/companySelection/CompanySelectItem";
 
