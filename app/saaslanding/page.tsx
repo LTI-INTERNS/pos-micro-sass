@@ -5,20 +5,39 @@ import StatsBar from "../components/saas/landing/StatsBar";
 import About from "../components/saas/landing/About";
 import WhyChooseUs from "../components/saas/landing/WhyChooseUs";
 import LandingPageWithComponents from "../components/saas/landing/landingfeature";
+import GrowthSection from "../components/saas/landing/Growth";
 
 
 export default function LandingPage() {
   return (
     <main className="bg-black">
       <Navigation />
-      <HeroSection />
-      <StatsBar />
-      <About />
-      <WhyChooseUs />
-      <LandingPageWithComponents />
-      {/* Add next components below */}
-      {/* <FeaturesSection /> */}
-      {/* <PricingSection /> */}
+
+      <section id="home">
+        <HeroSection />
+      </section>
+
+      <section id="stats">
+        <StatsBar />
+      </section>
+
+      <section id="about" className="scroll-mt-18">
+        <About />
+        <WhyChooseUs />
+      </section>
+      
+      <section id="features" className="scroll-mt-18">
+        <LandingPageWithComponents />
+      </section>
+
+      <section id="growth" className="scroll-mt-18">
+        <GrowthSection />
+      </section>
+
+      <section id="testimonials" className="scroll-mt-18">
+        {/* Testimonials component */}
+      </section>
+
       <Footer />
     </main>
   );
