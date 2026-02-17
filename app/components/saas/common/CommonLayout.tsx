@@ -13,7 +13,7 @@ export default function CommonLayout({ children, navbar }: Props) {
 
       <main
         className="flex-1 bg-fixed bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/saasbg.png')" }}
+        style={{ backgroundImage: "url('/saas/saasbg.png')" }}
       >
         {children}
       </main>

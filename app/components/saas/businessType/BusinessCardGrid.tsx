@@ -12,7 +12,7 @@ const BUSINESS_TYPES = [
   {
     id: "retail",
     title: "Retail",
-    icon: <img src="/retail.png" alt="Retail" className="w-20 h-20 object-contain" />,
+    icon: <img src="/saas/retail.png" alt="Retail" className="w-20 h-20 object-contain" />,
     features: [
       { label: "Inventory Management", available: true },
       { label: "Sales Tracking",       available: true },
@@ -24,7 +24,7 @@ const BUSINESS_TYPES = [
   {
     id: "restaurant",
     title: "Restaurant / Café",
-    icon: <img src="/cafe.png" alt="Restaurant / Café" className="w-20 h-20 object-contain" />,
+    icon: <img src="/saas/cafe.png" alt="Restaurant / Café" className="w-20 h-20 object-contain" />,
     features: [
       { label: "Inventory Management", available: true },
       { label: "Sales Tracking",       available: true },
@@ -36,7 +36,7 @@ const BUSINESS_TYPES = [
   {
     id: "grocery",
     title: "Grocery / Supermarket",
-    icon: <img src="/supermarket.png" alt="Grocery / Supermarket" className="w-20 h-20 object-contain" />,
+    icon: <img src="/saas/supermarket.png" alt="Grocery / Supermarket" className="w-20 h-20 object-contain" />,
     features: [
       { label: "Inventory Management", available: true },
       { label: "Sales Tracking",       available: true },

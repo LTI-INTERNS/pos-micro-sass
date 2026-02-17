@@ -246,7 +246,7 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
                 <div className="flex justify-center mb-8">
                   <div className="relative w-[380px] h-[230px]">
                     <Image
-                      src="/creationcompanylogo.svg"
+                      src="/saas/creationcompanylogo.svg"
                       alt="Company illustration"
                       fill
                       className="object-contain"
