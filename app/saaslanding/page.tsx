@@ -4,6 +4,7 @@ import Footer from "@/app/components/saas/common/Footer";
 import StatsBar from "../components/saas/landing/StatsBar";
 import About from "../components/saas/landing/About";
 import WhyChooseUs from "../components/saas/landing/WhyChooseUs";
+import LandingPageWithComponents from "../components/saas/landing/landingfeature";
 
 
 export default function LandingPage() {
@@ -14,6 +15,7 @@ export default function LandingPage() {
       <StatsBar />
       <About />
       <WhyChooseUs />
+      <LandingPageWithComponents />
       {/* Add next components below */}
       {/* <FeaturesSection /> */}
       {/* <PricingSection /> */}
