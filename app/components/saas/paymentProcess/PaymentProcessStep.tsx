@@ -10,6 +10,7 @@ import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
 import { tempCheckoutData } from "@/app/components/saas/paymentProcess/tempCheckoutData";
+import PaymentSuccessPopup from "./Paymentsuccesspopup";
 
 type Errors = {
   nameOnCard?: string;
@@ -94,6 +95,10 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
   const [errors, setErrors] = useState<Errors>({});
   const [touched, setTouched] = useState<Touched>({});
   const [formError, setFormError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   const summary = tempCheckoutData;
 
@@ -138,7 +143,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
     !getFieldError("expDate", values) &&
     !getFieldError("cvv", values);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     setFormError("");
 
     setTouched({
@@ -153,7 +158,21 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       return;
     }
 
-    onComplete({ nameOnCard, cardNumber, expDate, cvv });
+    // --- Replace the block below with your real API calls ---
+    // Example:
+    //   const paymentResult = await processPayment({ nameOnCard, cardNumber, expDate, cvv });
+    //   setPaymentSuccess(paymentResult.success);
+    //   if (paymentResult.success) {
+    //     const regResult = await registerCompany(data);
+    //     setRegistrationSuccess(regResult.success);
+    //   }
+    //
+    // For now, both are set to true (happy path):
+    setPaymentSuccess(true);
+    setRegistrationSuccess(false);
+    // --------------------------------------------------------
+
+    setShowSuccess(true);
   }
 
   return (
@@ -311,7 +330,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
         </div>
       </GlassBackground>
 
-      {/* Bottom nav */}
       <div className="mt-10 ml-50 flex justify-start text-white mb-20">
         <button
           onClick={onBack}
@@ -320,6 +338,19 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
           {"< Back"}
         </button>
       </div>
+
+      <PaymentSuccessPopup
+        isOpen={showSuccess}
+        paymentSuccess={paymentSuccess}
+        registrationSuccess={registrationSuccess}
+        onClose={() => {
+          setShowSuccess(false);
+          onComplete({ nameOnCard, cardNumber, expDate, cvv });
+        }}
+        onTryAgain={() => {
+          setShowSuccess(false); 
+        }}
+      />
     </>
   );
 }
