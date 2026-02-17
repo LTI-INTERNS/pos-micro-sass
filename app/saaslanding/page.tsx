@@ -12,15 +12,32 @@ export default function LandingPage() {
   return (
     <main className="bg-black">
       <Navigation />
-      <HeroSection />
-      <StatsBar />
-      <About />
-      <WhyChooseUs />
-      <LandingPageWithComponents />
-      <GrowthSection />
-      {/* Add next components below */}
-      {/* <FeaturesSection /> */}
-      {/* <PricingSection /> */}
+
+      <section id="home">
+        <HeroSection />
+      </section>
+
+      <section id="stats">
+        <StatsBar />
+      </section>
+
+      <section id="about" className="scroll-mt-18">
+        <About />
+        <WhyChooseUs />
+      </section>
+      
+      <section id="features" className="scroll-mt-18">
+        <LandingPageWithComponents />
+      </section>
+
+      <section id="growth" className="scroll-mt-18">
+        <GrowthSection />
+      </section>
+
+      <section id="testimonials" className="scroll-mt-18">
+        {/* Testimonials component */}
+      </section>
+
       <Footer />
     </main>
   );

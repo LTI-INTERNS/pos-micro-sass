@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -42,9 +42,9 @@ export default function HeroSection() {
             </p>
 
             <div className="mt-8 w-64">
-              <PrimaryButton className="cursor-pointer" onClick={() => router.push("/saaslogin")}>
+              <ActionButton onClick={() => router.push("/saaslogin")}>
                 Get Start
-              </PrimaryButton>
+              </ActionButton>
             </div>
 
             <Link

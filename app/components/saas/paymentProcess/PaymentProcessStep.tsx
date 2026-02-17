@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
 
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 import {
   InputField,
   FormErrorMessage,
@@ -245,13 +245,13 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
 
                     {formError && <FormErrorMessage message={formError} />}
 
-                    <PrimaryButton
+                    <ActionButton
                       className="w-full py-4 text-base"
                       onClick={handleSubmit}
                       disabled={!isFormValid}
                     >
                       Pay Now
-                    </PrimaryButton>
+                    </ActionButton>
                   </div>
                 </div>
               }
