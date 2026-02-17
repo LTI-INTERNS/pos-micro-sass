@@ -52,7 +52,6 @@ export function usePDFExport<T>() {
   ) {
     if (!data || !data.length) return;
 
-    // Lazy-load jsPDF and the autotable plugin
     const [jsPDFModule, autoTableModule] = await Promise.all([
       import("jspdf").catch(() => {
         console.error(
