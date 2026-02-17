@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/landing',
+        destination: '/saaslanding',
         permanent: true,
       },
     ];
