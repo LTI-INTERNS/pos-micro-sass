@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Navbar from "../common/Navbar";
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 
@@ -35,6 +35,7 @@ export default function Navigation({
   const pathname = usePathname();
   const [activeHash, setActiveHash] = useState("");
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const updateHash = () => setActiveHash(window.location.hash);
@@ -81,7 +82,7 @@ export default function Navigation({
         <div className="flex items-center gap-3">
           <ActionButton
             label="Sign In"
-            onClick={onSignIn}
+            onClick={() => router.push("/saaslogin")}
             variant="outline"
             fullWidth={false}
             className="px-5 !bg-transparent"
@@ -89,7 +90,7 @@ export default function Navigation({
 
           <ActionButton
             label="Sign Up"
-            onClick={onSignUp}
+            onClick={() => router.push("/saasregistration")}
             variant="primary"
             fullWidth={false}
             className="px-5"

@@ -33,7 +33,7 @@ export default function BaseCard({
     <div className="w-full rounded-2xl border border-orange-400 shadow-lg overflow-hidden bg-white/10 backdrop-blur-lg">
 
      
-      <div className="bg-linear-to-b from-orange-500 to-orange-400 text-white text-center py-20 relative rounded-b-2xl">
+      <div className={`bg-linear-to-b from-orange-500 to-orange-400 text-white text-center  relative rounded-b-2xl ${icon ? "py-15" : "py-20"}`}>
         {icon && <div className="flex justify-center ">{icon}</div>}
         {title && <h2 className="text-xl font-bold">{title}</h2>}
 
@@ -69,7 +69,7 @@ export default function BaseCard({
         {showButton && (
           <button
             onClick={onClick}
-            className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-full text-sm font-semibold transition "
+            className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-full text-sm font-semibold transition hover:cursor-pointer "
           >
             {buttonLabel}
           </button>
