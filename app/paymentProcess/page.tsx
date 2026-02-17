@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import ActionButton from "@/app/components/saas/common/ActionButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 import { InputField, FormErrorMessage } from "@/app/components/saas/common/FormFields";
 import Navigation from "@/app/components/saas/companyCreation/Navigation";
 import StepProgressBar from "../components/saas/common/StepProgressBar";
