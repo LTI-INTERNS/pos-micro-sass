@@ -5,6 +5,7 @@ import StatsBar from "../components/saas/landing/StatsBar";
 import About from "../components/saas/landing/About";
 import WhyChooseUs from "../components/saas/landing/WhyChooseUs";
 import LandingPageWithComponents from "../components/saas/landing/landingfeature";
+import GrowthSection from "../components/saas/landing/Growth";
 
 
 export default function LandingPage() {
@@ -16,6 +17,7 @@ export default function LandingPage() {
       <About />
       <WhyChooseUs />
       <LandingPageWithComponents />
+      <GrowthSection />
       {/* Add next components below */}
       {/* <FeaturesSection /> */}
       {/* <PricingSection /> */}

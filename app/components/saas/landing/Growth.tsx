@@ -5,67 +5,84 @@ import { CloudLightning, BarChart3, Box, UserCheck } from "lucide-react";
 
 export default function GrowthSection() {
   return (
-    <section className="relative text-white">
-      
-      <div className="absolute inset-0 bg-linear-to-b from-[#2b0c05]/90 to-[#0b0b0b]/95" />
+    <section className="text-white">
 
-      <div className="relative max-w-6xl mx-auto px-6 py-20">
+      {/* ================= TOP SECTION  ================= */}
+      <div className="relative">
+       
+        <div className="absolute inset-0 bg-[url('/saas/landing/growthtop.png')] bg-cover bg-center" />
         
-        <div className="text-center ">
-          <h3 className="text-2xl md:text-3xl font-bold mb-4">
-            Grow Your Business with Smart POS Technology
-          </h3>
 
-          <p className="text-gray-300 mb-10 max-w-2xl mx-auto">
-            Improve efficiency, reduce manual work, and make smarter decisions
-            with real-time business insights.
-          </p>
+        <div className="relative max-w-6xl mx-auto px-6 py-20">
 
-         
-          <div className="flex flex-wrap justify-center gap-6">
-            <StatCard text="Reduce Billing Time by 40%" />
-            <StatCard text="Increase Sales Visibility" />
-            <StatCard text="Reduce Inventory Loss" />
-            <StatCard text="Better Profit Tracking" />
-          </div>
-        </div>
-        
-        
-        <div className="grid md:grid-cols-2 gap-10 items-center mt-20">
-          
-          
-          <div>
-            <h2 className="text-3xl font-bold mb-6">Growth Benefits</h2>
+          <div className="text-center">
+            <h3 className="text-2xl md:text-3xl font-bold mb-4">
+              Grow Your Business with Smart POS Technology
+            </h3>
 
-            <p className="text-gray-200 leading-relaxed">
-              Small and medium businesses often struggle with disconnected
-              systems for sales, inventory, and customer management. Our
-              cloud-based POS platform brings everything together in one simple,
-              secure, and scalable solution—designed to grow with your business.
-              <br /><br />
-              Small and medium businesses often struggle with disconnected
-              systems for sales, inventory, and customer management. Our
-              cloud-based POS platform brings everything together in one simple,
-              secure, and scalable solution—designed to grow with your business.
+            <p className="text-gray-300 mb-10 max-w-2xl mx-auto">
+              Improve efficiency, reduce manual work, and make smarter decisions
+              with real-time business insights.
             </p>
+
+            <div className="flex flex-wrap justify-center gap-6">
+              <StatCard text="Reduce Billing Time by 40%" />
+              <StatCard text="Increase Sales Visibility" />
+              <StatCard text="Reduce Inventory Loss" />
+              <StatCard text="Better Profit Tracking" />
+            </div>
           </div>
 
-          
-          <div className="space-y-5">
-            <BenefitCard icon={<CloudLightning size={22} />} text="Faster Checkout" />
-            <BenefitCard icon={<BarChart3 size={22} />} text="Data-Driven Decisions" />
-            <BenefitCard icon={<Box size={22} />} text="Smart Inventory" />
-            <BenefitCard icon={<UserCheck size={22} />} text="Better Customer Retention" />
-          </div>
         </div>
-
-        
       </div>
+
+
+      {/* ================= BOTTOM SECTION  ================= */}
+      <div className="relative">
+        
+        <div className="absolute inset-0 bg-[url('/saas/landing/growthbottom.png')] bg-cover bg-center" />
+        
+
+        <div className="relative max-w-6xl mx-auto px-6 py-20">
+
+          <div className="grid md:grid-cols-2 gap-10 items-center">
+
+            
+            <div>
+              <h2 className="text-3xl font-bold mb-6">Growth Benefits</h2>
+
+              <p className="text-gray-200 leading-relaxed">
+                Small and medium businesses often struggle with disconnected
+                systems for sales, inventory, and customer management. Our
+                cloud-based POS platform brings everything together in one simple,
+                secure, and scalable solution—designed to grow with your business.
+                <br /><br />
+                Small and medium businesses often struggle with disconnected
+                systems for sales, inventory, and customer management. Our
+                cloud-based POS platform brings everything together in one simple,
+                secure, and scalable solution—designed to grow with your business.
+              </p>
+            </div>
+
+            
+            <div className="space-y-5">
+              <BenefitCard icon={<CloudLightning size={22} />} text="Faster Checkout" />
+              <BenefitCard icon={<BarChart3 size={22} />} text="Data-Driven Decisions" />
+              <BenefitCard icon={<Box size={22} />} text="Smart Inventory" />
+              <BenefitCard icon={<UserCheck size={22} />} text="Better Customer Retention" />
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
     </section>
   );
 }
 
 
+/* ================= TYPES ================= */
 
 type BenefitCardProps = {
   icon: ReactNode;
@@ -77,6 +94,7 @@ type StatCardProps = {
 };
 
 
+/* ================= COMPONENTS ================= */
 
 function BenefitCard({ icon, text }: BenefitCardProps) {
   return (
