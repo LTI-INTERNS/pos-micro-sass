@@ -18,7 +18,7 @@ export default function Footer() {
       {/* Background Image */}
       <div className="absolute inset-0 -z-10">
         <Image
-          src="/footer.png"
+          src="/saas/saasbg.png"
           alt="Footer Background"
           fill
           className="object-cover"
@@ -37,7 +37,7 @@ export default function Footer() {
           <div>
             <Link href="https://lankatechinnovations.com/">
               <Image
-                src="/logo.png"
+                src="/saas/logo.png"
                 alt="Logo"
                 width={200}
                 height={50}
