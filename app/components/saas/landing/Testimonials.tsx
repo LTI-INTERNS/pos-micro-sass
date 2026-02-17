@@ -106,7 +106,7 @@ export default function TestimonialSection() {
                   >
                     
                     <div
-                      className={`relative rounded-2xl p-6 sm:p-8 w-full 
+                      className={`relative rounded-2xl p-6 sm:p-8 w-full h-[200px]
                       max-w-[85%] sm:max-w-md md:max-w-lg
                       text-left transition-all duration-500
                       ${
