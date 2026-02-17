@@ -9,8 +9,14 @@ import {
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
-import { tempCheckoutData } from "@/app/components/saas/paymentProcess/tempCheckoutData";
 import PaymentSuccessPopup from "./Paymentsuccesspopup";
+
+// Plan pricing 
+const PLAN_PRICES: Record<string, number> = {
+  free:       0.00,
+  pro:        29.99,
+  enterprise: 99.99,
+};
 
 type Errors = {
   nameOnCard?: string;
@@ -89,18 +95,16 @@ type Props = {
 export default function PaymentProcessStep({ data, onComplete, onBack }: Props) {
   const [nameOnCard, setNameOnCard] = useState(data.nameOnCard);
   const [cardNumber, setCardNumber] = useState(data.cardNumber);
-  const [expDate, setExpDate] = useState(data.expDate);
-  const [cvv, setCvv] = useState(data.cvv);
+  const [expDate,    setExpDate]    = useState(data.expDate);
+  const [cvv,        setCvv]        = useState(data.cvv);
 
-  const [errors, setErrors] = useState<Errors>({});
-  const [touched, setTouched] = useState<Touched>({});
-  const [formError, setFormError] = useState("");
+  const [errors,      setErrors]    = useState<Errors>({});
+  const [touched,     setTouched]   = useState<Touched>({});
+  const [formError,   setFormError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [paymentSuccess,      setPaymentSuccess]      = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-
-  const summary = tempCheckoutData;
 
   const values = useMemo(
     () => ({ nameOnCard, cardNumber, expDate, cvv }),
@@ -118,21 +122,14 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
   }
 
   function validateAll() {
-    const fields: (keyof Errors)[] = [
-      "nameOnCard",
-      "cardNumber",
-      "expDate",
-      "cvv",
-    ];
+    const fields: (keyof Errors)[] = ["nameOnCard", "cardNumber", "expDate", "cvv"];
     const next: Errors = {};
     let ok = true;
-
     for (const f of fields) {
       const msg = getFieldError(f, values);
       if (msg) ok = false;
       next[f] = msg || undefined;
     }
-
     setErrors(next);
     return ok;
   }
@@ -140,25 +137,19 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
   const isFormValid =
     !getFieldError("nameOnCard", values) &&
     !getFieldError("cardNumber", values) &&
-    !getFieldError("expDate", values) &&
-    !getFieldError("cvv", values);
+    !getFieldError("expDate",    values) &&
+    !getFieldError("cvv",        values);
 
   async function handleSubmit() {
     setFormError("");
-
-    setTouched({
-      nameOnCard: true,
-      cardNumber: true,
-      expDate: true,
-      cvv: true,
-    });
+    setTouched({ nameOnCard: true, cardNumber: true, expDate: true, cvv: true });
 
     if (!validateAll()) {
       setFormError("Please fix the highlighted fields.");
       return;
     }
 
-    // --- Replace the block below with your real API calls ---
+    // TODO: Replace with real API calls
     // Example:
     //   const paymentResult = await processPayment({ nameOnCard, cardNumber, expDate, cvv });
     //   setPaymentSuccess(paymentResult.success);
@@ -166,14 +157,49 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
     //     const regResult = await registerCompany(data);
     //     setRegistrationSuccess(regResult.success);
     //   }
-    //
-    // For now, both are set to true (happy path):
     setPaymentSuccess(true);
     setRegistrationSuccess(true);
-    // --------------------------------------------------------
 
     setShowSuccess(true);
   }
+
+  // Company fields (companyName, address, contact, email) come from the
+  // registration form cached in localStorage via useRegistrationPersistence.
+  //
+  // TODO: Once the customer record exists in the database (e.g. after the
+  //       company is created on the backend), replace these fields with data
+  //       fetched from the DB. Example:
+  //
+  //         const customer = await fetchCustomerById(session.userId);
+  //         // Then use: customer.fullName, customer.address, customer.email, etc.
+  //
+  const planKey   = data.subscriptionPlan?.toLowerCase() ?? "";
+  const planPrice = PLAN_PRICES[planKey] ?? 0;
+  const planLabel = data.subscriptionPlan
+    ? data.subscriptionPlan.charAt(0).toUpperCase() +
+      data.subscriptionPlan.slice(1).toLowerCase()
+    : "—";
+
+  const summary = {
+    //  Company info 
+    companyName: data.companyName || "—",
+    address:     data.address     || "—",
+    contact:     data.contact     || "—",
+    email:       data.email       || "—",
+
+    //  Order details 
+    businessType: data.businessType || "—",
+    plan:         planLabel,
+
+    branchesRemaining: 3,
+
+    // TODO: Replace with the authenticated customer's email fetched from the DB.
+    orderEmail: data.email || "—",
+
+    // Pricing 
+    currency: "USD $",
+    total:    planPrice.toFixed(2),
+  };
 
   return (
     <>
@@ -196,10 +222,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                       required
                       value={nameOnCard}
                       onChange={(e) => setNameOnCard(e.target.value)}
-                      onBlur={() => {
-                        markTouched("nameOnCard");
-                        validateField("nameOnCard");
-                      }}
+                      onBlur={() => { markTouched("nameOnCard"); validateField("nameOnCard"); }}
                       error={touched.nameOnCard ? errors.nameOnCard : ""}
                     />
 
@@ -211,13 +234,8 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                       inputMode="numeric"
                       placeholder="0000-0000-0000-0000"
                       value={cardNumber}
-                      onChange={(e) =>
-                        setCardNumber(formatCardNumber(e.target.value))
-                      }
-                      onBlur={() => {
-                        markTouched("cardNumber");
-                        validateField("cardNumber");
-                      }}
+                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                      onBlur={() => { markTouched("cardNumber"); validateField("cardNumber"); }}
                       error={touched.cardNumber ? errors.cardNumber : ""}
                     />
 
@@ -230,13 +248,8 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                         inputMode="numeric"
                         placeholder="MM/YY"
                         value={expDate}
-                        onChange={(e) =>
-                          setExpDate(formatExpDate(e.target.value))
-                        }
-                        onBlur={() => {
-                          markTouched("expDate");
-                          validateField("expDate");
-                        }}
+                        onChange={(e) => setExpDate(formatExpDate(e.target.value))}
+                        onBlur={() => { markTouched("expDate"); validateField("expDate"); }}
                         error={touched.expDate ? errors.expDate : ""}
                       />
 
@@ -250,10 +263,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                         placeholder="***"
                         value={cvv}
                         onChange={(e) => setCvv(formatCvc(e.target.value))}
-                        onBlur={() => {
-                          markTouched("cvv");
-                          validateField("cvv");
-                        }}
+                        onBlur={() => { markTouched("cvv"); validateField("cvv"); }}
                         error={touched.cvv ? errors.cvv : ""}
                       />
                     </div>
@@ -272,53 +282,29 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
               }
               right={
                 <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
-                  <h2 className="text-[28px] font-bold mb-6">
-                    Shipping Details
-                  </h2>
+                  <h2 className="text-[28px] font-bold mb-6">Order Summary</h2>
 
-                  {!summary ? (
-                    <div className="text-white/80 text-sm">
-                      Loading details...
-                    </div>
-                  ) : (
-                    <>
-                      <section className="space-y-1">
-                        <h3 className="text-lg font-semibold">
-                          Customer Information
-                        </h3>
-                        <LineText>{summary.customer.name}</LineText>
-                        <LineText>{summary.customer.address}</LineText>
-                        <LineText>{summary.customer.email}</LineText>
-                      </section>
+                  <section className="space-y-1">
+                    <h3 className="text-lg font-semibold">Company Information</h3>
+                    {/* TODO: Replace with customer record fetched from DB */}
+                    <LineText>{summary.companyName}</LineText>
+                    <LineText>{summary.address}</LineText>
+                    <LineText>{summary.contact}</LineText>
+                    <LineText>{summary.email}</LineText>
+                  </section>
 
-                      <section className="mt-6 space-y-1">
-                        <h3 className="text-lg font-semibold">
-                          Company Information
-                        </h3>
-                        <LineText>{summary.company.name}</LineText>
-                        <LineText>{summary.company.address}</LineText>
-                        <LineText>{summary.company.contact}</LineText>
-                        <LineText>{summary.company.email}</LineText>
-                      </section>
+                  <section className="mt-6 space-y-1">
+                    <h3 className="text-lg font-semibold">Order Details</h3>
+                    <LineText>Business Type: {summary.businessType}</LineText>
+                    <LineText>Plan: {summary.plan}</LineText>
+                    <LineText>Branches Remaining: {summary.branchesRemaining}</LineText>
+                    <LineText>Order Email: {summary.orderEmail}</LineText>
+                  </section>
 
-                      <section className="mt-6 space-y-1">
-                        <h3 className="text-lg font-semibold">
-                          Order Details
-                        </h3>
-                        <LineText>{summary.order.type}</LineText>
-                        <LineText>{summary.order.plan}</LineText>
-                        <LineText>{summary.order.branchesRemaining}</LineText>
-                        <LineText>{summary.order.email}</LineText>
-                      </section>
-
-                      <div className="mt-8 flex justify-between font-bold text-lg">
-                        <span>Total</span>
-                        <span>
-                          {summary.currency} {summary.total}
-                        </span>
-                      </div>
-                    </>
-                  )}
+                  <div className="mt-8 flex justify-between font-bold text-lg">
+                    <span>Total</span>
+                    <span>{summary.currency} {summary.total}</span>
+                  </div>
                 </div>
               }
             />
@@ -326,7 +312,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
         </div>
       </GlassBackground>
 
-      <div className="mt-10 ml-50 flex justify-start text-white mb-20">
+      <div className="mt-10 ml-50 lg:ml-110 md:ml-50 xl:ml-170 flex justify-start text-white mb-20">
         <button
           onClick={onBack}
           className="font-semibold hover:opacity-80 cursor-pointer"
@@ -343,9 +329,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
           setShowSuccess(false);
           onComplete({ nameOnCard, cardNumber, expDate, cvv });
         }}
-        onTryAgain={() => {
-          setShowSuccess(false); 
-        }}
+        onTryAgain={() => setShowSuccess(false)}
       />
     </>
   );
