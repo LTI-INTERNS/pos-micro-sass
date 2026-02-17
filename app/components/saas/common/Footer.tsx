@@ -59,7 +59,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li className="hover:text-white cursor-pointer">
-                  <Link href="/pricing" className="hover:text-white transition">
+                  <Link href="/Pricing" className="hover:text-white transition">
                     Pricing
                   </Link>
                   </li>
@@ -76,7 +76,7 @@ export default function Footer() {
                     </Link>
                   </li>
                 <li className="hover:text-white cursor-pointer">
-                  <Link href="/contactus" className="hover:text-white transition">
+                  <Link href="/contactUs" className="hover:text-white transition">
                     Contact Us
                   </Link></li>
               </ul>
@@ -85,7 +85,7 @@ export default function Footer() {
             {/* SOCIAL */}
             <div>
               <h4 className="font-semibold mb-4">FOLLOW US</h4>
-              <div className="flex justify-end gap-3">
+              <div className="flex gap-3">
                 <Link
                   href="https://web.facebook.com/lankatechinnovations"
                   target="_blank"

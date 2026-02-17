@@ -16,7 +16,7 @@ import {
   PasswordField,
   FormErrorMessage,
 } from "@/app/components/saas/common/FormFields";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 import { loginAction } from "./auth";
 
@@ -177,9 +177,9 @@ export default function LoginPage() {
                       />
                     </div>
 
-                    <PrimaryButton type="submit" disabled={!canSubmit || isPending}>
+                    <ActionButton type="submit" disabled={!canSubmit || isPending}>
                       {isPending ? "Signing In..." : "Sign In"}
-                    </PrimaryButton>
+                    </ActionButton>
 
                     <div className="pt-3 text-center text-sm text-white/60 space-y-2">
                       <p>

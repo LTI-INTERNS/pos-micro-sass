@@ -7,7 +7,7 @@ import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navigation from "@/app/components/saas/landing/Navigation";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 import Card from "@/app/components/saas/common/formCard";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import {
   InputField,
@@ -256,9 +256,9 @@ export default function RegisterPage() {
                       />
                     </div>
 
-                    <PrimaryButton type="submit" disabled={!canSubmit || isPending}>
+                    <ActionButton type="submit" disabled={!canSubmit || isPending}>
                       {isPending ? "Signing Up..." : "Sign Up"}
-                    </PrimaryButton>
+                    </ActionButton>
 
                     <div className="pt-3 text-center text-sm text-white/60 space-y-2">
                       <p>

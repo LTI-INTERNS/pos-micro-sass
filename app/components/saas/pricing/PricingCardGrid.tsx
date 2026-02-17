@@ -3,10 +3,10 @@ import BaseCard from '../common/BaseCard'
 
 const PricingCardGrid = () => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start px-15" >
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start px-15" >
         <BaseCard
       title="FREE"
-      price="$0.00"
+      price="$0.00/mo"
       features={[
         { label: "Basic POS", available: true },
         { label: "Single Branch", available: true },
@@ -18,7 +18,7 @@ const PricingCardGrid = () => {
     />
     <BaseCard
       title="PRO"
-      price="$29.99"
+      price="$29.99/mo"
       features={[
         { label: "Advanced POS", available: true },
         { label: "Multiple Branches", available: true },
@@ -30,7 +30,7 @@ const PricingCardGrid = () => {
     />
     <BaseCard
       title="ENTERPRISE"
-      price="$99.99"
+      price="$99.99/mo"
       features={[
         { label: "Enterprise POS", available: true },
         { label: "Unlimited Branches", available: true },

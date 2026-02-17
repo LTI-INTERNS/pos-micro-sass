@@ -12,7 +12,7 @@ import Navigation from "@/app/components/saas/companyCreation/Navigation";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
 
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/saas/common/ActionButton";
 import {
   InputField,
   FormErrorMessage,
@@ -262,20 +262,21 @@ export default function CompanyCreatePage() {
 
               {formError && <FormErrorMessage message={formError} />}
 
-              <PrimaryButton
+              <ActionButton
                 type="submit"
                 disabled={!isFormValid}
                 className="w-full py-4 text-base"
               >
                 Create Company
-              </PrimaryButton>
+              </ActionButton>
             </form>
           </div>
         }
         left={
+          <div className="hidden md:block">
           <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
             <div className="flex justify-center mb-8">
-              <div className="relative w-[380px] h-[230px]">
+              <div className="relative w-full max-w-[380px] h-48 md:h-[230px] mx-auto">
                 <Image
                   src="/creationcompanylogo.svg"
                   alt="Company illustration"
@@ -296,17 +297,23 @@ export default function CompanyCreatePage() {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         }
       />
     </div>
 </GlassBackground>
-  {/* Bottom nav */}
-  <div className="mt-10 ml-50 flex justify-start text-white mb-20">
-    <button onClick={handleBack} className="font-semibold hover:opacity-80 cursor-pointer">
-      {"< Back"}
+<div className="mt-10 flex items-center justify-center mb-20">
+  <div className="flex w-full max-w-xl justify-end text-white">
+    <button
+      onClick={handleNext}
+      className="font-semibold hover:opacity-80 cursor-pointer"
+    >
+      {"Next >"}
     </button>
   </div>
+</div>
+
 </CommonLayout>
   );
 }

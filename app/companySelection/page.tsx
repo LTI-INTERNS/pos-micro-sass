@@ -9,7 +9,7 @@ import Navigation from "@/app/components/saas/companyCreation/Navigation";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/saas/common/ActionButton";
 
 import CompanySelectItem from "@/app/components/saas/companySelection/CompanySelectItem";
 
@@ -41,15 +41,9 @@ export default function CompanySelectPage() {
     router.push(`/dashboard?company=${companyId}`);
   }
 
-  const handleBack = () => {
-    router.push("/saaslogin");
-  };
-  const handleNext = () => {
-    router.push("/businessType");
-  };
 
   return (
- <CommonLayout navbar={<Navigation />}>
+ <CommonLayout navbar={<Navigation title="Company Selection"/>}>
       <div className="pt-10 pb-5 px-4">
         <GlassBackground >
             <div>
@@ -80,7 +74,7 @@ export default function CompanySelectPage() {
                   </div>
                 }
                 right={
-                  <div className="w-full flex items-center justify-center">
+                  <div className="w-full flex items-center justify-center mt-15">
                     <div className="w-full max-w-md space-y-4">
                       <div className="rounded-2xl border border-white/15 bg-white/5 p-6">
                         <h3 className="text-xl font-semibold text-white">
@@ -92,12 +86,12 @@ export default function CompanySelectPage() {
                         </p>
 
                         <div className="mt-6">
-                          <PrimaryButton
-                            className="py-4 text-base cursor-pointer"
+                          <ActionButton
+                            className="py-4 text-base"
                             onClick={() => router.push("/companycreation")}
                           >
                             Create Company
-                          </PrimaryButton>
+                          </ActionButton>
                         </div>
                       </div>
 
@@ -114,7 +108,6 @@ export default function CompanySelectPage() {
             </div>
           
         </GlassBackground>
-
       </div>
     </CommonLayout>
   );
