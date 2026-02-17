@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navbar from '../components/saas/landing/Navigation'
 import Card from "@/app/components/saas/common/formCard";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/saas/common/ActionButton";
 import { InputField, TextAreaField } from "@/app/components/saas/common/FormFields";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
@@ -117,11 +117,11 @@ export default function ContactUsPage() {
     <div className="relative z-10 px-4 sm:px-8 pt-20 pb-16">
       <div className="mx-auto max-w-6xl">
         <GlassBackground>
-          <div className="p-10">
+          <div className="p-6 sm:p-10">
             <div className="flex items-center justify-between mb-10">
               <button
                 onClick={() => router.back()}
-                className="text-white font-semibold hover:opacity-80"
+                className="text-white font-semibold hover:opacity-80 cursor-pointer "
               >
                 {"< Back"}
               </button>
@@ -130,18 +130,22 @@ export default function ContactUsPage() {
                 <div className="w-[64px]" />
               </div>
 
-              <div className="flex flex-col md:flex-row items-stretch gap-[59px]">
-                {/* LEFT */}
-                <div className="w-full md:w-[417px]">
-                  <div className="rounded-lg overflow-hidden w-full h-[308px] bg-white/10">
-                    <iframe
-                      title="Map"
-                      src={contact.mapEmbedSrc}
-                      className="w-full h-full"
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                    />
-                  </div>
+                {/* Responsive Layout */}
+                <div className="flex flex-col lg:flex-row items-stretch gap-10">
+
+                  {/* LEFT SECTION */}
+                  <div className="w-full lg:w-[420px]">
+
+                    {/* Map */}
+                    <div className="rounded-lg overflow-hidden w-full h-64 lg:h-[308px] bg-white/10">
+                      <iframe
+                        title="Map"
+                        src={contact.mapEmbedSrc}
+                        className="w-full h-full"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                      />
+                    </div>
 
                   <div className="mt-8 text-white/90 text-[16px] font-semibold">Contact Information</div>
 
@@ -171,12 +175,12 @@ export default function ContactUsPage() {
                 </div>
 
               {/* Divider */}
-              <div className="hidden md:flex items-center">
+              <div className="hidden lg:flex items-center">
                 <div className="h-full w-[1px] bg-white/20" />
               </div>
 
                 {/* RIGHT */}
-                <div className="w-full md:flex-1">
+                <div className="w-full lg:flex-1">
                   <h2 className="text-white font-bold text-[24px]">Send us a Message</h2>
 
                   <div className="mt-8 space-y-6 max-w-[420px]">
@@ -219,75 +223,53 @@ export default function ContactUsPage() {
                       error={touched.email ? (errors.email ?? currentErrors.email) : undefined}
                     />
 
-                    <InputField
-                      id="contact-subject"
-                      label="Subject"
-                      placeholder="What is this about?"
-                      required
-                      value={subject}
-                      onChange={(e) => {
-                        const v = e.target.value;
-                        setSubject(v);
-                        if (touched.subject) setErrors((p) => ({ ...p, ...validate({ subject: v }) }));
-                      }}
-                      onBlur={() => {
-                        markTouched("subject");
-                        setErrors((p) => ({ ...p, ...validate() }));
-                      }}
-                      error={touched.subject ? (errors.subject ?? currentErrors.subject) : undefined}
-                    />
+                      <InputField
+                        id="contact-subject"
+                        label="Subject"
+                        placeholder="What is this about?"
+                        required
+                        value={subject}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setSubject(v);
+                          if (touched.subject)
+                            setErrors((p) => ({
+                              ...p,
+                              ...validate({ subject: v }),
+                            }));
+                        }}
+                        onBlur={() => {
+                          markTouched("subject");
+                          setErrors((p) => ({ ...p, ...validate() }));
+                        }}
+                        error={
+                          touched.subject
+                            ? errors.subject ?? currentErrors.subject
+                            : undefined
+                        }
+                      />
 
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <label className="text-white/90 text-[16px]">
-                          Your Message ({Math.min(message.length, maxLen)}/{maxLen})
-                        </label>
-                      </div>
-
-                      <div className="mt-3">
-                        <TextAreaField
-                          id="contact-message"
-                          label=""
-                          required
-                          value={message}
-                          maxLength={maxLen}
-                          onChange={(e) => {
-                            const v = e.target.value.slice(0, maxLen);
-                            setMessage(v);
-                            if (touched.message)
-                              setErrors((p) => ({ ...p, ...validate({ message: v }) }));
-                          }}
-                          onBlur={() => {
-                            markTouched("message");
-                            setErrors((p) => ({ ...p, ...validate() }));
-                          }}
-                          error={touched.message ? (errors.message ?? currentErrors.message) : undefined}
-                          placeholder="Tell us about your Thought"
-                          className="min-h-[125px]"
-                        />
-                      </div>
+                      <ActionButton
+                        className={[
+                          "w-full rounded-full py-4 text-base",
+                          isFormValid && !submitting
+                            ? "bg-orange-500 hover:brightness-110"
+                            : "bg-orange-500/60 cursor-not-allowed",
+                        ].join(" ")}
+                        onClick={handleSubmit}
+                        disabled={!isFormValid || submitting}
+                      >
+                        {submitting ? "Sending..." : "Send Message"}
+                      </ActionButton>
                     </div>
-
-                    <PrimaryButton
-                      className={[
-                        "w-full rounded-full py-4 text-base",
-                        isFormValid && !submitting
-                          ? "bg-orange-500 hover:brightness-110"
-                          : "bg-orange-500/60 cursor-not-allowed",
-                      ].join(" ")}
-                      onClick={handleSubmit}
-                      disabled={!isFormValid || submitting}
-                    >
-                      {submitting ? "Sending..." : "Send Message"}
-                    </PrimaryButton>
                   </div>
+
                 </div>
               </div>
+            </GlassBackground>
           </div>
-        </GlassBackground>
+        </div>
       </div>
-    </div>
-  </div>
-</CommonLayout>
+    </CommonLayout>
   );
 }
