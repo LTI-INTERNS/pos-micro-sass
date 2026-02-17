@@ -3,13 +3,13 @@ import BaseCard from '../common/BaseCard'
 
 const BusinessCardGrid = () => {
   return (
-     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start px-15" >
+     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start px-15" >
        <BaseCard
           title="Retail"
           icon={<img
                   src="/retail.png"
                   alt="Retail"
-                  className="w-14 h-14 object-contain"
+                  className="w-20 h-20  object-contain"
                 />}
           features={[
             { label: "Inventory Management", available: true },
@@ -26,7 +26,7 @@ const BusinessCardGrid = () => {
           icon={<img
                   src="/cafe.png"
                   alt="Restaurant / Café"
-                  className="w-14 h-14 object-contain"
+                  className="w-20 h-20 object-contain"
                 />}
           features={[
             { label: "Inventory Management", available: true },
@@ -43,7 +43,7 @@ const BusinessCardGrid = () => {
           icon={<img
                   src="/supermarket.png"
                   alt="Grocery / Supermarket"
-                  className="w-14 h-14 object-contain"
+                  className="w-20 h-20 object-contain"
                 />}
           features={[
             { label: "Inventory Management", available: true },

@@ -4,7 +4,7 @@ import { RegistrationData } from "@/app/companyregistration/page";
 
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 import {
   InputField,
   FormErrorMessage,
@@ -231,17 +231,18 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
 
                   {formError && <FormErrorMessage message={formError} />}
 
-                  <PrimaryButton
+                  <ActionButton
                     type="submit"
                     disabled={!isFormValid}
                     className="w-full py-4 text-base"
                   >
                     Create Company
-                  </PrimaryButton>
+                  </ActionButton>
                 </form>
               </div>
             }
             left={
+              <div className="hidden md:block">
               <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
                 <div className="flex justify-center mb-8">
                   <div className="relative w-[380px] h-[230px]">
@@ -265,6 +266,7 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
                     </div>
                   ))}
                 </div>
+              </div>
               </div>
             }
           />

@@ -44,7 +44,7 @@ export default function StepEmail({
       onCancel();
     } else {
       
-      router.push("/saaslogin");
+      router.back();
     }
   };
 

@@ -85,7 +85,7 @@ export default function Footer() {
             {/* SOCIAL */}
             <div>
               <h4 className="font-semibold mb-4">FOLLOW US</h4>
-              <div className="flex justify-end gap-3">
+              <div className="flex gap-3">
                 <Link
                   href="https://web.facebook.com/lankatechinnovations"
                   target="_blank"
@@ -137,11 +137,13 @@ export default function Footer() {
               </Link>
             </span>
             {/* Scroll To Top Button */}
-            <span>
-                <button onClick={scrollToTop} className="right-6 p-3 rounded-full bg-black hover:bg-white/20 backdrop-blur-md">
-                <ArrowUp size={18} />
-                </button>
-            </span>
+            <button
+              suppressHydrationWarning
+              onClick={scrollToTop}
+              className="right-6 p-3 rounded-full bg-black hover:bg-white/20 backdrop-blur-md"
+            >
+              <ArrowUp size={18} />
+            </button>
           </div>
 
         </div>
