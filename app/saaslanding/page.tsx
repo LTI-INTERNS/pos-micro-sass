@@ -10,7 +10,7 @@ import GrowthSection from "../components/saas/landing/Growth";
 
 export default function LandingPage() {
   return (
-    <main className="bg-black">
+    <main >
       <Navigation />
 
       <section id="home">
