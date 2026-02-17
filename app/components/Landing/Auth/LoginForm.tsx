@@ -7,6 +7,7 @@ import {
   PasswordField,
   FormErrorMessage,
 } from "@/app/components/saas/common/FormFields";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 type LoginResponse =
   | {
@@ -193,12 +194,12 @@ export default function LoginForm() {
           </a>
         </div>
 
-        <button
+        <ActionButton
+          type="submit"
           disabled={loading}
-          className="w-full py-3 rounded-full bg-orange-600 hover:bg-orange-700 transition text-white font-medium disabled:opacity-60"
         >
-          {loading ? "Running..." : "Running order"}
-        </button>
+          {loading ? "Logging in..." : "Log in"}
+        </ActionButton>
 
         {/* End user agreement */}
         <div className="text-center text-sm text-white/60 pt-2">
