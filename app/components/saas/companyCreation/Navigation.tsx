@@ -6,19 +6,18 @@ import Navbar from "../common/Navbar";
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 type NavigationProps = {
+  title?: string; // NEW (optional)
   links?: {
     label: string;
     href: string;
   }[];
-
   onSignUp?: () => void;
-
   logoSrc?: string;
   logoAlt?: string;
 };
 
 export default function Navigation({
-  onSignUp,
+  title = "Micro-Saas Registration Dashboard", // DEFAULT TITLE
   logoSrc,
   logoAlt,
 }: NavigationProps) {
@@ -38,13 +37,10 @@ export default function Navigation({
       logoSrc={logoSrc}
       logoAlt={logoAlt}
       middleContent={
-        <>
-          <h2>Micro-Saas Registration Dashboard</h2>
-        </>
+        <h2>{title}</h2> // dynamic title
       }
       rightContent={
         <div className="flex items-center gap-3">
-
           <ActionButton
             label="Log Out"
             onClick={() => router.push("/saaslogin")}

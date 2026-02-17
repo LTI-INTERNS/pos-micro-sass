@@ -43,8 +43,8 @@ export default function CompanySelectPage() {
 
 
   return (
- <CommonLayout navbar={<Navigation />}>
-      <div className="pt-10 pb-10 px-4">
+ <CommonLayout navbar={<Navigation title="Company Selection"/>}>
+      <div className="pt-10 pb-5 px-4">
         <GlassBackground >
             <div>
               <SplitPanelLayout
