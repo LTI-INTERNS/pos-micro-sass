@@ -18,7 +18,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
     // localStorage.removeItem('token');
     // cookies, etc.
 
-    router.push('/landing'); 
+    router.push('/login'); 
   };
 
   return (
