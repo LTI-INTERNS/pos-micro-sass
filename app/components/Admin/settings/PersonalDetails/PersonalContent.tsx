@@ -35,7 +35,6 @@ export default function PersonalContent() {
           <div className="px-6 flex-1 overflow-auto min-h-0">
             <SettingsRow label="Name" value={personalDetails.name} />
             <SettingsRow label="Email" value={personalDetails.email} />
-            <EmailVerification />
             <SettingsRow label="Address" value={personalDetails.address} />
             <SettingsRow label="Phone" value={personalDetails.phone} />
           </div>
@@ -131,43 +130,6 @@ function PasswordRow({
                      outline-none focus:ring-2 focus:ring-orange-200"
         />
       </div>
-    </div>
-  );
-}
-
-function EmailVerification() {
-  const [status, setStatus] = React.useState<
-    "unverified" | "sent" | "verified"
-  >("unverified");
-
-  return (
-    <div className="pl-4 sm:pl-3 py-2">
-      {status === "unverified" && (
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-yellow-600 font-medium">
-            ⚠ Email not verified
-          </span>
-
-          <button
-            onClick={() => setStatus("sent")}
-            className="text-orange-600 font-semibold hover:underline"
-          >
-            Verify Email
-          </button>
-        </div>
-      )}
-
-      {status === "sent" && (
-        <p className="text-sm text-gray-500">
-          Verification email sent. Please check your inbox.
-        </p>
-      )}
-
-      {status === "verified" && (
-        <p className="text-sm text-green-600 font-medium">
-          ✅ Email verified
-        </p>
-      )}
     </div>
   );
 }
