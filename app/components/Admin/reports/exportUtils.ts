@@ -1,4 +1,3 @@
-
 export type ExportColumn = {
   key: string;
   label: string;
@@ -67,9 +66,10 @@ export function usePDFExport<T>() {
       }),
     ]);
 
-    if (!jsPDFModule) return;
+    if (!jsPDFModule || !autoTableModule) return;
 
     const { jsPDF } = jsPDFModule;
+    const autoTable = autoTableModule.default;
     const accent = options.accentColor ?? [255, 92, 0]; // orange
 
     const doc = new jsPDF({
@@ -111,7 +111,7 @@ export function usePDFExport<T>() {
       keys.map((k) => String((row as any)[k] ?? ""))
     );
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [headers],
       body: rows,
       startY: 76,
