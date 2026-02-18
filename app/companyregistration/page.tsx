@@ -69,6 +69,11 @@ export default function RegistrationPage() {
     }
   }, [registrationData, currentStep, hydrated, save]);
 
+  // Scroll to top whenever current step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentStep]);
+
   // Navigation handlers 
   const handleNext = (stepData: Partial<RegistrationData>) => {
     const merged = { ...registrationData, ...stepData };

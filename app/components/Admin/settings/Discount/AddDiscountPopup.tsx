@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import ModalShell from "../common/ModalShell";
-import FormField from "../common/FormField";
-import PopupActions from "../common/PopupActions";
+import ModalShell from "../../common/ModalShell";
+import FormField from "../../common/FormField";
+import PopupActions from "../../common/PopupActions";
 
 type DiscountValues = {
   title: string;
