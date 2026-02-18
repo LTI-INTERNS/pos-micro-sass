@@ -38,7 +38,7 @@ function formatExpDate(v: string) {
 }
 
 function formatCvc(v: string) {
-  return v.replace(/\D/g, "").slice(0, 4);
+  return v.replace(/\D/g, "").slice(0, 3);
 }
 
 function getFieldError(
@@ -63,13 +63,49 @@ function getFieldError(
       if (!/^\d{16}$/.test(digits)) return "Card number must be 16 digits";
       return "";
     }
-    case "expDate":
+
+    case "expDate": {
       if (!expDate.trim()) return "Expiry date is required";
-      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expDate)) return "Use MM/YY format";
+
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expDate))
+        return "Use MM/YY format (e.g. 08/27)";
+
+      const [mm, yy] = expDate.split("/").map(Number);
+
+      const now = new Date();
+      const currentFullYear = now.getFullYear();
+      const currentMonth    = now.getMonth() + 1;
+
+      const cardFullYear = 2000 + yy; 
+
+      const minFullYear = currentFullYear - 4;
+      const maxFullYear = currentFullYear + 4;
+
+      const tooOld =
+        cardFullYear < minFullYear ||
+        (cardFullYear === minFullYear && mm < currentMonth);
+
+      if (tooOld) {
+        const minMM = String(currentMonth).padStart(2, "0");
+        const minYY = String(minFullYear).slice(2);
+        return `Expiry date cannot be more than 4 years in the past (min ${minMM}/${minYY})`;
+      }
+      const tooFar =
+        cardFullYear > maxFullYear ||
+        (cardFullYear === maxFullYear && mm > currentMonth);
+
+      if (tooFar) {
+        const maxMM = String(currentMonth).padStart(2, "0");
+        const maxYY = String(maxFullYear).slice(2);
+        return `Expiry date cannot be more than 4 years in the future (max ${maxMM}/${maxYY})`;
+      }
+
       return "";
+    }
+
     case "cvv":
-      if (!cvv.trim()) return "CVC is required";
-      if (!/^\d{3,4}$/.test(cvv)) return "CVC must be 3 or 4 digits";
+      if (!cvv.trim()) return "CVV is required";
+      if (!/^\d{3}$/.test(cvv)) return "CVV must be exactly 3 digits";
       return "";
     default:
       return "";
@@ -241,9 +277,9 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                       />
 
                       <InputField
-                        id="cvc"
-                        name="cvc"
-                        label="CVC Code"
+                        id="cvv"
+                        name="cvv"
+                        label="CVV Code"
                         required
                         type="password"
                         inputMode="numeric"
