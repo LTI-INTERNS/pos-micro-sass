@@ -1,6 +1,8 @@
 "use client";
 import * as React from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
+import TabSelector from "@/app/components/Admin/common/TabSelector";
+import SubscriptionPlanCards from "@/app/components/Admin/settings/subscriptionplan/SubscriptionPlanCards";
 
 export default function SettingsPage() {
   return (
