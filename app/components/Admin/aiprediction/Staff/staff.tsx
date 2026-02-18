@@ -1,4 +1,4 @@
-import PerformancePredictions, { PerformanceItem } from "@/app/components/Admin/common/AiPerformancePredictions";
+import PerformancePredictions, { PerformanceItem } from "@/app/components/Admin/aiprediction/AiPerformancePredictions";
 
 const staffItems: PerformanceItem[] = [
   {
@@ -56,7 +56,7 @@ const staffItems: PerformanceItem[] = [
 
 export default function Staff() {
   return (
-    <main className="min-h-screen bg-gray-50 p-6 md:p-10">
+    <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-5xl">
         <PerformancePredictions title="Staff Performance Predictions" items={staffItems} />
       </div>
