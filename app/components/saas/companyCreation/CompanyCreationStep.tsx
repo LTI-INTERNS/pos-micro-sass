@@ -107,7 +107,6 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
 
   useEffect(() => {
     validate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyName, address, contact, email, logo]);
 
   const isFormValid =
@@ -247,7 +246,7 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
                 <div className="flex justify-center mb-8">
                   <div className="relative w-full max-w-[380px] h-48 md:h-[230px] mx-auto">
                     <Image
-                      src="/creationcompanylogo.svg"
+                      src="/saas/creationcompanylogo.svg"
                       alt="Company illustration"
                       fill
                       className="object-contain"
@@ -273,14 +272,7 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
         </div>
       </GlassBackground>
 
-      {/* Bottom nav */}
       <div className="mt-10 ml-50 flex justify-start text-white mb-20">
-        <button
-          onClick={onBack}
-          className="font-semibold hover:opacity-80 cursor-pointer"
-        >
-          {"< Back"}
-        </button>
       </div>
     </>
   );

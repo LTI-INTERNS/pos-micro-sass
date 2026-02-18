@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { CloudLightning, BarChart3, Box, UserCheck } from "lucide-react";
+import FeatureCard from "./FeatureCard";
 
 export default function GrowthSection() {
   return (
@@ -26,11 +27,27 @@ export default function GrowthSection() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-6">
-              <StatCard text="Reduce Billing Time by 40%" />
-              <StatCard text="Increase Sales Visibility" />
-              <StatCard text="Reduce Inventory Loss" />
-              <StatCard text="Better Profit Tracking" />
+  
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105 ">
+                  <StatCard text="Reduce Billing Time by 40%" />
+                </div>
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105">
+                  <StatCard text="Increase Sales Visibility" /> 
+                </div>
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105">
+                  <StatCard text="Reduce Inventory Loss" />
+                </div>
+
+                
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105">
+                  <StatCard text="Better Profit Tracking"/>
+                </div>
             </div>
+
           </div>
 
         </div>
@@ -66,12 +83,12 @@ export default function GrowthSection() {
 
             
             <div className="space-y-5">
-              <BenefitCard icon={<CloudLightning size={22} />} text="Faster Checkout" />
-              <BenefitCard icon={<BarChart3 size={22} />} text="Data-Driven Decisions" />
-              <BenefitCard icon={<Box size={22} />} text="Smart Inventory" />
-              <BenefitCard icon={<UserCheck size={22} />} text="Better Customer Retention" />
+              <FeatureCard key={1} icon={<CloudLightning size={22} />} label="Faster Checkout" className="hover:cursor-pointer" />
+              <FeatureCard key={2} icon={<BarChart3 size={22} />} label="Data-Driven Decisions" className="hover:cursor-pointer" />
+              <FeatureCard key={3} icon={<Box size={22} />} label="Smart Inventory" className="hover:cursor-pointer" />
+              <FeatureCard key={4} icon={<UserCheck size={22} />} label="Better Customer Retention" className="hover:cursor-pointer" />
             </div>
-
+              
           </div>
 
         </div>
@@ -84,30 +101,17 @@ export default function GrowthSection() {
 
 /* ================= TYPES ================= */
 
-type BenefitCardProps = {
-  icon: ReactNode;
-  text: string;
-};
 
 type StatCardProps = {
   text: string;
+  className?: string;
 };
 
-
-/* ================= COMPONENTS ================= */
-
-function BenefitCard({ icon, text }: BenefitCardProps) {
+function StatCard({ text, className = "" }: StatCardProps) {
   return (
-    <div className="flex items-center gap-4 border border-orange-400/60 rounded-xl px-6 py-4 bg-white/5 backdrop-blur hover:bg-white/10 transition">
-      <div className="text-orange-400">{icon}</div>
-      <span className="text-lg font-medium">{text}</span>
-    </div>
-  );
-}
-
-function StatCard({ text }: StatCardProps) {
-  return (
-    <div className="px-8 py-4 rounded-xl border border-orange-400/60 bg-black/40 backdrop-blur hover:bg-orange-500/10 transition">
+    <div
+      className={`px-8 py-4 rounded-xl border border-orange-400/60 bg-black/40 backdrop-blur hover:bg-orange-500/10 transition ${className}`}
+    >
       <span className="text-lg font-medium">{text}</span>
     </div>
   );

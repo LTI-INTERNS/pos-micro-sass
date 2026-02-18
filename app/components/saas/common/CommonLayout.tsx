@@ -9,13 +9,11 @@ export default function CommonLayout({ children, navbar }: Props) {
   return (
     <div className="min-h-screen flex flex-col">
 
-      {/* NAVBAR VARIANT */}
       {navbar}
 
-      {/* PAGE BACKGROUND */}
       <main
-        className="flex-1 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/saasbg.png')" }}
+        className="flex-1 bg-fixed bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/saas/saasbg.png')" }}
       >
         {children}
       </main>

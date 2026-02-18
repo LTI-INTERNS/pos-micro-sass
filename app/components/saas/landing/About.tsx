@@ -32,7 +32,7 @@ const About: React.FC = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('/saasbg.png')",
+            backgroundImage: "url('/saas/saasbg.png')",
           }}
         />
       </div>

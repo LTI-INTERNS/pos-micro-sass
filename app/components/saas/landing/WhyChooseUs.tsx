@@ -16,7 +16,7 @@ const WhyChooseUs: React.FC = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('/saas/about.png')",
+            backgroundImage: "url('/saas/landing/about.png')",
           }}
         />
       </div>

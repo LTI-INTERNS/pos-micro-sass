@@ -14,7 +14,7 @@ type NavbarProps = {
 export default function Navbar({
   middleContent,
   rightContent,
-  logoSrc = "/logo.png",
+  logoSrc = "/saas/logo.png",
   logoAlt = "Logo",
 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);

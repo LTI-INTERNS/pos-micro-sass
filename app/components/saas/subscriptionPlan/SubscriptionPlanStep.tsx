@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import PlanCardGrid from "@/app/components/saas/subscriptionPlan/PlanCardGrid";
@@ -6,13 +7,17 @@ type Props = {
   data: RegistrationData;
   onNext: (data: Partial<RegistrationData>) => void;
   onBack: () => void;
+  completedSteps: number;
 };
 
-export default function SubscriptionPlanStep({ data, onNext, onBack }: Props) {
+export default function SubscriptionPlanStep({ data, onNext, onBack, completedSteps }: Props) {
+  const [selectedPlan, setSelectedPlan] = useState<string>(data.subscriptionPlan);
+
+  const canProceed = selectedPlan.length > 0;
+
   const handleNext = () => {
-    // You can capture the selected subscription plan from PlanCardGrid
-    // For now, just proceed to next step
-    onNext({});
+    if (!canProceed) return;
+    onNext({ subscriptionPlan: selectedPlan });
   };
 
   return (
@@ -23,7 +28,10 @@ export default function SubscriptionPlanStep({ data, onNext, onBack }: Props) {
             Select Your Subscription Plan
           </h1>
 
-          <PlanCardGrid />
+          <PlanCardGrid
+            selected={selectedPlan}
+            onSelect={setSelectedPlan}
+          />
         </div>
       </GlassBackground>
 
@@ -38,7 +46,12 @@ export default function SubscriptionPlanStep({ data, onNext, onBack }: Props) {
 
           <button
             onClick={handleNext}
-            className="font-semibold hover:opacity-80 cursor-pointer"
+            disabled={!canProceed}
+            className={`font-semibold transition-opacity ${
+              canProceed
+                ? "hover:opacity-80 cursor-pointer"
+                : "opacity-40 cursor-not-allowed"
+            }`}
           >
             {"Next >"}
           </button>
