@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 /* Shared Wrapper */
 
@@ -99,8 +100,68 @@ export function InputField({
   );
 }
 
-export function PasswordField(props: InputFieldProps) {
-  return <InputField type="password" {...props} />;
+/* Password Field  */
+
+export function PasswordField({
+  label,
+  variant = "glass",
+  error,
+  wrapperClassName,
+  className,
+  required,
+  id,
+  ...rest
+}: InputFieldProps) {
+  const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const iconColor =
+    variant === "glass"
+      ? "text-white/60 hover:text-white"
+      : "text-gray-400 hover:text-gray-700";
+
+  return (
+    <FieldWrapper
+      label={label}
+      required={required}
+      error={error}
+      htmlFor={id}
+      wrapperClassName={wrapperClassName}
+    >
+      <div className="relative">
+        <input
+          id={id}
+          type={mounted && visible ? "text" : "password"}
+          className={buildInputStyles(
+            error,
+            variant,
+            rest.disabled,
+            [mounted ? "pr-12" : "", className].join(" ")
+          )}
+          {...rest}
+        />
+        {mounted && (
+          <button
+            type="button"
+            onClick={() => setVisible((v) => !v)}
+            className={[
+              "absolute right-4 top-1/2 -translate-y-1/2 transition",
+              iconColor,
+              rest.disabled ? "pointer-events-none opacity-40" : "",
+            ].join(" ")}
+            tabIndex={-1}
+            aria-label={visible ? "Hide password" : "Show password"}
+          >
+            {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
+      </div>
+    </FieldWrapper>
+  );
 }
 
 /* TextArea Field */

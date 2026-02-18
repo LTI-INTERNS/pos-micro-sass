@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 import BusinessCardGrid from "@/app/components/saas/businessType/BusinessCardGrid";
@@ -6,13 +7,17 @@ type Props = {
   data: RegistrationData;
   onNext: (data: Partial<RegistrationData>) => void;
   onBack: () => void;
+  completedSteps: number;
 };
 
-export default function BusinessTypeStep({ data, onNext, onBack }: Props) {
+export default function BusinessTypeStep({ data, onNext, onBack, completedSteps }: Props) {
+  const [selectedType, setSelectedType] = useState<string>(data.businessType);
+
+  const canProceed = selectedType.length > 0;
+
   const handleNext = () => {
-    // You can capture the selected business type from BusinessCardGrid
-    // For now, just proceed to next step
-    onNext({});
+    if (!canProceed) return;
+    onNext({ businessType: selectedType });
   };
 
   return (
@@ -23,7 +28,10 @@ export default function BusinessTypeStep({ data, onNext, onBack }: Props) {
             Select Your Business Type
           </h1>
 
-          <BusinessCardGrid />
+          <BusinessCardGrid
+            selected={selectedType}
+            onSelect={setSelectedType}
+          />
         </div>
       </GlassBackground>
 
@@ -38,7 +46,12 @@ export default function BusinessTypeStep({ data, onNext, onBack }: Props) {
 
           <button
             onClick={handleNext}
-            className="font-semibold hover:opacity-80 cursor-pointer"
+            disabled={!canProceed}
+            className={`font-semibold transition-opacity ${
+              canProceed
+                ? "hover:opacity-80 cursor-pointer"
+                : "opacity-40 cursor-not-allowed"
+            }`}
           >
             {"Next >"}
           </button>

@@ -81,14 +81,12 @@ export default function LoginPage() {
 
 
         setTouched({ email: true, pw: true });
-
         return;
       }
-
        setSuccess(res.message);
  
         
-          router.push("/companyCreation");
+          router.push("/companyregistration");
          
     });
   }
@@ -109,7 +107,7 @@ export default function LoginPage() {
                     className="w-[420px] h-[460px] rounded-3xl bg-gradient-to-b from-orange-500 to-orange-600 flex items-center justify-center shadow-xl"
                   >
                     <img
-                      src="/logIn.png"
+                      src="/saas/logIn.png"
                       alt="Login Illustration"
                       className="w-[300px] h-auto object-contain"
                     />

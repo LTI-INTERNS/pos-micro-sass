@@ -6,11 +6,12 @@ import About from "../components/saas/landing/About";
 import WhyChooseUs from "../components/saas/landing/WhyChooseUs";
 import LandingPageWithComponents from "../components/saas/landing/landingfeature";
 import GrowthSection from "../components/saas/landing/Growth";
+import Testimonials from "../components/saas/landing/Testimonials";
 
 
 export default function LandingPage() {
   return (
-    <main className="bg-black">
+    <main >
       <Navigation />
 
       <section id="home">
@@ -35,7 +36,7 @@ export default function LandingPage() {
       </section>
 
       <section id="testimonials" className="scroll-mt-18">
-        {/* Testimonials component */}
+        <Testimonials />
       </section>
 
       <Footer />

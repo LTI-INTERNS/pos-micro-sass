@@ -18,7 +18,7 @@ export default function Footer() {
       {/* Background Image */}
       <div className="absolute inset-0 -z-10">
         <Image
-          src="/footer.png"
+          src="/saas/saasbg.png"
           alt="Footer Background"
           fill
           className="object-cover"
@@ -37,7 +37,7 @@ export default function Footer() {
           <div>
             <Link href="https://lankatechinnovations.com/">
               <Image
-                src="/logo.png"
+                src="/saas/logo.png"
                 alt="Logo"
                 width={200}
                 height={50}
@@ -59,7 +59,7 @@ export default function Footer() {
                   </Link>
                 </li>
                 <li className="hover:text-white cursor-pointer">
-                  <Link href="/Pricing" className="hover:text-white transition">
+                  <Link href="/pricing" className="hover:text-white transition">
                     Pricing
                   </Link>
                   </li>
@@ -76,7 +76,7 @@ export default function Footer() {
                     </Link>
                   </li>
                 <li className="hover:text-white cursor-pointer">
-                  <Link href="/contactUs" className="hover:text-white transition">
+                  <Link href="/contactus" className="hover:text-white transition">
                     Contact Us
                   </Link></li>
               </ul>
@@ -137,11 +137,13 @@ export default function Footer() {
               </Link>
             </span>
             {/* Scroll To Top Button */}
-            <span>
-                <button onClick={scrollToTop} className="right-6 p-3 rounded-full bg-black hover:bg-white/20 backdrop-blur-md">
-                <ArrowUp size={18} />
-                </button>
-            </span>
+            <button
+              suppressHydrationWarning
+              onClick={scrollToTop}
+              className="right-6 p-3 rounded-full bg-black hover:bg-white/20 backdrop-blur-md"
+            >
+              <ArrowUp size={18} />
+            </button>
           </div>
 
         </div>

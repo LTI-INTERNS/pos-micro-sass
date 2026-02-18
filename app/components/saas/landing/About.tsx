@@ -28,21 +28,18 @@ const About: React.FC = () => {
 
   return (
     <section className="relative w-full min-h-screen py-24 overflow-hidden">
-      {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('/saasbg.png')",
+            backgroundImage: "url('/saas/saasbg.png')",
           }}
         />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 container mx-auto px-4">
-        {/* Header Section */}
         <div className="flex flex-col items-center gap-6 mb-16 max-w-[1307px] mx-auto">
-          <h2 className="text-2xl font-semibold text-white text-center leading-tight pt-10">
+          <h2 className="text-2xl font-semibold text-white text-center leading-tight pt-15">
             Simplifying Business Operations with Smart POS Solutions
           </h2>
           <p className="text-base md:text-sm font-normal text-white/90 text-center max-w-[1000px] leading-relaxed pt-10">
@@ -52,8 +49,7 @@ const About: React.FC = () => {
           </p>
         </div>
 
-        {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-[1442px] mx-auto px-4 lg:px-[120px]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-8 max-w-[1442px] mx-auto px-4 lg:px-[120px]">
           {features.map((feature, index) => (
             <div key={index} className="flex justify-center">
               <GlassCard

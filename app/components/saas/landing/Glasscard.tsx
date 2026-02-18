@@ -1,8 +1,8 @@
 import React, { ReactNode } from 'react';
 
 interface GlassCardProps {
-  icon: ReactNode;
-  title: string;
+  icon?: ReactNode;
+  title?: string;
   description: string;
   className?: string;
 }
