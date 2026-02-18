@@ -247,7 +247,14 @@ export default function ContactUsPage() {
                             : undefined
                         }
                       />
-                         <div className="mt-3">
+                      <div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-white/90 text-[16px]">
+                          Your Message ({Math.min(message.length, maxLen)}/{maxLen})
+                        </label>
+                      </div>
+
+                      <div className="mt-3">
                         <TextAreaField
                           id="contact-message"
                           label=""
@@ -268,6 +275,7 @@ export default function ContactUsPage() {
                           placeholder="Tell us about your Thought"
                           className="min-h-[125px]"
                         />
+                      </div>
                     </div>
 
                       <ActionButton
