@@ -25,7 +25,7 @@ export default function InsightCard({
   onReanalyze,
 }: InsightCardProps) {
   return (
-    <div className="bg-[#dcc7b7] rounded-2xl p-6 w-full max-w-xs shadow-sm">
+    <div className="bg-orange-200 rounded-2xl p-6 w-full max-w-xs shadow-sm">
 
       
       <div className="flex items-center gap-2 mb-6">
@@ -36,7 +36,7 @@ export default function InsightCard({
       
       <div className="space-y-4">
           {metrics.map((m, i) => (
-            <div key={i} className="bg-gray-200 rounded-xl p-4 ">
+            <div key={i} className="bg-white rounded-xl p-4 ">
               <p className="text-gray-500 text-sm">{m.label}</p>
 
               <p
