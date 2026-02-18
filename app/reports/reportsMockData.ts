@@ -165,3 +165,43 @@ export const CATEGORY_BREAKDOWN_DATA = [
   { day: "Jan 27", beverages: 310, snacks: 210, dryGoods: 155, confection: 135 },
   { day: "Jan 28", beverages: 220, snacks: 165, dryGoods: 110, confection: 85 },
 ];
+
+
+export type ForecastRow = {
+  label: string;
+  actual: number;
+  predicted: number;
+};
+
+/* Product Demand Forecast (Line Chart) */
+export const PRODUCT_FORECAST_DATA: ForecastRow[] = [
+  { label: "Jan", actual: 100, predicted: 110 },
+  { label: "Feb", actual: 200, predicted: 190 },
+  { label: "Mar", actual: 280, predicted: 220 },
+  { label: "Apr", actual: 230, predicted: 250 },
+  { label: "May", actual: 260, predicted: 260 },
+  { label: "Jun", actual: 290, predicted: 270 },
+  { label: "Jul", actual: 300, predicted: 280 },
+  { label: "Aug", actual: 310, predicted: 295 },
+  { label: "Sep", actual: 320, predicted: 310 },
+];
+
+/* Sales Forecast (Bar Chart) */
+export const SALES_FORECAST_DATA: ForecastRow[] = [
+  { label: "Jan", actual: 3800, predicted: 3000 },
+  { label: "Feb", actual: 2200, predicted: 2100 },
+  { label: "Mar", actual: 2500, predicted: 2900 },
+  { label: "Apr", actual: 3200, predicted: 2700 },
+  { label: "May", actual: 3400, predicted: 3600 },
+  { label: "Jun", actual: 0,    predicted: 3700 },
+  { label: "Jul", actual: 0,    predicted: 3900 },
+];
+
+/* Branch Performance Comparison */
+export const BRANCH_FORECAST_DATA: ForecastRow[] = [
+  { label: "Branch 1", actual: 3800, predicted: 3000 },
+  { label: "Branch 2", actual: 2100, predicted: 2000 },
+  { label: "Branch 3", actual: 2300, predicted: 2600 },
+  { label: "Branch 4", actual: 2900, predicted: 2100 },
+  { label: "Branch 5", actual: 3200, predicted: 3500 },
+];
