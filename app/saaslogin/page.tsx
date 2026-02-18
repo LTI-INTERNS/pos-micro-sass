@@ -81,14 +81,12 @@ export default function LoginPage() {
 
 
         setTouched({ email: true, pw: true });
-
         return;
       }
-
        setSuccess(res.message);
  
         
-          router.push("/companyCreation");
+          router.push("/companyregistration");
          
     });
   }
