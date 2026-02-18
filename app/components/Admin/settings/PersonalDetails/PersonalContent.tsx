@@ -1,75 +1,100 @@
 "use client";
+
 import * as React from "react";
+import EditEntityModal, { EditField } from "@/app/components/Admin/common/EditPopup";
 
 export default function PersonalContent() {
+  const [modalOpen, setModalOpen] = React.useState(false);
+
+  const [personalDetails, setPersonalDetails] = React.useState({
+    name: "Nirmala Azalea",
+    email: "abc@gmail.com",
+    address: "No: 02, Kandy",
+    phone: "071234567",
+  });
+
+  const editFields: EditField[] = [
+    { name: "name", label: "Name" },
+    { name: "email", label: "Email" },
+    { name: "address", label: "Address" },
+    { name: "phone", label: "Phone" },
+  ];
+
   return (
     <div className="w-full h-full flex flex-col gap-2">
 
-      {/* Two cards */}
       <div className="flex-1 grid grid-rows-2 gap-4 min-h-0">
 
-        {/* Personal Details */}
         <section className="bg-white rounded-xl border border-gray-100 flex flex-col min-h-0">
-            <div className="px-6 py-4">
-              <h2 className="text-sm font-semibold text-gray-900">
-                Personal Details
-              </h2>
-            </div>
+          <div className="px-6 py-4">
+            <h2 className="text-sm font-semibold text-gray-900">
+              Personal Details
+            </h2>
+          </div>
 
-            <div className="px-6 flex-1 overflow-auto min-h-0">
-               <SettingsRow label="Name" value="Nirmala Azalea" />
-               <SettingsRow label="Email" value="abc@gmail.com" />
-               <EmailVerification />
-               <SettingsRow label="Address" value="No: 02, Kandy" />
-               <SettingsRow label="Phone" value="071234567" />
-            </div>
+          <div className="px-6 flex-1 overflow-auto min-h-0">
+            <SettingsRow label="Name" value={personalDetails.name} />
+            <SettingsRow label="Email" value={personalDetails.email} />
+            <EmailVerification />
+            <SettingsRow label="Address" value={personalDetails.address} />
+            <SettingsRow label="Phone" value={personalDetails.phone} />
+          </div>
 
-            <div className="px-6 py-2">
-              <button
-                type="button"
-                className="w-full sm:w-[520px] rounded-full border border-orange-400 bg-white py-2.5
-                           text-sm font-semibold text-orange-500
-                           hover:bg-orange-50 transition"
-                onClick={() => alert("Edit Personal Details")}
-              >
-                Edit Details
-              </button>
-            </div>
+          <div className="px-6 py-2">
+            <button
+              type="button"
+              className="w-full sm:w-[520px] rounded-full border border-orange-400 bg-white py-2.5
+                         text-sm font-semibold text-orange-500
+                         hover:bg-orange-50 transition"
+              onClick={() => setModalOpen(true)}
+            >
+              Edit Details
+            </button>
+          </div>
         </section>
 
-        {/* Change Password */}
         <section className="bg-white rounded-xl border border-gray-100 flex flex-col min-h-0">
-            <div className="px-6 py-3">
-              <h2 className="text-sm font-semibold text-gray-900">
-                Change Password
-              </h2>
-            </div>
+          <div className="px-6 py-3">
+            <h2 className="text-sm font-semibold text-gray-900">
+              Change Password
+            </h2>
+          </div>
 
-            <div className="px-6 flex-1 overflow-auto min-h-0">
-              <PasswordRow label="Current Password" placeholder="Enter Current Password" />
-              <PasswordRow label="New Password" placeholder="Enter New Password" />
-              <PasswordRow label="Confirm Password" placeholder="Enter Confirm Password" />
-            </div>
+          <div className="px-6 flex-1 overflow-auto min-h-0">
+            <PasswordRow label="Current Password" placeholder="Enter Current Password" />
+            <PasswordRow label="New Password" placeholder="Enter New Password" />
+            <PasswordRow label="Confirm Password" placeholder="Enter Confirm Password" />
+          </div>
 
-            <div className="px-6 py-2">
-              <button
-                type="button"
-                className="w-full sm:w-[520px] rounded-full border border-orange-400 bg-white py-2.5
-                           text-sm font-semibold text-orange-500
-                           hover:bg-orange-50 transition"
-                onClick={() => alert("Change Password")}
-              >
-                Change Password
-              </button>
+          <div className="px-6 py-2">
+            <button
+              type="button"
+              className="w-full sm:w-[520px] rounded-full border border-orange-400 bg-white py-2.5
+                         text-sm font-semibold text-orange-500
+                         hover:bg-orange-50 transition"
+              onClick={() => alert("Change Password")}
+            >
+              Change Password
+            </button>
           </div>
         </section>
 
       </div>
+
+      <EditEntityModal
+        open={modalOpen}
+        title="Edit Personal Details"
+        initialValues={personalDetails}
+        fields={editFields}
+        onClose={() => setModalOpen(false)}
+        onSave={(values) => {
+          setPersonalDetails(values);
+          setModalOpen(false);
+        }}
+      />
     </div>
   );
 }
-
-/* ---------- Helpers ---------- */
 
 function SettingsRow({ label, value }: { label: string; value: string }) {
   return (
