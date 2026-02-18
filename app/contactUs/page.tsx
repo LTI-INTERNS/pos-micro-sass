@@ -4,9 +4,8 @@ import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navbar from "../components/saas/landing/Navigation";
-import Card from "@/app/components/saas/common/formCard";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import Navbar from '../components/saas/landing/Navigation'
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 import { InputField, TextAreaField } from "@/app/components/saas/common/FormFields";
 import GlassBackground from "@/app/components/saas/common/GlassBackground";
 
@@ -114,32 +113,30 @@ export default function ContactUsPage() {
       <div className="relative">
         <div className="absolute inset-0 bg-black/60" />
 
-        <div className="relative z-10 px-4 sm:px-6 md:px-8 pt-16 sm:pt-20 pb-12 sm:pb-16">
-          <div className="mx-auto max-w-7xl">
-            <GlassBackground>
-              <div className="p-6 sm:p-8 md:p-10">
+    <div className="relative z-10 px-4 sm:px-8 pt-20 pb-16">
+      <div className="mx-auto max-w-6xl">
+        <GlassBackground>
+          <div className="p-6 sm:p-10">
+            <div className="flex items-center justify-between mb-10">
+              <button
+                onClick={() => router.back()}
+                className="text-white font-semibold hover:opacity-80 cursor-pointer "
+              >
+                {"< Back"}
+              </button>
 
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8 sm:mb-10">
-                  <button
-                    onClick={() => router.back()}
-                    className="text-white font-semibold hover:opacity-80 text-sm sm:text-base"
-                  >
-                    {"< Back"}
-                  </button>
+                <div className="text-white font-bold text-[20px]">Get In Touch</div>
+                <div className="w-[64px]" />
+              </div>
 
-                  <div className="text-white font-bold text-lg sm:text-xl">
-                    Get In Touch
-                  </div>
-                  <div className="w-12 sm:w-[64px]" />
-                </div>
+                {/* Responsive Layout */}
+                <div className="flex flex-col lg:flex-row items-stretch gap-10">
 
-                <div className="flex flex-col md:flex-row gap-10 md:gap-[59px]">
+                  {/* LEFT SECTION */}
+                  <div className="w-full lg:w-[420px]">
 
-                  {/* LEFT SIDE */}
-                  <div className="w-full md:w-[417px]">
-
-                    <div className="rounded-lg overflow-hidden w-full h-[220px] sm:h-[260px] md:h-[308px] bg-white/10">
+                    {/* Map */}
+                    <div className="rounded-lg overflow-hidden w-full h-64 lg:h-[308px] bg-white/10">
                       <iframe
                         title="Map"
                         src={contact.mapEmbedSrc}
@@ -149,92 +146,81 @@ export default function ContactUsPage() {
                       />
                     </div>
 
-                    <div className="mt-6 sm:mt-8 text-white/90 text-base font-semibold">
-                      Contact Information
-                    </div>
+                  <div className="mt-8 text-white/90 text-[16px] font-semibold">Contact Information</div>
 
-                    <div className="mt-4 space-y-4 pl-2 sm:pl-3">
-                      <div className="flex items-start gap-3 text-white/80">
-                        <MapPin className="mt-1 h-5 w-5 text-white/70" />
-                        <div className="text-sm leading-5">
-                          {contact.addressLines.map((l) => (
-                            <div key={l}>{l}</div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 text-white/80">
-                        <Phone className="mt-1 h-5 w-5 text-white/70" />
-                        <div className="text-sm leading-5">
-                          <div>{contact.phone}</div>
-                          <div className="text-white/50">
-                            {contact.availability}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3 text-white/80">
-                        <Mail className="mt-1 h-5 w-5 text-white/70" />
-                        <div className="text-sm leading-5">
-                          {contact.mail}
-                        </div>
+                  <div className="mt-4 space-y-4 pl-3">
+                    <div className="flex items-start gap-3 text-white/80">
+                      <MapPin className="mt-1 h-5 w-5 text-white/70" />
+                      <div className="text-sm leading-5">
+                        {contact.addressLines.map((l) => (
+                          <div key={l}>{l}</div>
+                        ))}
                       </div>
                     </div>
+
+                    <div className="flex items-start gap-3 text-white/80">
+                      <Phone className="mt-1 h-5 w-5 text-white/70" />
+                      <div className="text-sm leading-5">
+                        <div>{contact.phone}</div>
+                        <div className="text-white/50">{contact.availability}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 text-white/80">
+                      <Mail className="mt-1 h-5 w-5 text-white/70" />
+                      <div className="text-sm leading-5">{contact.mail}</div>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Divider */}
-                  <div className="hidden md:flex items-stretch">
-                    <div className="w-[1px] bg-white/20" />
-                  </div>
+              {/* Divider */}
+              <div className="hidden lg:flex items-center">
+                <div className="h-full w-[1px] bg-white/20" />
+              </div>
 
-                  {/* RIGHT SIDE */}
-                  <div className="w-full md:flex-1">
-                    <h2 className="text-white font-bold text-xl sm:text-2xl">
-                      Send us a Message
-                    </h2>
+                {/* RIGHT */}
+                <div className="w-full lg:flex-1">
+                  <h2 className="text-white font-bold text-[24px]">Send us a Message</h2>
 
-                    <div className="mt-6 sm:mt-8 space-y-6 w-full max-w-full md:max-w-[420px]">
+                  <div className="mt-8 space-y-6 max-w-[420px]">
+                    <InputField
+                      id="contact-name"
+                      label="Your Name"
+                      required
+                      value={name}
+                      autoComplete="name"
+                      placeholder="Enter your full name"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setName(v);
+                        if (touched.name) setErrors((p) => ({ ...p, ...validate({ name: v }) }));
+                      }}
+                      onBlur={() => {
+                        markTouched("name");
+                        setErrors((p) => ({ ...p, ...validate() }));
+                      }}
+                      error={touched.name ? (errors.name ?? currentErrors.name) : undefined}
+                    />
 
-                      <InputField
-                        id="contact-name"
-                        label="Your Name"
-                        required
-                        value={name}
-                        autoComplete="name"
-                        placeholder="Enter your full name"
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setName(v);
-                          if (touched.name)
-                            setErrors((p) => ({ ...p, ...validate({ name: v }) }));
-                        }}
-                        onBlur={() => {
-                          markTouched("name");
-                          setErrors((p) => ({ ...p, ...validate() }));
-                        }}
-                        error={touched.name ? (errors.name ?? currentErrors.name) : undefined}
-                      />
-
-                      <InputField
-                        id="contact-email"
-                        label="Email Address"
-                        required
-                        type="email"
-                        value={email}
-                        autoComplete="email"
-                        placeholder="Enter your email address"
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setEmail(v);
-                          if (touched.email)
-                            setErrors((p) => ({ ...p, ...validate({ email: v }) }));
-                        }}
-                        onBlur={() => {
-                          markTouched("email");
-                          setErrors((p) => ({ ...p, ...validate() }));
-                        }}
-                        error={touched.email ? (errors.email ?? currentErrors.email) : undefined}
-                      />
+                    <InputField
+                      id="contact-email"
+                      label="Email Address"
+                      required
+                      type="email"
+                      value={email}
+                      autoComplete="email"
+                      placeholder="Enter your email address"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setEmail(v);
+                        if (touched.email) setErrors((p) => ({ ...p, ...validate({ email: v }) }));
+                      }}
+                      onBlur={() => {
+                        markTouched("email");
+                        setErrors((p) => ({ ...p, ...validate() }));
+                      }}
+                      error={touched.email ? (errors.email ?? currentErrors.email) : undefined}
+                    />
 
                       <InputField
                         id="contact-subject"
@@ -246,51 +232,55 @@ export default function ContactUsPage() {
                           const v = e.target.value;
                           setSubject(v);
                           if (touched.subject)
-                            setErrors((p) => ({ ...p, ...validate({ subject: v }) }));
+                            setErrors((p) => ({
+                              ...p,
+                              ...validate({ subject: v }),
+                            }));
                         }}
                         onBlur={() => {
                           markTouched("subject");
                           setErrors((p) => ({ ...p, ...validate() }));
                         }}
-                        error={touched.subject ? (errors.subject ?? currentErrors.subject) : undefined}
+                        error={
+                          touched.subject
+                            ? errors.subject ?? currentErrors.subject
+                            : undefined
+                        }
                       />
-
                       <div>
-                        <label className="text-white/90 text-sm sm:text-base">
+                      <div className="flex items-center justify-between">
+                        <label className="text-white/90 text-[16px]">
                           Your Message ({Math.min(message.length, maxLen)}/{maxLen})
                         </label>
-
-                        <div className="mt-3">
-                          <TextAreaField
-                            id="contact-message"
-                            label=""
-                            required
-                            value={message}
-                            maxLength={maxLen}
-                            onChange={(e) => {
-                              const v = e.target.value.slice(0, maxLen);
-                              setMessage(v);
-                              if (touched.message)
-                                setErrors((p) => ({ ...p, ...validate({ message: v }) }));
-                            }}
-                            onBlur={() => {
-                              markTouched("message");
-                              setErrors((p) => ({ ...p, ...validate() }));
-                            }}
-                            error={
-                              touched.message
-                                ? errors.message ?? currentErrors.message
-                                : undefined
-                            }
-                            placeholder="Tell us about your Thought"
-                            className="min-h-[120px]"
-                          />
-                        </div>
                       </div>
 
-                      <PrimaryButton
+                      <div className="mt-3">
+                        <TextAreaField
+                          id="contact-message"
+                          label=""
+                          required
+                          value={message}
+                          maxLength={maxLen}
+                          onChange={(e) => {
+                            const v = e.target.value.slice(0, maxLen);
+                            setMessage(v);
+                            if (touched.message)
+                              setErrors((p) => ({ ...p, ...validate({ message: v }) }));
+                          }}
+                          onBlur={() => {
+                            markTouched("message");
+                            setErrors((p) => ({ ...p, ...validate() }));
+                          }}
+                          error={touched.message ? (errors.message ?? currentErrors.message) : undefined}
+                          placeholder="Tell us about your Thought"
+                          className="min-h-[125px]"
+                        />
+                      </div>
+                    </div>
+
+                      <ActionButton
                         className={[
-                          "w-full rounded-full py-3 sm:py-4 text-sm sm:text-base",
+                          "w-full rounded-full py-4 text-base",
                           isFormValid && !submitting
                             ? "bg-orange-500 hover:brightness-110"
                             : "bg-orange-500/60 cursor-not-allowed",
@@ -299,11 +289,11 @@ export default function ContactUsPage() {
                         disabled={!isFormValid || submitting}
                       >
                         {submitting ? "Sending..." : "Send Message"}
-                      </PrimaryButton>
+                      </ActionButton>
                     </div>
                   </div>
-                </div>
 
+                </div>
               </div>
             </GlassBackground>
           </div>

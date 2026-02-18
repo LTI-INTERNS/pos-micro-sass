@@ -51,7 +51,7 @@ export default function TestimonialSection() {
     <section
       className="relative w-full py-16 sm:py-20 md:py-24 bg-cover bg-center bg-no-repeat"
       style={{
-        backgroundImage: "url('/testimonial.png')",
+        backgroundImage: "url('/saas/landing/testimonial.png')",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center overflow-hidden">
@@ -115,7 +115,7 @@ export default function TestimonialSection() {
                           : "scale-90 opacity-100 z-10"
                       }`}
                       style={{
-                        backgroundImage: "url('/t-card.png')",
+                        backgroundImage: "url('/saas/landing/t-card.png')",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                       }}

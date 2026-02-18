@@ -21,11 +21,11 @@ type NavigationProps = {
 
 export default function Navigation({
   links = [
-    { label: "Home", href: "#home" },
-    { label: "About", href: "#about" },
-    { label: "Features", href: "#features" },
-    { label: "Growth", href: "#growth" },
-    { label: "Testimonials", href: "#testimonials" },
+    { label: "Home", href: "/saaslanding#home" },
+    { label: "About", href: "/saaslanding#about" },
+    { label: "Features", href: "/saaslanding#features" },
+    { label: "Growth", href: "/saaslanding#growth" },
+    { label: "Testimonials", href: "/saaslanding#testimonials" },
   ],
   onSignIn,
   onSignUp,

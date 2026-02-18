@@ -16,7 +16,7 @@ import {
   PasswordField,
   FormErrorMessage,
 } from "@/app/components/saas/common/FormFields";
-import PrimaryButton from "@/app/components/saas/common/PrimaryButton";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 import { loginAction } from "./auth";
 
@@ -81,14 +81,12 @@ export default function LoginPage() {
 
 
         setTouched({ email: true, pw: true });
-
         return;
       }
-
        setSuccess(res.message);
  
         
-          router.push("/companyCreation");
+          router.push("/companyregistration");
          
     });
   }
@@ -109,7 +107,7 @@ export default function LoginPage() {
                     className="w-[420px] h-[460px] rounded-3xl bg-gradient-to-b from-orange-500 to-orange-600 flex items-center justify-center shadow-xl"
                   >
                     <img
-                      src="/logIn.png"
+                      src="/saas/logIn.png"
                       alt="Login Illustration"
                       className="w-[300px] h-auto object-contain"
                     />
@@ -177,9 +175,9 @@ export default function LoginPage() {
                       />
                     </div>
 
-                    <PrimaryButton type="submit" disabled={!canSubmit || isPending}>
+                    <ActionButton type="submit" disabled={!canSubmit || isPending}>
                       {isPending ? "Signing In..." : "Sign In"}
-                    </PrimaryButton>
+                    </ActionButton>
 
                     <div className="pt-3 text-center text-sm text-white/60 space-y-2">
                       <p>
