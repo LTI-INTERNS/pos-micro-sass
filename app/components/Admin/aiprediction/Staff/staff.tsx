@@ -1,4 +1,4 @@
-import PerformancePredictions, { PerformanceItem } from "@/app/components/Admin/common/AiPerformancePredictions";
+import PerformancePredictions, { PerformanceItem } from "@/app/components/Admin/aiprediction/AiPerformancePredictions";
 
 const staffItems: PerformanceItem[] = [
   {

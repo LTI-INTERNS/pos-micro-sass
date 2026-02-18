@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import DiscountContent from "@/app/components/Admin/settings/DiscountContent";
+import DiscountContent from "@/app/components/Admin/settings/Discount/DiscountContent";
 
 export default function TestDiscountsPage() {
   return (
