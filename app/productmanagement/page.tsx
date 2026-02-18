@@ -115,7 +115,7 @@ export default function DashboardPage() {
         open={addOpen}
         onClose={() => setAddOpen(false)}
         onSave={(newProduct) => {
-          setProducts((prev) => [...prev, newProduct]);
+          // Backend will handle creation later
           setAddOpen(false);
         }}
       />
@@ -127,11 +127,7 @@ export default function DashboardPage() {
         initialValues={selectedProduct}
         onClose={() => setEditOpen(false)}
         onSave={(updated) => {
-          setProducts((prev) =>
-            prev.map((p) =>
-              p.id === updated.id ? updated : p
-            )
-          );
+          // Backend will handle update later
           setEditOpen(false);
         }}
         fields={[
