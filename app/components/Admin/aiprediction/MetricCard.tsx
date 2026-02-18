@@ -25,18 +25,16 @@ export default function InsightCard({
   onReanalyze,
 }: InsightCardProps) {
   return (
-    <div className="bg-[#dcc7b7] rounded-2xl p-6 w-full max-w-xs shadow-sm">
-
-      
+    <div className="bg-orange-200 rounded-2xl p-6 w-full max-w-xs shadow-sm">
+    
       <div className="flex items-center gap-2 mb-6">
         <div className="text-orange-500">{icon}</div>
         <h3 className="font-semibold text-lg text-gray-900">{title}</h3>
       </div>
-
       
       <div className="space-y-4">
           {metrics.map((m, i) => (
-            <div key={i} className="bg-gray-200 rounded-xl p-4 ">
+            <div key={i} className="bg-white rounded-xl p-4 ">
               <p className="text-gray-500 text-sm">{m.label}</p>
 
               <p
@@ -51,12 +49,10 @@ export default function InsightCard({
             </div>
           ))}
        </div>
-
-
       
       <button
         onClick={onReanalyze}
-        className="mt-6 w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-medium transition"
+        className="mt-6 w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-lg font-medium transition cursor-pointer"
       >
         <RefreshCcw size={16} />
         {buttonText}
