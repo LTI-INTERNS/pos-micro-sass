@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import PlanCard from "./PlanCard";
-import { planCardsData } from "./planCardsData";
+import { planCardsData, PlanCardData } from "./planCardsData";
+import PaymentModal, { PaymentPlan } from "./PaymentModal";
 
 type Props = {
   defaultPlanId?: string;
@@ -14,13 +14,22 @@ export default function SubscriptionPlanCards({
   defaultPlanId = "basic",
   onUpgrade,
 }: Props) {
-  const router = useRouter();
-  const [currentPlanId] = useState(defaultPlanId);
+  const [currentPlanId, setCurrentPlanId] = useState(defaultPlanId);
+  const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(null);
 
-  const handleUpgrade = (planId: string) => {
+  const handleUpgradeClick = (plan: PlanCardData) => {
+    setSelectedPlan({
+      id: plan.id,
+      name: plan.name,
+      price: plan.price,
+      billingCycle: plan.billingCycle,
+    });
+  };
+
+  const handlePaymentSuccess = (planId: string) => {
+    setCurrentPlanId(planId);
     onUpgrade?.(planId);
-
-    router.push(`/payment?planId=${planId}`);
+    setSelectedPlan(null);
   };
 
 
@@ -31,25 +40,33 @@ export default function SubscriptionPlanCards({
   });
 
   return (
-    <div className="flex flex-col gap-4">
-      {sortedPlans.map((plan) => {
-        const isCurrent = currentPlanId === plan.id;
+    <>
+      <div className="flex flex-col gap-4">
+        {sortedPlans.map((plan) => {
+          const isCurrent = currentPlanId === plan.id;
+          return (
+            <PlanCard
+              key={plan.id}
+              name={plan.name}
+              price={plan.price}
+              billingCycle={plan.billingCycle}
+              description={plan.description}
+              badge={plan.badge}
+              features={plan.features}
+              isCurrent={isCurrent}
+              upgradeLabel="Upgrade to this plan"
+              onUpgrade={!isCurrent ? () => handleUpgradeClick(plan) : undefined}
+            />
+          );
+        })}
+      </div>
 
-        return (
-          <PlanCard
-            key={plan.id}
-            name={plan.name}
-            price={plan.price}
-            billingCycle={plan.billingCycle}
-            description={plan.description}
-            badge={plan.badge}
-            features={plan.features}
-            isCurrent={isCurrent}
-            upgradeLabel="Upgrade to this plan"
-            onUpgrade={!isCurrent ? () => handleUpgrade(plan.id) : undefined}
-          />
-        );
-      })}
-    </div>
+      <PaymentModal
+        open={!!selectedPlan}
+        plan={selectedPlan}
+        onClose={() => setSelectedPlan(null)}
+        onSuccess={handlePaymentSuccess}
+      />
+    </>
   );
 }
