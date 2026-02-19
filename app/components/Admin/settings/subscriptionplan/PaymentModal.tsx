@@ -58,18 +58,46 @@ export default function PaymentModal({ open, plan, onClose, onSuccess }: Props) 
 
   const cardType = detectCardType(cardNumber);
 
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!cardHolder.trim()) e.cardHolder = "Cardholder name is required";
-    const digits = cardNumber.replace(/\s/g, "");
-    if (digits.length < 16) e.cardNumber = "Enter a valid 16-digit card number";
-    const [mm] = expiry.split("/");
-    if (!expiry || expiry.length < 5 || Number(mm) > 12 || Number(mm) < 1)
-      e.expiry = "Enter a valid expiry (MM/YY)";
-    if (cvv.length < 3) e.cvv = "Enter a valid CVV";
-    return e;
-  };
+const validate = () => {
+  const e: Record<string, string> = {};
 
+  if (!cardHolder.trim()) e.cardHolder = "Cardholder name is required";
+
+  const digits = cardNumber.replace(/\s/g, "");
+  if (digits.length < 16) e.cardNumber = "Enter a valid 16-digit card number";
+
+  const [mmStr, yyStr] = expiry.split("/");
+  const mm = Number(mmStr);
+  const yy = Number(yyStr);
+
+  if (!expiry || expiry.length < 5 || mm < 1 || mm > 12) {
+    e.expiry = "Enter a valid expiry (MM/YY)";
+  } else {
+    const now = new Date();
+    const currentYear  = now.getFullYear() % 100;
+    const currentMonth = now.getMonth() + 1;
+
+    const cardYear  = yy;
+    const maxYear   = currentYear + 4;
+
+    const isExpired =
+      cardYear < currentYear ||
+      (cardYear === currentYear && mm < currentMonth);
+
+    const isTooFar = cardYear > maxYear ||
+      (cardYear === maxYear && mm > currentMonth);
+
+    if (isExpired) {
+      e.expiry = "Card is expired";
+    } else if (isTooFar) {
+      e.expiry = "Expiry date cannot be more than 4 years from today";
+    }
+  }
+
+  if (cvv.length < 3) e.cvv = "Enter a valid CVV";
+
+  return e;
+};
   const handlePay = async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
@@ -156,7 +184,7 @@ export default function PaymentModal({ open, plan, onClose, onSuccess }: Props) 
           <div className="space-y-1">
             <FormField
               label="Cardholder Name"
-              placeholder="John Doe"
+              placeholder="Enter name as on card"
               value={cardHolder}
               onChange={setCardHolder}
               type="text"
