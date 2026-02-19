@@ -1,6 +1,6 @@
 "use client";
 import React, { useMemo, useState } from "react";
-import FoodGrid from "../components/Pos/posdashboard/FoodGrid";
+import ItemGrid from "../components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, { OrderItem } from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
@@ -130,22 +130,22 @@ const page = () => {
     [orderItems]
   );
 
-  const handleAddFood = (food: { id: number; name: string; price: number; image: string }) => {
+  const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
     setOrderItems((prev) => {
-      const existing = prev.find((it) => it.id === String(food.id));
+      const existing = prev.find((it) => it.id === String(item.id));
 
       if (existing) {
-        return prev.map((it) => (it.id === String(food.id) ? { ...it, qty: it.qty + 1 } : it));
+        return prev.map((it) => (it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it));
       }
 
       return [
         ...prev,
         {
-          id: String(food.id),
-          name: food.name,
-          price: food.price,
+          id: String(item.id),
+          name: item.name,
+          price: item.price,
           qty: 1,
-          imageUrl: food.image,
+          imageUrl: item.image,
         },
       ];
     });
@@ -170,7 +170,7 @@ const page = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
-            <FoodGrid search={search} onAdd={handleAddFood} />
+            <ItemGrid search={search} onAdd={handleAddItem} />
           </div>
         </div>
 
