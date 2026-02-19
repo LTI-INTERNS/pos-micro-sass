@@ -3,7 +3,7 @@ import PerformancePredictions, { PerformanceItem } from "@/app/components/Admin/
 const staffItems: PerformanceItem[] = [
   {
     id: "staff-1",
-    title: "Pamara Cherera",
+    title: "Chamara Perera",
     subtitle: "Sales Performance & Productivity",
 
     primaryMetricLabel: "Sales",
@@ -20,7 +20,7 @@ const staffItems: PerformanceItem[] = [
   },
   {
     id: "staff-2",
-    title: "Dilith Malhara",
+    title: "Malith Dilhara",
     subtitle: "Sales Performance & Productivity",
 
     primaryMetricLabel: "Sales",
@@ -37,7 +37,7 @@ const staffItems: PerformanceItem[] = [
   },
   {
     id: "staff-3",
-    title: "Alsha Mashen",
+    title: "Malsha Ashen",
     subtitle: "Sales Performance & Productivity",
 
     primaryMetricLabel: "Sales",
@@ -52,12 +52,46 @@ const staffItems: PerformanceItem[] = [
 
     calloutText: "Growth potential identified. Recommend skill development training.",
   },
+  {
+    id: "staff-4",
+    title: "Manuga Dewhan",
+    subtitle: "Sales Performance & Productivity",
+
+    primaryMetricLabel: "Sales",
+    primaryMetricValueText: "LKR 28,000",
+    primaryMetricSubtext: "Target: LKR 10,000",
+
+    metricA: { label: "Productivity", valuePct: 96, tone: "orange" },
+    metricB: { label: "Satisfaction", valuePct: 92, tone: "green" },
+
+    badgeText: "96% Productivity",
+    badgeTone: "orange",
+
+    calloutText: "Growth potential identified. Recommend skill development training.",
+  },
+  {
+    id: "staff-5",
+    title: "Kavindu Madhushan",
+    subtitle: "Sales Performance & Productivity",
+
+    primaryMetricLabel: "Sales",
+    primaryMetricValueText: "LKR 78,000",
+    primaryMetricSubtext: "Target: LKR 64,000",
+
+    metricA: { label: "Productivity", valuePct: 96, tone: "orange" },
+    metricB: { label: "Satisfaction", valuePct: 92, tone: "green" },
+
+    badgeText: "96% Productivity",
+    badgeTone: "orange",
+
+    calloutText: "Growth potential identified. Recommend skill development training.",
+  },
 ];
 
 export default function Staff() {
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto w-full">
         <PerformancePredictions title="Staff Performance Predictions" items={staffItems} />
       </div>
     </main>
