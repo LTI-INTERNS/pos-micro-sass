@@ -92,7 +92,7 @@ function MetricBlock({
   return (
     <div className="space-y-1">
       <div className="text-sm text-gray-600">{label}</div>
-      <div className="text-2xl font-semibold text-gray-900">{value}</div>
+      <div className="text-lg font-semibold text-gray-900">{value}</div>
       {subvalue ? <div className="text-sm text-gray-600">{subvalue}</div> : null}
     </div>
   );
@@ -111,7 +111,7 @@ function BarMetric({
     <div className="space-y-2">
       <div className="text-sm text-gray-600">{label}</div>
       <ProgressBar value={percent} tone={tone} />
-      <div className="text-2xl font-semibold text-gray-900">{percent}%</div>
+      <div className="text-lg font-semibold text-gray-900">{percent}%</div>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export default function PerformanceCard({ item }: { item: PerformanceItem }) {
 
        
         <div className="space-y-1 sm:pr-28">
-          <h3 className="text-2xl font-semibold text-gray-900">{item.title}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
           {item.subtitle ? (
             <p className="text-sm text-gray-500">{item.subtitle}</p>
           ) : null}

@@ -46,7 +46,7 @@ export default function MetricCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>
-          <div className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900">
+          <div className="mt-2 text-lg font-extrabold tracking-tight text-slate-900">
             {value}
           </div>
         </div>
