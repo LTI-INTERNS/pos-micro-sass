@@ -40,7 +40,7 @@ const customerItems: PerformanceItem[] = [
 export default function Customers() {
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto w-full">
         <PerformancePredictions title="Customer Performance Predictions" items={customerItems} />
       </div>
     </main>
