@@ -129,124 +129,180 @@ export default function CompanyDetailsForm({
         className,
       ].join(" ")}
     >
-      <div className="grid grid-cols-12 gap-x-10 gap-y-4">
-        
-        <div className="col-span-4 space-y-4">
-          <FieldLabel>Company Name</FieldLabel>
-          <FieldLabel>Registration No</FieldLabel>
-          <FieldLabel>Email</FieldLabel>
-          <FieldLabel>Phone</FieldLabel>
-          <FieldLabel>Address Line 1</FieldLabel>
-          <FieldLabel>Address Line 2</FieldLabel>
-        </div>
+      
 
-        
-        <div className="col-span-6 space-y-4">
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.companyName}
-            onChange={(e) => set("companyName", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.regNo}
-            onChange={(e) => set("regNo", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.email}
-            onChange={(e) => set("email", e.target.value)}
-            placeholder=""
-            type="email"
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.phone}
-            onChange={(e) => set("phone", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.addressLine1}
-            onChange={(e) => set("addressLine1", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.addressLine2}
-            onChange={(e) => set("addressLine2", e.target.value)}
-            placeholder=""
-          />
+          <div className="space-y-4">
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+                <div className="lg:col-span-4">
+                  <FieldLabel>Company Name</FieldLabel>
+                </div>
+                <div className="lg:col-span-6">
+                  <TextInput
+                    disabled={isLocked || saving}
+                    value={form.companyName}
+                    onChange={(e) => set("companyName", e.target.value)}
+                  />
+                </div>
+              </div>
 
-         
-          <div className="pt-2">
-            <UploadButton
-              disabled={isLocked || saving}
-              label="Change company logo"
-              fileName={form.logoFile?.name}
-              onPick={() => logoInputRef.current?.click()}
-            />
-            <input
-              ref={logoInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => set("logoFile", e.target.files?.[0] ?? null)}
-            />
-          </div>
-        </div>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+                <div className="lg:col-span-4">
+                  <FieldLabel>Registration No</FieldLabel>
+                </div>
+                <div className="lg:col-span-6">
+                  <TextInput
+                    disabled={isLocked || saving}
+                    value={form.regNo}
+                    onChange={(e) => set("regNo", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+                <div className="lg:col-span-4">
+                  <FieldLabel>Email</FieldLabel>
+                </div>
+                <div className="lg:col-span-6">
+                  <TextInput
+                    disabled={isLocked || saving}
+                    value={form.email}
+                    onChange={(e) => set("email", e.target.value)}
+                    type="email"
+                  />
+                </div>
+              </div>
+
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+                <div className="lg:col-span-4">
+                  <FieldLabel>Phone</FieldLabel>
+                </div>
+                <div className="lg:col-span-6">
+                  <TextInput
+                    disabled={isLocked || saving}
+                    value={form.phone}
+                    onChange={(e) => set("phone", e.target.value)}
+                  />
+                </div>
+              </div>
+
+             
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+                <div className="lg:col-span-4">
+                  <FieldLabel>Address Line 1</FieldLabel>
+                </div>
+                <div className="lg:col-span-6">
+                  <TextInput
+                    disabled={isLocked || saving}
+                    value={form.addressLine1}
+                    onChange={(e) => set("addressLine1", e.target.value)}
+                  />
+              </div>
+            </div>
+
+  
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+              <div className="lg:col-span-4">
+                <FieldLabel>Address Line 2</FieldLabel>
+              </div>
+              <div className="lg:col-span-6">
+                <TextInput
+                  disabled={isLocked || saving}
+                  value={form.addressLine2}
+                  onChange={(e) => set("addressLine2", e.target.value)}
+                />
+              </div>
+            </div>
+      </div>
+
+
+       
+
 
         
         <div className="col-span-2" />
 
         
-        <div className="col-span-6 pt-10">
-          <UploadButton
-            disabled={isLocked || saving}
-            label="Upload Background Image"
-            fileName={form.backgroundFile?.name}
-            onPick={() => bgInputRef.current?.click()}
-          />
-          <input
-            ref={bgInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => set("backgroundFile", e.target.files?.[0] ?? null)}
-          />
-        </div>
+        
+          <div className="col-span-12 pt-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+              <div className="flex items-center justify-center">
+                <div className="w-full max-w-130">
+                  <UploadButton
+                    disabled={isLocked || saving}
+                    label="Upload Background Image"
+                    fileName={form.backgroundFile?.name}
+                    onPick={() => bgInputRef.current?.click()}
+                  />
+                  <input
+                    ref={bgInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) =>
+                      set("backgroundFile", e.target.files?.[0] ?? null)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center">
+                <div className="w-full max-w-130">
+                  <UploadButton
+                    disabled={isLocked || saving}
+                    label="Change company logo"
+                    fileName={form.logoFile?.name}
+                    onPick={() => logoInputRef.current?.click()}
+                  />
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) => set("logoFile", e.target.files?.[0] ?? null)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
 
         
-        <div className="col-span-12 pt-10 flex items-center justify-between gap-8">
-          <button
-            type="button"
-            onClick={handleEdit}
-            disabled={readOnly || saving}
-            className={[
-              "w-full max-w-105 h-12 rounded-full border border-orange-400 bg-white text-orange-500 hover:bg-orange-50 cursor-pointer ",
-              (readOnly || saving) ? "opacity-60 cursor-not-allowed" : "",
-            ].join(" ")}
-          >
-            Edit Details
-          </button>
+        <div className="col-span-12 pt-10">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-8">
+            <button
+              type="button"
+              onClick={handleEdit}
+              disabled={readOnly || saving}
+              className={[
+                "h-12 lg:w-[320px] w-full rounded-full border border-orange-400 bg-white",
+                "text-orange-500 hover:bg-orange-50",
+                "flex items-center justify-center", 
+                (readOnly || saving) ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
+              ].join(" ")}
+            >
+              Edit Details
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!onSave || isLocked || saving}
-            className={[
-              "w-full max-w-105 h-12 rounded-full bg-orange-500 text-white hover:bg-orange-600 cursor-pointer ",
-             
-              
-              (!onSave || isLocked || saving) ? "opacity-60 cursor-not-allowed" : "",
-            ].join(" ")}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!onSave || isLocked || saving}
+              className={[
+                "h-12 lg:w-[320px] w-full rounded-full bg-orange-500 text-white hover:bg-orange-600",
+                "flex items-center justify-center", 
+                (!onSave || isLocked || saving)
+                  ? "opacity-60 cursor-not-allowed"
+                  : "cursor-pointer",
+              ].join(" ")}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
         </div>
-      </div>
+      
     </section>
   );
 }
