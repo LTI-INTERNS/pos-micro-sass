@@ -36,6 +36,5 @@ export const mockBranchData: BranchForecast[] = [
     currentSale: 1290,
     predictedSale: 2290,
     efficiencyPercent: 18,
-    highlighted: true,
   },
 ];
