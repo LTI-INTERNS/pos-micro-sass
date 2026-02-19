@@ -9,10 +9,11 @@ import SubscriptionPlanCards from "@/app/components/Admin/settings/subscriptionp
 import CompanyDetailsForm from "@/app/components/Admin/settings/companydetails/CompanyDetailsContent";
 
 const TABS = [
-  { id: "personalDetails", label: "Personal Details" },
-  { id: "discountManagement", label: "Discount Managemet" },
-  { id: "companuDetails", label: "Company Details" },
-  { id: "subscriptionPlan", label: "Subscription Plan" },
+  { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
+  { id: "discountManagement", label: "Discount Managemet", shortLabel: "Discount" },
+  { id: "companuDetails", label: "Company Details", shortLabel: "Company" },
+  { id: "subscriptionPlan", label: "Subscription Plan", shortLabel: "Sub. Plan" },
+  { id: "settings", label: "System Settings", shortLabel: "System" },
 ];
 
 export default function settingPage() {
