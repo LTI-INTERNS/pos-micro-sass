@@ -10,7 +10,7 @@ export type OrderItem = {
   name: string;
   price: number;
   qty: number;
-  imageUrl: string;
+  imageUrl?: string;
 };
 
 type Props = {
@@ -136,9 +136,17 @@ export default function CustomerInfoPanel({
               <div className="pt-4 flex-1 overflow-auto space-y-4">
                 {items.map((it) => (
                   <div key={it.id} className="border-b pb-4 flex items-center gap-4">
-                    <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                      <Image src={it.imageUrl} alt={it.name} fill className="object-cover" />
-                    </div>
+                    {it.imageUrl && (
+                      <div className="relative h-16 w-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
+                        <Image
+                          src={it.imageUrl}
+                          alt={it.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    )}
+
 
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-[16px] font-semibold text-slate-900">{it.name}</p>
