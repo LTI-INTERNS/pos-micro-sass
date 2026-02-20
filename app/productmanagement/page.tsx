@@ -118,7 +118,7 @@ export default function DashboardPage() {
           // Backend will handle creation later
           setAddOpen(false);
         }}
-        userRole="admin"       // TODO: replace with real role from auth session
+        userRole="branch_manager"       // TODO: replace with real role from auth session
         branchName=""          // TODO: replace with real branch from auth session
         branchManager=""       // TODO: replace with real manager from auth session
       />
