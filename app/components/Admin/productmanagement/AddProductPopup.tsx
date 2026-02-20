@@ -4,7 +4,7 @@ import * as React from "react";
 import ModalShell from "../common/ModalShell";
 import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
-import { useNotifications } from "../notifications/NotificationsContext";
+import { useNotifications } from "../../../context/NotificationsContext";
 
 
 type SoldBy = "each" | "volume_weight";
