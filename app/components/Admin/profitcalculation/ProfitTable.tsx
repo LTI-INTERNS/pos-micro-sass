@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function ProfitTable({ profits }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const columns: Column<Profit>[] = [
     {
@@ -40,7 +40,7 @@ export default function ProfitTable({ profits }: Props) {
     { 
       key: "profit", 
       label: "Profit", 
-      render: (row) => formatCurrency(row.profit, currency) 
+      render: (row) => formatCurrency(row.profit, currency, useCents) 
     },
     {
       key: "payment",

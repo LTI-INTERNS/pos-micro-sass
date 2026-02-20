@@ -12,13 +12,12 @@ import SuccessPopup from "@/app/components/Admin/common/SuccessPopup";
 import { usePosSettings } from "@/app/context/PosSettingsContext";
 
 export default function AdditionalSettingsContent() {
-  const { currency, setCurrency } = useCurrency();
+  const { currency, setCurrency, useCents, setUseCents } = useCurrency();
   const { posSettings, setPosSettings } = usePosSettings();
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
   const [systemImageUrl, setSystemImageUrl] = useState<string | null>(null);
-  const [useCents, setUseCents] = useState(true);
 
   const [features, setFeatures] = useState({
     customerDisplays: true,
@@ -57,7 +56,7 @@ export default function AdditionalSettingsContent() {
   const handleSave = () => {
     const settings = {
       features,
-      regional: { country, currency, timezone },
+      regional: { country, currency, timezone, useCents },
       loyalty: { pointsEarningPercentage },
       receipt: receiptSettings,
       systemBackground: { imageId: systemImageId, imageUrl: systemImageUrl },
@@ -75,7 +74,7 @@ export default function AdditionalSettingsContent() {
         currency={currency}
         timezone={timezone}
         useCents={useCents}
-        onUseCentsChange={setUseCents}
+        onUseCentsChange={setUseCents} // now updates CurrencyContext
         onCountryChange={setCountry}
         onCurrencyChange={setCurrency}
         onTimezoneChange={setTimezone}

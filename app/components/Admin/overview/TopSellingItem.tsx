@@ -18,15 +18,8 @@ export default function TopSellingItem({
   percentage,
   trend,
 }: TopSellingItemProps) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   const isUp = trend === 'up';
-
-  const formatPrice = (value: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-    }).format(value);
 
   return (
     <div className="flex items-center justify-between py-3 border-b last:border-b-0">
@@ -42,7 +35,7 @@ export default function TopSellingItem({
       </div>
 
       <div className="text-right">
-        <p className="text-sm font-semibold text-gray-800">{formatCurrency(price, currency)}</p>
+        <p className="text-sm font-semibold text-gray-800">{formatCurrency(price, currency, useCents)}</p>
         <p className={`text-xs ${isUp ? 'text-green-500' : 'text-red-500'}`}>{percentage}</p>
       </div>
     </div>

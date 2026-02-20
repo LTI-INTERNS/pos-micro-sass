@@ -17,7 +17,7 @@ type Props = {
 };
 
 export default function PreviousOrdersModal({ open, onClose }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   const [search, setSearch] = useState("");
 
   //  NEW: details popup state
@@ -42,7 +42,7 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
       key: "totalamount",
       label: "Total Amount",
       render: (row) => row.totalamount !== undefined 
-        ? formatCurrency(row.totalamount, currency) 
+        ? formatCurrency(row.totalamount, currency, useCents) 
         : "-",
     },
     { key: "status", label: "Status" },

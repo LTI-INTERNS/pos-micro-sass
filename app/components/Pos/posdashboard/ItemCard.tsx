@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function ItemCard({ item, onClick }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const hasImage = Boolean(item.image);
 
@@ -55,7 +55,7 @@ export default function ItemCard({ item, onClick }: Props) {
       {hasImage ? (
         <div className="p-3 text-center">
           <p className="text-sm font-semibold text-black">{item.name}</p>
-          <p className="text-xs text-orange-500">{formatCurrency(item.price, currency)}</p> 
+          <p className="text-xs text-orange-500">{formatCurrency(item.price, currency, useCents)}</p> 
         </div>
       ) : (
         <p className="text-sm font-semibold text-orange-600">

@@ -4,7 +4,6 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 
 type PosSettings = {
   customerDisplayEnabled: boolean;
-  useCents: boolean; 
 };
 
 type PosSettingsContextType = {
@@ -16,7 +15,6 @@ const STORAGE_KEY = "pos_settings";
 
 const DEFAULTS: PosSettings = {
   customerDisplayEnabled: true,
-  useCents: false, 
 };
 
 function loadFromStorage(): PosSettings {
