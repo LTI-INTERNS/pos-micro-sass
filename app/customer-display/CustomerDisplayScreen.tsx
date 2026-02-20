@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { usePosChannel, PosMessage } from "@/app/hooks/usePosChannel";
 import { CustomerFormValues } from "@/app/components/Admin/common/AddCustomerModal";
 import { OrderItem } from "@/app/components/Pos/posdashboard/CustomerInfoPanel";
@@ -9,6 +9,7 @@ import { useCurrency } from "@/app/context/CurrencyContext";
 import { useImage } from "@/app/context/ImageContext";
 import Image from "next/image";
 import { Delete, CheckCircle, Clock, MonitorOff } from "lucide-react";
+import { usePosSettings } from "@/app/context/PosSettingsContext";
 
 const customers = [
   { id: 1, name: "Kavindu Madushan", phone: "083894771983", email: "KavinduMadushan@mail.com" },
@@ -41,14 +42,32 @@ export default function CustomerDisplayScreen() {
   const [total, setTotal] = useState(0);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
 
-  // Feature enabled/disabled driven by the settings toggle via BroadcastChannel
-  const [featureEnabled, setFeatureEnabled] = useState(true);
+  const { posSettings } = usePosSettings();
+  const [featureEnabled, setFeatureEnabled] = useState(
+    posSettings.customerDisplayEnabled
+  );
 
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
   });
+
+  useEffect(() => {
+    setFeatureEnabled(posSettings.customerDisplayEnabled);
+
+    if (!posSettings.customerDisplayEnabled) {
+      // reset screen when disabled
+      setScreen("dialpad");
+      setPhone("");
+      setError("");
+      setCustomer(null);
+      setItems([]);
+      setSubtotal(0);
+      setTotal(0);
+      setPaymentSummary(null);
+    }
+  }, [posSettings.customerDisplayEnabled]);
 
   const handleMessage = useCallback(
     (msg: PosMessage) => {
