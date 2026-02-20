@@ -193,7 +193,7 @@ export default function AddProductPopup({
     if (!validateForm()) return;
     const payload: ProductValues = { ...values, imageUrl: imagePreview || "" };
 
-    if (userRole === "branch_manager") {
+    if (userRole === "admin") {
       addNotification({
         type: "approval_pending",
         message: `New product request from ${branchName} — "${values.name.trim()}" awaiting approval`,
@@ -393,7 +393,7 @@ export default function AddProductPopup({
               actions={[
                 { label: "Cancel", onClick: handleCancel, variant: "secondary" },
                 {
-                  label: userRole === "branch_manager" ? "Submit for Approval" : "Save",
+                  label: userRole === "admin" ? "Submit for Approval" : "Save",
                   onClick: handleSave,
                   variant: "primary",
                 },
