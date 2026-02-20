@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { X, CheckCircle2, XCircle, Package, User, Building2, Clock } from "lucide-react";
-import type { ProductApprovalData } from "./NotificationsContext";
+import type { ProductApprovalData } from "../../../context/NotificationsContext";
 
 type Props = {
   open: boolean;

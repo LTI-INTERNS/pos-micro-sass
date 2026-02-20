@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
-import { useNotifications } from "./NotificationsContext";
-import type { Notification, ProductApprovalData } from "./NotificationsContext";
+import { useNotifications } from "../../../context/NotificationsContext";
+import type { Notification, ProductApprovalData } from "../../../context/NotificationsContext";
 import NotificationPanel from "./NotificationPanel";
 import NotificationMessagePopup from "@/app/components/Admin/notifications/NotificationMessagePopup";
 import ProductApprovalModal from "./ProductApprovalModal";
