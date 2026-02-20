@@ -3,6 +3,8 @@
 import * as React from "react";
 import { X, CheckCircle2, XCircle, Package, User, Building2, Clock } from "lucide-react";
 import type { ProductApprovalData } from "../../../context/NotificationsContext";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 type Props = {
   open: boolean;
@@ -13,6 +15,7 @@ type Props = {
 };
 
 export default function ProductApprovalModal({ open, data, onClose, onApprove, onReject }: Props) {
+  const { currency } = useCurrency();
   const [rejecting, setRejecting] = React.useState(false);
   const [reason, setReason] = React.useState("");
   const [reasonError, setReasonError] = React.useState("");
@@ -59,10 +62,8 @@ export default function ProductApprovalModal({ open, data, onClose, onApprove, o
       <div className="absolute inset-0" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[560px] overflow-hidden">
 
-        {/* Top accent */}
         <div className="h-1 w-full bg-gradient-to-r from-orange-400 to-orange-500" />
 
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -78,11 +79,9 @@ export default function ProductApprovalModal({ open, data, onClose, onApprove, o
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto" style={{ scrollbarWidth: "none" }}>
           {statusBanner}
 
-          {/* Branch info cards */}
           <div className="flex items-stretch gap-3">
             <div className="flex items-center gap-2 flex-1 px-3 py-2.5 rounded-xl bg-gray-50 border border-gray-100">
               <Building2 size={14} className="text-orange-400 flex-shrink-0" />
@@ -107,7 +106,6 @@ export default function ProductApprovalModal({ open, data, onClose, onApprove, o
             </div>
           </div>
 
-          {/* Product header */}
           <div className="flex items-center gap-4 px-4 py-3 rounded-xl bg-orange-50 border border-orange-100">
             {data.imageUrl ? (
               <img src={data.imageUrl} alt={data.productName} className="w-14 h-14 rounded-xl object-cover border border-orange-200 flex-shrink-0" />
@@ -123,15 +121,17 @@ export default function ProductApprovalModal({ open, data, onClose, onApprove, o
             </div>
           </div>
 
-          {/* Details */}
           <div className="rounded-xl border border-gray-100 px-4 py-1">
-            <DetailRow label="Price" value={`LKR ${data.price}`} highlight />
+            <DetailRow
+              label="Price"
+              value={formatCurrency(parseFloat(data.price), currency)}
+              highlight
+            />
             <DetailRow label="Discount" value={`${data.discount}%`} />
             <DetailRow label="Tax" value={`${data.tax}%`} />
             <DetailRow label="Stock" value={`${data.stock}${data.unit ? ` ${data.unit}` : " units"}`} />
           </div>
 
-          {/* Description */}
           {data.description && (
             <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Description</p>
@@ -139,7 +139,6 @@ export default function ProductApprovalModal({ open, data, onClose, onApprove, o
             </div>
           )}
 
-          {/* Rejection reason textarea */}
           {rejecting && !isAlreadyActioned && (
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-gray-700">
@@ -156,8 +155,7 @@ export default function ProductApprovalModal({ open, data, onClose, onApprove, o
             </div>
           )}
         </div>
-
-        {/* Footer */}
+        
         {!isAlreadyActioned ? (
           <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
             {!rejecting ? (
