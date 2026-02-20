@@ -5,20 +5,31 @@ import React, { createContext, useContext, useState, useMemo, useCallback } from
 export type NotificationType = "info" | "warning" | "error" | "success" | "approval_pending";
 
 export type ProductApprovalData = {
+  //  Core product fields
   id: number;
   productName: string;
   category?: string;
-  price: string;
-  discount: string;
-  tax: string;
-  stock: string;
+  price: number;
+  discount: number;
+  tax: number;
+  stock: number;
   unit?: string;
   description?: string;
   imageUrl?: string;
+
+  // Branch info 
+  branchId: number;
   branchName: string;
   branchManager: string;
+  submittedBy: string;
+
   submittedAt: string;
+  reviewedAt?: string;
+
+  //  Approval audit
   status: "pending" | "approved" | "rejected";
+  approvedBy?: string;
+  rejectedBy?: string;
   rejectionReason?: string;
 };
 
@@ -54,17 +65,23 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         id: 101,
         productName: "Wireless Mouse",
         category: "Electronics",
-        price: "25.00",
-        discount: "0",
-        tax: "5",
-        stock: "100",
+        price: 25.00,
+        discount: 0,
+        tax: 5,
+        stock: 100,
         unit: "pcs",
         description: "A sleek wireless mouse with ergonomic design.",
         imageUrl: "/images/products/wireless-mouse.jpg",
+        branchId: 1,
         branchName: "Colombo Branch",
         branchManager: "Nimal Perera",
+        submittedBy: "nimal.perera@colombobranch.com",
         submittedAt: "2024-06-15T10:30:00Z",
+        reviewedAt: undefined,
         status: "pending",
+        approvedBy: undefined,
+        rejectedBy: undefined,
+        rejectionReason: undefined,
       },
     },
   ]);
