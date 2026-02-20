@@ -87,7 +87,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     (i) => i.image && i.image.trim() !== ""
   );
 
-  /* 🔹 LIST VIEW (no images) */
+  /* LIST VIEW (no images) */
   if (!hasAnyImage) {
     return (
       <div className="space-y-2">
@@ -105,7 +105,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     );
   }
 
-  /* 🔹 GRID VIEW (with images) */
+  /* GRID VIEW (with images) */
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {filteredItems.map((item) => (

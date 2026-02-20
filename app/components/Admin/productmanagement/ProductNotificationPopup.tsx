@@ -110,24 +110,23 @@ const handleReject = () => {
           </div>
         </div>
 
-        {/*  Actions */}
         <div className="flex items-center justify-center">
           <div className="w-[420px]">
-<PopupActions
-  actions={[
-    {
-      label: "Accept",
-      onClick: handleAccept,
-      variant: "secondary",
-    },
-    {
-      label: "Reject & Notify",
-      onClick: handleReject,
-      variant: "primary",
-      disabled: description.trim().length === 0, // reject needs reason
-    },
-  ]}
-/>
+          <PopupActions
+            actions={[
+              {
+                label: "Accept",
+                onClick: handleAccept,
+                variant: "secondary",
+              },
+              {
+                label: "Reject & Notify",
+                onClick: handleReject,
+                variant: "primary",
+                disabled: description.trim().length === 0, // reject needs reason
+              },
+            ]}
+          />
           </div>
         </div>
       </div>

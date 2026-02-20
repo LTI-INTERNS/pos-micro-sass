@@ -16,8 +16,8 @@ type CompanyDetails = {
 
 type Props = {
   initial?: Partial<CompanyDetails>;
-  readOnly?: boolean; // if true -> inputs disabled
-  onEditClick?: () => void; // optional (if you handle edit mode outside)
+  readOnly?: boolean; 
+  onEditClick?: () => void; 
   onSave?: (data: CompanyDetails) => Promise<void> | void;
   className?: string;
 };

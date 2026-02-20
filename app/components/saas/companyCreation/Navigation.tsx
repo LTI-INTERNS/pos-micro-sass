@@ -6,7 +6,7 @@ import Navbar from "../common/Navbar";
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 type NavigationProps = {
-  title?: string; // NEW (optional)
+  title?: string; 
   links?: {
     label: string;
     href: string;
@@ -17,7 +17,7 @@ type NavigationProps = {
 };
 
 export default function Navigation({
-  title = "Micro-Saas Registration Dashboard", // DEFAULT TITLE
+  title = "Micro-Saas Registration Dashboard", 
   logoSrc,
   logoAlt,
 }: NavigationProps) {
@@ -37,7 +37,7 @@ export default function Navigation({
       logoSrc={logoSrc}
       logoAlt={logoAlt}
       middleContent={
-        <h2>{title}</h2> // dynamic title
+        <h2>{title}</h2> 
       }
       rightContent={
         <div className="flex items-center gap-3">

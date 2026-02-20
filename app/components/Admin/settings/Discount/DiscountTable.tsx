@@ -46,7 +46,7 @@ export default function DiscountTable({
       render: (d) => d.branch || "All",
     },
     {
-      key: "status", // ✅ virtual key (prevents duplicate key error)
+      key: "status", 
       label: "Status",
       align: "center",
       render: (d) => {

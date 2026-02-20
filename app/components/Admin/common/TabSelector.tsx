@@ -5,6 +5,7 @@ import React from "react";
 type Tab = {
   id: string;
   label: string;
+  shortLabel?: string;
 };
 
 type TabSelectorProps = {
@@ -50,7 +51,8 @@ export default function TabSelector({
               onClick={() => onChange(tab.id)}
               className={`
                 relative flex items-center justify-center
-                px-6 py-2.5 text-sm font-medium transition-all
+                px-3 sm:px-6 py-2.5
+                text-xs sm:text-sm font-medium transition-all
                 ${index < tabs.length - 1 ? "border-r border-gray-200" : ""}
                 ${
                   isActive
@@ -59,8 +61,18 @@ export default function TabSelector({
                 }
               `}
             >
-              {tab.label}
+              {/* Mobile */}
+              <span className="sm:hidden">
+                {tab.shortLabel ?? tab.label.split(" ")[0]}
+              </span>
+
+              {/* Desktop */}
+              <span className="hidden sm:inline">
+                {tab.label}
+              </span>
             </button>
+
+
           </React.Fragment>
         );
       })}
