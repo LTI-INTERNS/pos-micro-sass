@@ -29,7 +29,6 @@ export default function NotificationBell() {
   const [approvalData, setApprovalData] = useState<ProductApprovalData | null>(null);
   const [approvalNotifId, setApprovalNotifId] = useState<number | null>(null);
 
-  // Bell shake on new unread notification
   const prevUnread = useRef(unreadCount);
   useEffect(() => {
     if (unreadCount > prevUnread.current) {
@@ -38,8 +37,6 @@ export default function NotificationBell() {
     }
     prevUnread.current = unreadCount;
   }, [unreadCount]);
-
-  // ── Open correct popup per notification type ─────────────────────────────
 
   const handleOpenMessage = (n: Notification) => {
     markAsRead(n.id);
@@ -55,8 +52,6 @@ export default function NotificationBell() {
     setSelected(n);
     setPopupOpen(true);
   };
-
-  // ── Approval actions ─────────────────────────────────────────────────────
 
   const handleApprove = (productId: number) => {
     if (approvalNotifId !== null) {
@@ -88,8 +83,6 @@ export default function NotificationBell() {
     setApprovalOpen(false);
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
-
   return (
     <div className="relative">
       <style>{`
@@ -102,7 +95,6 @@ export default function NotificationBell() {
         }
       `}</style>
 
-      {/* Bell — only visible when there are unread notifications */}
       {unreadCount > 0 && (
         <button
           type="button"
@@ -121,7 +113,6 @@ export default function NotificationBell() {
         </button>
       )}
 
-      {/* Notification panel */}
       {open && (
         <NotificationPanel
           notifications={notifications}
@@ -132,14 +123,12 @@ export default function NotificationBell() {
         />
       )}
 
-      {/* Generic message popup */}
       <NotificationMessagePopup
         open={popupOpen}
         data={selected}
         onClose={() => setPopupOpen(false)}
       />
 
-      {/* Product approval modal */}
       <ProductApprovalModal
         open={approvalOpen}
         data={approvalData}
