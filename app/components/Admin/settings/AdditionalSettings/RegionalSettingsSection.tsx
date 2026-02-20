@@ -2,11 +2,16 @@
 
 import React from "react";
 import FormField from "@/app/components/Admin/common/FormField";
+import ToggleSwitch from "@/app/components/Admin/common/ToggleSwitch";
 
 type RegionalSettingsProps = {
   country: string;
   currency: string;
   timezone: string;
+
+  useCents: boolean;
+  onUseCentsChange: (value: boolean) => void;
+  
   onCountryChange: (country: string) => void;
   onCurrencyChange: (currency: string) => void;
   onTimezoneChange: (timezone: string) => void;
@@ -65,6 +70,8 @@ export default function RegionalSettingsSection({
   country,
   currency,
   timezone,
+  useCents,
+  onUseCentsChange,
   onCountryChange,
   onCurrencyChange,
   onTimezoneChange,
@@ -114,6 +121,19 @@ export default function RegionalSettingsSection({
             label: c.name,
           }))}
         />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-gray-900">Use cents</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Enable decimal values for prices (e.g. 10.50 instead of 10)
+            </p>
+          </div>
+
+          <ToggleSwitch
+            enabled={useCents}
+            onChange={onUseCentsChange}
+          />
+        </div>
 
         <FormField
           label="Timezone"
