@@ -294,7 +294,7 @@ export default function CashierManagementPage() {
                 mockCashiers[index] = updatedCashier;
               }
 
-              setSelectedCashier(updatedCashier); // update selection
+              setSelectedCashier(updatedCashier);
               setEditPopupOpen(false);
             }}
           />

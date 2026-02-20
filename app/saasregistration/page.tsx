@@ -114,7 +114,7 @@ export default function RegisterPage() {
 
   return (
     <CommonLayout navbar={<Navigation />} >
-      {/*space under fixed navbar */}
+      
       <div className="pt-10 pb-20 px-4">
         <GlassBackground>
           <div>

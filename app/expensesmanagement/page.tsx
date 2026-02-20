@@ -16,14 +16,13 @@ export default function ExpensesManagementPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
-        {/* Tab Selector */}
+    
         <TabSelector
           tabs={TABS}
           activeTab={activeTab}
           onChange={setActiveTab}
         />
 
-        {/* Render the appropriate content based on active tab */}
         {activeTab === "expenses" ? (
           <ExpensesContent />
         ) : (

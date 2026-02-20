@@ -1,21 +1,20 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import ItemGrid from "../components/Pos/posdashboard/ItemGrid";
-import CustomerInfoPanel, { OrderItem } from "../components/Pos/posdashboard/CustomerInfoPanel";
+import CustomerInfoPanel, {
+  CustomerInfoPanelHandle,
+  OrderItem,
+} from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
 import OrderPaymentModal, { PaymentSummary } from "../components/Pos/posdashboard/OrderPaymentModal";
 import OrderConfirmation, { ConfirmItem } from "../components/Pos/OrderConfirmation";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { usePosSettings } from "@/app/context/PosSettingsContext"; 
 import { Check, X } from "lucide-react";
 
-function OrderCompletePopup({
-  open,
-  onClose,
-  orderNo,
-}: {
-  open: boolean;
-  onClose: () => void;
-  orderNo: string | number;
+function OrderCompletePopup({ open, onClose, orderNo }: {
+  open: boolean; onClose: () => void; orderNo: string | number;
 }) {
   return (
     <div
@@ -36,24 +35,18 @@ function OrderCompletePopup({
         >
           <X size={18} />
         </button>
-
         <div className="p-8 text-center">
           <div className="relative mx-auto w-20 h-20 grid place-items-center">
-            {/* orange animated glow */}
             <span className="absolute inset-0 rounded-full glow" />
             <span className="absolute inset-[-14px] rounded-full glow-strong" />
             <div className="w-16 h-16 rounded-full bg-orange-400 grid place-items-center relative z-10">
               <Check className="text-white" size={34} />
             </div>
           </div>
-
           <h2 className="mt-5 text-2xl font-semibold text-black">Order Completed!</h2>
           <p className="text-sm text-slate-500 mt-1">Order #{orderNo}</p>
-
           <div className="my-6 h-px bg-slate-200" />
-
           <p className="text-slate-500">The order has been successfully completed.</p>
-
           <div className="mt-7 flex justify-center">
             <button
               onClick={onClose}
@@ -63,91 +56,44 @@ function OrderCompletePopup({
             </button>
           </div>
         </div>
-
         <style jsx>{`
-            .glow {
-              background: radial-gradient(
-                circle,
-                rgba(249, 115, 22, 0.7),
-                rgba(249, 115, 22, 0) 65%
-              );
-              filter: blur(10px);
-            }
-
-            .glow-strong {
-              background: radial-gradient(
-                circle,
-                rgba(249, 115, 22, 0.5),
-                rgba(249, 115, 22, 0) 80%
-              );
-              filter: blur(26px);
-            }
-          `}</style>
-
-
+          .glow { background: radial-gradient(circle, rgba(249,115,22,0.7), rgba(249,115,22,0) 65%); filter: blur(10px); }
+          .glow-strong { background: radial-gradient(circle, rgba(249,115,22,0.5), rgba(249,115,22,0) 80%); filter: blur(26px); }
+        `}</style>
       </div>
     </div>
   );
 }
 
 const page = () => {
+  const { currency } = useCurrency();
+  
+  const { posSettings } = usePosSettings();
+
   const [search, setSearch] = useState("");
-  const [showCustomerPopup, setShowCustomerPopup] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentData, setPaymentData] = useState<{
-    orderNo: string;
-    totalAmount: number;
-    tipAmount: number;
-  } | null>(null);
-
+  const [paymentData, setPaymentData] = useState<{ orderNo: string; totalAmount: number; tipAmount: number } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
-
-  // order complete popup
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
-
-  // hard reset modal key only when order is confirmed OR when user cancels order completely
   const [paymentModalKey, setPaymentModalKey] = useState(0);
-
-  // ✅ NEW: control edit-mode when coming back from confirmation
   const [paymentForceEditable, setPaymentForceEditable] = useState(false);
 
-  const orderNo = useMemo(() => {
-    return `ORD-${new Date().getTime()}`;
-  }, []);
+  const panelRef = useRef<CustomerInfoPanelHandle>(null);
+  const orderNo = useMemo(() => `ORD-${new Date().getTime()}`, []);
 
   const confirmItems: ConfirmItem[] = useMemo(
-    () =>
-      orderItems.map((it) => ({
-        id: it.id,
-        name: it.name,
-        qty: it.qty,
-        price: it.price,
-        subtotal: it.price * it.qty,
-      })),
+    () => orderItems.map((it) => ({ id: it.id, name: it.name, qty: it.qty, price: it.price, subtotal: it.price * it.qty })),
     [orderItems]
   );
 
   const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
     setOrderItems((prev) => {
       const existing = prev.find((it) => it.id === String(item.id));
-
-      if (existing) {
-        return prev.map((it) => (it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it));
-      }
-
-      return [
-        ...prev,
-        {
-          id: String(item.id),
-          name: item.name,
-          price: item.price,
-          qty: 1,
-          imageUrl: item.image,
-        },
-      ];
+      if (existing) return prev.map((it) => (it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it));
+      return [...prev, { id: String(item.id), name: item.name, price: item.price, qty: 1, imageUrl: item.image }];
     });
   };
 
@@ -157,7 +103,6 @@ const page = () => {
     setPaymentSummary(null);
     setConfirmOpen(false);
     setPaymentForceEditable(false);
-
     setPaymentModalKey((k) => k + 1);
   };
 
@@ -168,7 +113,6 @@ const page = () => {
           <div className="pt-2 shrink-0">
             <SearchBar value={search} onChange={setSearch} placeholder="Search Name or ID" className="py-2" />
           </div>
-
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
             <ItemGrid search={search} onAdd={handleAddItem} />
           </div>
@@ -176,46 +120,27 @@ const page = () => {
 
         <div className="w-md sticky top-0 h-[calc(100vh-76px)]">
           <CustomerInfoPanel
+            ref={panelRef}
             items={orderItems}
-            onAddCustomer={() => setShowCustomerPopup(true)}
-            onInc={(id) =>
-              setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it)))
-            }
+            
+            customerDisplayEnabled={posSettings.customerDisplayEnabled}
+            onInc={(id) => setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it)))}
             onDec={(id) =>
               setOrderItems((prev) =>
                 prev.map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it)).filter((it) => it.qty > 0)
               )
             }
             onSetQty={(id, qty) => setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)))}
-            onCancel={() => {
-              setOrderItems([]);
-              hardResetPaymentFlow();
-            }}
+            onCancel={() => { setOrderItems([]); hardResetPaymentFlow(); }}
             onPay={({ total }) => {
-              if (total <= 0) {
-                alert("Please add items to proceed with payment.");
-                return;
-              }
-
-              // normal pay → not editable lock after full paid
+              if (total <= 0) { alert("Please add items to proceed with payment."); return; }
               setPaymentForceEditable(false);
-
-              setPaymentData({
-                orderNo,
-                totalAmount: total,
-                tipAmount: 0,
-              });
+              setPaymentData({ orderNo, totalAmount: total, tipAmount: 0 });
               setPaymentOpen(true);
             }}
           />
         </div>
       </div>
-
-      {showCustomerPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCustomerPopup(false)} />
-        </div>
-      )}
 
       <OrderPaymentModal
         key={paymentModalKey}
@@ -224,15 +149,14 @@ const page = () => {
         orderNo={paymentData?.orderNo ?? "-"}
         totalAmount={paymentData?.totalAmount ?? 0}
         tipAmount={paymentData?.tipAmount ?? 0}
-        currencyCode="LKR"
+        currencyCode={currency}
         forceEditable={paymentForceEditable}
         onDone={(summary) => {
           setPaymentSummary(summary);
           setPaymentOpen(false);
           setConfirmOpen(true);
-
-          // once we go to confirmation, allow edit if they come back
           setPaymentForceEditable(true);
+          panelRef.current?.sendPaymentSummary(summary);
         }}
       />
 
@@ -242,23 +166,15 @@ const page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-          onCancelEdit={() => {
-            // go back to payment modal and allow editing
-            setConfirmOpen(false);
-            setPaymentForceEditable(true);
-            setPaymentOpen(true);
-          }}
+          onCancelEdit={() => { setConfirmOpen(false); setPaymentForceEditable(true); setPaymentOpen(true); }}
           onConfirm={() => {
-            // final confirm: show popup + reset for next order
             setCompletedOrderNo(paymentSummary.orderNo);
-
             setConfirmOpen(false);
             setPaymentOpen(false);
-
             setOrderItems([]);
             hardResetPaymentFlow();
-
             setCompleteOpen(true);
+            panelRef.current?.sendOrderConfirmed();
           }}
         />
       )}

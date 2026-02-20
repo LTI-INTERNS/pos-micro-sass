@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { useImage } from "@/app/context/ImageContext";
 
 type Cashier = {
   name: string;
@@ -12,14 +14,14 @@ type Cashier = {
 export default function PinEntryPage() {
   const router = useRouter();
 
+  const { backgroundImage } = useImage();
+
   const [pin, setPin] = useState<string>("");
   const [cashier, setCashier] = useState<Cashier | null>(null);
 
-  
   const CASHIER_TIMEOUT_MS = 2 * 60 * 1000; 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  
   const resetCashierTimeout = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
@@ -86,10 +88,15 @@ export default function PinEntryPage() {
   const pinDots = "●".repeat(pin.length);
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-cover bg-center relative"
-      style={{ backgroundImage: "url('/landing.png')" }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-cover bg-center relative">
+        <Image
+        src={backgroundImage}
+        alt="Background"
+        fill
+        priority
+        className="object-cover"
+      />
+      <div className="absolute inset-0 bg-black/20" />
      
       <button
         onClick={goBack}

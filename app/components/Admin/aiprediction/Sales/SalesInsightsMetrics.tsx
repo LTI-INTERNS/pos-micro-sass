@@ -1,7 +1,10 @@
-// components/SalesInsightsMetrics.tsx
+"use client";
+
 import React from "react";
 import MetricGrid from "./MetricGrid";
 import type { MetricCardProps } from "./MetricCard";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 export type SalesInsightsMetricsProps = {
   className?: string;
@@ -14,14 +17,16 @@ export default function SalesInsightsMetrics({
   className = "",
   items,
 }: SalesInsightsMetricsProps) {
+  const { currency } = useCurrency();
+
   const defaultItems: MetricCardProps[] = [
     {
       title: "Daily Average Sales",
-      value: "$1,290",
+      amount: 1290,
       subtitle: (
         <>
           <span className="text-slate-400">Current Sale :</span>{" "}
-          <span className="text-slate-500">$1,290</span>
+          <span className="text-slate-500">{formatCurrency(1290, currency)}</span>
         </>
       ),
       progressPct: 92,
