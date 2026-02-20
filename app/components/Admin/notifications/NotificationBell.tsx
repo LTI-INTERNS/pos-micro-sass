@@ -61,7 +61,12 @@ export default function NotificationBell() {
         type: "success",
         message: `"${notif?.productApproval?.productName}" approved ✓`,
         productApproval: notif?.productApproval
-          ? { ...notif.productApproval, status: "approved" }
+          ? {
+              ...notif.productApproval,
+              status: "approved",
+              approvedBy: "current.admin@company.com", // TODO: replace with real auth user
+              reviewedAt: new Date().toISOString(),
+            }
           : undefined,
       });
     }
@@ -76,7 +81,13 @@ export default function NotificationBell() {
         type: "error",
         message: `"${notif?.productApproval?.productName}" rejected`,
         productApproval: notif?.productApproval
-          ? { ...notif.productApproval, status: "rejected", rejectionReason: reason }
+          ? {
+              ...notif.productApproval,
+              status: "rejected",
+              rejectedBy: "current.admin@company.com", // TODO: replace with real auth user
+              reviewedAt: new Date().toISOString(),
+              rejectionReason: reason,
+            }
           : undefined,
       });
     }
