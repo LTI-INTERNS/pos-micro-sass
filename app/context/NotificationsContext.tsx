@@ -5,7 +5,6 @@ import React, { createContext, useContext, useState, useMemo, useCallback } from
 export type NotificationType = "info" | "warning" | "error" | "success" | "approval_pending";
 
 export type ProductApprovalData = {
-  //  Core product fields
   id: number;
   productName: string;
   category?: string;
@@ -14,19 +13,13 @@ export type ProductApprovalData = {
   tax: number;
   stock: number;
   unit?: string;
-
   imageUrl?: string;
-
-  // Branch info 
   branchId: number;
   branchName: string;
   branchManager: string;
   submittedBy: string;
-
   submittedAt: string;
   reviewedAt?: string;
-
-  //  Approval audit
   status: "pending" | "approved" | "rejected";
   approvedBy?: string;
   rejectedBy?: string;
@@ -76,16 +69,10 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         branchManager: "Nimal Perera",
         submittedBy: "nimal.perera@colombobranch.com",
         submittedAt: "2024-06-15T10:30:00Z",
-        reviewedAt: undefined,
         status: "pending",
-        approvedBy: undefined,
-        rejectedBy: undefined,
-        rejectionReason: undefined,
       },
     },
   ]);
-
-  const [nextId, setNextId] = useState(100);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -97,18 +84,20 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       const now = new Date();
       const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-      setNextId((prev) => prev + 1);
-      setNotifications((prev) => [
-        {
-          ...n,
-          id: nextId,
-          read: false,
-          time: `Today at ${time}`,
-        },
-        ...prev,
-      ]);
+      setNotifications((prev) => {
+        const newId = prev.length > 0 ? Math.max(...prev.map((x) => x.id)) + 1 : 1;
+        return [
+          {
+            ...n,
+            id: newId,
+            read: false,
+            time: `Today at ${time}`,
+          },
+          ...prev,
+        ];
+      });
     },
-    [nextId]
+    []
   );
 
   const markAsRead = useCallback((id: number) => {
