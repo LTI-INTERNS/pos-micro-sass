@@ -43,36 +43,38 @@ export default function ReceiptCustomizationSection({
           placeholder="Enter header text (e.g. Welcome to Our Store)"
         />
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div>
+          <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-gray-700">
               Show Logo on Receipt
             </label>
-            <p className="text-sm text-gray-500 mt-1">
-              Display your business logo at the top of receipts
-            </p>
+
+            <ToggleSwitch
+              enabled={showLogo}
+              onChange={onShowLogoChange}
+            />
           </div>
 
-          <ToggleSwitch
-            enabled={showLogo}
-            onChange={onShowLogoChange}
-          />
+          <p className="text-sm text-gray-500 mt-1">
+            Display your business logo at the top of receipts
+          </p>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
+        <div >
+          <div className="flex items-center justify-between">
             <label className="block text-sm font-medium text-gray-700">
               Show Tax Number
             </label>
-            <p className="text-sm text-gray-500 mt-1">
-              Display tax identification number on receipts
-            </p>
-          </div>
 
-          <ToggleSwitch
-            enabled={showTaxNumber}
-            onChange={onShowTaxNumberChange}
-          />
+            <ToggleSwitch
+              enabled={showTaxNumber}
+              onChange={onShowTaxNumberChange}
+            />
+          </div>
+          <p className="text-sm text-gray-500 mt-1">
+            Display tax identification number on receipts
+          </p>
+          
         </div>
 
 
