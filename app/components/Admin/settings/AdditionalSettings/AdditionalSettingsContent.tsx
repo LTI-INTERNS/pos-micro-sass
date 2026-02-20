@@ -18,6 +18,7 @@ export default function AdditionalSettingsContent() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
   const [systemImageUrl, setSystemImageUrl] = useState<string | null>(null);
+  const [useCents, setUseCents] = useState(true);
 
   const [features, setFeatures] = useState({
     customerDisplays: true,
@@ -73,6 +74,8 @@ export default function AdditionalSettingsContent() {
         country={country}
         currency={currency}
         timezone={timezone}
+        useCents={useCents}
+        onUseCentsChange={setUseCents}
         onCountryChange={setCountry}
         onCurrencyChange={setCurrency}
         onTimezoneChange={setTimezone}
