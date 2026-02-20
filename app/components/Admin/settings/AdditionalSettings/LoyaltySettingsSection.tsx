@@ -2,6 +2,8 @@
 
 import React from "react";
 import FormField from "@/app/components/Admin/common/FormField";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 type LoyaltySettingsProps = {
   pointsEarningPercentage: number;
@@ -12,6 +14,11 @@ export default function LoyaltySettingsSection({
   pointsEarningPercentage,
   onPointsEarningChange,
 }: LoyaltySettingsProps) {
+  const { currency } = useCurrency();
+
+  const exampleSpend = 1000;
+  const examplePoints = (exampleSpend * pointsEarningPercentage) / 100;
+
   const handleChange = (value: string) => {
     const parsed = parseFloat(value);
 
@@ -48,9 +55,9 @@ export default function LoyaltySettingsSection({
 
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-sm text-orange-600">
-            <span className="font-medium">Example:</span> If a customer spends
-            LKR 1,000 with {pointsEarningPercentage}% earning rate, they will
-            receive {(1000 * pointsEarningPercentage) / 100} loyalty points.
+            <span className="font-medium">Example:</span> If a customer spends{" "}
+            {formatCurrency(exampleSpend, currency)} with {pointsEarningPercentage}% earning rate,
+            they will receive <span className="font-medium">{examplePoints}</span> loyalty points.
           </p>
         </div>
       </div>

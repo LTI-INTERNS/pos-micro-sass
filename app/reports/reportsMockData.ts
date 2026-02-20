@@ -124,9 +124,9 @@ export const PRODUCTS_DATA: ProductRow[] = [
 ];
 
 export const REPORT_STATS = [
-  { title: "Total Sales",        value: "$9,842.50", percentage: "↑ 4.2%", trend: "up"   as const, caption: "from last month" },
-  { title: "Total Expenses",     value: "$3,120.00", percentage: "↓ 1.5%", trend: "down" as const, caption: "from last month" },
-  { title: "Net Profit",         value: "$6,722.50", percentage: "↑ 6.8%", trend: "up"   as const, caption: "from last month" },
+  { title: "Total Sales",        amount: 9842.50, percentage: "↑ 4.2%", trend: "up"   as const, caption: "from last month" },
+  { title: "Total Expenses",     amount: 3120.00, percentage: "↓ 1.5%", trend: "down" as const, caption: "from last month" },
+  { title: "Net Profit",         amount: 6722.50, percentage: "↑ 6.8%", trend: "up"   as const, caption: "from last month" },
   { title: "Transactions Count", value: "823",       percentage: "↑ 4.0%", trend: "up"   as const, caption: "from last month" },
 ];
 

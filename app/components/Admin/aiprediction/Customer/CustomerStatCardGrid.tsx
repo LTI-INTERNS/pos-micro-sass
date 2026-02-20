@@ -3,7 +3,7 @@ import StatCard from "@/app/components/Admin/common/StatCard";
 const statCards = [
   {
     title: "Avg. Customer Value",
-    value: "LKR 342",
+    amount: 342.00,
     percentage: "+2.5%",
     trend: "up" as const,
     caption: "vs last month",
@@ -33,6 +33,7 @@ export default function StatCardGrid() {
           key={card.title}
           title={card.title}
           value={card.value}
+          amount={card.amount}
           percentage={card.percentage}
           trend={card.trend}
           caption={card.caption}

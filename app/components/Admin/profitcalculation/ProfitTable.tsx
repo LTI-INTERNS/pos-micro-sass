@@ -1,13 +1,15 @@
 "use client";
 
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable"; 
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 export type Profit = {
   id: string;
   date: string;
   category: string;
   description: string;
-  profit: string;
+  profit: number;
   payment: string;
 };
 
@@ -16,6 +18,8 @@ type Props = {
 };
 
 export default function ProfitTable({ profits }: Props) {
+  const { currency } = useCurrency();
+
   const columns: Column<Profit>[] = [
     {
       key: "id",
@@ -33,9 +37,10 @@ export default function ProfitTable({ profits }: Props) {
       key: "description",
       label: "Description",
     },
-    {
-      key: "profit",
-      label: "Profit",
+    { 
+      key: "profit", 
+      label: "Profit", 
+      render: (row) => formatCurrency(row.profit, currency) 
     },
     {
       key: "payment",

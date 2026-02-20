@@ -1,6 +1,8 @@
 "use client";
 
 import CommonTable, { Column } from "../common/CommonTable";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 export type Cashier = {
   id: string;
@@ -20,14 +22,16 @@ type Props = {
 };
 
 export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: Props) {
+  const { currency } = useCurrency();
+
   const columns: Column<Cashier>[] = [
     { key: "id", label: "ID" },
     { key: "name", label: "Name" },
     { key: "cashierNo", label: "Cashier No" },
-    {
-      key: "totalRevenue",
-      label: "Total Revenue",
-      render: (c) => `Rs. ${c.totalRevenue.toLocaleString()}`,
+    { 
+      key: "totalRevenue", 
+      label: "Total Revenue", 
+      render: (c) => formatCurrency(c.totalRevenue, currency) 
     },
     { key: "email", label: "Email" },
     {

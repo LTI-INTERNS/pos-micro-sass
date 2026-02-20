@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import OrderTable, { Column } from "../Admin/common/CommonTable";
 import Buttons from "../Admin/common/ActionButton";
 import type { PaymentSummary } from "./posdashboard/OrderPaymentModal";
+import { useCurrency } from "@/app/context/CurrencyContext";
 import { Mail, Printer, X } from "lucide-react";
 
 export type ConfirmItem = {
@@ -24,23 +25,6 @@ type Props = {
   onCancelEdit?: () => void; // go back to payment modal (no reset)
   onConfirm?: () => void; // final confirm
 };
-
-const columns: Column<ConfirmItem>[] = [
-  { key: "name", label: "ITEM NAME", align: "left" },
-  { key: "qty", label: "QTY", align: "center" },
-  {
-    key: "price",
-    label: "PRICE",
-    align: "center",
-    render: (row) => `${row ? `LKR ${row.price.toFixed(2)}` : ""}`,
-  },
-  {
-    key: "subtotal",
-    label: "SUBTOTAL",
-    align: "right",
-    render: (row) => `${row ? `LKR ${row.subtotal.toFixed(2)}` : ""}`,
-  },
-];
 
 function PaymentIcons({ paymentMethod }: { paymentMethod: string }) {
   const method = (paymentMethod || "").toLowerCase();
@@ -80,7 +64,25 @@ export default function OrderConfirmation({
 
   if (!open) return null;
 
-  const c = payment.currencyCode ?? "LKR";
+  const { currency } = useCurrency();
+  const c = payment.currencyCode ?? currency;
+
+  const columns: Column<ConfirmItem>[] = useMemo(() => [
+    { key: "name", label: "ITEM NAME", align: "left" },
+    { key: "qty", label: "QTY", align: "center" },
+    {
+      key: "price",
+      label: "PRICE",
+      align: "center",
+      render: (row) => `${c} ${row.price.toFixed(2)}`,
+    },
+    {
+      key: "subtotal",
+      label: "SUBTOTAL",
+      align: "right",
+      render: (row) => `${c} ${row.subtotal.toFixed(2)}`,
+    },
+  ], [c]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

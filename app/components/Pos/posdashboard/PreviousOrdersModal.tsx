@@ -5,6 +5,8 @@ import ModalShell from "../../Admin/common/ModalShell";
 import SearchBar from "../../Admin/common/Search-bar";
 import CommonTable, { Column } from "../../Admin/common/CommonTable";
 import { ordersData, Order } from "@/app/ordermanagement/data";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 type Props = {
   open: boolean;
@@ -12,6 +14,7 @@ type Props = {
 };
 
 export default function PreviousOrdersModal({ open, onClose }: Props) {
+  const { currency } = useCurrency();
   const [search, setSearch] = useState("");
 
   const filteredOrders = useMemo(() => {
@@ -30,7 +33,13 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
     { key: "dateTime", label: "Date & Time" },
     { key: "cashier", label: "Cashier" },
     { key: "paymenttype", label: "Payment" },
-    { key: "totalamount", label: "Total Amount" },
+    {
+      key: "totalamount",
+      label: "Total Amount",
+      render: (row) => row.totalamount !== undefined 
+        ? formatCurrency(row.totalamount, currency) 
+        : "-",
+    },
     { key: "status", label: "Status" },
     {
       key: "action",

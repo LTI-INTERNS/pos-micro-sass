@@ -11,6 +11,7 @@ export default function ReportStatCardGrid() {
           key={s.title}
           title={s.title}
           value={s.value}
+          amount={s.amount}
           percentage={s.percentage}
           trend={s.trend}
           caption={s.caption}

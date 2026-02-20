@@ -1,11 +1,15 @@
-// components/MetricCard.tsx
+"use client";
+
 import React from "react";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 export type MetricCardProps = {
   title: string;
+  amount?: number;
 
   // Main value (big)
-  value: React.ReactNode;
+  value?: React.ReactNode;
 
   // Small "current" line under the value
   subtitle?: React.ReactNode;
@@ -23,13 +27,19 @@ export type MetricCardProps = {
 export default function MetricCard({
   title,
   value,
+  amount,
   subtitle,
   progressPct = 0,
   pillText,
   pillTone = "orange",
   className = "",
 }: MetricCardProps) {
+  const { currency } = useCurrency();
   const pct = clamp(progressPct, 0, 100);
+
+  const displayValue = amount !== undefined
+    ? formatCurrency(amount, currency) 
+    : value;
 
   const pillClasses =
     pillTone === "orange"
@@ -47,7 +57,7 @@ export default function MetricCard({
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>
           <div className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900">
-            {value}
+            {displayValue}
           </div>
         </div>
 
