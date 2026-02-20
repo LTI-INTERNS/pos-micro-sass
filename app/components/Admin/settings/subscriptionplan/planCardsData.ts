@@ -18,7 +18,7 @@ export const planCardsData: PlanCardData[] = [
   {
     id: "basic",
     name: "Basic",
-    price: "$9",
+    price: "$0.00",
     billingCycle: "month",
     description: "Perfect for small shops just getting started.",
     features: [

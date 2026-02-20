@@ -1,7 +1,10 @@
+"use client";
+
 import * as React from "react";
 import ModalShell from "../common/ModalShell";
 import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
+import { useNotifications } from "@/app/components/Admin/notifications/NotificationsContext";
 
 type SoldBy = "each" | "volume_weight";
 
@@ -24,7 +27,13 @@ type AddProductPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (values: ProductValues) => void;
+
+  // Pass role + branch info from your auth/session
+  userRole?: "admin" | "branch_manager" | string;
+  branchName?: string;
+  branchManager?: string;
 };
+
 
 const MAX_IMAGE_SIZE_MB = 5;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -39,7 +48,12 @@ export default function AddProductPopup({
   open,
   onClose,
   onSave,
+  userRole = "branch_manager",
+  branchName = "Unknown Branch",
+  branchManager = "Unknown Manager",
 }: AddProductPopupProps) {
+  const { addNotification } = useNotifications();
+
   const [values, setValues] = React.useState<ProductValues>({
     name: "",
     price: "",
@@ -180,7 +194,7 @@ export default function AddProductPopup({
     <ModalShell
       open={open}
       title="Add New Product"
-      onClose={handleCancel}
+      onClose={onClose}
       widthClassName="w-[980px] max-w-[92vw]"
     >
       <form
