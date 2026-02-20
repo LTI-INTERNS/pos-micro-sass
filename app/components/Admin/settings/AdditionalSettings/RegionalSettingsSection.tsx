@@ -36,16 +36,30 @@ const CURRENCIES = [
 ];
 
 const TIMEZONES = [
-  { value: "Asia/Colombo", label: "Sri Lanka Time (UTC+5:30)" },
-  { value: "America/New_York", label: "Eastern Time (UTC-5)" },
-  { value: "America/Chicago", label: "Central Time (UTC-6)" },
-  { value: "America/Los_Angeles", label: "Pacific Time (UTC-8)" },
-  { value: "Europe/London", label: "London Time (UTC+0)" },
-  { value: "Asia/Dubai", label: "Dubai Time (UTC+4)" },
-  { value: "Asia/Singapore", label: "Singapore Time (UTC+8)" },
-  { value: "Asia/Tokyo", label: "Tokyo Time (UTC+9)" },
-  { value: "Australia/Sydney", label: "Sydney Time (UTC+10)" },
+  { value: "Asia/Colombo",       label: "Sri Lanka Time (UTC+5:30)" },
+  { value: "America/New_York",   label: "Eastern Time (UTC-5)" },
+  { value: "America/Chicago",    label: "Central Time (UTC-6)" },
+  { value: "America/Los_Angeles",label: "Pacific Time (UTC-8)" },
+  { value: "America/Toronto",    label: "Eastern Time Canada (UTC-5)" },
+  { value: "Europe/London",      label: "London Time (UTC+0)" },
+  { value: "Asia/Dubai",         label: "Dubai Time (UTC+4)" },
+  { value: "Asia/Kolkata",       label: "India Time (UTC+5:30)" },
+  { value: "Asia/Singapore",     label: "Singapore Time (UTC+8)" },
+  { value: "Asia/Kuala_Lumpur",  label: "Malaysia Time (UTC+8)" },
+  { value: "Asia/Tokyo",         label: "Tokyo Time (UTC+9)" },
+  { value: "Australia/Sydney",   label: "Sydney Time (UTC+10)" },
 ];
+
+const COUNTRY_TIMEZONE: Record<string, string> = {
+  LK: "Asia/Colombo",
+  US: "America/New_York",
+  GB: "Europe/London",
+  IN: "Asia/Kolkata",
+  AU: "Australia/Sydney",
+  CA: "America/Toronto",
+  SG: "Asia/Singapore",
+  MY: "Asia/Kuala_Lumpur",
+};
 
 export default function RegionalSettingsSection({
   country,
@@ -63,6 +77,12 @@ export default function RegionalSettingsSection({
     const selectedCountry = COUNTRIES.find((c) => c.code === newCountry);
     if (selectedCountry) {
       onCurrencyChange(selectedCountry.currency);
+    }
+
+    // Auto-update timezone based on country
+    const tz = COUNTRY_TIMEZONE[newCountry];
+    if (tz) {
+      onTimezoneChange(tz);
     }
   };
 

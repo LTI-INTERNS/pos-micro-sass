@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import ToggleSwitch from "../../common/ToggleSwitch";
-import { Monitor, Mail, ShoppingBag, Barcode, X } from "lucide-react";
+import { Monitor, Mail, ShoppingBag, Barcode, X, ExternalLink } from "lucide-react";
 
 type Feature = {
   id: string;
@@ -11,6 +12,7 @@ type Feature = {
   description: string;
   tooltip?: string;
   learnMoreUrl?: string;
+  href?: string; // in-app navigation link
 };
 
 type FeaturesSectionProps = {
@@ -32,6 +34,7 @@ const FEATURES: Feature[] = [
     tooltip:
       "Connect a secondary screen to your POS so customers can see itemized orders, totals, and payment prompts in real time. Supports most USB and HDMI display hardware.",
     learnMoreUrl: "#",
+    href: "/customer-display", // 👈 update to your actual route
   },
   {
     id: "lowStockNotifications",
@@ -73,7 +76,6 @@ function LearnMoreTooltip({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -178,7 +180,21 @@ export default function FeaturesSection({ features, onToggle }: FeaturesSectionP
               <div className="flex items-start gap-4 flex-1">
                 <div className="mt-1">{feature.icon}</div>
                 <div className="flex-1">
-                  <h3 className="text-base font-medium text-gray-900">{feature.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-medium text-gray-900">{feature.title}</h3>
+                    {feature.href && (
+                      <Link
+                        href={feature.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open customer display"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-orange-500 hover:text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200 rounded-md px-2 py-0.5 transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Open
+                      </Link>
+                    )}
+                  </div>
                   <div className="text-sm text-gray-500 mt-1">
                     {feature.description}{" "}
                     {feature.learnMoreUrl && feature.tooltip && (
