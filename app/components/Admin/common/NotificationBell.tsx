@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
 import NotificationPanel, { type Notification } from "./NotificationPanel";
 import NotificationMessagePopup from "./NotificationMessagePopup";
@@ -11,6 +11,7 @@ import ProductNotificationPopup, {
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const [pulse, setPulse] = useState(false);
 
   // message popup state
   const [popupOpen, setPopupOpen] = useState(false);
@@ -64,6 +65,14 @@ export default function NotificationBell() {
     () => notifications.filter((n) => !n.read).length,
     [notifications]
   );
+  const prevUnread = useRef(unreadCount);
+  useEffect(() => {
+    if (unreadCount > prevUnread.current) {
+      setPulse(true);
+      setTimeout(() => setPulse(false), 1000);
+    }
+    prevUnread.current = unreadCount;
+  }, [unreadCount]);
 
   const markAsRead = (id: number) => {
     setNotifications((prev) =>
@@ -75,14 +84,10 @@ export default function NotificationBell() {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  // open correct popup depending on notification payload
   const openMessagePopup = (n: Notification) => {
     markAsRead(n.id);
-
-    // Close panel (clean UX)
     setOpen(false);
 
-    // If product payload exists → open product popup
     if (n.product) {
       setProductData({
         ...n.product,
@@ -93,27 +98,45 @@ export default function NotificationBell() {
       return;
     }
 
-    // otherwise open normal message popup
     setSelected(n);
     setPopupOpen(true);
   };
 
   return (
     <div className="relative">
+      {unreadCount > 0 && (
       <button
         type="button"
         onClick={() => setOpen((s) => !s)}
-        className="relative bg-gray-100 hover:bg-gray-200 p-2 rounded-full"
         title="Notifications"
+        className="relative bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-all active:scale-90"
       >
-        <Bell className="text-gray-800 cursor-pointer" size={18} />
-
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
-            {unreadCount}
-          </span>
-        )}
+        <Bell
+          className="text-gray-800 cursor-pointer"
+          size={18}
+          style={{
+            animation: pulse ? "bellShake 0.5s ease-in-out" : "none",
+          }}
+        />
+        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
       </button>
+      )}
+
+      <style>{`
+        @keyframes bellShake {
+          0%, 100% { transform: rotate(0deg); }
+          20% { transform: rotate(-12deg); }
+          40% { transform: rotate(12deg); }
+          60% { transform: rotate(-8deg); }
+          80% { transform: rotate(8deg); }
+        }
+        @keyframes pingOnce {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+      `}</style>
 
       {open && (
         <NotificationPanel
@@ -125,20 +148,18 @@ export default function NotificationBell() {
         />
       )}
 
-      {/* normal notification popup */}
       <NotificationMessagePopup
         open={popupOpen}
         data={selected}
         onClose={() => setPopupOpen(false)}
       />
 
-      {/*  product notification popup */}
       <ProductNotificationPopup
         open={productPopupOpen}
         onClose={() => setProductPopupOpen(false)}
         initialValues={productData}
         onSave={(values) => {
-          console.log("check product from notification:", values);
+          console.log("Product from notification:", values);
           setProductPopupOpen(false);
         }}
       />
