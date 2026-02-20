@@ -14,7 +14,7 @@ export type ProductApprovalData = {
   tax: number;
   stock: number;
   unit?: string;
-  description?: string;
+
   imageUrl?: string;
 
   // Branch info 
@@ -70,7 +70,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         tax: 5,
         stock: 100,
         unit: "pcs",
-        description: "A sleek wireless mouse with ergonomic design.",
         imageUrl: "/Discount.png",
         branchId: 1,
         branchName: "Colombo Branch",
