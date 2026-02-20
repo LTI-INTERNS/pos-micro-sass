@@ -190,10 +190,11 @@ export default function NotificationPanel({
 
 
                     </div>
-
+                  {/*}
                     <p className={`text-xs leading-snug ${n.read ? "text-gray-400 font-normal" : "text-gray-800 font-medium"}`}>
                       {n.message}
-                    </p>
+                    </p> 
+                    */}
 
                     {n.productApproval?.productName && (
                       <p className="text-[10px] text-orange-500 font-semibold mt-0.5">
