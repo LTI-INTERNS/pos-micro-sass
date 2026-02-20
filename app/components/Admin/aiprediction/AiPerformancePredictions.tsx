@@ -5,14 +5,12 @@ type Props = {
   title?: string;
   items: PerformanceItem[];
   className?: string;
-  listHeightClassName?: string;
 };
 
 export default function PerformancePredictions({
   title = "Performance Predictions",
   items,
   className,
-  listHeightClassName = "max-h-[100vh]",
 }: Props) {
   return (
     <section
@@ -23,19 +21,10 @@ export default function PerformancePredictions({
     >
       <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
 
-      <div
-        className={[
-          "mt-5 space-y-5",
-          listHeightClassName,
-          "overflow-y-auto scroll-smooth pr-2",
-          "snap-y snap-mandatory",
-          "scrollbar-hide", 
-        ].join(" ")}
-      >
+      {/* ✅ Normal vertical layout (no internal scroll / no snap) */}
+      <div className="mt-5 space-y-5">
         {items.map((item) => (
-          <div key={item.id} className="snap-start">
-            <PerformanceCard item={item} />
-          </div>
+          <PerformanceCard key={item.id} item={item} />
         ))}
       </div>
     </section>
