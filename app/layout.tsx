@@ -3,6 +3,7 @@ import { Geist_Mono, Poppins } from "next/font/google";
 import { CurrencyProvider } from "@/app/context/CurrencyContext";
 import { ImageProvider } from "@/app/context/ImageContext";
 import { PosSettingsProvider } from "@/app/context/PosSettingsContext";
+import { NotificationsProvider } from "@/app/context/NotificationsContext";
 
 import "./globals.css";
 
@@ -36,7 +37,9 @@ export default function RootLayout({
         <CurrencyProvider>
           <ImageProvider>
             <PosSettingsProvider>
-              {children}
+              <NotificationsProvider>
+                {children}
+              </NotificationsProvider>
             </PosSettingsProvider>
           </ImageProvider>
         </CurrencyProvider>
