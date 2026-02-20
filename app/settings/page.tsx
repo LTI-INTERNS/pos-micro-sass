@@ -7,12 +7,14 @@ import DiscountContent from "@/app/components/Admin/settings/Discount/DiscountCo
 import PersonalContent from "@/app/components/Admin/settings/PersonalDetails/PersonalContent";
 import SubscriptionPlanCards from "@/app/components/Admin/settings/subscriptionplan/SubscriptionPlanCards";
 import CompanyDetailsForm from "@/app/components/Admin/settings/companydetails/CompanyDetailsContent";
+import AdditionalSettingsContent from "@/app/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 
 const TABS = [
-  { id: "personalDetails", label: "Personal Details" },
-  { id: "discountManagement", label: "Discount Managemet" },
-  { id: "companuDetails", label: "Company Details" },
-  { id: "subscriptionPlan", label: "Subscription Plan" },
+  { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
+  { id: "discountManagement", label: "Discount Managemet", shortLabel: "Discount" },
+  { id: "companuDetails", label: "Company Details", shortLabel: "Company" },
+  { id: "subscriptionPlan", label: "Subscription Plan", shortLabel: "Sub. Plan" },
+  { id: "settings", label: "System Settings", shortLabel: "System" },
 ];
 
 export default function settingPage() {
@@ -52,6 +54,7 @@ export default function settingPage() {
             }}
           />
         }
+        {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>
     </DashboardLayout>
   );

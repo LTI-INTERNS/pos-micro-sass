@@ -17,7 +17,7 @@ export default function AddCustomerForm({
   onSubmit
 }: AddCustomerFormProps) {
   const handleAdminSubmit = (values: CustomerFormValues) => {
-    // 🔹 pos logic here
+    // pos logic here
     console.log("Pos customer:", values);
 
     onSubmit?.(values);

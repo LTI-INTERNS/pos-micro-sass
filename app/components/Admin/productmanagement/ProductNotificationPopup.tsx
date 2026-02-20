@@ -379,40 +379,23 @@ export default function ProductNotificationPopup({
                 }`}
             />
 
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                {descError && (
-                  <div className="flex items-center gap-1.5">
-                    <AlertCircle size={12} className="text-red-500 flex-shrink-0" />
-                    <p className="text-xs text-red-600 font-medium">{descError}</p>
-                  </div>
-                )}
-              </div>
-              <p
-                className={`text-[10px] flex-shrink-0 ${
-                  description.length > 450 ? "text-red-400" : "text-gray-400"
-                }`}
-              >
-                {description.length}/500
-              </p>
-            </div>
-
-            <div className="flex gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => { setMode(null); setDescError(""); }}
-                className="flex-1 py-2.5 rounded-full border border-gray-300 text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleReject}
-                className="flex-1 py-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Reject & Notify
-              </button>
-            </div>
+        <div className="flex items-center justify-center">
+          <div className="w-[420px]">
+          <PopupActions
+            actions={[
+              {
+                label: "Accept",
+                onClick: handleAccept,
+                variant: "secondary",
+              },
+              {
+                label: "Reject & Notify",
+                onClick: handleReject,
+                variant: "primary",
+                disabled: description.trim().length === 0, // reject needs reason
+              },
+            ]}
+          />
           </div>
         )}
       </div>

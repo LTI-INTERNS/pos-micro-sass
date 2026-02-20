@@ -1,5 +1,7 @@
 "use client";
+
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable"; 
+import { useCurrency } from "@/app/context/CurrencyContext";
 
 export type Customer = {
   id: number;
@@ -16,6 +18,15 @@ type Props = {
   setSelectedCustomer: (c: Customer | null) => void;
 };
 export default function CustomerTable({ customers, selectedCustomer, setSelectedCustomer }: Props) {
+  const { currency } = useCurrency();
+
+  const formatAmount = (value: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 0,
+    }).format(value);
+
   const columns: Column<Customer>[] = [
     {key: "id",label: "ID",},
     {key: "name",label: "Name",},
@@ -23,7 +34,12 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
     {key: "promoCard",label: "Promo Card",},
     {key: "points",label: "Points",},
     {key: "email",label: "Email",},
-    {key: "outstanding",label: "Outstanding", align: "right",},
+    {
+      key: "outstanding",
+      label: "Outstanding",
+      align: "right",
+      render: (row) => formatAmount(row.outstanding),
+    },
   ];
 
   return (

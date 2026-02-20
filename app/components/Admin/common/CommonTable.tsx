@@ -15,7 +15,7 @@ type Props<T> = {
   columns: Column<T>[];
   emptyMessage?: string;
   selectedRowId?: string | number;
-  onSelectRow?: (row: T | null) => void; // allow deselect
+  onSelectRow?: (row: T | null) => void; 
 };
 
 const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {

@@ -128,10 +128,10 @@ export default function OrderPaymentModal({
   // animation when value is auto-corrected
   const [amountNudge, setAmountNudge] = useState(false);
 
-  // ✅ Remaining glow pulse (no bounce)
+  // Remaining glow pulse (no bounce)
   const [remainingNudge, setRemainingNudge] = useState(false);
 
-  // ✅ Done button pulse
+  // Done button pulse
   const [donePulse, setDonePulse] = useState(false);
 
   // remember last card type for split label
@@ -235,17 +235,17 @@ export default function OrderPaymentModal({
 
   const isFullyPaid = remainingToPay <= 0;
 
-  // ✅ IMPORTANT: lock only when fully paid AND NOT in forceEditable mode
+  //  IMPORTANT: lock only when fully paid AND NOT in forceEditable mode
   const lockInputs = isFullyPaid && !forceEditable;
 
-  // ✅ once card payment is added, lock card type + tax buttons until removed
+  //  once card payment is added, lock card type + tax buttons until removed
   const lockCardConfig = cardPaid > EPS;
 
-  // ✅ Disable methods based on who fully covered the bill
+  //  Disable methods based on who fully covered the bill
   const cashCoversBill = cashPaid > EPS && cardPaid <= EPS && remainingToPay <= 0;
   const cardCoversBill = cardPaid > EPS && remainingToPay <= 0;
 
-  // ✅ Done auto-pulse every 1s while fully paid (works even after returning from confirmation)
+  //  Done auto-pulse every 1s while fully paid (works even after returning from confirmation)
   useEffect(() => {
     if (!open) return;
     if (!isFullyPaid) return;
@@ -313,7 +313,7 @@ export default function OrderPaymentModal({
     return nextRaw;
   }
 
-  // ✅ when moving to card section, suggest total remaining with tax automatically
+  //  when moving to card section, suggest total remaining with tax automatically
   useEffect(() => {
     if (!open) return;
     if (!isCard) return;
@@ -351,7 +351,7 @@ export default function OrderPaymentModal({
         return;
       }
 
-      // ✅ ensure they can’t pay less than suggested
+      //  ensure they can’t pay less than suggested
       if (n < maxAllowed) {
         setAmountDraft(maxAllowed.toFixed(2));
 
@@ -604,14 +604,14 @@ export default function OrderPaymentModal({
                   const isSelected = selectedMethod === pm.id;
 
                   const disableThis =
-                    // ✅ If cash alone covered full bill → disable both card methods
+                    //  If cash alone covered full bill → disable both card methods
                     (cashCoversBill && (pm.id === "Visa" || pm.id === "Master")) ||
-                    // ✅ If any card method covered full bill → disable cash + the other card method
+                    //  If any card method covered full bill → disable cash + the other card method
                     (cardCoversBill &&
                       (pm.id === "Cash" ||
                         ((pm.id === "Visa" || pm.id === "Master") &&
                           pm.id !== selectedMethod))) ||
-                    // ✅ Once card payment added, can’t switch card types until removed
+                    //  Once card payment added, can’t switch card types until removed
                     (lockCardConfig &&
                       (pm.id === "Visa" || pm.id === "Master") &&
                       pm.id !== selectedMethod);
@@ -843,7 +843,7 @@ export default function OrderPaymentModal({
           }
         }
 
-        /* ✅ glow only (no bounce/scale) */
+        /*  glow only (no bounce/scale) */
         .remaining-glow {
           border-radius: 10px;
           padding: 10px 10px;

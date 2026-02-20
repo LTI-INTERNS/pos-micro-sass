@@ -44,7 +44,7 @@ export default function RegistrationPage() {
   const { save, load, clear } = useRegistrationPersistence();
 
   const [currentStep,    setCurrentStep]    = useState(1);
-  const [completedSteps, setCompletedSteps] = useState(0); // highest step fully submitted
+  const [completedSteps, setCompletedSteps] = useState(0);
   const [registrationData, setRegistrationData] = useState<RegistrationData>(DEFAULT_DATA);
   const [hydrated, setHydrated] = useState(false);
 

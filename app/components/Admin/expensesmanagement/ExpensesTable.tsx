@@ -1,5 +1,8 @@
 "use client";
+
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable"; 
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 export type Expenses = {
   id: string;
@@ -16,6 +19,8 @@ type Props = {
 };
 
 export default function ExpensesTable({ Expenses }: Props) {
+  const { currency } = useCurrency();
+
   const columns: Column<Expenses>[] = [
     {
       key: "id",
@@ -33,9 +38,10 @@ export default function ExpensesTable({ Expenses }: Props) {
       key: "description",
       label: "Description",
     },
-    {
-      key: "amount",
-      label: "Amount (LKR)",
+    { 
+      key: "amount", 
+      label: "Amount", 
+      render: (row) => formatCurrency(row.amount, currency) 
     },
     {
       key: "payment",
