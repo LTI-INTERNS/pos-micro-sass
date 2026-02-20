@@ -71,7 +71,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         stock: 100,
         unit: "pcs",
         description: "A sleek wireless mouse with ergonomic design.",
-        imageUrl: "/images/products/wireless-mouse.jpg",
+        imageUrl: "/Discount.png",
         branchId: 1,
         branchName: "Colombo Branch",
         branchManager: "Nimal Perera",

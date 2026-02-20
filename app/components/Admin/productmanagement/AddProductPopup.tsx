@@ -4,6 +4,9 @@ import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
 import { useNotifications } from "../../../context/NotificationsContext";
 
+// ─── FIX 1: Add the missing props for userRole, branchName, branchManager ─────
+// These were used inside the component but never declared as props,
+// causing "not defined" runtime errors alongside handleCancel.
 
 type SoldBy = "each" | "volume_weight";
 
@@ -26,6 +29,10 @@ type AddProductPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (values: ProductValues) => void;
+  // ↓ These three were missing from the props type — added now
+  userRole?: "admin" | "cashier" | "superadmin" | "branch_manager";
+  branchName?: string;
+  branchManager?: string;
 };
 
 const MAX_IMAGE_SIZE_MB = 5;
@@ -41,7 +48,12 @@ export default function AddProductPopup({
   open,
   onClose,
   onSave,
+  userRole,
+  branchName = "",
+  branchManager = "",
 }: AddProductPopupProps) {
+  const { addNotification } = useNotifications();
+
   const [values, setValues] = React.useState<ProductValues>({
     name: "",
     price: "",
@@ -59,6 +71,7 @@ export default function AddProductPopup({
   const [imageError, setImageError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // Reset all state when the popup opens
   React.useEffect(() => {
     if (!open) return;
     setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
@@ -68,6 +81,18 @@ export default function AddProductPopup({
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [open]);
+
+  // ─── FIX 2: Define handleCancel — resets form state then closes ───────────
+  // This was referenced at line 195 (onClose={handleCancel}) but never defined.
+  const handleCancel = () => {
+    setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
+    setErrors({});
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    onClose();
+  };
 
   const setField = (name: keyof ProductValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -105,6 +130,8 @@ export default function AddProductPopup({
       newErrors.discount = "Discount must be a valid number";
     } else if (Number(values.discount) < 0) {
       newErrors.discount = "Discount cannot be negative";
+    } else if (Number(values.discount) > 100) {
+      newErrors.discount = "Discount cannot exceed 100%";
     }
 
     if (!values.tax.trim()) {
@@ -113,6 +140,8 @@ export default function AddProductPopup({
       newErrors.tax = "Tax must be a valid number";
     } else if (Number(values.tax) < 0) {
       newErrors.tax = "Tax cannot be negative";
+    } else if (Number(values.tax) > 100) {
+      newErrors.tax = "Tax cannot exceed 100%";
     }
 
     if (!values.stock.trim()) {
@@ -121,6 +150,8 @@ export default function AddProductPopup({
       newErrors.stock = "Stock must be a valid number";
     } else if (Number(values.stock) < 0) {
       newErrors.stock = "Stock cannot be negative";
+    } else if (!Number.isInteger(Number(values.stock))) {
+      newErrors.stock = "Stock must be a whole number";
     }
 
     if (values.soldBy === "volume_weight" && !values.unit.trim()) {
@@ -155,6 +186,9 @@ export default function AddProductPopup({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ─── FIX 3: productApproval fields now use number types (not strings) ──────
+  // price, discount, tax, stock must be numbers to match the updated
+  // ProductApprovalData type in NotificationsContext.tsx.
   const handleSave = () => {
     if (!validateForm()) return;
     const payload: ProductValues = { ...values, imageUrl: imagePreview || "" };
@@ -166,18 +200,17 @@ export default function AddProductPopup({
         productApproval: {
           id: Date.now(),
           productName: values.name.trim(),
-          price: values.price,
-          discount: values.discount,
-          tax: values.tax,
-          stock: values.stock,
+          price: Number(values.price),
+          discount: Number(values.discount),
+          tax: Number(values.tax),
+          stock: Number(values.stock),
           unit: values.soldBy === "volume_weight" ? values.unit : "each",
           imageUrl: imagePreview || "",
+          branchId: 0,
           branchName,
           branchManager,
-          submittedAt: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          submittedBy: branchManager,
+          submittedAt: new Date().toISOString(),
           status: "pending",
         },
       });
@@ -186,7 +219,6 @@ export default function AddProductPopup({
     onSave(payload);
     onClose();
   };
-
 
   return (
     <ModalShell
@@ -225,7 +257,7 @@ export default function AddProductPopup({
           <div className="flex-1 space-y-1">
             <FormField
               label="Discount"
-              placeholder="Enter discount"
+              placeholder="Enter discount %"
               value={values.discount}
               onChange={(v) => setField("discount", v)}
               type="number"
@@ -238,7 +270,7 @@ export default function AddProductPopup({
           <div className="flex-1 space-y-1">
             <FormField
               label="Tax"
-              placeholder="Enter tax"
+              placeholder="Enter tax %"
               value={values.tax}
               onChange={(v) => setField("tax", v)}
               type="number"
@@ -359,7 +391,7 @@ export default function AddProductPopup({
           <div className="w-[420px]">
             <PopupActions
               actions={[
-                { label: "Cancel", onClick: onClose, variant: "secondary" },
+                { label: "Cancel", onClick: handleCancel, variant: "secondary" },
                 {
                   label: userRole === "branch_manager" ? "Submit for Approval" : "Save",
                   onClick: handleSave,
