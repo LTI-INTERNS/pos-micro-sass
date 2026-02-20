@@ -1,7 +1,10 @@
+"use client";
+
 import * as React from "react";
 import ModalShell from "../common/ModalShell";
 import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
+import { useNotifications } from "@/app/components/Admin/notifications/NotificationsContext";
 
 type ProductValues = {
   name: string;
@@ -20,7 +23,13 @@ type AddProductPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (values: ProductValues) => void;
+
+  // Pass role + branch info from your auth/session
+  userRole?: "admin" | "branch_manager" | string;
+  branchName?: string;
+  branchManager?: string;
 };
+
 
 const MAX_IMAGE_SIZE_MB = 5;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
@@ -29,7 +38,12 @@ export default function AddProductPopup({
   open,
   onClose,
   onSave,
+  userRole = "branch_manager",
+  branchName = "Unknown Branch",
+  branchManager = "Unknown Manager",
 }: AddProductPopupProps) {
+  const { addNotification } = useNotifications();
+
   const [values, setValues] = React.useState<ProductValues>({
     name: "",
     price: "",
@@ -172,15 +186,32 @@ export default function AddProductPopup({
   const handleSave = () => {
     if (!validateForm()) return;
 
-    const payload: ProductValues = {
-      ...values,
-      imageUrl: imagePreview || "",
-    };
+    const payload: ProductValues = { ...values, imageUrl: imagePreview || "" };
+
+    if (userRole === "branch_manager") {
+      addNotification({
+        type: "approval_pending",
+        message: `New product request from ${branchName} — "${values.name.trim()}" awaiting approval`,
+        productApproval: {
+          id: Date.now(),
+          productName: values.name.trim(),
+          price: values.price,
+          discount: values.discount,
+          tax: values.tax,
+          stock: values.stock,
+          imageUrl: imagePreview || "",
+          branchName,
+          branchManager,
+          submittedAt: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          status: "pending",
+        },
+      });
+    }
 
     onSave(payload);
-  };
-
-  const handleCancel = () => {
     onClose();
   };
 
@@ -188,7 +219,7 @@ export default function AddProductPopup({
     <ModalShell
       open={open}
       title="Add New Product"
-      onClose={handleCancel}
+      onClose={onClose}
       widthClassName="w-[980px] max-w-[92vw]"
     >
       <form
@@ -287,13 +318,25 @@ export default function AddProductPopup({
           )}
         </div>
 
-        
+        {userRole === "branch_manager" && (
+          <div className="flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3">
+            <span className="text-orange-400 text-base">📋</span>
+            <p className="text-xs text-orange-600 font-medium">
+              This product will be sent to admin for approval before it goes live.
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-center pt-4">
           <div className="w-[420px]">
             <PopupActions
               actions={[
-                { label: "Cancel", onClick: handleCancel, variant: "secondary" },
-                { label: "Save", onClick: handleSave, variant: "primary" },
+                { label: "Cancel", onClick: onClose, variant: "secondary" },
+                {
+                  label: userRole === "branch_manager" ? "Submit for Approval" : "Save",
+                  onClick: handleSave,
+                  variant: "primary",
+                },
               ]}
             />
           </div>
