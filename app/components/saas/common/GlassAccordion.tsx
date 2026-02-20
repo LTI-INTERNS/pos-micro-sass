@@ -14,7 +14,6 @@ type GlassAccordionProps = {
   /** first item open by default */
   defaultOpenId?: string;
 
-  /** optional class */
   className?: string;
 };
 

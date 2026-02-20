@@ -21,7 +21,7 @@ export function ImageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem("app_background_image");
     if (saved) setBackgroundImageState(saved);
-    setMounted(true); // ✅ only show children after localStorage is read
+    setMounted(true); 
   }, []);
 
   const setBackgroundImage = (url: string) => {
@@ -29,7 +29,7 @@ export function ImageProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("app_background_image", url);
   };
 
-  if (!mounted) return null; // ✅ blocks render until correct image is known
+  if (!mounted) return null;
 
   return (
     <ImageContext.Provider value={{ backgroundImage, setBackgroundImage }}>

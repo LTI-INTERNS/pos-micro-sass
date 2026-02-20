@@ -1,7 +1,7 @@
 import React from "react";
 
 type Props = {
-  value: number; // can be > 100; we clamp visually
+  value: number;
   tone?: "orange" | "green" | "gray";
   className?: string;
 };

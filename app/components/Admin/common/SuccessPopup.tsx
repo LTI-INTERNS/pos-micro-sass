@@ -41,9 +41,7 @@ export default function SuccessPopup({
     >
       <div className="flex flex-col items-center text-center pb-2">
 
-        {/* Animated check circle */}
         <div className="relative flex items-center justify-center mb-6">
-          {/* Glow ring */}
           <div
             className="absolute rounded-full ease-out"
             style={{
@@ -56,7 +54,6 @@ export default function SuccessPopup({
             }}
           />
 
-          {/* Orange circle */}
           <div
             className="relative flex items-center justify-center rounded-full bg-orange-500 shadow-lg ease-out"
             style={{
@@ -68,7 +65,6 @@ export default function SuccessPopup({
               opacity: animateCheck ? 1 : 0,
             }}
           >
-            {/* Checkmark SVG with stroke animation */}
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -96,17 +92,13 @@ export default function SuccessPopup({
           </div>
         </div>
 
-        {/* Title — no animation */}
         <h2 className="text-2xl font-bold text-gray-900 mb-1">{title}</h2>
         {message && <p className="text-sm text-gray-400 mb-4">{message}</p>}
 
-        {/* Divider — no animation */}
         <div className="w-full border-t border-gray-100 my-4" />
 
-        {/* Sub text — no animation */}
         {subText && <p className="text-sm text-gray-400 mb-6">{subText}</p>}
 
-        {/* OK Button — no animation */}
         <div className="w-full">
           <PopupActions
             actions={[

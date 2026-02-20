@@ -13,7 +13,7 @@ const PRESET_IMAGES = [
 ];
 
 const DEFAULT_IMAGE_ID = "bg1";
-const DEFAULT_IMAGE_URL = "/backgrounds/mount.png"; // ✅ single source of truth for default
+const DEFAULT_IMAGE_URL = "/backgrounds/mount.png"; 
 
 type SystemImageSectionProps = {
   currentImageId: string | null;
@@ -78,7 +78,7 @@ export default function SystemImageSection({
         Choose a background image for your POS system display.
       </p>
 
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {PRESET_IMAGES.map((img) => {
           const selected = isSelected(img.id);
           return (
@@ -107,7 +107,6 @@ export default function SystemImageSection({
           );
         })}
 
-        {/* Upload box */}
         <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -132,8 +131,8 @@ export default function SystemImageSection({
                 </>
             ) : (
                 <div className="flex flex-col items-center justify-center gap-2 text-orange-500">
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center group-hover:scale-105 transition-transform">
-                    <Upload className="w-5 h-5" />
+                <div className="w-5 h-5 rounded-full bg-orange-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                    <Upload className="w-3 h-3" />
                 </div>
 
                 <span className="text-xs font-semibold tracking-wide">

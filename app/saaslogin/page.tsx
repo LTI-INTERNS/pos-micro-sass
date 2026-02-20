@@ -93,7 +93,7 @@ export default function LoginPage() {
 
   return (
     <CommonLayout navbar={<Navigation />} >
-      {/*space under fixed navbar */}
+      
       <div className="pt-5 pb-20 px-4">
         <GlassBackground>
           <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FeaturesSection from "./FeaturesSection";
 import RegionalSettingsSection from "./RegionalSettingsSection";
 import LoyaltySettingsSection from "./LoyaltySettingsSection";
@@ -8,23 +8,30 @@ import ReceiptCustomizationSection from "./ReceiptCustomizationSection";
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import SystemImageSection from "./SystemImageSection";
-import SuccessPopup from "@/app/components/Admin/common/SuccessPopup"
+import SuccessPopup from "@/app/components/Admin/common/SuccessPopup";
+import { usePosSettings } from "@/app/context/PosSettingsContext";
 
 export default function AdditionalSettingsContent() {
   const { currency, setCurrency } = useCurrency();
+  const { posSettings, setPosSettings } = usePosSettings();
 
   const [showSuccess, setShowSuccess] = useState(false);
-
-  // ✅ null here — SystemImageSection owns the default logic
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
   const [systemImageUrl, setSystemImageUrl] = useState<string | null>(null);
 
   const [features, setFeatures] = useState({
-    customerDisplays: false,
+    customerDisplays: true,
     lowStockNotifications: false,
     negativeStockAlerts: false,
     weightEmbeddedBarcodes: false,
   });
+
+  useEffect(() => {
+    setFeatures((prev) => ({
+      ...prev,
+      customerDisplays: posSettings.customerDisplayEnabled,
+    }));
+  }, [posSettings.customerDisplayEnabled]);
 
   const [country, setCountry] = useState("LK");
   const [timezone, setTimezone] = useState("Asia/Colombo");
@@ -40,6 +47,10 @@ export default function AdditionalSettingsContent() {
 
   const handleFeatureToggle = (featureId: string, value: boolean) => {
     setFeatures((prev) => ({ ...prev, [featureId]: value }));
+
+    if (featureId === "customerDisplays") {
+      setPosSettings({ customerDisplayEnabled: value });
+    }
   };
 
   const handleSave = () => {
@@ -113,6 +124,7 @@ export default function AdditionalSettingsContent() {
           className="px-8"
         />
       </div>
+
       <SuccessPopup
         open={showSuccess}
         title="Settings Saved!"

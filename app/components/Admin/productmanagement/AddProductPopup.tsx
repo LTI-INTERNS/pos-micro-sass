@@ -353,7 +353,6 @@ export default function AddProductPopup({
           )}
         </div>
 
-        {/* ── Actions ── */}
         <div className="flex items-center justify-center pt-4">
           <div className="w-[420px]">
             <PopupActions

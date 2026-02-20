@@ -14,7 +14,7 @@ export default function AddCustomerForm({
   onClose,
 }: AddCustomerFormProps) {
   const handleAdminSubmit = (values: CustomerFormValues) => {
-    // 🔹 Admin-specific logic here
+    // Admin-specific logic here
     console.log("Admin customer:", values);
 
     // API call / DB save can go here
