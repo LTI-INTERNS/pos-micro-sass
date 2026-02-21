@@ -10,10 +10,30 @@ import { useCurrency } from "@/app/context/CurrencyContext";
 import SystemImageSection from "./SystemImageSection";
 import SuccessPopup from "@/app/components/Admin/common/SuccessPopup";
 import { usePosSettings } from "@/app/context/PosSettingsContext";
+import { useReceiptSettings } from "@/app/context/ReceiptSettingsContext";
+
+type LocalReceiptSettings = {
+  headerText: string;
+  footerMessage: string;
+  showLogo: boolean;
+  showTaxNumber: boolean;
+  taxNumber: string;
+  showCustomerDetails: boolean;
+};
+
+const defaultReceiptSettings: LocalReceiptSettings = {
+  headerText: "",
+  footerMessage: "",
+  showLogo: true,
+  showTaxNumber: false,
+  taxNumber: "",
+  showCustomerDetails: false,
+};
 
 export default function AdditionalSettingsContent() {
   const { currency, setCurrency, useCents, setUseCents } = useCurrency();
   const { posSettings, setPosSettings } = usePosSettings();
+  const { setReceiptSettings: setReceiptSettingsContext } = useReceiptSettings();
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
@@ -37,17 +57,15 @@ export default function AdditionalSettingsContent() {
   const [timezone, setTimezone] = useState("Asia/Colombo");
   const [pointsEarningPercentage, setPointsEarningPercentage] = useState(5);
 
-  const [receiptSettings, setReceiptSettings] = useState({
-    headerText: "",
-    footerMessage: "",
-    showLogo: true,
-    showTaxNumber: false,
-    taxNumber: "",
+  // ✅ Explicitly typed useState — prev is inferred correctly in all callbacks
+  const [receiptSettings, setReceiptSettings] = useState<LocalReceiptSettings>(() => {
+    if (typeof window === "undefined") return defaultReceiptSettings;
+    const saved = localStorage.getItem("receiptSettings");
+    return saved ? { ...defaultReceiptSettings, ...JSON.parse(saved) } : defaultReceiptSettings;
   });
 
   const handleFeatureToggle = (featureId: string, value: boolean) => {
     setFeatures((prev) => ({ ...prev, [featureId]: value }));
-
     if (featureId === "customerDisplays") {
       setPosSettings({ customerDisplayEnabled: value });
     }
@@ -62,6 +80,21 @@ export default function AdditionalSettingsContent() {
       systemBackground: { imageId: systemImageId, imageUrl: systemImageUrl },
     };
     console.log("Saving settings:", settings);
+
+    // ✅ Persist to localStorage — survives page refresh
+    localStorage.setItem("receiptSettings", JSON.stringify(receiptSettings));
+
+    // ✅ Push to context — updates receipt instantly across all components
+    setReceiptSettingsContext({
+      headerText: receiptSettings.headerText,
+      footerMessage: receiptSettings.footerMessage,
+      showLogo: receiptSettings.showLogo,
+      showTaxNumber: receiptSettings.showTaxNumber,
+      taxNumber: receiptSettings.taxNumber,
+      showCustomerDetails: receiptSettings.showCustomerDetails,
+      customerDetails: "",
+    });
+
     setShowSuccess(true);
   };
 
@@ -74,7 +107,7 @@ export default function AdditionalSettingsContent() {
         currency={currency}
         timezone={timezone}
         useCents={useCents}
-        onUseCentsChange={setUseCents} // now updates CurrencyContext
+        onUseCentsChange={setUseCents}
         onCountryChange={setCountry}
         onCurrencyChange={setCurrency}
         onTimezoneChange={setTimezone}
@@ -91,6 +124,7 @@ export default function AdditionalSettingsContent() {
         showLogo={receiptSettings.showLogo}
         showTaxNumber={receiptSettings.showTaxNumber}
         taxNumber={receiptSettings.taxNumber}
+        showCustomerDetails={receiptSettings.showCustomerDetails}
         onHeaderTextChange={(value) =>
           setReceiptSettings((prev) => ({ ...prev, headerText: value }))
         }
@@ -105,6 +139,9 @@ export default function AdditionalSettingsContent() {
         }
         onTaxNumberChange={(value) =>
           setReceiptSettings((prev) => ({ ...prev, taxNumber: value }))
+        }
+        onShowCustomerDetailsChange={(value) =>
+          setReceiptSettings((prev) => ({ ...prev, showCustomerDetails: value }))
         }
       />
 

@@ -2,7 +2,12 @@
 
 import React, { useMemo } from "react";
 import OrderTable, { Column } from "../Admin/common/CommonTable";
-import { Printer } from "lucide-react";
+import { Printer, Mail } from "lucide-react";
+import { generateReceiptHTML } from "@/app/utils/generateReceiptHTML";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
+import { useReceiptSettings } from "@/app/context/ReceiptSettingsContext";
+import { useStoreInfo } from "@/app/context/StoreInfoContext";
 
 export type CommonOrderItem = {
   id: number | string;
@@ -15,14 +20,13 @@ export type CommonOrderItem = {
 export type CommonPaymentSummary = {
   orderNo: string | number;
   currencyCode?: string;
-
   discountValue: number;
   cardTax: number;
   grandTotal: number;
-
   paymentMethod: string;
   cashPaid: number;
   cardPaid: number;
+  customerEmail?: string;
 };
 
 export const commonColumns: Column<CommonOrderItem>[] = [
@@ -44,7 +48,6 @@ export const commonColumns: Column<CommonOrderItem>[] = [
 
 export function PaymentIcons({ paymentMethod }: { paymentMethod: string }) {
   const method = (paymentMethod || "").toLowerCase();
-
   const hasCash = method.includes("cash");
   const hasVisa = method.includes("visa");
   const hasMaster = method.includes("master");
@@ -53,7 +56,6 @@ export function PaymentIcons({ paymentMethod }: { paymentMethod: string }) {
   if (hasCash) icons.push({ src: "/Cash.png", alt: "Cash" });
   if (hasVisa) icons.push({ src: "/Visa.png", alt: "Visa" });
   if (hasMaster) icons.push({ src: "/Master.png", alt: "Master" });
-
   if (!icons.length) icons.push({ src: "/Cash.png", alt: "Payment" });
 
   return (
@@ -69,16 +71,10 @@ type Props<TItem extends CommonOrderItem> = {
   title: string;
   subtitle: string;
   orderNoLabel: string | number;
-
   items: TItem[];
   columns?: Column<TItem>[];
-
   payment: CommonPaymentSummary;
-
-  /** Left-side block inside the 2-column grid (Notes OR Payment method card, etc.) */
   leftBlock: React.ReactNode;
-
-  /** Right-side "secondary action" button next to receipt (Email / Add Email / nothing) */
   rightAction?: React.ReactNode;
 };
 
@@ -92,13 +88,114 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
   leftBlock,
   rightAction,
 }: Props<TItem>) {
+  const { receiptSettings: contextSettings } = useReceiptSettings();
+  const { storeInfo } = useStoreInfo(); // ✅ all store info from context
+  const { currency, useCents } = useCurrency();
+
   const itemsSubtotal = useMemo(
-    () =>
-      items.reduce((sum, it) => sum + (Number.isFinite(it.subtotal) ? it.subtotal : 0), 0),
+    () => items.reduce((sum, it) => sum + (Number.isFinite(it.subtotal) ? it.subtotal : 0), 0),
     [items]
   );
 
-  const c = payment.currencyCode ?? "LKR";
+  const c = payment.currencyCode ?? currency ?? "LKR";
+  const format = (value: number) => formatCurrency(value, c, useCents);
+
+  const receiptItems = useMemo(
+    () => items.map((it) => ({ name: it.name, qty: it.qty, price: it.price })),
+    [items]
+  );
+
+  function buildReceiptHTML() {
+    const now = new Date();
+
+    const absoluteLogoUrl = storeInfo.logoUrl
+    ? storeInfo.logoUrl.startsWith("http")
+      ? storeInfo.logoUrl                          // already absolute (e.g. S3/Cloudinary)
+      : `${window.location.origin}${storeInfo.logoUrl}` // e.g. http://localhost:3000/logo.png
+    : null;
+
+    return generateReceiptHTML({
+      // ✅ Receipt customization — from context (set by admin settings)
+      headerText: contextSettings.headerText,
+      footerMessage: contextSettings.footerMessage,
+      showLogo: contextSettings.showLogo,
+      showTaxNumber: contextSettings.showTaxNumber,
+      taxNumber: contextSettings.taxNumber,
+      showCustomerDetails: contextSettings.showCustomerDetails,
+      customerDetails: payment.customerEmail ?? "",
+      // ✅ Store info — from StoreInfoContext (will come from DB)
+      storeName: storeInfo.storeName,
+      branchName: storeInfo.branchName,
+      cashierName: storeInfo.cashierName, // ✅ was missing
+      telephone: storeInfo.telephone,
+      logoUrl: absoluteLogoUrl, 
+      // ✅ Order data
+      orderId: String(payment.orderNo),
+      date: now.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }),
+      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      items: receiptItems,
+      discount: payment.discountValue,
+      tax: payment.cardTax,
+      total: payment.grandTotal,
+      paymentMethod: payment.paymentMethod,
+      cashPaid: payment.cashPaid,
+      cardPaid: payment.cardPaid,
+      formatPrice: format,
+    });
+  }
+
+  function handleGetReceipt() {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    printWindow.document.open();
+    printWindow.document.write(buildReceiptHTML());
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      const images = printWindow.document.images;
+      let loaded = 0;
+
+      if (images.length === 0) {
+        printWindow.print();
+        printWindow.close();
+        return;
+      }
+
+      for (const img of images) {
+        if (img.complete) {
+          loaded++;
+        } else {
+          img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded === images.length) {
+              printWindow.print();
+              printWindow.close();
+            }
+          };
+        }
+      }
+
+      if (loaded === images.length) {
+        printWindow.print();
+        printWindow.close();
+      }
+    };
+  }
+
+  function handleEmailReceipt() {
+    const email = payment.customerEmail;
+    if (!email) return;
+    const subject = encodeURIComponent(`Your Receipt - Order #${payment.orderNo}`);
+    const body = encodeURIComponent(
+      `Dear Customer,\n\nPlease find your receipt for Order #${payment.orderNo}.\n\nTotal: ${c} ${payment.grandTotal.toFixed(2)}\nPayment Method: ${payment.paymentMethod}\n\nThank you for your purchase!`
+    );
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
+  }
 
   return (
     <>
@@ -108,7 +205,11 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
         <p className="text-xs text-slate-400 mt-1">Order #{orderNoLabel}</p>
       </div>
 
-      <OrderTable data={items} columns={(columns as Column<TItem>[]) ?? (commonColumns as Column<TItem>[])} emptyMessage="No order items found" />
+      <OrderTable
+        data={items}
+        columns={(columns as Column<TItem>[]) ?? (commonColumns as Column<TItem>[])}
+        emptyMessage="No order items found"
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* LEFT */}
@@ -118,30 +219,22 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
         <div className="space-y-3 text-sm">
           <div className="flex justify-between text-slate-500">
             <span>SUBTOTAL (Items)</span>
-            <span className="text-black">
-              {c} {itemsSubtotal.toFixed(2)}
-            </span>
+            <span className="text-black">{c} {itemsSubtotal.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between text-slate-500">
             <span>ORDER DISCOUNT</span>
-            <span className="text-black">
-              {c} {payment.discountValue.toFixed(2)}
-            </span>
+            <span className="text-black">{c} {payment.discountValue.toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between text-slate-500">
             <span>CARD TAX</span>
-            <span className="text-black">
-              {c} {payment.cardTax.toFixed(2)}
-            </span>
+            <span className="text-black">{c} {payment.cardTax.toFixed(2)}</span>
           </div>
 
           <div className="border-t pt-3 flex justify-between font-semibold">
             <span className="text-black">BILL AMOUNT</span>
-            <span className="text-orange-500">
-              {c} {payment.grandTotal.toFixed(2)}
-            </span>
+            <span className="text-orange-500">{c} {payment.grandTotal.toFixed(2)}</span>
           </div>
 
           <div className="pt-3 border-t space-y-2">
@@ -149,30 +242,37 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
               <span>PAYMENT METHOD</span>
               <span className="text-black">{payment.paymentMethod}</span>
             </div>
-
             <div className="flex justify-between text-slate-500">
               <span>CASH PAID</span>
-              <span className="text-black">
-                {c} {payment.cashPaid.toFixed(2)}
-              </span>
+              <span className="text-black">{c} {payment.cashPaid.toFixed(2)}</span>
             </div>
-
             <div className="flex justify-between text-slate-500">
               <span>CARD PAID</span>
-              <span className="text-black">
-                {c} {payment.cardPaid.toFixed(2)}
-              </span>
+              <span className="text-black">{c} {payment.cardPaid.toFixed(2)}</span>
             </div>
           </div>
 
           {/* ACTION BUTTONS */}
           <div className="pt-3 border-t flex gap-3">
-            <button className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer">
+            <button
+              onClick={handleGetReceipt}
+              className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+            >
               <Printer size={16} />
-              <span>Get receipt</span>
+              <span>Get Receipt</span>
             </button>
 
-            {rightAction}
+            {payment.customerEmail ? (
+              <button
+                onClick={handleEmailReceipt}
+                className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+              >
+                <Mail size={16} />
+                <span>Email</span>
+              </button>
+            ) : (
+              rightAction
+            )}
           </div>
         </div>
       </div>
