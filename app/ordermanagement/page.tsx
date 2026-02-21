@@ -17,7 +17,7 @@ type Order = {
   branch?: string;
   cashier?: string;
   paymenttype?: string;
-  totalamount?: string;
+  totalamount?: number;
   status?: string;
   action?: string;
 };
