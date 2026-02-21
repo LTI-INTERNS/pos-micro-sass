@@ -19,7 +19,7 @@ type CardProps = {
 
  
   backgroundImage?: string;
-  overlayOpacity?: number; // 0 - 1
+  overlayOpacity?: number; 
   blur?: boolean;
 };
 
@@ -109,7 +109,7 @@ export default function Card({
         />
       )}
 
-      {/* subtle highlight for glass */}
+      
       {variant === "glass" && (
         <div className="pointer-events-none absolute inset-0 bg-white/5" />
       )}

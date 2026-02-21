@@ -26,7 +26,7 @@ export function useTableFilters<T>({
   useEffect(() => {
     let result = [...data];
 
-    // 🔍 Search
+    // Search
     if (search.trim() && searchKeys.length) {
       const q = search.toLowerCase();
       result = result.filter((item) =>
@@ -36,7 +36,7 @@ export function useTableFilters<T>({
       );
     }
 
-    // 📅 Date range
+    // Date range
     if (start && end && dateKey) {
       result = result.filter((item) => {
         const d = new Date(String(item[dateKey]));
@@ -44,7 +44,7 @@ export function useTableFilters<T>({
       });
     }
 
-    // 🧩 Dropdown filters
+    // Dropdown filters
     Object.entries(filters).forEach(([key, value]) => {
       if (value) {
         result = result.filter(

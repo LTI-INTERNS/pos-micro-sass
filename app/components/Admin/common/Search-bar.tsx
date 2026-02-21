@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Search, X } from "lucide-react";
-import ActionButton from "./ActionButton"; 
 
 type Props = {
   value: string;
@@ -69,7 +68,7 @@ export default function SearchBar({
   };
 
  return (
-  <div className={`flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden ${className}`}>
+  <div className={`flex items-center bg-white border border-gray-200 rounded-lg flex-wrapS ${className}`}>
     
     {/* Left: search input */}
     <div className="flex items-center gap-2 px-3 py-2 flex-1">
@@ -100,33 +99,39 @@ export default function SearchBar({
           onClick={onFilter}
           className={`
             flex items-center cursor-pointer select-none
-            rounded-full py-2 text-xs font-semibold transition
+            rounded-full py-1 sm:py-2
+            text-xs font-semibold transition
             ${isFilterApplied
               ? "bg-orange-500 text-white hover:bg-orange-600"
               : "border border-orange-400 bg-white text-orange-500 hover:bg-orange-50"}
           `}
         >
           {/* Label */}
-          <span className="px-4">{filterLabel}</span>
+          <span className="px-2 sm:px-4 hidden xs:inline">
+            {filterLabel}
+          </span>
+
+          {/* Mobile fallback icon */}
+          <span className="xs:hidden px-2">
+            Filter
+          </span>
 
           {isFilterApplied && (
             <>
-              {/* Divider */}
-              <span className="h-4 w-px bg-white/60" />
-
-              {/* Clear filters */}
+              <span className="h-4 w-px bg-white/60 mx-1" />
               <span
                 onClick={(e) => {
-                  e.stopPropagation(); 
+                  e.stopPropagation();
                   onClearFilters?.();
                 }}
-                className="px-3 hover:bg-white/20 rounded-r-full"
+                className="px-2 hover:bg-white/20 rounded-r-full"
               >
                 <X size={12} />
               </span>
             </>
           )}
         </div>
+
       </div>
     )}
   </div>

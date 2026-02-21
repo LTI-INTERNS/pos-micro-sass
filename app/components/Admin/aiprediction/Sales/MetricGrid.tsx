@@ -1,4 +1,3 @@
-// components/MetricGrid.tsx
 import React from "react";
 import MetricCard, { MetricCardProps } from "./MetricCard";
 

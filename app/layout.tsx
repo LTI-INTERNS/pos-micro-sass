@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
+import { CurrencyProvider } from "@/app/context/CurrencyContext";
+import { ImageProvider } from "@/app/context/ImageContext";
+import { PosSettingsProvider } from "@/app/context/PosSettingsContext";
+import { NotificationsProvider } from "@/app/context/NotificationsContext";
+
 import "./globals.css";
 
 const poppins = Poppins({
@@ -29,7 +34,15 @@ export default function RootLayout({
         suppressHydrationWarning
         className={`${poppins.className} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <CurrencyProvider>
+          <ImageProvider>
+            <PosSettingsProvider>
+              <NotificationsProvider>
+                {children}
+              </NotificationsProvider>
+            </PosSettingsProvider>
+          </ImageProvider>
+        </CurrencyProvider>
       </body>
     </html>
   );

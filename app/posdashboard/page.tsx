@@ -1,11 +1,18 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import ItemGrid from "../components/Pos/posdashboard/ItemGrid";
-import CustomerInfoPanel, { OrderItem } from "../components/Pos/posdashboard/CustomerInfoPanel";
+import CustomerInfoPanel, {
+  CustomerInfoPanelHandle,
+  OrderItem,
+} from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
-import OrderPaymentModal, { PaymentSummary } from "../components/Pos/posdashboard/OrderPaymentModal";
+import OrderPaymentModal, {
+  PaymentSummary,
+} from "../components/Pos/posdashboard/OrderPaymentModal";
 import OrderConfirmation, { ConfirmItem } from "../components/Pos/OrderConfirmation";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { usePosSettings } from "@/app/context/PosSettingsContext";
 import { Check, X } from "lucide-react";
 
 function OrderCompletePopup({
@@ -32,14 +39,12 @@ function OrderCompletePopup({
         <button
           onClick={onClose}
           className="absolute right-4 top-4 w-9 h-9 rounded-full border border-slate-200 hover:border-slate-300 grid place-items-center text-slate-500 hover:text-black transition z-10"
-          aria-label="Close"
         >
           <X size={18} />
         </button>
 
         <div className="p-8 text-center">
           <div className="relative mx-auto w-20 h-20 grid place-items-center">
-            {/* orange animated glow */}
             <span className="absolute inset-0 rounded-full glow" />
             <span className="absolute inset-[-14px] rounded-full glow-strong" />
             <div className="w-16 h-16 rounded-full bg-orange-400 grid place-items-center relative z-10">
@@ -65,35 +70,35 @@ function OrderCompletePopup({
         </div>
 
         <style jsx>{`
-            .glow {
-              background: radial-gradient(
-                circle,
-                rgba(249, 115, 22, 0.7),
-                rgba(249, 115, 22, 0) 65%
-              );
-              filter: blur(10px);
-            }
-
-            .glow-strong {
-              background: radial-gradient(
-                circle,
-                rgba(249, 115, 22, 0.5),
-                rgba(249, 115, 22, 0) 80%
-              );
-              filter: blur(26px);
-            }
-          `}</style>
-
-
+          .glow {
+            background: radial-gradient(
+              circle,
+              rgba(249, 115, 22, 0.7),
+              rgba(249, 115, 22, 0) 65%
+            );
+            filter: blur(10px);
+          }
+          .glow-strong {
+            background: radial-gradient(
+              circle,
+              rgba(249, 115, 22, 0.5),
+              rgba(249, 115, 22, 0) 80%
+            );
+            filter: blur(26px);
+          }
+        `}</style>
       </div>
     </div>
   );
 }
 
 const page = () => {
+  const { currency } = useCurrency();
+  const { posSettings } = usePosSettings();
+
   const [search, setSearch] = useState("");
-  const [showCustomerPopup, setShowCustomerPopup] = useState(false);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<{
     orderNo: string;
@@ -104,19 +109,18 @@ const page = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
 
-  // order complete popup
+  //  RESTORED: customer email state
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
 
-  // hard reset modal key only when order is confirmed OR when user cancels order completely
   const [paymentModalKey, setPaymentModalKey] = useState(0);
-
-  // ✅ NEW: control edit-mode when coming back from confirmation
   const [paymentForceEditable, setPaymentForceEditable] = useState(false);
 
-  const orderNo = useMemo(() => {
-    return `ORD-${new Date().getTime()}`;
-  }, []);
+  const panelRef = useRef<CustomerInfoPanelHandle>(null);
+
+  const orderNo = useMemo(() => `ORD-${new Date().getTime()}`, []);
 
   const confirmItems: ConfirmItem[] = useMemo(
     () =>
@@ -133,9 +137,10 @@ const page = () => {
   const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
     setOrderItems((prev) => {
       const existing = prev.find((it) => it.id === String(item.id));
-
       if (existing) {
-        return prev.map((it) => (it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it));
+        return prev.map((it) =>
+          it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it
+        );
       }
 
       return [
@@ -158,6 +163,9 @@ const page = () => {
     setConfirmOpen(false);
     setPaymentForceEditable(false);
 
+    //  RESTORED: reset email
+    setCustomerEmail(null);
+
     setPaymentModalKey((k) => k + 1);
   };
 
@@ -176,46 +184,45 @@ const page = () => {
 
         <div className="w-md sticky top-0 h-[calc(100vh-76px)]">
           <CustomerInfoPanel
+            ref={panelRef}
             items={orderItems}
-            onAddCustomer={() => setShowCustomerPopup(true)}
+            customerDisplayEnabled={posSettings.customerDisplayEnabled}
             onInc={(id) =>
-              setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it)))
+              setOrderItems((prev) =>
+                prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it))
+              )
             }
             onDec={(id) =>
               setOrderItems((prev) =>
-                prev.map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it)).filter((it) => it.qty > 0)
+                prev
+                  .map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it))
+                  .filter((it) => it.qty > 0)
               )
             }
-            onSetQty={(id, qty) => setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)))}
+            onSetQty={(id, qty) =>
+              setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)))
+            }
             onCancel={() => {
               setOrderItems([]);
               hardResetPaymentFlow();
             }}
-            onPay={({ total }) => {
+            onPay={({ total, customer }: any) => {
+              //  keep same behavior: block if no items
               if (total <= 0) {
                 alert("Please add items to proceed with payment.");
                 return;
               }
 
-              // normal pay → not editable lock after full paid
-              setPaymentForceEditable(false);
+              //  RESTORED: capture email from selected customer (if exists)
+              setCustomerEmail(customer?.email ?? null);
 
-              setPaymentData({
-                orderNo,
-                totalAmount: total,
-                tipAmount: 0,
-              });
+              setPaymentForceEditable(false);
+              setPaymentData({ orderNo, totalAmount: total, tipAmount: 0 });
               setPaymentOpen(true);
             }}
           />
         </div>
       </div>
-
-      {showCustomerPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowCustomerPopup(false)} />
-        </div>
-      )}
 
       <OrderPaymentModal
         key={paymentModalKey}
@@ -224,15 +231,16 @@ const page = () => {
         orderNo={paymentData?.orderNo ?? "-"}
         totalAmount={paymentData?.totalAmount ?? 0}
         tipAmount={paymentData?.tipAmount ?? 0}
-        currencyCode="LKR"
+        currencyCode={currency}
         forceEditable={paymentForceEditable}
         onDone={(summary) => {
           setPaymentSummary(summary);
           setPaymentOpen(false);
           setConfirmOpen(true);
-
-          // once we go to confirmation, allow edit if they come back
           setPaymentForceEditable(true);
+
+          //  merged branch behavior preserved
+          panelRef.current?.sendPaymentSummary(summary);
         }}
       />
 
@@ -242,14 +250,14 @@ const page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
+          //  RESTORED: pass email into confirmation popup
+          customerEmail={customerEmail}
           onCancelEdit={() => {
-            // go back to payment modal and allow editing
             setConfirmOpen(false);
             setPaymentForceEditable(true);
             setPaymentOpen(true);
           }}
           onConfirm={() => {
-            // final confirm: show popup + reset for next order
             setCompletedOrderNo(paymentSummary.orderNo);
 
             setConfirmOpen(false);
@@ -259,6 +267,9 @@ const page = () => {
             hardResetPaymentFlow();
 
             setCompleteOpen(true);
+
+            //  merged branch behavior preserved
+            panelRef.current?.sendOrderConfirmed();
           }}
         />
       )}

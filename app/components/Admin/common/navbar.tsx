@@ -3,7 +3,7 @@
 import Clock from '../../Landing/clock';
 import { Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import NotificationBell from './NotificationBell';
+import NotificationBell from '@/app/components/Admin/notifications/NotificationBell';
 
 
 interface NavbarProps {

@@ -9,6 +9,7 @@ export default function StatCardGrid() {
           key={card.title}
           title={card.title}
           value={card.value}
+          amount={card.amount} 
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
           caption={card.caption}

@@ -4,7 +4,7 @@ export type Order = {
   branch?: string;
   cashier?: string;
   paymenttype?: string;
-  totalamount?: string;
+  totalamount?: number;
   status?: string;
   action?: string;
   
@@ -17,7 +17,7 @@ export const ordersData: Order[] = [
     branch: "Colombo 01",
     cashier: "Nimal Perera",
     paymenttype: "Cash",
-    totalamount: "LKR 2,450.00",
+    totalamount: 2450.00,
     status: "Completed",
     action: "View",
   },
@@ -27,7 +27,7 @@ export const ordersData: Order[] = [
     branch: "Kandy",
     cashier: "Kamal Silva",
     paymenttype: "Card",
-    totalamount: "LKR 1,820.00",
+    totalamount: 1820.00,
     status: "Completed",
     action: "View",
   },
@@ -37,7 +37,7 @@ export const ordersData: Order[] = [
     branch: "Galle",
     cashier: "Sunil Fernando",
     paymenttype: "QR",
-    totalamount: "LKR 3,600.00",
+    totalamount: 3600.00,
     status: "Pending",
     action: "View",
   },
@@ -47,7 +47,7 @@ export const ordersData: Order[] = [
     branch: "Colombo 07",
     cashier: "Nadeesha Jayasinghe",
     paymenttype: "Cash",
-    totalamount: "LKR 980.00",
+    totalamount: 980.00,
     status: "Cancelled",
     action: "View",
   },
@@ -57,7 +57,7 @@ export const ordersData: Order[] = [
     branch: "Negombo",
     cashier: "Ruwan Wijesekara",
     paymenttype: "Card",
-    totalamount: "LKR 5,250.00",
+    totalamount: 5250.00,
     status: "Completed",
     action: "View",
   },

@@ -2,6 +2,8 @@
 
 import React from "react";
 import { Package } from "lucide-react";
+import { useCurrency } from "@/app/context/CurrencyContext";
+import { formatCurrency } from "@/app/context/formatCurrency";
 
 type Item = {
   id: number;
@@ -16,6 +18,8 @@ type Props = {
 };
 
 export default function ItemCard({ item, onClick }: Props) {
+  const { currency } = useCurrency();
+
   const hasImage = Boolean(item.image);
 
   return (
@@ -51,11 +55,11 @@ export default function ItemCard({ item, onClick }: Props) {
       {hasImage ? (
         <div className="p-3 text-center">
           <p className="text-sm font-semibold text-black">{item.name}</p>
-          <p className="text-xs text-orange-500">LKR {item.price}</p>
+          <p className="text-xs text-orange-500">{formatCurrency(item.price, currency)}</p> 
         </div>
       ) : (
         <p className="text-sm font-semibold text-orange-600">
-          LKR {item.price}
+          {formatCurrency(item.price, currency)}
         </p>
       )}
     </div>

@@ -21,7 +21,6 @@ export default function PerformancePredictions({
     >
       <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
 
-      {/* ✅ Normal vertical layout (no internal scroll / no snap) */}
       <div className="mt-5 space-y-5">
         {items.map((item) => (
           <PerformanceCard key={item.id} item={item} />
