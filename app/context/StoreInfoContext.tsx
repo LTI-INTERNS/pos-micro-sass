@@ -13,6 +13,7 @@ export type StoreInfo = {
 const defaultStoreInfo: StoreInfo = {
   storeName: "Coca",
   branchName: "Main Branch",
+  
   cashierName: "Cashier",
   telephone: "+94 11 234 5678",
   logoUrl: "/logo.svg",
