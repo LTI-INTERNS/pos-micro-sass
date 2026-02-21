@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Settings, X } from 'lucide-react';
 
@@ -9,13 +9,16 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+type UserRole = "superadmin" | "admin" | "manager";
+
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const router = useRouter();
   const pathname = usePathname();
+  
+  // TODO: Replace with actual auth session/role
+  const userRole: UserRole = "superadmin" as UserRole; // Get from auth context
 
-  const [activeItem, setActiveItem] = useState('Dashboard');
-
-  const menuItems = [
+  const allMenuItems = [
     { label: 'Dashboard', path: '/overview' },
     { label: 'Staff Management', path: '/staffmanagement' },
     { label: 'Customers Management', path: '/customermanagement' },
@@ -27,30 +30,38 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Supplier Management', path: '/suppliermanagement' },
     { label: 'Reports', path: '/reports' },
     { label: 'Ai Prediction', path: '/aiprediction' },
-    { label: 'Branches', path: '/branchmanagement' },
+    { 
+      label: 'Branches', 
+      path: '/branchmanagement',
+      roles: ['superadmin'] as UserRole[] // Only superadmin can see this
+    },
   ];
 
+  // Memoize filtered menu items to prevent recreation on every render
+  const menuItems = useMemo(() => {
+    return allMenuItems.filter(item => {
+      if (!item.roles) return true; // Show items without role restriction
+      return item.roles.includes(userRole);
+    });
+  }, [userRole]);
 
-  // Auto detect active item based on URL
-  useEffect(() => {
+  // Determine active item based on current pathname
+  const activeItem = useMemo(() => {
+    if (pathname.startsWith('/settings')) {
+      return 'Settings';
+    }
+    
     const active = menuItems.find(item =>
       pathname === item.path || pathname.startsWith(item.path + '/')
     );
 
-    if (active) {
-      setActiveItem(active.label);
-    } else if (pathname.startsWith('/settings')) {
-      setActiveItem('Settings');
-    }
-  },[pathname]);
-
+    return active ? active.label : 'Dashboard';
+  }, [pathname, menuItems]);
 
   const handleNavigation = (item: { label: string; path: string }) => {
-    setActiveItem(item.label);
     router.push(item.path);
     onClose(); // close sidebar on mobile
   };
-
 
   return (
     <>
@@ -66,7 +77,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         className={`fixed z-50 top-0 left-0 min-h-full w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform
           ${isOpen ? 'translate-x-0' : '-translate-x-full'} sm:translate-x-0 sm:relative sm:top-0 sm:left-0`}
       >
-
         <div className="flex justify-end sm:hidden p-4 text-gray-400">
           <button onClick={onClose}>
             <X size={24} />
@@ -93,7 +103,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         <div className="p-5">
           <div
             onClick={() => {
-              setActiveItem('Settings');
               router.push('/settings');
               onClose();
             }}
