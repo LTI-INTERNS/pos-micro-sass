@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Upload } from "lucide-react";
+import LogoUploadSection from "./LogoUploadSection";
 
 type CompanyDetails = {
   companyName: string;
@@ -11,20 +11,20 @@ type CompanyDetails = {
   addressLine1: string;
   addressLine2: string;
   logoFile?: File | null;
-  backgroundFile?: File | null;
+  logoUrl?: string | null;
 };
 
 type Props = {
   initial?: Partial<CompanyDetails>;
-  readOnly?: boolean; 
-  onEditClick?: () => void; 
+  readOnly?: boolean;
+  onEditClick?: () => void;
   onSave?: (data: CompanyDetails) => Promise<void> | void;
   className?: string;
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-sm text-black/80 font-medium leading-10">
+    <div className="text-sm text-black/80 font-medium leading-6 lg:leading-10">
       {children}
     </div>
   );
@@ -45,33 +45,6 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-function UploadButton({label, fileName,disabled,onPick,}: {label: string;fileName?: string;disabled?: boolean; onPick: () => void;})  {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onPick}
-      className={[
-        "w-full h-12 rounded-full bg-white",
-        "border-2 border-dashed border-black/35",
-        "flex items-center justify-center gap-3",
-        "text-sm font-medium text-black/70",
-        "hover:bg-black/3 transition",
-        disabled ? "opacity-60 cursor-not-allowed" : "",
-      ].join(" ")}
-      title={fileName ? fileName : label}
-    >
-      <Upload className="w-5 h-5 text-black/60" />
-      <span>{label}</span>
-      {fileName ? (
-        <span className="ml-2 text-xs text-black/40 max-w-[40%] truncate">
-          ({fileName})
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
 export default function CompanyDetailsForm({
   initial,
   readOnly = false,
@@ -83,7 +56,6 @@ export default function CompanyDetailsForm({
   const isLocked = readOnly ? true : !editing;
 
   const logoInputRef = useRef<HTMLInputElement | null>(null);
-  const bgInputRef = useRef<HTMLInputElement | null>(null);
 
   const defaults: CompanyDetails = useMemo(
     () => ({
@@ -94,7 +66,7 @@ export default function CompanyDetailsForm({
       addressLine1: initial?.addressLine1 ?? "",
       addressLine2: initial?.addressLine2 ?? "",
       logoFile: initial?.logoFile ?? null,
-      backgroundFile: initial?.backgroundFile ?? null,
+      logoUrl: initial?.logoUrl ?? null,
     }),
     [initial]
   );
@@ -121,112 +93,126 @@ export default function CompanyDetailsForm({
     }
   };
 
+  
+  const FieldRow = ({
+    label,
+    input,
+  }: {
+    label: string;
+    input: React.ReactNode;
+  }) => (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
+      <div className="lg:col-span-3">
+        <FieldLabel>{label}</FieldLabel>
+      </div>
+      <div className="lg:col-span-9">{input}</div>
+    </div>
+  );
+
   return (
     <section
       className={[
         "w-full rounded-md border border-black/20 bg-white shadow-sm",
-        "p-8",
+        "p-5 sm:p-8",
         className,
       ].join(" ")}
     >
-      <div className="grid grid-cols-12 gap-x-10 gap-y-4">
-        
-        <div className="col-span-4 space-y-4">
-          <FieldLabel>Company Name</FieldLabel>
-          <FieldLabel>Registration No</FieldLabel>
-          <FieldLabel>Email</FieldLabel>
-          <FieldLabel>Phone</FieldLabel>
-          <FieldLabel>Address Line 1</FieldLabel>
-          <FieldLabel>Address Line 2</FieldLabel>
-        </div>
-
-        
-        <div className="col-span-6 space-y-4">
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.companyName}
-            onChange={(e) => set("companyName", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.regNo}
-            onChange={(e) => set("regNo", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.email}
-            onChange={(e) => set("email", e.target.value)}
-            placeholder=""
-            type="email"
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.phone}
-            onChange={(e) => set("phone", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.addressLine1}
-            onChange={(e) => set("addressLine1", e.target.value)}
-            placeholder=""
-          />
-          <TextInput
-            disabled={isLocked || saving}
-            value={form.addressLine2}
-            onChange={(e) => set("addressLine2", e.target.value)}
-            placeholder=""
-          />
-
-         
-          <div className="pt-2">
-            <UploadButton
+      
+      <div className="space-y-4">
+        <FieldRow
+          label="Company Name"
+          input={
+            <TextInput
               disabled={isLocked || saving}
-              label="Change company logo"
-              fileName={form.logoFile?.name}
-              onPick={() => logoInputRef.current?.click()}
+              value={form.companyName}
+              onChange={(e) => set("companyName", e.target.value)}
             />
-            <input
-              ref={logoInputRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => set("logoFile", e.target.files?.[0] ?? null)}
+          }
+        />
+
+        <FieldRow
+          label="Registration No"
+          input={
+            <TextInput
+              disabled={isLocked || saving}
+              value={form.regNo}
+              onChange={(e) => set("regNo", e.target.value)}
             />
-          </div>
-        </div>
+          }
+        />
 
-        
-        <div className="col-span-2" />
+        <FieldRow
+          label="Email"
+          input={
+            <TextInput
+              disabled={isLocked || saving}
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+              type="email"
+            />
+          }
+        />
 
-        
-        <div className="col-span-6 pt-10">
-          <UploadButton
-            disabled={isLocked || saving}
-            label="Upload Background Image"
-            fileName={form.backgroundFile?.name}
-            onPick={() => bgInputRef.current?.click()}
-          />
-          <input
-            ref={bgInputRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => set("backgroundFile", e.target.files?.[0] ?? null)}
-          />
-        </div>
+        <FieldRow
+          label="Phone"
+          input={
+            <TextInput
+              disabled={isLocked || saving}
+              value={form.phone}
+              onChange={(e) => set("phone", e.target.value)}
+            />
+          }
+        />
 
-        
-        <div className="col-span-12 pt-10 flex items-center justify-between gap-8">
+        <FieldRow
+          label="Address Line 1"
+          input={
+            <TextInput
+              disabled={isLocked || saving}
+              value={form.addressLine1}
+              onChange={(e) => set("addressLine1", e.target.value)}
+            />
+          }
+        />
+
+        <FieldRow
+          label="Address Line 2"
+          input={
+            <TextInput
+              disabled={isLocked || saving}
+              value={form.addressLine2}
+              onChange={(e) => set("addressLine2", e.target.value)}
+            />
+          }
+        />
+      </div>
+
+      
+      <div className="pt-10">
+        <LogoUploadSection
+          disabled={isLocked || saving}
+          currentLogoUrl={form.logoUrl ?? null}
+          onLogoChange={(url, file) => {
+            set("logoUrl", url);
+            set("logoFile", file ?? null);
+          }}
+        />
+      </div>
+
+          
+      <div className="pt-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-4 sm:gap-8">
           <button
             type="button"
             onClick={handleEdit}
             disabled={readOnly || saving}
             className={[
-              "w-full max-w-105 h-12 rounded-full border border-orange-400 bg-white text-orange-500 hover:bg-orange-50 cursor-pointer ",
-              (readOnly || saving) ? "opacity-60 cursor-not-allowed" : "",
+              "h-12 w-full lg:w-[320px] rounded-full border border-orange-400 bg-white",
+              "text-orange-500 hover:bg-orange-50",
+              "flex items-center justify-center",
+              readOnly || saving
+                ? "opacity-60 cursor-not-allowed"
+                : "cursor-pointer",
             ].join(" ")}
           >
             Edit Details
@@ -237,10 +223,11 @@ export default function CompanyDetailsForm({
             onClick={handleSave}
             disabled={!onSave || isLocked || saving}
             className={[
-              "w-full max-w-105 h-12 rounded-full bg-orange-500 text-white hover:bg-orange-600 cursor-pointer ",
-             
-              
-              (!onSave || isLocked || saving) ? "opacity-60 cursor-not-allowed" : "",
+              "h-12 w-full lg:w-[320px] rounded-full bg-orange-500 text-white hover:bg-orange-600",
+              "flex items-center justify-center",
+              !onSave || isLocked || saving
+                ? "opacity-60 cursor-not-allowed"
+                : "cursor-pointer",
             ].join(" ")}
           >
             {saving ? "Saving..." : "Save Changes"}
