@@ -6,54 +6,100 @@ import TabSelector from "../components/Admin/common/TabSelector";
 import DiscountContent from "@/app/components/Admin/settings/Discount/DiscountContent";
 import PersonalContent from "@/app/components/Admin/settings/PersonalDetails/PersonalContent";
 import SubscriptionPlanCards from "@/app/components/Admin/settings/subscriptionplan/SubscriptionPlanCards";
-import CompanyDetailsForm from "@/app/components/Admin/settings/companydetails/CompanyDetailsContent";
+import CompanyDetailsForm from "@/app/components/Admin/settings/Details/CompanyDetailsContent";
+import BranchDetailsForm from "@/app/components/Admin/settings/Details/BranchDetailsContent";
 import AdditionalSettingsContent from "@/app/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 
-const TABS = [
-  { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
-  { id: "discountManagement", label: "Discount Managemet", shortLabel: "Discount" },
-  { id: "companuDetails", label: "Company Details", shortLabel: "Company" },
-  { id: "subscriptionPlan", label: "Subscription Plan", shortLabel: "Sub. Plan" },
-  { id: "settings", label: "System Settings", shortLabel: "System" },
-];
+type UserRole = "superadmin" | "admin" | "manager";
 
-export default function settingPage() {
+type Tab = {
+  id: string;
+  label: string;
+  shortLabel: string;
+  roles?: UserRole[]; // Optional roles property
+};
+
+const getTabs = (userRole: UserRole): Tab[] => {
+  const allTabs: Tab[] = [
+    { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
+    { id: "discountManagement", label: "Discount Management", shortLabel: "Discount" },
+    {
+      id: "companyDetails",
+      label: userRole === "superadmin" ? "Company Details" : "Branch Details",
+      shortLabel: userRole === "superadmin" ? "Company" : "Branch",
+    },
+    { 
+      id: "subscriptionPlan", 
+      label: "Subscription Plan", 
+      shortLabel: "Sub. Plan",
+      roles: ["superadmin"] // Only visible to superadmin
+    },
+    { id: "settings", label: "System Settings", shortLabel: "System" },
+  ];
+
+  // Filter tabs based on user role
+  return allTabs.filter(tab => {
+    // If no roles specified, show to everyone
+    if (!tab.roles) return true;
+    // Otherwise check if user role is in allowed roles
+    return tab.roles.includes(userRole);
+  });
+};
+
+export default function SettingPage() {
+  const userRole: UserRole = "superadmin" as UserRole;
+  const TABS = getTabs(userRole);
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
+  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
-        
-        <TabSelector
-          tabs={TABS}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
+        <TabSelector tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
-        
         {activeTab === "personalDetails" && <PersonalContent />}
         {activeTab === "discountManagement" && <DiscountContent />}
-        {activeTab === "subscriptionPlan" && (
-          <SubscriptionPlanCards
-            defaultPlanId="basic"
-          />
+        
+        {/* Only render subscription plan for superadmin */}
+        {activeTab === "subscriptionPlan" && userRole === "superadmin" && (
+          <SubscriptionPlanCards defaultPlanId="basic" />
         )}
-        {activeTab === "companuDetails" && 
-          <CompanyDetailsForm 
-            initial={{
-              companyName: "ABC Pvt Ltd",
-              regNo: "PV12345",
-              email: "abc@gmail.com",
-              phone: "+94 77 123 4567",
-              addressLine1: "No 10, Main Street",
-              addressLine2: "Colombo",
-            }}
-            onSave={(data) => {
-              console.log("SAVE", data);
-              // TODO: call API / Supabase update here
-            }}
-          />
-        }
+
+        {activeTab === "companyDetails" &&
+          (userRole === "superadmin" ? (
+            <CompanyDetailsForm
+              initial={{
+                name: "ABC Pvt Ltd",
+                regNo: "PV12345",
+                email: "abc@gmail.com",
+                phone: "+94 77 123 4567",
+                addressLine1: "No 10, Main Street",
+                addressLine2: "Colombo",
+              }}
+              logoUrl={companyLogoUrl}
+              onLogoChange={(url, file) => {
+                console.log("Logo changed:", url, file);
+                setCompanyLogoUrl(url);
+              }}
+              onSave={(data) => {
+                console.log("SAVE COMPANY", data);
+              }}
+            />
+          ) : (
+            <BranchDetailsForm
+              initial={{
+                name: "Colombo Branch",
+                email: "branch@gmail.com",
+                phone: "+94 77 987 6543",
+                addressLine1: "No 15, High Street",
+                addressLine2: "Colombo",
+              }}
+              onSave={(data) => {
+                console.log("SAVE BRANCH", data);
+              }}
+            />
+          ))}
+
         {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>
     </DashboardLayout>

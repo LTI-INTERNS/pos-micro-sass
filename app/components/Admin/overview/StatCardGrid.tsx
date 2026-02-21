@@ -1,7 +1,27 @@
+
+"use client";
+
+import { useRouter } from 'next/navigation';
 import StatCard from '../common/StatCard';
 import { statCards } from '@/app/overview/mock/mockData';
 
 export default function StatCardGrid() {
+  const router = useRouter();
+
+  const handleDetailClick = (title: string) => {
+    const routeMap: Record<string, string> = {
+      "Customers": "/customermanagement",
+      "Low Stock Products": "/productmanagement",
+      "Total Sales": "/reports",
+      "Expenses": "/expensesmanagement",
+    };
+
+    const route = routeMap[title];
+    if (route) {
+      router.push(route);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {statCards.map((card) => (
@@ -14,6 +34,7 @@ export default function StatCardGrid() {
           trend={card.trend as 'up' | 'down'}
           caption={card.caption}
           showDetailButton={true}
+          onDetailClick={() => handleDetailClick(card.title)}
         />
       ))}
     </div>
