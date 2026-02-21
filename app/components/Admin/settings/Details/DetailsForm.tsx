@@ -1,25 +1,26 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import LogoUploadSection from "./LogoUploadSection";
+import { useMemo, useState } from "react";
+import LogoUploadSection from "./LogoUploadSection"; // will use only if includeLogo=true
 
-type CompanyDetails = {
-  companyName: string;
-  regNo: string;
+type Details = {
+  name: string;
+  regNo?: string;
   email: string;
   phone: string;
   addressLine1: string;
   addressLine2: string;
-  logoFile?: File | null;
-  logoUrl?: string | null;
 };
 
-type Props = {
-  initial?: Partial<CompanyDetails>;
+type DetailsFormProps = {
+  initial?: Partial<Details>;
   readOnly?: boolean;
   onEditClick?: () => void;
-  onSave?: (data: CompanyDetails) => Promise<void> | void;
+  onSave?: (data: Details) => Promise<void> | void;
   className?: string;
+  includeLogo?: boolean; // only show logo upload if true
+  logoUrl?: string | null;
+  onLogoChange?: (url: string | null, file?: File | null) => void;
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -45,36 +46,35 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-export default function CompanyDetailsForm({
+export default function DetailsForm({
   initial,
   readOnly = false,
   onEditClick,
   onSave,
   className = "",
-}: Props) {
+  includeLogo = false,
+  logoUrl = null,
+  onLogoChange,
+}: DetailsFormProps) {
   const [editing, setEditing] = useState(!readOnly);
   const isLocked = readOnly ? true : !editing;
+  const [saving, setSaving] = useState(false);
 
-  const logoInputRef = useRef<HTMLInputElement | null>(null);
-
-  const defaults: CompanyDetails = useMemo(
+  const defaults: Details = useMemo(
     () => ({
-      companyName: initial?.companyName ?? "",
+      name: initial?.name ?? "",
       regNo: initial?.regNo ?? "",
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",
       addressLine1: initial?.addressLine1 ?? "",
       addressLine2: initial?.addressLine2 ?? "",
-      logoFile: initial?.logoFile ?? null,
-      logoUrl: initial?.logoUrl ?? null,
     }),
     [initial]
   );
 
-  const [form, setForm] = useState<CompanyDetails>(defaults);
-  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Details>(defaults);
 
-  const set = (key: keyof CompanyDetails, value: any) =>
+  const set = (key: keyof Details, value: any) =>
     setForm((p) => ({ ...p, [key]: value }));
 
   const handleEdit = () => {
@@ -93,14 +93,7 @@ export default function CompanyDetailsForm({
     }
   };
 
-  
-  const FieldRow = ({
-    label,
-    input,
-  }: {
-    label: string;
-    input: React.ReactNode;
-  }) => (
+  const FieldRow = ({ label, input }: { label: string; input: React.ReactNode }) => (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
       <div className="lg:col-span-3">
         <FieldLabel>{label}</FieldLabel>
@@ -111,35 +104,32 @@ export default function CompanyDetailsForm({
 
   return (
     <section
-      className={[
-        "w-full rounded-md border border-black/20 bg-white shadow-sm",
-        "p-5 sm:p-8",
-        className,
-      ].join(" ")}
+      className={["w-full rounded-md border bg-white shadow-sm", "p-5 sm:p-8", className].join(" ")}
     >
-      
       <div className="space-y-4">
         <FieldRow
-          label="Company Name"
+          label={includeLogo ? "Company Name" : "Branch Name"}
           input={
             <TextInput
               disabled={isLocked || saving}
-              value={form.companyName}
-              onChange={(e) => set("companyName", e.target.value)}
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
             />
           }
         />
 
-        <FieldRow
-          label="Registration No"
-          input={
-            <TextInput
-              disabled={isLocked || saving}
-              value={form.regNo}
-              onChange={(e) => set("regNo", e.target.value)}
-            />
-          }
-        />
+        {includeLogo && (
+          <FieldRow
+            label="Registration No"
+            input={
+              <TextInput
+                disabled={isLocked || saving}
+                value={form.regNo}
+                onChange={(e) => set("regNo", e.target.value)}
+              />
+            }
+          />
+        )}
 
         <FieldRow
           label="Email"
@@ -187,19 +177,17 @@ export default function CompanyDetailsForm({
         />
       </div>
 
-      
-      <div className="pt-10">
-        <LogoUploadSection
-          disabled={isLocked || saving}
-          currentLogoUrl={form.logoUrl ?? null}
-          onLogoChange={(url, file) => {
-            set("logoUrl", url);
-            set("logoFile", file ?? null);
-          }}
-        />
-      </div>
+      {/* Logo Section Only For Company */}
+      {includeLogo && onLogoChange && (
+        <div className="pt-10">
+          <LogoUploadSection
+            disabled={isLocked || saving}
+            currentLogoUrl={logoUrl}
+            onLogoChange={(url, file) => onLogoChange(url, file)}
+          />
+        </div>
+      )}
 
-          
       <div className="pt-10">
         <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-4 sm:gap-8">
           <button
@@ -210,9 +198,7 @@ export default function CompanyDetailsForm({
               "h-12 w-full lg:w-[320px] rounded-full border border-orange-400 bg-white",
               "text-orange-500 hover:bg-orange-50",
               "flex items-center justify-center",
-              readOnly || saving
-                ? "opacity-60 cursor-not-allowed"
-                : "cursor-pointer",
+              readOnly || saving ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
             ].join(" ")}
           >
             Edit Details
@@ -225,9 +211,7 @@ export default function CompanyDetailsForm({
             className={[
               "h-12 w-full lg:w-[320px] rounded-full bg-orange-500 text-white hover:bg-orange-600",
               "flex items-center justify-center",
-              !onSave || isLocked || saving
-                ? "opacity-60 cursor-not-allowed"
-                : "cursor-pointer",
+              !onSave || isLocked || saving ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
             ].join(" ")}
           >
             {saving ? "Saving..." : "Save Changes"}

@@ -145,19 +145,12 @@ export default function ReceiptCustomizationSection({
 
           {/* Footer Message */}
           <div>
-            <label className="block text-xs text-gray-500 pt-5">
-              Footer Message
-            </label>
-            <textarea
+            <FormField
+              label=" Footer Message"
               value={footerMessage}
-              onChange={(e) => {
-                if (e.target.value.length <= MAX_FOOTER_LENGTH)
-                  onFooterMessageChange(e.target.value);
+              onChange={(value) => {
+                if (value.length <= MAX_FOOTER_LENGTH) onFooterMessageChange(value);
               }}
-              rows={2}
-              className="w-full rounded-full border px-4 py-2 outline-none resize-none
-                         border-gray-200 text-gray-800
-                         focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
               placeholder="Thank you for your business!"
             />
             <p className="text-sm text-gray-500 mt-4">

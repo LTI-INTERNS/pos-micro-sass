@@ -14,7 +14,7 @@ type PosSettingsContextType = {
 const STORAGE_KEY = "pos_settings";
 
 const DEFAULTS: PosSettings = {
-  customerDisplayEnabled: true,
+  customerDisplayEnabled: false,
 };
 
 function loadFromStorage(): PosSettings {
