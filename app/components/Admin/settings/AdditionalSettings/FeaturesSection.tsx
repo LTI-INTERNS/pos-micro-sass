@@ -12,7 +12,7 @@ type Feature = {
   description: string;
   tooltip?: string;
   learnMoreUrl?: string;
-  href?: string; // in-app navigation link
+  href?: string; 
 };
 
 type FeaturesSectionProps = {
@@ -34,7 +34,7 @@ const FEATURES: Feature[] = [
     tooltip:
       "Connect a secondary screen to your POS so customers can see itemized orders, totals, and payment prompts in real time. Supports most USB and HDMI display hardware.",
     learnMoreUrl: "#",
-    href: "/customer-display", // 👈 update to your actual route
+    href: "/customer-display", 
   },
   {
     id: "lowStockNotifications",

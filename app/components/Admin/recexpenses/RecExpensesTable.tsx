@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   
   const columns: Column<RecurringExpenses>[] = [
     {
@@ -41,7 +41,7 @@ export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
     { 
       key: "amount", 
       label: "Amount", 
-      render: (row) => formatCurrency(row.amount, currency) 
+      render: (row) => formatCurrency(row.amount, currency, useCents) 
     },
     {
       key: "payment",

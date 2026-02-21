@@ -35,7 +35,7 @@ export default function ReportTable({
   selectedExpense, onSelectExpense,
   selectedProduct, onSelectProduct,
 }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const SALE_COLS: Column<SaleRow>[] = [
     { key: "date",          label: "Date"           },
@@ -63,7 +63,7 @@ export default function ReportTable({
       key: "amount",
       label: "Amount",
       align: "right",
-      render: (row) => formatCurrency(row.amount, currency), 
+      render: (row) => formatCurrency(row.amount, currency, useCents), 
     },
   ];
 
@@ -76,7 +76,7 @@ export default function ReportTable({
       key: "amount",
       label: "Amount",
       align: "right",
-      render: (row) => formatCurrency(row.amount, currency), 
+      render: (row) => formatCurrency(row.amount, currency, useCents), 
     },
   ];
 
@@ -89,7 +89,7 @@ export default function ReportTable({
       key: "revenue",
       label: "Revenue",
       align: "right",
-      render: (row) => formatCurrency(row.revenue, currency), 
+      render: (row) => formatCurrency(row.revenue, currency, useCents), 
     },
     {
       key: "stock",

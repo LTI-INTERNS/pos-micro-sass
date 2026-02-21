@@ -22,7 +22,7 @@ type Props = {
 };
 
 export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const columns: Column<Cashier>[] = [
     { key: "id", label: "ID" },
@@ -31,7 +31,7 @@ export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: 
     { 
       key: "totalRevenue", 
       label: "Total Revenue", 
-      render: (c) => formatCurrency(c.totalRevenue, currency) 
+      render: (c) => formatCurrency(c.totalRevenue, currency, useCents) 
     },
     { key: "email", label: "Email" },
     {

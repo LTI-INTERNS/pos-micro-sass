@@ -12,14 +12,14 @@ type Props = {
 }
 
 export default function ProductsTable({ products, selectedProduct, setSelectedProduct }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const productColumns: Column<Product>[] = [
   { key: "id", label: "ID" },
   { key: "name", label: "Name" },
   { key: "category", label: "Category" },
   { key: "supplier", label: "Supplier"},
-  { key: "price", label: "Price", render: (row) => formatCurrency(row.price, currency) },
+  { key: "price", label: "Price", render: (row) => formatCurrency(row.price, currency, useCents) },
   { key: "discount", label: "Discount (%)" },
   { key: "tax", label: "Tax (%)" },
   { key: "stock", label: "Stock" },

@@ -24,11 +24,11 @@ export default function StatCard({
   showDetailButton = true, 
   onDetailClick,
 }: StatCardProps) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   const showTrend = Boolean(percentage) && Boolean(trend);
 
   const displayValue = amount !== undefined
-    ? formatCurrency(amount, currency)
+    ? formatCurrency(amount, currency, useCents)
     : value;
 
   return (

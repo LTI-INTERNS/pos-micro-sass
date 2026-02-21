@@ -19,7 +19,7 @@ type Props = {
 };
 
 export default function ExpensesTable({ Expenses }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const columns: Column<Expenses>[] = [
     {
@@ -41,7 +41,7 @@ export default function ExpensesTable({ Expenses }: Props) {
     { 
       key: "amount", 
       label: "Amount", 
-      render: (row) => formatCurrency(row.amount, currency) 
+      render: (row) => formatCurrency(row.amount, currency, useCents) 
     },
     {
       key: "payment",

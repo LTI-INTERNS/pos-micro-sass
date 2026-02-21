@@ -17,7 +17,7 @@ export default function SalesInsightsMetrics({
   className = "",
   items,
 }: SalesInsightsMetricsProps) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const defaultItems: MetricCardProps[] = [
     {
@@ -26,7 +26,7 @@ export default function SalesInsightsMetrics({
       subtitle: (
         <>
           <span className="text-slate-400">Current Sale :</span>{" "}
-          <span className="text-slate-500">{formatCurrency(1290, currency)}</span>
+          <span className="text-slate-500">{formatCurrency(1290, currency, useCents)}</span>
         </>
       ),
       progressPct: 92,

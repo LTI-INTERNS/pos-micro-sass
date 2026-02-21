@@ -34,11 +34,11 @@ export default function MetricCard({
   pillTone = "orange",
   className = "",
 }: MetricCardProps) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   const pct = clamp(progressPct, 0, 100);
 
   const displayValue = amount !== undefined
-    ? formatCurrency(amount, currency) 
+    ? formatCurrency(amount, currency, useCents) 
     : value;
 
   const pillClasses =
