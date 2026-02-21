@@ -16,7 +16,7 @@ export default function StaffReportItem({
   amount,
   subAmount,
 }: StaffReportItemProps) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   return (
     <div className="flex items-center justify-between py-3 border-b last:border-b-0">
@@ -30,8 +30,8 @@ export default function StaffReportItem({
       </div>
 
       <div className="text-right">
-        <p className="text-sm font-semibold text-gray-800">{formatCurrency(amount, currency)}</p>
-        <p className="text-xs text-green-500">{formatCurrency(subAmount, currency)}</p>
+        <p className="text-sm font-semibold text-gray-800">{formatCurrency(amount, currency, useCents)}</p>
+        <p className="text-xs text-green-500">{formatCurrency(subAmount, currency, useCents)}</p>
       </div>
     </div>
   );

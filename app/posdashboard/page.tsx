@@ -7,14 +7,22 @@ import CustomerInfoPanel, {
 } from "../components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "../components/Admin/common/Search-bar";
-import OrderPaymentModal, { PaymentSummary } from "../components/Pos/posdashboard/OrderPaymentModal";
+import OrderPaymentModal, {
+  PaymentSummary,
+} from "../components/Pos/posdashboard/OrderPaymentModal";
 import OrderConfirmation, { ConfirmItem } from "../components/Pos/OrderConfirmation";
 import { useCurrency } from "@/app/context/CurrencyContext";
-import { usePosSettings } from "@/app/context/PosSettingsContext"; 
+import { usePosSettings } from "@/app/context/PosSettingsContext";
 import { Check, X } from "lucide-react";
 
-function OrderCompletePopup({ open, onClose, orderNo }: {
-  open: boolean; onClose: () => void; orderNo: string | number;
+function OrderCompletePopup({
+  open,
+  onClose,
+  orderNo,
+}: {
+  open: boolean;
+  onClose: () => void;
+  orderNo: string | number;
 }) {
   return (
     <div
@@ -31,10 +39,10 @@ function OrderCompletePopup({ open, onClose, orderNo }: {
         <button
           onClick={onClose}
           className="absolute right-4 top-4 w-9 h-9 rounded-full border border-slate-200 hover:border-slate-300 grid place-items-center text-slate-500 hover:text-black transition z-10"
-          aria-label="Close"
         >
           <X size={18} />
         </button>
+
         <div className="p-8 text-center">
           <div className="relative mx-auto w-20 h-20 grid place-items-center">
             <span className="absolute inset-0 rounded-full glow" />
@@ -43,10 +51,14 @@ function OrderCompletePopup({ open, onClose, orderNo }: {
               <Check className="text-white" size={34} />
             </div>
           </div>
+
           <h2 className="mt-5 text-2xl font-semibold text-black">Order Completed!</h2>
           <p className="text-sm text-slate-500 mt-1">Order #{orderNo}</p>
+
           <div className="my-6 h-px bg-slate-200" />
+
           <p className="text-slate-500">The order has been successfully completed.</p>
+
           <div className="mt-7 flex justify-center">
             <button
               onClick={onClose}
@@ -56,9 +68,24 @@ function OrderCompletePopup({ open, onClose, orderNo }: {
             </button>
           </div>
         </div>
+
         <style jsx>{`
-          .glow { background: radial-gradient(circle, rgba(249,115,22,0.7), rgba(249,115,22,0) 65%); filter: blur(10px); }
-          .glow-strong { background: radial-gradient(circle, rgba(249,115,22,0.5), rgba(249,115,22,0) 80%); filter: blur(26px); }
+          .glow {
+            background: radial-gradient(
+              circle,
+              rgba(249, 115, 22, 0.7),
+              rgba(249, 115, 22, 0) 65%
+            );
+            filter: blur(10px);
+          }
+          .glow-strong {
+            background: radial-gradient(
+              circle,
+              rgba(249, 115, 22, 0.5),
+              rgba(249, 115, 22, 0) 80%
+            );
+            filter: blur(26px);
+          }
         `}</style>
       </div>
     </div>
@@ -67,33 +94,65 @@ function OrderCompletePopup({ open, onClose, orderNo }: {
 
 const page = () => {
   const { currency } = useCurrency();
-  
   const { posSettings } = usePosSettings();
 
   const [search, setSearch] = useState("");
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
+
   const [paymentOpen, setPaymentOpen] = useState(false);
-  const [paymentData, setPaymentData] = useState<{ orderNo: string; totalAmount: number; tipAmount: number } | null>(null);
+  const [paymentData, setPaymentData] = useState<{
+    orderNo: string;
+    totalAmount: number;
+    tipAmount: number;
+  } | null>(null);
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
+
+  //  RESTORED: customer email state
+  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
+
   const [paymentModalKey, setPaymentModalKey] = useState(0);
   const [paymentForceEditable, setPaymentForceEditable] = useState(false);
 
   const panelRef = useRef<CustomerInfoPanelHandle>(null);
+
   const orderNo = useMemo(() => `ORD-${new Date().getTime()}`, []);
 
   const confirmItems: ConfirmItem[] = useMemo(
-    () => orderItems.map((it) => ({ id: it.id, name: it.name, qty: it.qty, price: it.price, subtotal: it.price * it.qty })),
+    () =>
+      orderItems.map((it) => ({
+        id: it.id,
+        name: it.name,
+        qty: it.qty,
+        price: it.price,
+        subtotal: it.price * it.qty,
+      })),
     [orderItems]
   );
 
   const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
     setOrderItems((prev) => {
       const existing = prev.find((it) => it.id === String(item.id));
-      if (existing) return prev.map((it) => (it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it));
-      return [...prev, { id: String(item.id), name: item.name, price: item.price, qty: 1, imageUrl: item.image }];
+      if (existing) {
+        return prev.map((it) =>
+          it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it
+        );
+      }
+
+      return [
+        ...prev,
+        {
+          id: String(item.id),
+          name: item.name,
+          price: item.price,
+          qty: 1,
+          imageUrl: item.image,
+        },
+      ];
     });
   };
 
@@ -103,6 +162,10 @@ const page = () => {
     setPaymentSummary(null);
     setConfirmOpen(false);
     setPaymentForceEditable(false);
+
+    //  RESTORED: reset email
+    setCustomerEmail(null);
+
     setPaymentModalKey((k) => k + 1);
   };
 
@@ -113,6 +176,7 @@ const page = () => {
           <div className="pt-2 shrink-0">
             <SearchBar value={search} onChange={setSearch} placeholder="Search Name or ID" className="py-2" />
           </div>
+
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
             <ItemGrid search={search} onAdd={handleAddItem} />
           </div>
@@ -122,18 +186,36 @@ const page = () => {
           <CustomerInfoPanel
             ref={panelRef}
             items={orderItems}
-            
             customerDisplayEnabled={posSettings.customerDisplayEnabled}
-            onInc={(id) => setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it)))}
-            onDec={(id) =>
+            onInc={(id) =>
               setOrderItems((prev) =>
-                prev.map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it)).filter((it) => it.qty > 0)
+                prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it))
               )
             }
-            onSetQty={(id, qty) => setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)))}
-            onCancel={() => { setOrderItems([]); hardResetPaymentFlow(); }}
-            onPay={({ total }) => {
-              if (total <= 0) { alert("Please add items to proceed with payment."); return; }
+            onDec={(id) =>
+              setOrderItems((prev) =>
+                prev
+                  .map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it))
+                  .filter((it) => it.qty > 0)
+              )
+            }
+            onSetQty={(id, qty) =>
+              setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)))
+            }
+            onCancel={() => {
+              setOrderItems([]);
+              hardResetPaymentFlow();
+            }}
+            onPay={({ total, customer }: any) => {
+              //  keep same behavior: block if no items
+              if (total <= 0) {
+                alert("Please add items to proceed with payment.");
+                return;
+              }
+
+              //  RESTORED: capture email from selected customer (if exists)
+              setCustomerEmail(customer?.email ?? null);
+
               setPaymentForceEditable(false);
               setPaymentData({ orderNo, totalAmount: total, tipAmount: 0 });
               setPaymentOpen(true);
@@ -156,6 +238,8 @@ const page = () => {
           setPaymentOpen(false);
           setConfirmOpen(true);
           setPaymentForceEditable(true);
+
+          //  merged branch behavior preserved
           panelRef.current?.sendPaymentSummary(summary);
         }}
       />
@@ -166,14 +250,25 @@ const page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-          onCancelEdit={() => { setConfirmOpen(false); setPaymentForceEditable(true); setPaymentOpen(true); }}
+          //  RESTORED: pass email into confirmation popup
+          customerEmail={customerEmail}
+          onCancelEdit={() => {
+            setConfirmOpen(false);
+            setPaymentForceEditable(true);
+            setPaymentOpen(true);
+          }}
           onConfirm={() => {
             setCompletedOrderNo(paymentSummary.orderNo);
+
             setConfirmOpen(false);
             setPaymentOpen(false);
+
             setOrderItems([]);
             hardResetPaymentFlow();
+
             setCompleteOpen(true);
+
+            //  merged branch behavior preserved
             panelRef.current?.sendOrderConfirmed();
           }}
         />

@@ -2,6 +2,11 @@ import * as React from "react";
 import ModalShell from "../common/ModalShell";
 import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
+import { useNotifications } from "../../../context/NotificationsContext";
+
+// ─── FIX 1: Add the missing props for userRole, branchName, branchManager ─────
+// These were used inside the component but never declared as props,
+// causing "not defined" runtime errors alongside handleCancel.
 
 type SoldBy = "each" | "volume_weight";
 
@@ -24,6 +29,10 @@ type AddProductPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (values: ProductValues) => void;
+  // ↓ These three were missing from the props type — added now
+  userRole?: "admin" | "cashier" | "superadmin" | "branch_manager";
+  branchName?: string;
+  branchManager?: string;
 };
 
 const MAX_IMAGE_SIZE_MB = 5;
@@ -39,7 +48,12 @@ export default function AddProductPopup({
   open,
   onClose,
   onSave,
+  userRole,
+  branchName = "",
+  branchManager = "",
 }: AddProductPopupProps) {
+  const { addNotification } = useNotifications();
+
   const [values, setValues] = React.useState<ProductValues>({
     name: "",
     price: "",
@@ -57,18 +71,10 @@ export default function AddProductPopup({
   const [imageError, setImageError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  // Reset all state when the popup opens
   React.useEffect(() => {
     if (!open) return;
-    setValues({
-      name: "",
-      price: "",
-      discount: "",
-      tax: "",
-      stock: "",
-      soldBy: "each",
-      unit: "",
-      imageUrl: "",
-    });
+    setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
     setErrors({});
     setImageFile(null);
     setImagePreview(null);
@@ -76,11 +82,21 @@ export default function AddProductPopup({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [open]);
 
+  // ─── FIX 2: Define handleCancel — resets form state then closes ───────────
+  // This was referenced at line 195 (onClose={handleCancel}) but never defined.
+  const handleCancel = () => {
+    setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
+    setErrors({});
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    onClose();
+  };
+
   const setField = (name: keyof ProductValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const setSoldBy = (soldBy: SoldBy) => {
@@ -114,6 +130,8 @@ export default function AddProductPopup({
       newErrors.discount = "Discount must be a valid number";
     } else if (Number(values.discount) < 0) {
       newErrors.discount = "Discount cannot be negative";
+    } else if (Number(values.discount) > 100) {
+      newErrors.discount = "Discount cannot exceed 100%";
     }
 
     if (!values.tax.trim()) {
@@ -122,6 +140,8 @@ export default function AddProductPopup({
       newErrors.tax = "Tax must be a valid number";
     } else if (Number(values.tax) < 0) {
       newErrors.tax = "Tax cannot be negative";
+    } else if (Number(values.tax) > 100) {
+      newErrors.tax = "Tax cannot exceed 100%";
     }
 
     if (!values.stock.trim()) {
@@ -130,9 +150,10 @@ export default function AddProductPopup({
       newErrors.stock = "Stock must be a valid number";
     } else if (Number(values.stock) < 0) {
       newErrors.stock = "Stock cannot be negative";
+    } else if (!Number.isInteger(Number(values.stock))) {
+      newErrors.stock = "Stock must be a whole number";
     }
 
-    // Require unit when sold by volume/weight
     if (values.soldBy === "volume_weight" && !values.unit.trim()) {
       newErrors.unit = "Please select a unit";
     }
@@ -143,11 +164,8 @@ export default function AddProductPopup({
 
   const handleImageChange = (file: File | null) => {
     setImageError(null);
-    if (!file) {
-      setImageFile(null);
-      setImagePreview(null);
-      return;
-    }
+    if (!file) { setImageFile(null); setImagePreview(null); return; }
+
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       setImageError("Only JPG, JPEG, or PNG images are allowed");
       return;
@@ -168,13 +186,39 @@ export default function AddProductPopup({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ─── FIX 3: productApproval fields now use number types (not strings) ──────
+  // price, discount, tax, stock must be numbers to match the updated
+  // ProductApprovalData type in NotificationsContext.tsx.
   const handleSave = () => {
     if (!validateForm()) return;
     const payload: ProductValues = { ...values, imageUrl: imagePreview || "" };
-    onSave(payload);
-  };
 
-  const handleCancel = () => onClose();
+    if (userRole === "branch_manager") {
+      addNotification({
+        type: "approval_pending",
+        message: `New product request from ${branchName} — "${values.name.trim()}" awaiting approval`,
+        productApproval: {
+          id: Date.now(),
+          productName: values.name.trim(),
+          price: Number(values.price),
+          discount: Number(values.discount),
+          tax: Number(values.tax),
+          stock: Number(values.stock),
+          unit: values.soldBy === "volume_weight" ? values.unit : "each",
+          imageUrl: imagePreview || "",
+          branchId: 0,
+          branchName,
+          branchManager,
+          submittedBy: branchManager,
+          submittedAt: new Date().toISOString(),
+          status: "pending",
+        },
+      });
+    }
+
+    onSave(payload);
+    onClose();
+  };
 
   return (
     <ModalShell
@@ -185,10 +229,7 @@ export default function AddProductPopup({
     >
       <form
         className="space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSave();
-        }}
+        onSubmit={(e) => { e.preventDefault(); handleSave(); }}
       >
         <FormField
           label="Name"
@@ -212,12 +253,11 @@ export default function AddProductPopup({
           <p className="text-xs text-red-500 px-3">{errors.price}</p>
         )}
 
-        {/* ── Discount & Tax inline ── */}
         <div className="flex gap-4">
           <div className="flex-1 space-y-1">
             <FormField
               label="Discount"
-              placeholder="Enter discount"
+              placeholder="Enter discount %"
               value={values.discount}
               onChange={(v) => setField("discount", v)}
               type="number"
@@ -230,7 +270,7 @@ export default function AddProductPopup({
           <div className="flex-1 space-y-1">
             <FormField
               label="Tax"
-              placeholder="Enter tax"
+              placeholder="Enter tax %"
               value={values.tax}
               onChange={(v) => setField("tax", v)}
               type="number"
@@ -252,65 +292,54 @@ export default function AddProductPopup({
           <p className="text-xs text-red-500 px-3">{errors.stock}</p>
         )}
 
-        {/* ── Sold By + Unit inline ── */}
-          <div className="flex gap-4 items-start pt-1">
-            {/* Sold By */}
-            <div className="space-y-2">
-              <label className="text-[12px] text-gray-500">Sold By</label>
-
-              <div className="flex gap-3">
-                {(
-                  [
-                    { value: "each", label: "Each" },
-                    { value: "volume_weight", label: "Volume / Weight" },
-                  ] as { value: SoldBy; label: string }[]
-                ).map(({ value, label }) => {
-                  const active = values.soldBy === value;
-
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setSoldBy(value)}
-                      className={`
-                        rounded-full border px-4 py-2 text-sm font-normal transition-all
-                        outline-none
-                        ${
-                          active
-                            ? "border-orange-500 text-orange-600 ring-2 ring-orange-200 bg-white"
-                            : "border-gray-200 text-gray-800 hover:border-orange-300"
-                        }
-                      `}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+        <div className="flex gap-4 items-start pt-1">
+          <div className="space-y-2">
+            <label className="text-[12px] text-gray-500">Sold By</label>
+            <div className="flex gap-3">
+              {(
+                [
+                  { value: "each", label: "Each" },
+                  { value: "volume_weight", label: "Volume / Weight" },
+                ] as { value: SoldBy; label: string }[]
+              ).map(({ value, label }) => {
+                const active = values.soldBy === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setSoldBy(value)}
+                    className={`
+                      rounded-full border px-4 py-2 text-sm font-normal transition-all outline-none
+                      ${active
+                        ? "border-orange-500 text-orange-600 ring-2 ring-orange-200 bg-white"
+                        : "border-gray-200 text-gray-800 hover:border-orange-300"
+                      }
+                    `}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
-
-            {/* Unit – dropdown only for volume/weight */}
-            {values.soldBy === "volume_weight" && (
-              <div className="flex-1">
-                <FormField
-                  label="Unit"
-                  type="dropdown"
-                  placeholder="Select a unit…"
-                  value={values.unit}
-                  onChange={(v) => setField("unit", v)}
-                  options={VOLUME_WEIGHT_UNITS.map((u) => ({
-                    value: u,
-                    label: u,
-                  }))}
-                />
-                {errors.unit && (
-                  <p className="mt-1 text-xs text-red-500 px-3">{errors.unit}</p>
-                )}
-              </div>
-            )}
           </div>
 
-        {/* ── Product Image ── */}
+          {values.soldBy === "volume_weight" && (
+            <div className="flex-1">
+              <FormField
+                label="Unit"
+                type="dropdown"
+                placeholder="Select a unit…"
+                value={values.unit}
+                onChange={(v) => setField("unit", v)}
+                options={VOLUME_WEIGHT_UNITS.map((u) => ({ value: u, label: u }))}
+              />
+              {errors.unit && (
+                <p className="mt-1 text-xs text-red-500 px-3">{errors.unit}</p>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="space-y-2 pt-2">
           <label className="text-[12px] text-gray-500">Product Image</label>
 
@@ -326,12 +355,8 @@ export default function AddProductPopup({
               hover:file:bg-orange-100 hover:file:cursor-pointer"
           />
 
-          {imageError && (
-            <p className="text-xs text-red-500">{imageError}</p>
-          )}
-          {errors.image && (
-            <p className="text-xs text-red-500">{errors.image}</p>
-          )}
+          {imageError && <p className="text-xs text-red-500">{imageError}</p>}
+          {errors.image && <p className="text-xs text-red-500">{errors.image}</p>}
 
           {imagePreview && (
             <div className="relative mt-2 h-28 w-28">
@@ -353,16 +378,25 @@ export default function AddProductPopup({
           )}
         </div>
 
+        {userRole === "branch_manager" && (
+          <div className="flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3">
+            <span className="text-orange-400 text-base">📋</span>
+            <p className="text-xs text-orange-600 font-medium">
+              This product will be sent to admin for approval before it goes live.
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-center pt-4">
           <div className="w-[420px]">
             <PopupActions
               actions={[
+                { label: "Cancel", onClick: handleCancel, variant: "secondary" },
                 {
-                  label: "Cancel",
-                  onClick: handleCancel,
-                  variant: "secondary",
+                  label: userRole === "branch_manager" ? "Submit for Approval" : "Save",
+                  onClick: handleSave,
+                  variant: "primary",
                 },
-                { label: "Save", onClick: handleSave, variant: "primary" },
               ]}
             />
           </div>

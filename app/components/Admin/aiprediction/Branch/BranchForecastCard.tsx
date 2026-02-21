@@ -17,7 +17,7 @@ type Props = {
 };
 
 export default function BranchForecastCard({ branches }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const getEfficiencyStyles = (value: number) => {
     if (value <= 0) {
@@ -61,14 +61,14 @@ export default function BranchForecastCard({ branches }: Props) {
             <p>
               <span className="text-gray-500">Current Sale :</span>{" "}
               <span className="font-semibold text-gray-900">
-                {formatCurrency(data.currentSale, currency)}
+                {formatCurrency(data.currentSale, currency, useCents)}
               </span>
             </p>
 
             <p>
               <span className="text-gray-500">Predicted :</span>{" "}
               <span className="font-semibold text-gray-900">
-                {formatCurrency(data.predictedSale, currency)}
+                {formatCurrency(data.predictedSale, currency, useCents)}
               </span>
             </p>
           </div>

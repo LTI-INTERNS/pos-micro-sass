@@ -8,24 +8,29 @@ import { ordersData, Order } from "@/app/ordermanagement/data";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { formatCurrency } from "@/app/context/formatCurrency";
 
+import PreviousOrderDetailsModal from "./PreviousOrderDetailsModal";
+import { previousOrderDetailsMap } from "@/app/ordermanagement/previousOrderDetailsMock";
+
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
 export default function PreviousOrdersModal({ open, onClose }: Props) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   const [search, setSearch] = useState("");
+
+  //  NEW: details popup state
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+
+  const selectedDetails = selectedOrderId ? previousOrderDetailsMap[selectedOrderId] ?? null : null;
 
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return ordersData;
 
-    return ordersData.filter(
-      (o) =>
-        String(o.id).includes(q) ||
-        o.cashier?.toLowerCase().includes(q)
-    );
+    return ordersData.filter((o) => String(o.id).includes(q) || o.cashier?.toLowerCase().includes(q));
   }, [search]);
 
   const columns: Column<Order>[] = [
@@ -37,42 +42,44 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
       key: "totalamount",
       label: "Total Amount",
       render: (row) => row.totalamount !== undefined 
-        ? formatCurrency(row.totalamount, currency) 
+        ? formatCurrency(row.totalamount, currency, useCents) 
         : "-",
     },
     { key: "status", label: "Status" },
-    {
-      key: "action",
-      label: "Action",
-      render: () => (
-        <span className="text-orange-500 font-semibold cursor-pointer">
-          View
-        </span>
-      ),
-    },
   ];
 
   return (
-    <ModalShell
-      open={open}
-      title="Previous Orders"
-      onClose={onClose}
-      widthClassName="w-[1100px] max-w-[95vw]"
-    >
-      <div className="space-y-4">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder="Search by Order ID or Cashier"
-          showFilter={false}
-        />
+    <>
+      <ModalShell open={open} title="Previous Orders" onClose={onClose} widthClassName="w-[1100px] max-w-[95vw]">
+        <div className="space-y-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by Order ID or Cashier"
+            showFilter={false}
+          />
 
-        <CommonTable
-          data={filteredOrders}
-          columns={columns}
-          emptyMessage="No orders found"
-        />
-      </div>
-    </ModalShell>
+          <CommonTable
+            data={filteredOrders}
+            columns={columns}
+            emptyMessage="No orders found"
+            onSelectRow={(row) => {
+              if (!row) return;
+
+              //  open details popup
+              setSelectedOrderId(Number(row.id));
+              setDetailsOpen(true);
+            }}
+          />
+        </div>
+      </ModalShell>
+
+      {/*  NEW details popup */}
+      <PreviousOrderDetailsModal
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        details={selectedDetails}
+      />
+    </>
   );
 }

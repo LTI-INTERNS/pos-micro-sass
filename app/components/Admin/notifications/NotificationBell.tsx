@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
-import { useNotifications } from "./NotificationsContext";
-import type { Notification, ProductApprovalData } from "./NotificationsContext";
+import { useNotifications } from "../../../context/NotificationsContext";
+import type { Notification, ProductApprovalData } from "../../../context/NotificationsContext";
 import NotificationPanel from "./NotificationPanel";
 import NotificationMessagePopup from "@/app/components/Admin/notifications/NotificationMessagePopup";
 import ProductApprovalModal from "./ProductApprovalModal";
@@ -29,7 +29,6 @@ export default function NotificationBell() {
   const [approvalData, setApprovalData] = useState<ProductApprovalData | null>(null);
   const [approvalNotifId, setApprovalNotifId] = useState<number | null>(null);
 
-  // Bell shake on new unread notification
   const prevUnread = useRef(unreadCount);
   useEffect(() => {
     if (unreadCount > prevUnread.current) {
@@ -38,8 +37,6 @@ export default function NotificationBell() {
     }
     prevUnread.current = unreadCount;
   }, [unreadCount]);
-
-  // ── Open correct popup per notification type ─────────────────────────────
 
   const handleOpenMessage = (n: Notification) => {
     markAsRead(n.id);
@@ -56,8 +53,6 @@ export default function NotificationBell() {
     setPopupOpen(true);
   };
 
-  // ── Approval actions ─────────────────────────────────────────────────────
-
   const handleApprove = (productId: number) => {
     if (approvalNotifId !== null) {
       const notif = notifications.find((n) => n.id === approvalNotifId);
@@ -66,7 +61,12 @@ export default function NotificationBell() {
         type: "success",
         message: `"${notif?.productApproval?.productName}" approved ✓`,
         productApproval: notif?.productApproval
-          ? { ...notif.productApproval, status: "approved" }
+          ? {
+              ...notif.productApproval,
+              status: "approved",
+              approvedBy: "current.admin@company.com", // TODO: replace with real auth user
+              reviewedAt: new Date().toISOString(),
+            }
           : undefined,
       });
     }
@@ -81,14 +81,18 @@ export default function NotificationBell() {
         type: "error",
         message: `"${notif?.productApproval?.productName}" rejected`,
         productApproval: notif?.productApproval
-          ? { ...notif.productApproval, status: "rejected", rejectionReason: reason }
+          ? {
+              ...notif.productApproval,
+              status: "rejected",
+              rejectedBy: "current.admin@company.com", // TODO: replace with real auth user
+              reviewedAt: new Date().toISOString(),
+              rejectionReason: reason,
+            }
           : undefined,
       });
     }
     setApprovalOpen(false);
   };
-
-  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="relative">
@@ -102,7 +106,6 @@ export default function NotificationBell() {
         }
       `}</style>
 
-      {/* Bell — only visible when there are unread notifications */}
       {unreadCount > 0 && (
         <button
           type="button"
@@ -121,7 +124,6 @@ export default function NotificationBell() {
         </button>
       )}
 
-      {/* Notification panel */}
       {open && (
         <NotificationPanel
           notifications={notifications}
@@ -132,14 +134,12 @@ export default function NotificationBell() {
         />
       )}
 
-      {/* Generic message popup */}
       <NotificationMessagePopup
         open={popupOpen}
         data={selected}
         onClose={() => setPopupOpen(false)}
       />
 
-      {/* Product approval modal */}
       <ProductApprovalModal
         open={approvalOpen}
         data={approvalData}

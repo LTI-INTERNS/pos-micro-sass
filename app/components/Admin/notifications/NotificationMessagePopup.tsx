@@ -4,7 +4,7 @@ import * as React from "react";
 import { Info, CheckCircle2, AlertTriangle, XCircle } from "lucide-react";
 import ModalShell from "@/app/components/Admin/common/ModalShell";
 import PopupActions from "@/app/components/Admin/common/PopupActions";
-import type { NotificationType } from "./NotificationsContext";
+import type { NotificationType } from "../../../context/NotificationsContext";
 
 type Props = {
   open: boolean;

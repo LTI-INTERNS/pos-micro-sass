@@ -5,7 +5,7 @@ import { useCurrency } from "@/app/context/CurrencyContext";
 import { formatCurrency } from "@/app/context/formatCurrency";
 
 export default function Staff() {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
   const staffItems: PerformanceItem[] = [
     {
@@ -14,8 +14,8 @@ export default function Staff() {
       subtitle: "Sales Performance & Productivity",
 
       primaryMetricLabel: "Sales",
-      primaryMetricValueText: formatCurrency(48000, currency),
-      primaryMetricSubtext: `Target: ${formatCurrency(50000, currency)}`,
+      primaryMetricValueText: formatCurrency(48000, currency, useCents),
+      primaryMetricSubtext: `Target: ${formatCurrency(50000, currency, useCents)}`,
 
       metricA: { label: "Productivity", valuePct: 96, tone: "orange" },
       metricB: { label: "Satisfaction", valuePct: 92, tone: "green" },
@@ -31,8 +31,8 @@ export default function Staff() {
       subtitle: "Sales Performance & Productivity",
 
       primaryMetricLabel: "Sales",
-      primaryMetricValueText: formatCurrency(52000, currency),
-      primaryMetricSubtext: `Target: ${formatCurrency(60000, currency)}`,
+      primaryMetricValueText: formatCurrency(52000, currency, useCents),
+      primaryMetricSubtext: `Target: ${formatCurrency(60000, currency, useCents)}`,
 
       metricA: { label: "Productivity", valuePct: 104, tone: "orange" },
       metricB: { label: "Satisfaction", valuePct: 99, tone: "green" },
@@ -48,8 +48,8 @@ export default function Staff() {
       subtitle: "Sales Performance & Productivity",
 
       primaryMetricLabel: "Sales",
-      primaryMetricValueText: formatCurrency(22000, currency),
-      primaryMetricSubtext: `Target: ${formatCurrency(30000, currency)}`,
+      primaryMetricValueText: formatCurrency(22000, currency, useCents),
+      primaryMetricSubtext: `Target: ${formatCurrency(30000, currency, useCents)}`,
 
       metricA: { label: "Productivity", valuePct: 91, tone: "orange" },
       metricB: { label: "Satisfaction", valuePct: 99, tone: "green" },
@@ -65,8 +65,8 @@ export default function Staff() {
       subtitle: "Sales Performance & Productivity",
 
       primaryMetricLabel: "Sales",
-      primaryMetricValueText: formatCurrency(28000, currency),
-      primaryMetricSubtext: `Target: ${formatCurrency(10000, currency)}`,
+      primaryMetricValueText: formatCurrency(28000, currency, useCents),
+      primaryMetricSubtext: `Target: ${formatCurrency(10000, currency, useCents)}`,
 
       metricA: { label: "Productivity", valuePct: 96, tone: "orange" },
       metricB: { label: "Satisfaction", valuePct: 92, tone: "green" },
@@ -82,8 +82,8 @@ export default function Staff() {
       subtitle: "Sales Performance & Productivity",
 
       primaryMetricLabel: "Sales",
-      primaryMetricValueText: formatCurrency(78000, currency),
-      primaryMetricSubtext: `Target: ${formatCurrency(64000, currency)}`,
+      primaryMetricValueText: formatCurrency(78000, currency, useCents),
+      primaryMetricSubtext: `Target: ${formatCurrency(64000, currency, useCents)}`,
 
       metricA: { label: "Productivity", valuePct: 96, tone: "orange" },
       metricB: { label: "Satisfaction", valuePct: 92, tone: "green" },

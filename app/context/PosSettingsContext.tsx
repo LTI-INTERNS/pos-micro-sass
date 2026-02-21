@@ -19,10 +19,15 @@ const DEFAULTS: PosSettings = {
 
 function loadFromStorage(): PosSettings {
   if (typeof window === "undefined") return DEFAULTS;
+
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULTS;
-    return { ...DEFAULTS, ...JSON.parse(raw) };
+
+    return {
+      ...DEFAULTS,           
+      ...JSON.parse(raw),   
+    };
   } catch {
     return DEFAULTS;
   }
@@ -36,7 +41,6 @@ const PosSettingsContext = createContext<PosSettingsContextType>({
 export function PosSettingsProvider({ children }: { children: ReactNode }) {
   const [posSettings, setPosSettingsState] = useState<PosSettings>(DEFAULTS);
 
-  // Load from localStorage on mount (client only)
   useEffect(() => {
     setPosSettingsState(loadFromStorage());
   }, []);
