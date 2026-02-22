@@ -115,8 +115,19 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
     useImperativeHandle(ref, () => ({
       sendPaymentSummary(summary: PaymentSummary) {
         if (!customerDisplayEnabled) return;
-        send({ type: "PAYMENT_SUMMARY", summary });
-        onPaymentDone?.(summary);
+        // ✅ FIX: attach the currently selected customer to the summary
+        const summaryWithCustomer: PaymentSummary = {
+          ...summary,
+          customer: selectedCustomer
+            ? {
+                name: selectedCustomer.name,
+                phoneNumber: selectedCustomer.phoneNumber,
+                email: selectedCustomer.email ?? "",
+              }
+            : null,
+        };
+        send({ type: "PAYMENT_SUMMARY", summary: summaryWithCustomer });
+        onPaymentDone?.(summaryWithCustomer);
       },
       sendOrderConfirmed() {
         if (!customerDisplayEnabled) return;

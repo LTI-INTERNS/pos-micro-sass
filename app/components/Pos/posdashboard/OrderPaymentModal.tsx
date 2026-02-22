@@ -26,6 +26,12 @@ export type PaymentSummary = {
   changeToGive: number; // only for pure-cash flow
 
   grandTotal: number; // netDue + cardTaxApplied
+
+  customer?: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+  } | null;
 };
 
 type Props = {

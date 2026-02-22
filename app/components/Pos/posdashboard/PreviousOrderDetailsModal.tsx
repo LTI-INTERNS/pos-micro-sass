@@ -8,6 +8,7 @@ import OrderSummaryContent, {
   PaymentIcons,
   type CommonPaymentSummary,
 } from "../OrderSummaryContent";
+import { useReceiptPrinter } from "@/app/hooks/useReceiptActions";
 
 type Props = {
   open: boolean;
@@ -16,11 +17,44 @@ type Props = {
 };
 
 export default function PreviousOrderDetailsModal({ open, onClose, details }: Props) {
+  // ✅ Hook must be called unconditionally — guard with empty data instead
+  const { handlePrint, handleEmail } = useReceiptPrinter(
+    details
+      ? {
+          orderId: details.orderId,
+          currencyCode: details.currencyCode ?? "LKR",
+          items: details.items.map((it) => ({
+            name: it.name,
+            qty: it.qty,
+            price: it.price,
+          })),
+          discountValue: details.discountValue,
+          cardTax: details.cardTax,
+          grandTotal: details.grandTotal,
+          paymentMethod: details.paymentMethod,
+          cashPaid: details.cashPaid,
+          cardPaid: details.cardPaid,
+          customerEmail: details.email ?? null,
+        }
+      : {
+          // safe empty fallback when details is null
+          orderId: "",
+          currencyCode: "LKR",
+          items: [],
+          discountValue: 0,
+          cardTax: 0,
+          grandTotal: 0,
+          paymentMethod: "",
+          cashPaid: 0,
+          cardPaid: 0,
+        }
+  );
+
   if (!open || !details) return null;
 
-  const hasEmail = Boolean(details.email && details.email.trim());
+  const hasEmail = Boolean(details.email?.trim());
   const noteText = (details.note ?? "").trim();
-  const noteValue = noteText ? noteText : "No Notes available";
+  const noteValue = noteText || "No Notes available";
 
   const commonPayment: CommonPaymentSummary = {
     orderNo: details.orderId,
@@ -31,6 +65,7 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
     paymentMethod: details.paymentMethod,
     cashPaid: details.cashPaid,
     cardPaid: details.cardPaid,
+    customerEmail: details.email ?? undefined,
   };
 
   return (
@@ -45,7 +80,6 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
             <X size={18} />
           </button>
 
-          {/* Scoped wrapper for safe styling without changing the common component */}
           <div className="prev-order-details">
             <OrderSummaryContent<PreviousOrderItem>
               title="Previous Order Details"
@@ -56,8 +90,6 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
               leftBlock={
                 <div className="border rounded-xl p-4 bg-slate-50 h-full flex flex-col">
                   <h3 className="font-semibold mb-2 text-black">NOTES</h3>
-
-                  {/* Non-editable note area */}
                   <div className="flex-1">
                     <textarea
                       value={noteValue}
@@ -68,12 +100,10 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
                   </div>
                 </div>
               }
-              /*  We will show receipt/email buttons in the bottom bar (requested),
-                 so we hide the built-in action row using CSS below. */
               rightAction={null}
             />
 
-            {/*  Bottom section: payment method + buttons aligned horizontally */}
+            {/* Bottom bar: payment method + wired action buttons */}
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pt-6 border-t mt-4">
               <div>
                 <p className="text-sm text-slate-500">Payment method</p>
@@ -84,13 +114,20 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
               </div>
 
               <div className="flex gap-3 w-full md:w-auto">
-                <button className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer">
+                {/* ✅ Wired to useReceiptPrinter */}
+                <button
+                  onClick={handlePrint}
+                  className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+                >
                   <Printer size={16} />
-                  <span>Get receipt</span>
+                  <span>Get Receipt</span>
                 </button>
 
                 {hasEmail && (
-                  <button className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer">
+                  <button
+                    onClick={handleEmail}
+                    className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+                  >
                     <Mail size={16} />
                     <span>Email</span>
                   </button>
@@ -98,7 +135,7 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
               </div>
             </div>
 
-            {/*  Hide the action row inside OrderSummaryContent (so buttons appear ONLY in bottom bar) */}
+            {/* Hide the inner action row from OrderSummaryContent */}
             <style jsx global>{`
               .prev-order-details .grid > :last-child > div.pt-3.border-t.flex.gap-3 {
                 display: none;

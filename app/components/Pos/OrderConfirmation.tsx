@@ -94,6 +94,8 @@ export default function OrderConfirmation({
     paymentMethod: payment.paymentMethod,
     cashPaid: payment.cashPaid,
     cardPaid: payment.cardPaid,
+    customer: payment.customer ?? null,
+    customerEmail: payment.customer?.email ?? undefined,
   };
 
   return (

@@ -92,6 +92,13 @@ function OrderCompletePopup({
   );
 }
 
+// ✅ Type for the selected customer stored in dashboard state
+type SelectedCustomer = {
+  name: string;
+  phoneNumber: string;
+  email: string;
+} | null;
+
 const page = () => {
   const { currency } = useCurrency();
   const { posSettings } = usePosSettings();
@@ -109,8 +116,8 @@ const page = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
 
-  //  RESTORED: customer email state
-  const [customerEmail, setCustomerEmail] = useState<string | null>(null);
+  // ✅ FIX: store the full customer object, not just the email
+  const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer>(null);
 
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
@@ -163,8 +170,8 @@ const page = () => {
     setConfirmOpen(false);
     setPaymentForceEditable(false);
 
-    //  RESTORED: reset email
-    setCustomerEmail(null);
+    // ✅ FIX: reset full customer object
+    setSelectedCustomer(null);
 
     setPaymentModalKey((k) => k + 1);
   };
@@ -207,14 +214,21 @@ const page = () => {
               hardResetPaymentFlow();
             }}
             onPay={({ total, customer }: any) => {
-              //  keep same behavior: block if no items
               if (total <= 0) {
                 alert("Please add items to proceed with payment.");
                 return;
               }
 
-              //  RESTORED: capture email from selected customer (if exists)
-              setCustomerEmail(customer?.email ?? null);
+              // ✅ FIX: store the full customer object (name + phone + email)
+              setSelectedCustomer(
+                customer
+                  ? {
+                      name: customer.name ?? "",
+                      phoneNumber: customer.phoneNumber ?? "",
+                      email: customer.email ?? "",
+                    }
+                  : null
+              );
 
               setPaymentForceEditable(false);
               setPaymentData({ orderNo, totalAmount: total, tipAmount: 0 });
@@ -234,13 +248,19 @@ const page = () => {
         currencyCode={currency}
         forceEditable={paymentForceEditable}
         onDone={(summary) => {
-          setPaymentSummary(summary);
+          // ✅ FIX: attach the full customer object to the summary here,
+          // so it flows into OrderConfirmation → OrderSummaryContent → receipt
+          const summaryWithCustomer: PaymentSummary = {
+            ...summary,
+            customer: selectedCustomer,
+          };
+
+          setPaymentSummary(summaryWithCustomer);
           setPaymentOpen(false);
           setConfirmOpen(true);
           setPaymentForceEditable(true);
 
-          //  merged branch behavior preserved
-          panelRef.current?.sendPaymentSummary(summary);
+          panelRef.current?.sendPaymentSummary(summaryWithCustomer);
         }}
       />
 
@@ -250,8 +270,8 @@ const page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-          //  RESTORED: pass email into confirmation popup
-          customerEmail={customerEmail}
+          // ✅ FIX: pass email for the email button (derived from customer object)
+          customerEmail={selectedCustomer?.email ?? null}
           onCancelEdit={() => {
             setConfirmOpen(false);
             setPaymentForceEditable(true);
@@ -268,7 +288,6 @@ const page = () => {
 
             setCompleteOpen(true);
 
-            //  merged branch behavior preserved
             panelRef.current?.sendOrderConfirmed();
           }}
         />
