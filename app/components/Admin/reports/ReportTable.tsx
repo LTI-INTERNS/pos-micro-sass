@@ -1,17 +1,16 @@
 "use client";
 
 import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
-import {
-  SALES_DATA,   type SaleRow,
-  EXPENSES_DATA, type ExpenseRow,
-  PRODUCTS_DATA, type ProductRow,
-} from "@/app/reports/reportsMockData";
+import type { SaleRow, ExpenseRow, ProductRow } from "@/app/reports/reportsMockData";
+import { PRODUCTS_DATA } from "@/app/reports/reportsMockData";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { formatCurrency } from "@/app/context/formatCurrency";
 
 type Props = {
   activeTab: string;
   search: string;
+  salesData: SaleRow[];       
+  expensesData: ExpenseRow[]; 
   selectedSale:    SaleRow    | null;
   selectedExpense: ExpenseRow | null;
   selectedProduct: ProductRow | null;
@@ -31,6 +30,8 @@ function filterRows<T>(data: T[], search: string, keys: (keyof T)[]): T[] {
 export default function ReportTable({
   activeTab,
   search,
+  salesData,
+  expensesData,
   selectedSale,    onSelectSale,
   selectedExpense, onSelectExpense,
   selectedProduct, onSelectProduct,
@@ -63,8 +64,9 @@ export default function ReportTable({
       key: "amount",
       label: "Amount",
       align: "right",
-      render: (row) => formatCurrency(row.amount, currency, useCents), 
+      render: (row) => formatCurrency(row.amount, currency, useCents),
     },
+    { key: "branch", label: "Branch" },
   ];
 
   const EXPENSE_COLS: Column<ExpenseRow>[] = [
@@ -76,20 +78,21 @@ export default function ReportTable({
       key: "amount",
       label: "Amount",
       align: "right",
-      render: (row) => formatCurrency(row.amount, currency, useCents), 
+      render: (row) => formatCurrency(row.amount, currency, useCents),
     },
+    { key: "branch", label: "Branch" },
   ];
 
   const PRODUCT_COLS: Column<ProductRow>[] = [
-    { key: "sku",      label: "SKU"          },
-    { key: "name",     label: "Product Name" },
-    { key: "category", label: "Category"     },
+    { key: "sku",       label: "SKU"          },
+    { key: "name",      label: "Product Name" },
+    { key: "category",  label: "Category"     },
     { key: "unitsSold", label: "Units Sold", align: "center" },
     {
       key: "revenue",
       label: "Revenue",
       align: "right",
-      render: (row) => formatCurrency(row.revenue, currency, useCents), 
+      render: (row) => formatCurrency(row.revenue, currency, useCents),
     },
     {
       key: "stock",
@@ -104,7 +107,7 @@ export default function ReportTable({
   ];
 
   if (activeTab === "expenses") {
-    const filtered = filterRows<ExpenseRow>(EXPENSES_DATA, search, ["date", "category", "description", "approvedBy"]);
+    const filtered = filterRows<ExpenseRow>(expensesData, search, ["date", "category", "description", "approvedBy"]);
     return (
       <CommonTable<ExpenseRow>
         title="Expense Records"
@@ -131,7 +134,7 @@ export default function ReportTable({
     );
   }
 
-  const filtered = filterRows<SaleRow>(SALES_DATA, search, ["date", "invoiceId", "customer", "paymentMethod", "status"]);
+  const filtered = filterRows<SaleRow>(salesData, search, ["date", "invoiceId", "customer", "paymentMethod", "status"]);
   return (
     <CommonTable<SaleRow>
       title="Sales Transactions"

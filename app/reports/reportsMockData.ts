@@ -7,7 +7,9 @@ export type SaleRow = {
   paymentMethod: string;
   status: "Completed" | "Refunded" | "Pending";
   amount: number;
+  branch: string; 
 };
+
 
 export type ExpenseRow = {
   id: string;
@@ -16,6 +18,7 @@ export type ExpenseRow = {
   description: string;
   approvedBy: string;
   amount: number;
+   branch: string;
 };
 
 export type ProductRow = {
@@ -63,6 +66,7 @@ const CUSTOMERS = [
   "Tom Nguyen",    "Ella Martins",
 ];
 
+const BRANCHES = ["Colombo", "Kandy", "Galle", "Negombo"];
 const PAYMENTS = ["Credit Card", "Cash", "GCash", "PayMaya", "Debit Card"];
 const STATUSES: SaleRow["status"][] = ["Completed", "Completed", "Completed", "Refunded", "Pending"];
 
@@ -77,6 +81,7 @@ export const SALES_DATA: SaleRow[] = Array.from({ length: 30 }, (_, i) => {
     paymentMethod: PAYMENTS[i % PAYMENTS.length],
     status:        STATUSES[i % STATUSES.length],
     amount:        parseFloat((45 + i * 13.75 + (i % 4) * 8).toFixed(2)),
+    branch:        BRANCHES[i % BRANCHES.length], // 👈
   };
 });
 
@@ -105,6 +110,7 @@ export const EXPENSES_DATA: ExpenseRow[] = Array.from({ length: 15 }, (_, i) => 
     description: EXP_DESCRIPTIONS[i % EXP_DESCRIPTIONS.length],
     approvedBy:  MANAGERS[i % MANAGERS.length],
     amount:      parseFloat((80 + i * 47.5).toFixed(2)),
+    branch:      BRANCHES[i % BRANCHES.length], // 👈
   };
 });
 
