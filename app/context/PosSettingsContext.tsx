@@ -2,54 +2,53 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-type PosSettings = {
+export type PosSettings = {
   customerDisplayEnabled: boolean;
-  useCents: boolean; 
+  useCents: boolean;
+  negativeStockAlertsEnabled: boolean;
 };
 
 type PosSettingsContextType = {
   posSettings: PosSettings;
   setPosSettings: (settings: Partial<PosSettings>) => void;
+  hydrated: boolean;
 };
 
 const STORAGE_KEY = "pos_settings";
 
 const DEFAULTS: PosSettings = {
   customerDisplayEnabled: true,
-  useCents: false, 
+  useCents: false,
+  negativeStockAlertsEnabled: false,
 };
-
-function loadFromStorage(): PosSettings {
-  if (typeof window === "undefined") return DEFAULTS;
-
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULTS;
-
-    return {
-      ...DEFAULTS,           
-      ...JSON.parse(raw),   
-    };
-  } catch {
-    return DEFAULTS;
-  }
-}
 
 const PosSettingsContext = createContext<PosSettingsContextType>({
   posSettings: DEFAULTS,
   setPosSettings: () => {},
+  hydrated: false,
 });
 
 export function PosSettingsProvider({ children }: { children: ReactNode }) {
   const [posSettings, setPosSettingsState] = useState<PosSettings>(DEFAULTS);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    setPosSettingsState(loadFromStorage());
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const loaded = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : DEFAULTS;
+      console.log("[PosSettings] loaded from localStorage:", loaded);
+      setPosSettingsState(loaded);
+    } catch {
+      setPosSettingsState(DEFAULTS);
+    } finally {
+      setHydrated(true);
+    }
   }, []);
 
   const setPosSettings = (settings: Partial<PosSettings>) => {
     setPosSettingsState((prev) => {
       const next = { ...prev, ...settings };
+      console.log("[PosSettings] saving to localStorage:", next);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {}
@@ -58,7 +57,7 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PosSettingsContext.Provider value={{ posSettings, setPosSettings }}>
+    <PosSettingsContext.Provider value={{ posSettings, setPosSettings, hydrated }}>
       {children}
     </PosSettingsContext.Provider>
   );
