@@ -12,13 +12,15 @@ export type RecurringExpenses = {
   amount: number;
   payment: string;
   addedby: string;
+  branch: string;
 };
 
 type Props = {
   RecurringExpenses: RecurringExpenses[];
+  showBranch?: boolean;
 };
 
-export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
+export default function RecurringExpensesTable({ RecurringExpenses, showBranch = false }: Props) {
   const { currency, useCents } = useCurrency();
   
   const columns: Column<RecurringExpenses>[] = [
@@ -51,6 +53,9 @@ export default function RecurringExpensesTable({ RecurringExpenses }: Props) {
       key: "addedby",
       label: "Added By",
     },
+    ...(showBranch
+          ? [{ key: "branch" as keyof RecurringExpenses, label: "Branch" }]
+          : []),
   ];
 
   return (
