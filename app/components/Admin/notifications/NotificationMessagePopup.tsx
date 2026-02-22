@@ -60,6 +60,14 @@ const typeConfig: Record<
     iconBg: "bg-orange-50",
     iconColor: "text-orange-500",
   },
+  negative_stock: {
+    icon: <AlertTriangle size={16} />,
+    label: "LOW STOCK",
+    badgeBg: "bg-red-100",
+    badgeText: "text-red-700",
+    iconBg: "bg-red-50",
+    iconColor: "text-red-500",
+  },
 };
 
 export default function NotificationMessagePopup({ open, onClose, data }: Props) {

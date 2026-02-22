@@ -4,10 +4,6 @@ import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
 import { useNotifications } from "../../../context/NotificationsContext";
 
-// ─── FIX 1: Add the missing props for userRole, branchName, branchManager ─────
-// These were used inside the component but never declared as props,
-// causing "not defined" runtime errors alongside handleCancel.
-
 type SoldBy = "each" | "volume_weight";
 
 type ProductValues = {
@@ -29,8 +25,8 @@ type AddProductPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (values: ProductValues) => void;
-  // ↓ These three were missing from the props type — added now
-  userRole?: "admin" | "cashier" | "superadmin" | "branch_manager";
+  userRole?: "owner" | "cashier" | "administrator" | "branch_manager";
+  branchId?: number;
   branchName?: string;
   branchManager?: string;
 };
@@ -50,6 +46,7 @@ export default function AddProductPopup({
   onSave,
   userRole,
   branchName = "",
+  branchId = 0,
   branchManager = "",
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
@@ -71,7 +68,6 @@ export default function AddProductPopup({
   const [imageError, setImageError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
-  // Reset all state when the popup opens
   React.useEffect(() => {
     if (!open) return;
     setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
@@ -82,8 +78,6 @@ export default function AddProductPopup({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }, [open]);
 
-  // ─── FIX 2: Define handleCancel — resets form state then closes ───────────
-  // This was referenced at line 195 (onClose={handleCancel}) but never defined.
   const handleCancel = () => {
     setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
     setErrors({});
@@ -186,9 +180,6 @@ export default function AddProductPopup({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ─── FIX 3: productApproval fields now use number types (not strings) ──────
-  // price, discount, tax, stock must be numbers to match the updated
-  // ProductApprovalData type in NotificationsContext.tsx.
   const handleSave = () => {
     if (!validateForm()) return;
     const payload: ProductValues = { ...values, imageUrl: imagePreview || "" };
@@ -206,7 +197,7 @@ export default function AddProductPopup({
           stock: Number(values.stock),
           unit: values.soldBy === "volume_weight" ? values.unit : "each",
           imageUrl: imagePreview || "",
-          branchId: 0,
+          branchId,
           branchName,
           branchManager,
           submittedBy: branchManager,
