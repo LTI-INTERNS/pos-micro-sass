@@ -17,7 +17,6 @@ type Props = {
 };
 
 export default function PreviousOrderDetailsModal({ open, onClose, details }: Props) {
-  // ✅ Hook must be called unconditionally — guard with empty data instead
   const { handlePrint, handleEmail } = useReceiptPrinter(
     details
       ? {
@@ -114,7 +113,7 @@ export default function PreviousOrderDetailsModal({ open, onClose, details }: Pr
               </div>
 
               <div className="flex gap-3 w-full md:w-auto">
-                {/* ✅ Wired to useReceiptPrinter */}
+                {/*Wired to useReceiptPrinter */}
                 <button
                   onClick={handlePrint}
                   className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"

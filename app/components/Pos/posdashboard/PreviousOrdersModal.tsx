@@ -20,7 +20,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
   const { currency, useCents } = useCurrency();
   const [search, setSearch] = useState("");
 
-  //  NEW: details popup state
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
@@ -66,7 +65,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
             onSelectRow={(row) => {
               if (!row) return;
 
-              //  open details popup
               setSelectedOrderId(Number(row.id));
               setDetailsOpen(true);
             }}
@@ -74,7 +72,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
         </div>
       </ModalShell>
 
-      {/*  NEW details popup */}
       <PreviousOrderDetailsModal
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}

@@ -24,7 +24,7 @@ export type CommonPaymentSummary = {
   cashPaid: number;
   cardPaid: number;
   customerEmail?: string;
-  // Full customer object — carries name + phone + email from the POS flow
+
   customer?: {
     name: string;
     phoneNumber: string;
@@ -105,7 +105,6 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
     [items]
   );
 
-  // ✅ Use the shared hook — pass full customer fields individually
   const { handlePrint, handleEmail } = useReceiptPrinter({
     orderId: payment.orderNo,
     currencyCode: c,

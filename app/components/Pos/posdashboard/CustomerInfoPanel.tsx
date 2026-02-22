@@ -86,9 +86,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
 
     const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
 
-    /* ============================
-       POS CHANNEL COMMUNICATION
-    ============================ */
+    /* POS CHANNEL COMMUNICATION */
 
     const handleChannelMessage = useCallback((msg: PosMessage) => {
       if (msg.type === "CUSTOMER_SELECTED") {
@@ -106,16 +104,14 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
 
     const { send } = usePosChannel(handleChannelMessage);
 
-    // Broadcast feature toggle when changed
     useEffect(() => {
       send({ type: "FEATURE_TOGGLE", enabled: customerDisplayEnabled });
     }, [customerDisplayEnabled, send]);
 
-    // Expose methods to parent
     useImperativeHandle(ref, () => ({
       sendPaymentSummary(summary: PaymentSummary) {
         if (!customerDisplayEnabled) return;
-        // ✅ FIX: attach the currently selected customer to the summary
+
         const summaryWithCustomer: PaymentSummary = {
           ...summary,
           customer: selectedCustomer
@@ -138,15 +134,11 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       },
     }));
 
-    // Send order updates
     useEffect(() => {
       if (!customerDisplayEnabled) return;
       send({ type: "ORDER_UPDATED", items, subtotal, total });
     }, [items, subtotal, total, customerDisplayEnabled, send]);
 
-    /* ============================
-       QTY LOGIC
-    ============================ */
 
     useEffect(() => {
       const next: Record<string, string> = {};
@@ -164,10 +156,6 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       setQtyDraft((p) => ({ ...p, [id]: String(qty) }));
       onSetQty?.(id, qty);
     }
-
-    /* ============================
-       ACTIONS
-    ============================ */
 
     function handleCancel() {
       setSelectedCustomer(null);
@@ -189,13 +177,9 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       onPay?.({
         subtotal,
         total,
-        customer: selectedCustomer, //  passes customer email correctly
+        customer: selectedCustomer,
       });
     }
-
-    /* ============================
-       UI
-    ============================ */
 
     return (
       <>
