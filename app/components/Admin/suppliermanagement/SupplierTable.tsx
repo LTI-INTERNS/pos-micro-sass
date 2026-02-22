@@ -17,12 +17,14 @@ type Props = {
   suppliers: Supplier[];
   selectedSupplier: Supplier | null;
   setSelectedSupplier: (s: Supplier | null) => void;
+  isSuperAdmin?: boolean;
 };
 
 export default function SupplierTable({
   suppliers,
   selectedSupplier,
   setSelectedSupplier,
+  isSuperAdmin = false,
 }: Props) {
   const columns: Column<Supplier>[] = [
     { key: "id", label: "ID" },
@@ -31,11 +33,15 @@ export default function SupplierTable({
     { key: "phone", label: "Phone" },
     { key: "email", label: "Email" },
     { key: "coverarea", label: "Cover Area" },
-    { 
-      key: "branches", 
-      label: "Branches",
-      render: (row) => row.branches.join(", ")
-    },
+    ...(isSuperAdmin
+      ? [
+          {
+            key: "branches" as keyof Supplier,
+            label: "Branches",
+            render: (row: Supplier) => row.branches.join(", "),
+          },
+        ]
+      : []),
     { key: "regNo", label: "Reg No" },
   ];
 
@@ -45,10 +51,8 @@ export default function SupplierTable({
       data={suppliers}
       columns={columns}
       emptyMessage="No suppliers found"
-      selectedRowId={selectedSupplier?.id}
-      onSelectRow={(row) => {
-        setSelectedSupplier(row);
-      }}
+      selectedRowId={isSuperAdmin ? selectedSupplier?.id : undefined}
+      onSelectRow={isSuperAdmin ? (row) => setSelectedSupplier(row) : undefined}
     />
   );
 }

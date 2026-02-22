@@ -10,6 +10,13 @@ import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import FilterPopup from "../components/Admin/common/FilterPopup"; 
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 
+type UserRole = "superadmin" | "admin" | "manager";
+
+const mockSession = {
+  role: "superadmin" as UserRole, 
+  name: "John Doe",
+  branch: "Galle",
+};
 
 export type Supplier = {
   id: number;
@@ -63,6 +70,13 @@ export default function SupplierPage() {
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
+  const isSuperAdmin = mockSession.role === "superadmin";
+
+  const branchFilteredSuppliers = isSuperAdmin
+  ? suppliersList
+  : suppliersList.filter((s) =>
+      s.branches.includes(mockSession.branch)
+    );
 
   const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -77,21 +91,19 @@ export default function SupplierPage() {
 
   
   const filteredSuppliers = useMemo(() => {
-    return suppliersList.filter((s) => {
+    return branchFilteredSuppliers.filter((s) => {
       const matchesType = !filters.supplierType || s.type === filters.supplierType;
-
       const matchesCoverArea =
         !filters.coverarea ||
         s.coverarea.toLowerCase().includes(filters.coverarea.toLowerCase().trim());
-
       const matchesSearch = s.name
         .toLowerCase()
         .includes(search.toLowerCase().trim());
 
       return matchesType && matchesCoverArea && matchesSearch;
     });
-  }, [filters, search, suppliersList]);
-  
+  }, [filters, search, branchFilteredSuppliers]);
+    
   const handleDeleteSupplier = () => {
     if (!selectedSupplier) return;
     setSuppliersList((prev) => prev.filter((s) => s.id !== selectedSupplier.id));
@@ -104,8 +116,8 @@ export default function SupplierPage() {
       
       <div className="w-full space-y-6 relative">
         <DateRangeBar />
-        <StatCardGrid />
 
+        <StatCardGrid suppliers={filteredSuppliers} isSuperAdmin={isSuperAdmin} />
         
         <div className="relative">
           <SearchBar
@@ -152,21 +164,24 @@ export default function SupplierPage() {
           />
         </div>
 
-          <SupplierActionsBar
-            selectedSupplier={selectedSupplier}
-            onDelete={handleDeleteSupplier}
-            onEdit={(updatedSupplier: Supplier) => {
-              setSuppliersList((prev) =>
-                prev.map((s) => (s.id === updatedSupplier.id ? updatedSupplier : s))
-              );
-              setSelectedSupplier(updatedSupplier);
-            }}
-          />
+          {isSuperAdmin && (
+            <SupplierActionsBar
+              selectedSupplier={selectedSupplier}
+              onDelete={handleDeleteSupplier}
+              onEdit={(updatedSupplier: Supplier) => {
+                setSuppliersList((prev) =>
+                  prev.map((s) => (s.id === updatedSupplier.id ? updatedSupplier : s))
+                );
+                setSelectedSupplier(updatedSupplier);
+              }}
+            />
+          )}
           
           <SupplierTable
           suppliers={filteredSuppliers}
           selectedSupplier={selectedSupplier}
           setSelectedSupplier={setSelectedSupplier}
+          isSuperAdmin={isSuperAdmin}
         />
         </div>
     </DashboardLayout>
