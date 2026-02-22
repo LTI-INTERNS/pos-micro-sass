@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 export type PosSettings = {
   customerDisplayEnabled: boolean;
   useCents: boolean;
+  lowStockNotificationsEnabled: boolean;
   negativeStockAlertsEnabled: boolean;
 };
 
@@ -19,6 +20,7 @@ const STORAGE_KEY = "pos_settings";
 const DEFAULTS: PosSettings = {
   customerDisplayEnabled: true,
   useCents: false,
+  lowStockNotificationsEnabled: false,
   negativeStockAlertsEnabled: false,
 };
 
@@ -36,7 +38,6 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       const loaded = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : DEFAULTS;
-      console.log("[PosSettings] loaded from localStorage:", loaded);
       setPosSettingsState(loaded);
     } catch {
       setPosSettingsState(DEFAULTS);
@@ -48,7 +49,6 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
   const setPosSettings = (settings: Partial<PosSettings>) => {
     setPosSettingsState((prev) => {
       const next = { ...prev, ...settings };
-      console.log("[PosSettings] saving to localStorage:", next);
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       } catch {}
