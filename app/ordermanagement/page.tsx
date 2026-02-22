@@ -125,7 +125,7 @@ export default function DashboardPage() {
            If StatCardGrid currently uses ordersData inside itself, you must update that component
            to accept a prop (e.g. orders={filteredOrders} or data={baseData}) to make stats role-based.
         */}
-        <StatCardGrid />
+        <StatCardGrid orders={filteredOrders} />
 
         <div className="relative">
           <SearchBar
