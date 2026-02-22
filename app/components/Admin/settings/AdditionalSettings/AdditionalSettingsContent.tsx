@@ -13,7 +13,7 @@ import { usePosSettings } from "@/app/context/PosSettingsContext";
 
 export default function AdditionalSettingsContent() {
   const { currency, setCurrency } = useCurrency();
-  const { posSettings, setPosSettings } = usePosSettings();
+  const { posSettings, setPosSettings, hydrated } = usePosSettings();
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
@@ -28,11 +28,15 @@ export default function AdditionalSettingsContent() {
   });
 
   useEffect(() => {
+    if (!hydrated) return;
     setFeatures((prev) => ({
       ...prev,
       customerDisplays: posSettings.customerDisplayEnabled,
+      // Both toggles read from negativeStockAlertsEnabled — they control the same feature
+      lowStockNotifications: posSettings.negativeStockAlertsEnabled,
+      negativeStockAlerts: posSettings.negativeStockAlertsEnabled,
     }));
-  }, [posSettings.customerDisplayEnabled]);
+  }, [hydrated, posSettings.customerDisplayEnabled, posSettings.negativeStockAlertsEnabled]);
 
   const [country, setCountry] = useState("LK");
   const [timezone, setTimezone] = useState("Asia/Colombo");
@@ -51,6 +55,11 @@ export default function AdditionalSettingsContent() {
 
     if (featureId === "customerDisplays") {
       setPosSettings({ customerDisplayEnabled: value });
+    }
+
+    // Both "lowStockNotifications" AND "negativeStockAlerts" toggles
+    if (featureId === "lowStockNotifications" || featureId === "negativeStockAlerts") {
+      setPosSettings({ negativeStockAlertsEnabled: value });
     }
   };
 
