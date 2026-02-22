@@ -14,6 +14,7 @@ import AddProductPopup from "@/app/components/Admin/productmanagement/AddProduct
 import AddStockPopup from "@/app/components/Admin/productmanagement/addStockPopup";
 import DeletePopup from "@/app/components/Admin/common/Deletepopup";
 import EditEntityModal from "@/app/components/Admin/common/EditPopup";
+import { useLowStockNotifications } from "@/app/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
 import { usePosSettings } from "@/app/context/PosSettingsContext";
 
@@ -42,7 +43,14 @@ export default function DashboardPage() {
 
   const { posSettings, hydrated } = usePosSettings();
 
-  console.log("[Page] render — hydrated:", hydrated, "negativeStockAlertsEnabled:", posSettings.negativeStockAlertsEnabled);
+  useLowStockNotifications({
+    products,
+    branchId: 1,
+    branchName: "Colombo Branch",
+    branchManager: "Nimal Perera",
+    enabled: posSettings.lowStockNotificationsEnabled,
+    hydrated,
+  });
 
   useNegativeStockAlerts({
     products,
@@ -122,7 +130,7 @@ export default function DashboardPage() {
       <AddProductPopup
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onSave={(newProduct) => { setAddOpen(false); }}
+        onSave={() => { setAddOpen(false); }}
         userRole="branch_manager"
         branchName=""
         branchManager=""
@@ -133,7 +141,7 @@ export default function DashboardPage() {
         title="Edit Product"
         initialValues={selectedProduct}
         onClose={() => setEditOpen(false)}
-        onSave={(updated) => { setEditOpen(false); }}
+        onSave={() => { setEditOpen(false); }}
         fields={[
           { name: "name", label: "Product Name" },
           { name: "price", label: "Price", type: "number" },
