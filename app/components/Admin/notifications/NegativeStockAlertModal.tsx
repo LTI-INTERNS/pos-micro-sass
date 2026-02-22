@@ -65,7 +65,6 @@ export default function NegativeStockAlertModal({ open, onClose, data }: Props) 
           </div>
         </div>
 
-        {/* ── Product Details ── */}
         <div className="bg-gray-50 rounded-xl border border-gray-100 px-4 py-4 space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <Package className="w-4 h-4 text-orange-500" />
@@ -89,7 +88,6 @@ export default function NegativeStockAlertModal({ open, onClose, data }: Props) 
           </div>
         </div>
 
-        {/* ── Stock Level Visual ── */}
         <div className="px-4 py-4 bg-white rounded-xl border border-gray-100 space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <TrendingDown className="w-4 h-4 text-orange-500" />
@@ -106,7 +104,6 @@ export default function NegativeStockAlertModal({ open, onClose, data }: Props) 
             </span>
           </div>
 
-          {/* Progress bar */}
           <div className="h-2.5 w-full bg-gray-200 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${
@@ -122,7 +119,6 @@ export default function NegativeStockAlertModal({ open, onClose, data }: Props) 
           </div>
         </div>
 
-        {/* ── Branch & Manager ── */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-orange-50 border border-orange-100 rounded-xl px-4 py-3">
             <div className="flex items-center gap-1.5 mb-1">
