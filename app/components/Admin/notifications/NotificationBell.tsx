@@ -7,6 +7,8 @@ import type { Notification, ProductApprovalData } from "../../../context/Notific
 import NotificationPanel from "./NotificationPanel";
 import NotificationMessagePopup from "@/app/components/Admin/notifications/NotificationMessagePopup";
 import ProductApprovalModal from "./ProductApprovalModal";
+import NegativeStockAlertModal from "./NegativeStockAlertModal";
+import type { NegativeStockAlertData } from "./useNegativeStockAlerts";
 
 export default function NotificationBell() {
   const {
@@ -29,6 +31,10 @@ export default function NotificationBell() {
   const [approvalData, setApprovalData] = useState<ProductApprovalData | null>(null);
   const [approvalNotifId, setApprovalNotifId] = useState<number | null>(null);
 
+  // Negative stock alert modal
+  const [stockAlertOpen, setStockAlertOpen] = useState(false);
+  const [stockAlertData, setStockAlertData] = useState<NegativeStockAlertData | null>(null);
+
   const prevUnread = useRef(unreadCount);
   useEffect(() => {
     if (unreadCount > prevUnread.current) {
@@ -41,6 +47,12 @@ export default function NotificationBell() {
   const handleOpenMessage = (n: Notification) => {
     markAsRead(n.id);
     setOpen(false);
+
+    if (n.type === "negative_stock" && n.negativeStockAlert) {
+      setStockAlertData(n.negativeStockAlert);
+      setStockAlertOpen(true);
+      return;
+    }
 
     if (n.type === "approval_pending" && n.productApproval) {
       setApprovalData(n.productApproval);
@@ -146,6 +158,12 @@ export default function NotificationBell() {
         onClose={() => setApprovalOpen(false)}
         onApprove={handleApprove}
         onReject={handleReject}
+      />
+
+      <NegativeStockAlertModal
+        open={stockAlertOpen}
+        data={stockAlertData}
+        onClose={() => setStockAlertOpen(false)}
       />
     </div>
   );
