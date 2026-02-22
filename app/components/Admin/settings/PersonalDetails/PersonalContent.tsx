@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import EditEntityModal, { EditField } from "@/app/components/Admin/common/EditPopup";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 export default function PersonalContent() {
   const [modalOpen, setModalOpen] = React.useState(false);
@@ -40,15 +41,15 @@ export default function PersonalContent() {
           </div>
 
           <div className="px-6 py-2">
-            <button
-              type="button"
-              className="w-full sm:w-[520px] rounded-full border border-orange-400 bg-white py-2.5
-                         text-sm font-semibold text-orange-500
-                         hover:bg-orange-50 transition"
-              onClick={() => setModalOpen(true)}
-            >
-              Edit Details
-            </button>
+            <div className="flex justify-left">
+              <ActionButton
+                label="Edit Details"
+                variant="outline"
+                fullWidth={false}
+                className="w-[220px]"
+                onClick={() => setModalOpen(true)}
+              />
+            </div>
           </div>
         </section>
 
@@ -66,15 +67,15 @@ export default function PersonalContent() {
           </div>
 
           <div className="px-6 py-2">
-            <button
-              type="button"
-              className="w-full sm:w-[520px] rounded-full border border-orange-400 bg-white py-2.5
-                         text-sm font-semibold text-orange-500
-                         hover:bg-orange-50 transition"
-              onClick={() => alert("Change Password")}
-            >
-              Change Password
-            </button>
+            <div className="flex justify-left">
+              <ActionButton
+                label="Change Password"
+                variant="outline"
+                fullWidth={false}
+                className="w-[220px]"
+                onClick={() => alert("Change Password")}
+              />
+            </div>
           </div>
         </section>
 
