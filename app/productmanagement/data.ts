@@ -19,7 +19,7 @@ export const productsData: Product[] = [
     price: 100,
     discount: 5,
     tax: 10,
-    stock: 100,
+    stock: 0,
     lowstock: 10,
   },
   {

@@ -148,7 +148,7 @@ export default function NegativeStockAlertModal({ open, onClose, data }: Props) 
           actions={[
             { label: "Dismiss", onClick: onClose, variant: "secondary" },
             {
-              label: "Go to Product Management",
+              label: "Check Inventory",
               onClick: () => {
                 onClose();
                 window.location.href = "/productmanagement";
