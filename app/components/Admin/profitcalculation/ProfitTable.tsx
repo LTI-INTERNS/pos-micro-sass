@@ -11,13 +11,15 @@ export type Profit = {
   description: string;
   profit: number;
   payment: string;
+  branch: string;
 };
 
 type Props = {
   profits: Profit[];
+  showBranch?: boolean;
 };
 
-export default function ProfitTable({ profits }: Props) {
+export default function ProfitTable({ profits, showBranch = false }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Profit>[] = [
@@ -46,6 +48,9 @@ export default function ProfitTable({ profits }: Props) {
       key: "payment",
       label: "Payment",
     },
+    ...(showBranch
+          ? [{ key: "branch" as keyof Profit, label: "Branch" }]
+          : []),
   ];
 
   return (
