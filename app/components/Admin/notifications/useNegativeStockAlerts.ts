@@ -17,15 +17,15 @@ export type NegativeStockAlertData = {
   severity: "critical" | "warning";
 };
 
-type UseNegativeStockAlertsOptions = {
-  products: Product[];
-  branchId?: number;
-  branchName?: string;
-  branchManager?: string;
-  enabled?: boolean;
-  hydrated?: boolean;
-};
-
+/**
+ * useNegativeStockAlerts
+ *
+ * Fires a notification ONLY when a product's stock hits exactly 0
+ * (out of stock / critical). Controlled by the
+ * "Negative stock alerts" toggle in Settings → Features.
+ *
+ * severity: always "critical" (stock === 0)
+ */
 export function useNegativeStockAlerts({
   products,
   branchId = 1,
@@ -33,7 +33,14 @@ export function useNegativeStockAlerts({
   branchManager = "Branch Manager",
   enabled = false,
   hydrated = false,
-}: UseNegativeStockAlertsOptions) {
+}: {
+  products: Product[];
+  branchId?: number;
+  branchName?: string;
+  branchManager?: string;
+  enabled?: boolean;
+  hydrated?: boolean;
+}) {
   const { addNotification } = useNotifications();
 
   const addNotificationRef = useRef(addNotification);
@@ -42,64 +49,38 @@ export function useNegativeStockAlerts({
   const alertedRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
-    console.log("[StockAlert] useEffect fired — hydrated:", hydrated, "enabled:", enabled);
-
-    if (!hydrated) {
-      console.log("[StockAlert] skipping — not hydrated yet");
-      return;
-    }
+    if (!hydrated) return;
 
     if (!enabled) {
-      console.log("[StockAlert] skipping — feature disabled, clearing cache");
       alertedRef.current.clear();
       return;
     }
 
-    console.log("[StockAlert] scanning", products.length, "products");
-
     const now = new Date().toISOString();
 
     products.forEach((product) => {
-      const isLow = product.stock <= product.lowstock;
       const isCritical = product.stock === 0;
       const lastAlertedStock = alertedRef.current.get(product.id);
 
-      console.log(
-        `[StockAlert] ${product.name}: stock=${product.stock} lowstock=${product.lowstock} isLow=${isLow} lastAlerted=${lastAlertedStock}`
-      );
+      if (lastAlertedStock === product.stock) return;
 
-      if (lastAlertedStock === product.stock) {
-        console.log(`[StockAlert] ${product.name}: already alerted at this stock, skipping`);
-        return;
-      }
-
-      if (isLow) {
-        const severity: "critical" | "warning" = isCritical ? "critical" : "warning";
-
-        const alertData: NegativeStockAlertData = {
-          productId: product.id,
-          productName: product.name,
-          category: product.category,
-          currentStock: product.stock,
-          lowStockThreshold: product.lowstock,
-          branchId,
-          branchName,
-          branchManager,
-          alertedAt: now,
-          severity,
-        };
-
-        const message = isCritical
-          ? `🚨 "${product.name}" is OUT OF STOCK at ${branchName}.`
-          : `⚠️ "${product.name}" is low (${product.stock} left, threshold: ${product.lowstock}) at ${branchName}.`;
-
-        console.log(`[StockAlert] FIRING notification for ${product.name}`);
+      if (isCritical) {
         addNotificationRef.current({
-          message,
+          message: `🚨 "${product.name}" is OUT OF STOCK at ${branchName}.`,
           type: "negative_stock",
-          negativeStockAlert: alertData,
+          negativeStockAlert: {
+            productId: product.id,
+            productName: product.name,
+            category: product.category,
+            currentStock: product.stock,
+            lowStockThreshold: product.lowstock,
+            branchId,
+            branchName,
+            branchManager,
+            alertedAt: now,
+            severity: "critical",
+          },
         });
-
         alertedRef.current.set(product.id, product.stock);
       } else {
         alertedRef.current.delete(product.id);
