@@ -21,8 +21,11 @@ export type PreviousOrderDetails = {
   cashPaid: number;
   cardPaid: number;
 
-  //  optional (controls whether Email button appears)
+  // optional (controls whether Email button appears)
   email?: string | null;
+
+  //  NEW: optional notes for previous orders
+  note?: string | null;
 };
 
 export const previousOrderDetailsMap: Record<number, PreviousOrderDetails> = {
@@ -40,7 +43,8 @@ export const previousOrderDetailsMap: Record<number, PreviousOrderDetails> = {
     paymentMethod: "Cash",
     cashPaid: 2450,
     cardPaid: 0,
-    email: null, //  no email - no Email button
+    email: null,
+    note: "Customer requested extra ketchup packets.",
   },
 
   2: {
@@ -56,7 +60,8 @@ export const previousOrderDetailsMap: Record<number, PreviousOrderDetails> = {
     paymentMethod: "Visa",
     cashPaid: 0,
     cardPaid: 1765.6,
-    email: "customer2@mail.com", //  email exists - show Email button
+    email: "customer2@mail.com",
+    note: null, // no notes
   },
 
   3: {
@@ -74,6 +79,7 @@ export const previousOrderDetailsMap: Record<number, PreviousOrderDetails> = {
     cashPaid: 0,
     cardPaid: 3600,
     email: null,
+    note: "No onions in curry (special request).",
   },
 
   4: {
@@ -87,14 +93,13 @@ export const previousOrderDetailsMap: Record<number, PreviousOrderDetails> = {
     cashPaid: 980,
     cardPaid: 0,
     email: null,
+    note: null,
   },
 
   5: {
     orderId: 5,
     currencyCode: "LKR",
-    items: [
-      { id: "E1", name: "Family Meal Pack", qty: 1, price: 5250, subtotal: 5250 },
-    ],
+    items: [{ id: "E1", name: "Family Meal Pack", qty: 1, price: 5250, subtotal: 5250 }],
     discountValue: 0,
     cardTax: 0,
     grandTotal: 5250,
@@ -102,5 +107,6 @@ export const previousOrderDetailsMap: Record<number, PreviousOrderDetails> = {
     cashPaid: 0,
     cardPaid: 5250,
     email: "family@mail.com",
+    note: "Deliver to reception desk (building A).",
   },
 };
