@@ -19,6 +19,8 @@ export type CustomerInfoPanelHandle = {
   sendPaymentSummary: (summary: PaymentSummary) => void;
   sendOrderConfirmed: () => void;
   sendFeatureToggle: (enabled: boolean) => void;
+  // ✅ NEW: resets customer display back to dialpad after order completes
+  sendOrderCleared: () => void;
 };
 
 export type OrderItem = {
@@ -86,8 +88,6 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
 
     const [qtyDraft, setQtyDraft] = useState<Record<string, string>>({});
 
-    /* POS CHANNEL COMMUNICATION */
-
     const handleChannelMessage = useCallback((msg: PosMessage) => {
       if (msg.type === "CUSTOMER_SELECTED") {
         setSelectedCustomer({
@@ -96,7 +96,6 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
           email: msg.customer.email,
         });
       }
-
       if (msg.type === "CUSTOMER_CLEARED") {
         setSelectedCustomer(null);
       }
@@ -111,7 +110,6 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
     useImperativeHandle(ref, () => ({
       sendPaymentSummary(summary: PaymentSummary) {
         if (!customerDisplayEnabled) return;
-
         const summaryWithCustomer: PaymentSummary = {
           ...summary,
           customer: selectedCustomer
@@ -132,13 +130,18 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       sendFeatureToggle(enabled: boolean) {
         send({ type: "FEATURE_TOGGLE", enabled });
       },
+
+      sendOrderCleared() {
+        if (!customerDisplayEnabled) return;
+        send({ type: "ORDER_CLEARED" });
+        send({ type: "CUSTOMER_CLEARED" });
+      },
     }));
 
     useEffect(() => {
       if (!customerDisplayEnabled) return;
       send({ type: "ORDER_UPDATED", items, subtotal, total });
     }, [items, subtotal, total, customerDisplayEnabled, send]);
-
 
     useEffect(() => {
       const next: Record<string, string> = {};
@@ -161,10 +164,8 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       setSelectedCustomer(null);
       setQtyDraft({});
       setManageCustomerOpen(false);
-
       send({ type: "ORDER_CLEARED" });
       send({ type: "CUSTOMER_CLEARED" });
-
       onCancel?.();
     }
 
@@ -173,12 +174,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
         alert("Please add items to proceed with payment.");
         return;
       }
-
-      onPay?.({
-        subtotal,
-        total,
-        customer: selectedCustomer,
-      });
+      onPay?.({ subtotal, total, customer: selectedCustomer });
     }
 
     return (
@@ -196,7 +192,6 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
                   <p>{selectedCustomer.phoneNumber}</p>
                   <p>{selectedCustomer.email}</p>
                 </div>
-
                 <button
                   onClick={() => {
                     setSelectedCustomer(null);

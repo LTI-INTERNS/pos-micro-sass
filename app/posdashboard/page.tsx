@@ -92,7 +92,6 @@ function OrderCompletePopup({
   );
 }
 
-// ✅ Type for the selected customer stored in dashboard state
 type SelectedCustomer = {
   name: string;
   phoneNumber: string;
@@ -116,7 +115,6 @@ const page = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
 
-  // ✅ FIX: store the full customer object, not just the email
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer>(null);
 
   const [completeOpen, setCompleteOpen] = useState(false);
@@ -170,7 +168,6 @@ const page = () => {
     setConfirmOpen(false);
     setPaymentForceEditable(false);
 
-    // ✅ FIX: reset full customer object
     setSelectedCustomer(null);
 
     setPaymentModalKey((k) => k + 1);
@@ -219,7 +216,6 @@ const page = () => {
                 return;
               }
 
-              // ✅ FIX: store the full customer object (name + phone + email)
               setSelectedCustomer(
                 customer
                   ? {
@@ -248,8 +244,7 @@ const page = () => {
         currencyCode={currency}
         forceEditable={paymentForceEditable}
         onDone={(summary) => {
-          // ✅ FIX: attach the full customer object to the summary here,
-          // so it flows into OrderConfirmation → OrderSummaryContent → receipt
+
           const summaryWithCustomer: PaymentSummary = {
             ...summary,
             customer: selectedCustomer,
@@ -270,7 +265,7 @@ const page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-          // ✅ FIX: pass email for the email button (derived from customer object)
+          
           customerEmail={selectedCustomer?.email ?? null}
           onCancelEdit={() => {
             setConfirmOpen(false);
@@ -293,7 +288,15 @@ const page = () => {
         />
       )}
 
-      <OrderCompletePopup open={completeOpen} orderNo={completedOrderNo} onClose={() => setCompleteOpen(false)} />
+      <OrderCompletePopup
+        open={completeOpen}
+        orderNo={completedOrderNo}
+        onClose={() => {
+          setCompleteOpen(false);
+
+          panelRef.current?.sendOrderCleared();
+        }}
+      />
     </DashboardLayout>
   );
 };
