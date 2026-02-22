@@ -366,16 +366,6 @@ export default function ProductApprovalModal({
             />
           </div>
 
-          {/* Description */}
-          {data.description && (
-            <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">
-                Description
-              </p>
-              <p className="text-xs text-gray-600 leading-relaxed">{data.description}</p>
-            </div>
-          )}
-
           {isAlreadyActioned && (data.approvedBy || data.rejectedBy || reviewedAtDisplay) && (
             <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 space-y-1">
               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-2">

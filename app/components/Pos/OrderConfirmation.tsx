@@ -92,6 +92,7 @@ export default function OrderConfirmation({
     paymentMethod: payment.paymentMethod,
     cashPaid: payment.cashPaid,
     cardPaid: payment.cardPaid,
+    customerEmail: addedEmail || undefined,
   };
 
   return (

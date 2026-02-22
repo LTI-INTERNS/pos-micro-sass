@@ -3,6 +3,7 @@
 import Clock from '../../Landing/clock';
 import { Menu, History, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useStoreInfo } from "@/app/context/StoreInfoContext";
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   const router = useRouter();
+  const { storeInfo } = useStoreInfo();
 
   const handleLock = () => {
     // mark POS as locked
@@ -34,12 +36,25 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
 
         <div className="flex items-center gap-5">
           <img src="/ArrowButton.png" className="w-6 h-6" />
-          <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
-          <img src="/Vector.png" className="h-6 hidden sm:block" />
-          <div className="flex flex-col">
-            <span className="font-bold text-gray-800 text-sm">Walk-In</span>
-            <span className="text-gray-300 text-sm">Coca coffeetalk</span>
-          </div>
+            <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
+              <div className="flex items-center gap-4">
+              {storeInfo.logoUrl && (
+                <img
+                  src={storeInfo.logoUrl}
+                  alt="Store Logo"
+                  className="w-8 h-8 object-contain"
+                />
+              )}
+              <div className="flex flex-col leading-tight">
+                <span className="text-xl font-bold text-gray-900">
+                  {storeInfo?.storeName || "Store Name"}
+                </span>
+
+                <span className="text-xs text-gray-400 font-medium">
+                  {storeInfo?.branchName || "Main Branch"}
+                </span>
+              </div>
+            </div>
         </div>
       </div>
 

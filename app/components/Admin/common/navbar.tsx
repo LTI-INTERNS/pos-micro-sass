@@ -4,6 +4,7 @@ import Clock from '../../Landing/clock';
 import { Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import NotificationBell from '@/app/components/Admin/notifications/NotificationBell';
+import { useStoreInfo } from "@/app/context/StoreInfoContext";
 
 
 interface NavbarProps {
@@ -12,6 +13,7 @@ interface NavbarProps {
 
 const Navbar = ({ toggleSidebar }: NavbarProps) => {
   const router = useRouter();
+  const { storeInfo } = useStoreInfo();
 
   const handleLogout = () => {
     // clear auth/session data
@@ -30,8 +32,19 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
         </button>
 
         <div className="flex items-center gap-4">
-          <img src="/logo.svg" alt="Coca Logo" className="w-8 h-8 rounded-full" />
-          <img src="/coca.svg" alt="Coca" className="h-4 hidden sm:block" />
+          {storeInfo.logoUrl && (
+            <img
+              src={storeInfo.logoUrl}
+              alt="Store Logo"
+              className="w-8 h-8 object-contain"
+            />
+          )}
+          <div className="leading-tight hidden sm:block">
+            <p className="text-2xl font-extrabold tracking-tight text-gray-900 leading-none">
+              {storeInfo.storeName}
+            </p>
+            
+          </div>
         </div>
         <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
         <span className="font-bold text-gray-800">Dashboard</span>

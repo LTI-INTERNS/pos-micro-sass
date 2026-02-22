@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import {
   BarChart,
   Bar,
@@ -11,11 +12,15 @@ import {
 import { salesBarData } from '@/app/overview/mock/mockData';
 
 export default function SalesBarChart() {
+  const router = useRouter();
+
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-semibold text-black">Sales report</h3>
-        <button className="text-sm text-orange-500 font-medium hover:underline">
+        <button 
+          className="text-sm text-orange-500 font-medium hover:underline cursor-pointer"
+          onClick={() => router.push('/reports')}>
           View All
         </button>
       </div>

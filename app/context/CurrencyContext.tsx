@@ -1,23 +1,32 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 type CurrencyContextType = {
   currency: string;
   setCurrency: (currency: string) => void;
+  useCents: boolean;
+  setUseCents: (value: boolean) => void;
 };
 
 const CurrencyContext = createContext<CurrencyContextType>({
   currency: "LKR",
   setCurrency: () => {},
+  useCents: false,
+  setUseCents: () => {},
 });
 
-export function CurrencyProvider({ children }: { children: React.ReactNode }) {
+export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState("LKR");
+  const [useCents, setUseCentsState] = useState(false);
 
+  // Load from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem("app_currency");
-    if (saved) setCurrencyState(saved);
+    const savedCurrency = localStorage.getItem("app_currency");
+    const savedCents = localStorage.getItem("app_useCents");
+
+    if (savedCurrency) setCurrencyState(savedCurrency);
+    if (savedCents) setUseCentsState(savedCents === "true");
   }, []);
 
   const setCurrency = (newCurrency: string) => {
@@ -25,28 +34,13 @@ export function CurrencyProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("app_currency", newCurrency);
   };
 
-  //database conect
-  //const setCurrency = async (newCurrency: string) => {
-   // setCurrencyState(newCurrency);
-    //localStorage.setItem("currency", newCurrency); // keep as cache
-
-    // Add this when DB is ready:
-    //await fetch("/api/settings", {
-      //  method: "PATCH",
-      //  body: JSON.stringify({ currency: newCurrency }),
-   // });
-    //};
-
-    // onload
-   //useEffect(() => {
-    // Replace localStorage read with:
-   // fetch("/api/settings")
-    //    .then(res => res.json())
-    //    .then(data => setCurrencyState(data.currency));
-   // }, []);
+  const setUseCents = (value: boolean) => {
+    setUseCentsState(value);
+    localStorage.setItem("app_useCents", value.toString());
+  };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, useCents, setUseCents }}>
       {children}
     </CurrencyContext.Provider>
   );

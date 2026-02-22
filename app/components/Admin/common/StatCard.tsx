@@ -24,11 +24,11 @@ export default function StatCard({
   showDetailButton = true, 
   onDetailClick,
 }: StatCardProps) {
-  const { currency } = useCurrency();
+  const { currency, useCents } = useCurrency();
   const showTrend = Boolean(percentage) && Boolean(trend);
 
   const displayValue = amount !== undefined
-    ? formatCurrency(amount, currency)
+    ? formatCurrency(amount, currency, useCents)
     : value;
 
   return (
@@ -48,7 +48,7 @@ export default function StatCard({
         <button
           type="button"
           onClick={onDetailClick}
-          className="mt-4 text-sm font-medium text-orange-500 flex items-center gap-1"
+          className="mt-4 text-sm font-medium text-orange-500 flex items-center gap-1 cursor-pointer hover:text-orange-600" 
         >
           View detail →
         </button>
