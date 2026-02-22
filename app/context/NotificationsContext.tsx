@@ -1,11 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useCallback } from "react";
+import type { NegativeStockAlertData } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
 
-export type NotificationType = "info" | "warning" | "error" | "success" | "approval_pending";
+export type NotificationType =
+  | "info"
+  | "warning"
+  | "error"
+  | "success"
+  | "approval_pending"
+  | "negative_stock";
 
 export type ProductApprovalData = {
-  //  Core product fields
   id: number;
   productName: string;
   category?: string;
@@ -14,19 +20,13 @@ export type ProductApprovalData = {
   tax: number;
   stock: number;
   unit?: string;
-  description?: string;
   imageUrl?: string;
-
-  // Branch info 
   branchId: number;
   branchName: string;
   branchManager: string;
   submittedBy: string;
-
   submittedAt: string;
   reviewedAt?: string;
-
-  //  Approval audit
   status: "pending" | "approved" | "rejected";
   approvedBy?: string;
   rejectedBy?: string;
@@ -40,6 +40,7 @@ export type Notification = {
   time: string;
   read: boolean;
   productApproval?: ProductApprovalData;
+  negativeStockAlert?: NegativeStockAlertData;
 };
 
 type NotificationsContextValue = {
@@ -70,23 +71,16 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         tax: 5,
         stock: 100,
         unit: "pcs",
-        description: "A sleek wireless mouse with ergonomic design.",
         imageUrl: "/Discount.png",
         branchId: 1,
         branchName: "Colombo Branch",
         branchManager: "Nimal Perera",
         submittedBy: "nimal.perera@colombobranch.com",
         submittedAt: "2024-06-15T10:30:00Z",
-        reviewedAt: undefined,
         status: "pending",
-        approvedBy: undefined,
-        rejectedBy: undefined,
-        rejectionReason: undefined,
       },
     },
   ]);
-
-  const [nextId, setNextId] = useState(100);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
@@ -97,19 +91,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     (n: Omit<Notification, "id" | "read" | "time">) => {
       const now = new Date();
       const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-      setNextId((prev) => prev + 1);
-      setNotifications((prev) => [
-        {
-          ...n,
-          id: nextId,
-          read: false,
-          time: `Today at ${time}`,
-        },
-        ...prev,
-      ]);
+      setNotifications((prev) => {
+        const newId = prev.length > 0 ? Math.max(...prev.map((x) => x.id)) + 1 : 1;
+        return [{ ...n, id: newId, read: false, time: `Today at ${time}` }, ...prev];
+      });
     },
-    [nextId]
+    []
   );
 
   const markAsRead = useCallback((id: number) => {
@@ -130,14 +117,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
   return (
     <NotificationsContext.Provider
-      value={{
-        notifications,
-        unreadCount,
-        addNotification,
-        markAsRead,
-        markAllAsRead,
-        updateNotification,
-      }}
+      value={{ notifications, unreadCount, addNotification, markAsRead, markAllAsRead, updateNotification }}
     >
       {children}
     </NotificationsContext.Provider>
@@ -146,8 +126,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
 
 export function useNotifications() {
   const ctx = useContext(NotificationsContext);
-  if (!ctx) {
-    throw new Error("useNotifications must be used inside <NotificationsProvider>");
-  }
+  if (!ctx) throw new Error("useNotifications must be used inside <NotificationsProvider>");
   return ctx;
 }

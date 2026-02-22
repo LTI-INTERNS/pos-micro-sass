@@ -14,6 +14,9 @@ import AddProductPopup from "@/app/components/Admin/productmanagement/AddProduct
 import AddStockPopup from "@/app/components/Admin/productmanagement/addStockPopup";
 import DeletePopup from "@/app/components/Admin/common/Deletepopup";
 import EditEntityModal from "@/app/components/Admin/common/EditPopup";
+import { useLowStockNotifications } from "@/app/components/Admin/notifications/Uselowstocknotifications";
+import { useNegativeStockAlerts } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
+import { usePosSettings } from "@/app/context/PosSettingsContext";
 
 import { productsData } from "./data";
 import type { Product } from "./data";
@@ -38,6 +41,26 @@ export default function DashboardPage() {
     lowstock?: string;
   }>({});
 
+  const { posSettings, hydrated } = usePosSettings();
+
+  useLowStockNotifications({
+    products,
+    branchId: 1,
+    branchName: "Colombo Branch",
+    branchManager: "Nimal Perera",
+    enabled: posSettings.lowStockNotificationsEnabled,
+    hydrated,
+  });
+
+  useNegativeStockAlerts({
+    products,
+    branchId: 1,
+    branchName: "Colombo Branch",
+    branchManager: "Nimal Perera",
+    enabled: posSettings.negativeStockAlertsEnabled,
+    hydrated,
+  });
+
   const filteredProducts = useTableFilters({
     data: products,
     search,
@@ -50,10 +73,7 @@ export default function DashboardPage() {
   );
 
   const removeFilter = (key: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: "",
-    }));
+    setFilters((prev) => ({ ...prev, [key]: "" }));
   };
 
   return (
@@ -73,25 +93,22 @@ export default function DashboardPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={() => setFilters({})}
           />
-          <FilterChips
-            filters={filters}
-            onRemove={removeFilter}
-          />
+          <FilterChips filters={filters} onRemove={removeFilter} />
 
           <FilterPopup
             open={filterOpen}
             onClose={() => setFilterOpen(false)}
             onApply={(values) => {
               setFilters(values);
-              setFilterOpen(false); 
+              setFilterOpen(false);
             }}
             fields={[
-            { name: "category", placeholder: "Category", options: getFilterOptions(products, "category") },
-            { name: "discount", placeholder: "Discount", options: getFilterOptions(products, "discount") },
-            { name: "tax", placeholder: "Tax", options: getFilterOptions(products, "tax") },
-            { name: "stock", placeholder: "Stock", options: getFilterOptions(products, "stock") },
-            { name: "lowstock", placeholder: "Low Stock", options: getFilterOptions(products, "lowstock") },
-          ]}
+              { name: "category", placeholder: "Category", options: getFilterOptions(products, "category") },
+              { name: "discount", placeholder: "Discount", options: getFilterOptions(products, "discount") },
+              { name: "tax", placeholder: "Tax", options: getFilterOptions(products, "tax") },
+              { name: "stock", placeholder: "Stock", options: getFilterOptions(products, "stock") },
+              { name: "lowstock", placeholder: "Low Stock", options: getFilterOptions(products, "lowstock") },
+            ]}
           />
         </div>
 
@@ -110,26 +127,21 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* ADD */}
       <AddProductPopup
         open={addOpen}
         onClose={() => setAddOpen(false)}
-        onSave={(newProduct) => {
-          // Backend will handle creation later
-          setAddOpen(false);
-        }}
+        onSave={() => { setAddOpen(false); }}
+        userRole="branch_manager"
+        branchName=""
+        branchManager=""
       />
 
-      {/* EDIT */}
       <EditEntityModal<Product>
         open={editOpen}
         title="Edit Product"
         initialValues={selectedProduct}
         onClose={() => setEditOpen(false)}
-        onSave={(updated) => {
-          // Backend will handle update later
-          setEditOpen(false);
-        }}
+        onSave={() => { setEditOpen(false); }}
         fields={[
           { name: "name", label: "Product Name" },
           { name: "price", label: "Price", type: "number" },
@@ -139,7 +151,6 @@ export default function DashboardPage() {
         ]}
       />
 
-      {/* ADD STOCK */}
       {selectedProduct && (
         <AddStockPopup
           product={selectedProduct}
@@ -158,7 +169,6 @@ export default function DashboardPage() {
         />
       )}
 
-      {/* DELETE */}
       {selectedProduct && (
         <DeletePopup
           isOpen={deleteOpen}
@@ -173,9 +183,7 @@ export default function DashboardPage() {
             </>
           )}
           onConfirm={() => {
-            setProducts((prev) =>
-              prev.filter((p) => p.id !== selectedProduct.id)
-            );
+            setProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
             setSelectedProduct(null);
             setDeleteOpen(false);
           }}
