@@ -53,6 +53,13 @@ const typeConfig: Record<
     bg: "hover:bg-orange-50",
     text: "text-orange-500",
   },
+  negative_stock: {
+    dot: "bg-red-500",
+    bar: "bg-red-500",
+    label: "STOCK ALERT",
+    bg: "hover:bg-red-50",
+    text: "text-red-600",
+  },
 };
 
 export default function NotificationPanel({
@@ -70,12 +77,12 @@ export default function NotificationPanel({
         className="fixed inset-0 z-40 backdrop-blur-[2px] bg-black/10 transition-all"
         onClick={onClose}
       />
-
-      <div className="fixed right-6 top-[68px] z-50 w-[320px] bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col overflow-hidden"
+      <div
+        className="fixed right-6 top-[68px] z-50 w-[320px] bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col overflow-hidden"
         style={{ maxHeight: "calc(100vh - 90px)" }}
       >
-
-        <div className="flex items-center justify-between px-5 py-3.5"
+        <div
+          className="flex items-center justify-between px-5 py-3.5"
           style={{ borderBottom: "1.5px solid #f97316" }}
         >
           <div className="flex items-center gap-2.5">
@@ -131,6 +138,8 @@ export default function NotificationPanel({
           {notifications.map((n, idx) => {
             const cfg = typeConfig[n.type];
             const isPending = n.type === "approval_pending" && n.productApproval?.status === "pending";
+            const isStockAlert = n.type === "negative_stock";
+            const isCritical = n.negativeStockAlert?.severity === "critical";
 
             return (
               <button
@@ -150,7 +159,6 @@ export default function NotificationPanel({
                 />
 
                 <div className="flex items-start gap-3 pl-1">
-
                   <div className="mt-[5px] flex-shrink-0">
                     {!n.read ? (
                       <div className={`w-2 h-2 rounded-full ${cfg.dot} shadow-sm`} />
@@ -171,7 +179,6 @@ export default function NotificationPanel({
                           {n.productApproval.branchName}
                         </span>
                       )}
-
                       {isPending && (
                         <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded-md bg-orange-100 text-orange-500 animate-pulse">
                           PENDING
@@ -188,18 +195,40 @@ export default function NotificationPanel({
                         </span>
                       )}
 
-
+                      {isStockAlert && isCritical && (
+                        <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded-md bg-red-100 text-red-600 animate-pulse">
+                          OUT OF STOCK
+                        </span>
+                      )}
+                      {isStockAlert && !isCritical && (
+                        <span className="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-600">
+                          LOW STOCK
+                        </span>
+                      )}
                     </div>
-                  {/*}
-                    <p className={`text-xs leading-snug ${n.read ? "text-gray-400 font-normal" : "text-gray-800 font-medium"}`}>
-                      {n.message}
-                    </p> 
-                    */}
 
                     {n.productApproval?.productName && (
                       <p className="text-[10px] text-orange-500 font-semibold mt-0.5">
                         📦 {n.productApproval.productName}
                       </p>
+                    )}
+
+                    {isStockAlert && n.negativeStockAlert && (
+                      <>
+                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">
+                          📦 {n.negativeStockAlert.productName}
+                        </p>
+                        <p className="text-[10px] text-gray-500 mt-0.5">
+                          Stock:{" "}
+                          <span className={`font-bold ${isCritical ? "text-red-600" : "text-amber-600"}`}>
+                            {n.negativeStockAlert.currentStock}
+                          </span>
+                          {" "}/ Threshold: {n.negativeStockAlert.lowStockThreshold}
+                        </p>
+                        <p className="text-[9px] text-gray-400 mt-0.5">
+                          📍 {n.negativeStockAlert.branchName} · {n.negativeStockAlert.branchManager}
+                        </p>
+                      </>
                     )}
 
                     <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>
