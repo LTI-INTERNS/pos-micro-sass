@@ -21,7 +21,7 @@ export default function AdditionalSettingsContent() {
   const [useCents, setUseCents] = useState(true);
 
   const [features, setFeatures] = useState({
-    customerDisplays: true,
+    customerDisplays: false,
     lowStockNotifications: false,
     negativeStockAlerts: false,
     weightEmbeddedBarcodes: false,
@@ -32,11 +32,15 @@ export default function AdditionalSettingsContent() {
     setFeatures((prev) => ({
       ...prev,
       customerDisplays: posSettings.customerDisplayEnabled,
-      // Both toggles read from negativeStockAlertsEnabled — they control the same feature
-      lowStockNotifications: posSettings.negativeStockAlertsEnabled,
+      lowStockNotifications: posSettings.lowStockNotificationsEnabled, 
       negativeStockAlerts: posSettings.negativeStockAlertsEnabled,
     }));
-  }, [hydrated, posSettings.customerDisplayEnabled, posSettings.negativeStockAlertsEnabled]);
+  }, [
+    hydrated,
+    posSettings.customerDisplayEnabled,
+    posSettings.lowStockNotificationsEnabled,
+    posSettings.negativeStockAlertsEnabled,
+  ]);
 
   const [country, setCountry] = useState("LK");
   const [timezone, setTimezone] = useState("Asia/Colombo");
@@ -56,9 +60,10 @@ export default function AdditionalSettingsContent() {
     if (featureId === "customerDisplays") {
       setPosSettings({ customerDisplayEnabled: value });
     }
-
-    // Both "lowStockNotifications" AND "negativeStockAlerts" toggles
-    if (featureId === "lowStockNotifications" || featureId === "negativeStockAlerts") {
+    if (featureId === "lowStockNotifications") {
+      setPosSettings({ lowStockNotificationsEnabled: value });
+    }
+    if (featureId === "negativeStockAlerts") {
       setPosSettings({ negativeStockAlertsEnabled: value });
     }
   };
