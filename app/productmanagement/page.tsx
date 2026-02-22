@@ -16,7 +16,6 @@ import DeletePopup from "@/app/components/Admin/common/Deletepopup";
 import EditEntityModal from "@/app/components/Admin/common/EditPopup";
 import { useLowStockNotifications } from "@/app/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
-import { usePosSettings } from "@/app/context/PosSettingsContext";
 
 import { productsData } from "./data";
 import type { Product } from "./data";
@@ -41,15 +40,11 @@ export default function DashboardPage() {
     lowstock?: string;
   }>({});
 
-  const { posSettings, hydrated } = usePosSettings();
-
   useLowStockNotifications({
     products,
     branchId: 1,
     branchName: "Colombo Branch",
     branchManager: "Nimal Perera",
-    enabled: posSettings.lowStockNotificationsEnabled,
-    hydrated,
   });
 
   useNegativeStockAlerts({
@@ -57,8 +52,6 @@ export default function DashboardPage() {
     branchId: 1,
     branchName: "Colombo Branch",
     branchManager: "Nimal Perera",
-    enabled: posSettings.negativeStockAlertsEnabled,
-    hydrated,
   });
 
   const filteredProducts = useTableFilters({
