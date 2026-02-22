@@ -2,48 +2,47 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-export type PosSettings = {
+type PosSettings = {
   customerDisplayEnabled: boolean;
-  useCents: boolean;
-  lowStockNotificationsEnabled: boolean;
-  negativeStockAlertsEnabled: boolean;
 };
 
 type PosSettingsContextType = {
   posSettings: PosSettings;
   setPosSettings: (settings: Partial<PosSettings>) => void;
-  hydrated: boolean;
 };
 
 const STORAGE_KEY = "pos_settings";
 
 const DEFAULTS: PosSettings = {
-  customerDisplayEnabled: true,
-  useCents: false,
-  lowStockNotificationsEnabled: false,
-  negativeStockAlertsEnabled: false,
+  customerDisplayEnabled: false,
 };
+
+function loadFromStorage(): PosSettings {
+  if (typeof window === "undefined") return DEFAULTS;
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULTS;
+
+    return {
+      ...DEFAULTS,           
+      ...JSON.parse(raw),   
+    };
+  } catch {
+    return DEFAULTS;
+  }
+}
 
 const PosSettingsContext = createContext<PosSettingsContextType>({
   posSettings: DEFAULTS,
   setPosSettings: () => {},
-  hydrated: false,
 });
 
 export function PosSettingsProvider({ children }: { children: ReactNode }) {
   const [posSettings, setPosSettingsState] = useState<PosSettings>(DEFAULTS);
-  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const loaded = raw ? { ...DEFAULTS, ...JSON.parse(raw) } : DEFAULTS;
-      setPosSettingsState(loaded);
-    } catch {
-      setPosSettingsState(DEFAULTS);
-    } finally {
-      setHydrated(true);
-    }
+    setPosSettingsState(loadFromStorage());
   }, []);
 
   const setPosSettings = (settings: Partial<PosSettings>) => {
@@ -57,7 +56,7 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PosSettingsContext.Provider value={{ posSettings, setPosSettings, hydrated }}>
+    <PosSettingsContext.Provider value={{ posSettings, setPosSettings }}>
       {children}
     </PosSettingsContext.Provider>
   );
