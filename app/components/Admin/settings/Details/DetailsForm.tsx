@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import LogoUploadSection from "./LogoUploadSection"; // will use only if includeLogo=true
+import LogoUploadSection from "./LogoUploadSection";
+import ActionButton from "@/app/components/Admin/common/ActionButton";
 
 type Details = {
   name: string;
@@ -18,7 +19,7 @@ type DetailsFormProps = {
   onEditClick?: () => void;
   onSave?: (data: Details) => Promise<void> | void;
   className?: string;
-  includeLogo?: boolean; // only show logo upload if true
+  includeLogo?: boolean;
   logoUrl?: string | null;
   onLogoChange?: (url: string | null, file?: File | null) => void;
 };
@@ -78,7 +79,7 @@ export default function DetailsForm({
     setForm((p) => ({ ...p, [key]: value }));
 
   const handleEdit = () => {
-    if (onEditClick) onEditClick();
+    onEditClick?.();
     if (!readOnly) setEditing(true);
   };
 
@@ -93,7 +94,13 @@ export default function DetailsForm({
     }
   };
 
-  const FieldRow = ({ label, input }: { label: string; input: React.ReactNode }) => (
+  const FieldRow = ({
+    label,
+    input,
+  }: {
+    label: string;
+    input: React.ReactNode;
+  }) => (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
       <div className="lg:col-span-3">
         <FieldLabel>{label}</FieldLabel>
@@ -104,7 +111,11 @@ export default function DetailsForm({
 
   return (
     <section
-      className={["w-full rounded-md border bg-white shadow-sm", "p-5 sm:p-8", className].join(" ")}
+      className={[
+        "w-full rounded-md border bg-white shadow-sm",
+        "p-5 sm:p-8",
+        className,
+      ].join(" ")}
     >
       <div className="space-y-4">
         <FieldRow
@@ -177,7 +188,7 @@ export default function DetailsForm({
         />
       </div>
 
-      {/* Logo Section Only For Company */}
+      {/* Logo Upload – Company only */}
       {includeLogo && onLogoChange && (
         <div className="pt-10">
           <LogoUploadSection
@@ -189,33 +200,24 @@ export default function DetailsForm({
       )}
 
       <div className="pt-10">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-center gap-4 sm:gap-8">
-          <button
-            type="button"
-            onClick={handleEdit}
+        <div className="flex flex-col sm:flex-row items-center justify-left gap-4">
+          <ActionButton
+            label="Edit Details"
+            variant="outline"
             disabled={readOnly || saving}
-            className={[
-              "h-12 w-full lg:w-[320px] rounded-full border border-orange-400 bg-white",
-              "text-orange-500 hover:bg-orange-50",
-              "flex items-center justify-center",
-              readOnly || saving ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
-            ].join(" ")}
-          >
-            Edit Details
-          </button>
+            onClick={handleEdit}
+            fullWidth={false}
+            className="w-[220px]"
+          />
 
-          <button
-            type="button"
-            onClick={handleSave}
+          <ActionButton
+            label={saving ? "Saving..." : "Save Changes"}
+            variant="primary"
             disabled={!onSave || isLocked || saving}
-            className={[
-              "h-12 w-full lg:w-[320px] rounded-full bg-orange-500 text-white hover:bg-orange-600",
-              "flex items-center justify-center",
-              !onSave || isLocked || saving ? "opacity-60 cursor-not-allowed" : "cursor-pointer",
-            ].join(" ")}
-          >
-            {saving ? "Saving..." : "Save Changes"}
-          </button>
+            onClick={handleSave}
+            fullWidth={false}
+            className="w-[220px]"
+          />
         </div>
       </div>
     </section>

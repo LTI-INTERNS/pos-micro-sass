@@ -50,14 +50,19 @@ export default function AdditionalSettingsContent() {
     setFeatures((prev) => ({
       ...prev,
       customerDisplays: posSettings.customerDisplayEnabled,
+      lowStockNotifications: posSettings.lowStockNotificationsEnabled ?? false,
+      negativeStockAlerts: posSettings.negativeStockAlertsEnabled ?? false,
     }));
-  }, [posSettings.customerDisplayEnabled]);
+  }, [
+    posSettings.customerDisplayEnabled,
+    posSettings.lowStockNotificationsEnabled,
+    posSettings.negativeStockAlertsEnabled,
+  ]);
 
   const [country, setCountry] = useState("LK");
   const [timezone, setTimezone] = useState("Asia/Colombo");
   const [pointsEarningPercentage, setPointsEarningPercentage] = useState(5);
 
-  // ✅ Explicitly typed useState — prev is inferred correctly in all callbacks
   const [receiptSettings, setReceiptSettings] = useState<LocalReceiptSettings>(() => {
     if (typeof window === "undefined") return defaultReceiptSettings;
     const saved = localStorage.getItem("receiptSettings");
@@ -68,6 +73,12 @@ export default function AdditionalSettingsContent() {
     setFeatures((prev) => ({ ...prev, [featureId]: value }));
     if (featureId === "customerDisplays") {
       setPosSettings({ customerDisplayEnabled: value });
+    }
+    if (featureId === "lowStockNotifications") {
+      setPosSettings({ lowStockNotificationsEnabled: value });
+    }
+    if (featureId === "negativeStockAlerts") {
+      setPosSettings({ negativeStockAlertsEnabled: value });
     }
   };
 
@@ -81,10 +92,8 @@ export default function AdditionalSettingsContent() {
     };
     console.log("Saving settings:", settings);
 
-    // ✅ Persist to localStorage — survives page refresh
     localStorage.setItem("receiptSettings", JSON.stringify(receiptSettings));
 
-    // ✅ Push to context — updates receipt instantly across all components
     setReceiptSettingsContext({
       headerText: receiptSettings.headerText,
       footerMessage: receiptSettings.footerMessage,
