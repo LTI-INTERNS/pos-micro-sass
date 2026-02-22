@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
 import StatCardGrid from "@/app/components/Admin/ordermanagement/orderStarCardGrid";
@@ -22,6 +22,8 @@ type Order = {
   action?: string;
 };
 
+type UserRole = "superadmin" | "admin" | "manager";
+
 export default function DashboardPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
@@ -34,6 +36,25 @@ export default function DashboardPage() {
     status?: string;
   }>({});
 
+  // TODO: Replace with actual auth session/role + branch
+  const userRole: UserRole = "superadmin" as UserRole;
+  const userBranch = "Colombo 01" as const; // Get from auth context/session
+
+  // Base data: superadmin sees all; admin/manager only their branch
+  const baseData = useMemo(() => {
+    const all = ordersData as Order[];
+    return userRole === "superadmin"
+      ? all
+      : all.filter((o) => o.branch === userBranch);
+  }, [userRole, userBranch]);
+
+  // Optional but recommended: ensure branch filter isn't kept for admin/manager
+  useEffect(() => {
+    if (userRole !== "superadmin") {
+      setFilters((prev) => ({ ...prev, branch: "" }));
+    }
+  }, [userRole]);
+
   const isFilterApplied = Object.values(filters).some((v) => v && v.trim() !== "");
 
   const handleRemoveFilter = (key: string) => {
@@ -44,30 +65,41 @@ export default function DashboardPage() {
     setFilters({});
   };
 
-  const branchOptions = getFilterOptions(ordersData as Order[], "branch");
-  const paymentTypeOptions = getFilterOptions(ordersData as Order[], "paymenttype");
-  const statusOptions = getFilterOptions(ordersData as Order[], "status");
+  // Filter options (use baseData so admin/manager don't get other-branch options)
+  const paymentTypeOptions = getFilterOptions(baseData as Order[], "paymenttype");
+  const statusOptions = getFilterOptions(baseData as Order[], "status");
 
-  const filterFields: SelectField[] = [
-    {
-      name: "branch",
-      placeholder: "Select Branch",
-      options: branchOptions,
-    },
-    {
-      name: "paymenttype",
-      placeholder: "Select Payment Type",
-      options: paymentTypeOptions,
-    },
-    {
-      name: "status",
-      placeholder: "Select Status",
-      options: statusOptions,
-    },
-  ];
+  // Branch options only needed for superadmin
+  const branchOptions = useMemo(() => {
+    return getFilterOptions(ordersData as Order[], "branch");
+  }, []);
+
+  const filterFields: SelectField[] = useMemo(() => {
+    return [
+      ...(userRole === "superadmin"
+        ? [
+            {
+              name: "branch",
+              placeholder: "Select Branch",
+              options: branchOptions,
+            } as SelectField,
+          ]
+        : []),
+      {
+        name: "paymenttype",
+        placeholder: "Select Payment Type",
+        options: paymentTypeOptions,
+      },
+      {
+        name: "status",
+        placeholder: "Select Status",
+        options: statusOptions,
+      },
+    ];
+  }, [userRole, branchOptions, paymentTypeOptions, statusOptions]);
 
   const filteredOrders = useTableFilters<Order>({
-    data: ordersData as Order[],
+    data: baseData as Order[],
     search,
     start,
     end,
@@ -87,7 +119,13 @@ export default function DashboardPage() {
             setEnd(e);
           }}
         />
-        <StatCardGrid />
+
+        {/* NOTE ABOUT STATS:
+           This will still show whatever StatCardGrid calculates internally.
+           If StatCardGrid currently uses ordersData inside itself, you must update that component
+           to accept a prop (e.g. orders={filteredOrders} or data={baseData}) to make stats role-based.
+        */}
+        <StatCardGrid orders={filteredOrders} />
 
         <div className="relative">
           <SearchBar
@@ -100,6 +138,7 @@ export default function DashboardPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={clearAllFilters}
           />
+
           <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
           <FilterPopup

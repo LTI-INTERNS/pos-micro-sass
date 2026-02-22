@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import SearchBar from "../components/Admin/common/Search-bar";
@@ -9,11 +9,14 @@ import AddStaffPopup from "./popup/AddStaffPopup";
 import ActionButton from "../components/Admin/common/ActionButton";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 import FilterPopup from "../components/Admin/common/FilterPopup";
-import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
+import {
+  useTableFilters,
+  getFilterOptions,
+} from "../components/Admin/common/Filterlogic";
 import { useCSVExport } from "../components/Admin/common/csvExport";
 import { staffData } from "./mock/mockStaffData";
-import DeletePopup from "../components/Admin/common/Deletepopup"
-import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
+import DeletePopup from "../components/Admin/common/Deletepopup";
+import EditEntityModal, { EditField } from "@/app/components/Admin/common/EditPopup";
 
 type Staff = {
   id: string;
@@ -27,6 +30,8 @@ type Staff = {
   pin: string;
 };
 
+type UserRole = "superadmin" | "admin" | "manager";
+
 export default function StaffManagementPage() {
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
@@ -36,6 +41,9 @@ export default function StaffManagementPage() {
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
+  // TODO: Replace with actual auth session/role + branch
+  const userRole: UserRole = "superadmin" as UserRole;
+  const userBranch = "Kandy" as const; // Get from auth context/session
 
   const exportCSV = useCSVExport();
 
@@ -51,25 +59,45 @@ export default function StaffManagementPage() {
     { key: "pin", label: "Pin" },
   ];
 
+  // Base data: superadmin sees all branches; admin/manager only see their branch
+  const baseData = useMemo(() => {
+    return userRole === "superadmin"
+      ? staffData
+      : staffData.filter((s) => s.branch === userBranch);
+  }, [userRole, userBranch]);
+
+  // Optional: clear any leftover branch filter if user isn't allowed to use it
+  useEffect(() => {
+    if (userRole !== "superadmin") {
+      setFilters((prev) => ({ ...prev, branch: "" }));
+    }
+  }, [userRole]);
+
   const filteredStaff = useTableFilters<Staff>({
-    data: staffData,
+    data: baseData,
     search,
     searchKeys: ["id", "name", "staffNo", "branch", "position", "email"],
     filters,
   });
 
-  const filterFields = [
-    {
-      name: "position",
-      placeholder: "Position",
-      options: getFilterOptions(staffData, "position"),
-    },
-    {
-      name: "branch",
-      placeholder: "Branch",
-      options: getFilterOptions(staffData, "branch"),
-    },
-  ];
+  const filterFields = useMemo(() => {
+    return [
+      {
+        name: "position",
+        placeholder: "Position",
+        options: getFilterOptions(baseData, "position"),
+      },
+      ...(userRole === "superadmin"
+        ? [
+            {
+              name: "branch",
+              placeholder: "Branch",
+              options: getFilterOptions(staffData, "branch"),
+            },
+          ]
+        : []),
+    ];
+  }, [userRole, baseData]);
 
   const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -83,20 +111,19 @@ export default function StaffManagementPage() {
   };
 
   const editFields: EditField[] = [
-  { name: "name", label: "Name", type: "text" },
-  { name: "staffNo", label: "Staff No", type: "text" },
-  { name: "branch", label: "Branch", type: "text" },
-  { name: "position", label: "Position", type: "text" },
-  { name: "email", label: "Email", type: "text" },
-  { name: "phone", label: "Phone", type: "number" },
-];
-
+    { name: "name", label: "Name", type: "text" },
+    { name: "staffNo", label: "Staff No", type: "text" },
+    { name: "branch", label: "Branch", type: "text" },
+    { name: "position", label: "Position", type: "text" },
+    { name: "email", label: "Email", type: "text" },
+    { name: "phone", label: "Phone", type: "number" },
+  ];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <DateRangeBar />
-        
+
         <div className="relative">
           <SearchBar
             value={search}
@@ -110,11 +137,8 @@ export default function StaffManagementPage() {
             onClearFilters={() => setFilters({})}
           />
 
-          <FilterChips
-            filters={filters}
-            onRemove={removeFilter}
-          />
-          
+          <FilterChips filters={filters} onRemove={removeFilter} />
+
           <FilterPopup
             open={showFilter}
             onClose={() => setShowFilter(false)}
@@ -122,19 +146,19 @@ export default function StaffManagementPage() {
             onApply={(values) => setFilters(values)}
           />
         </div>
-        
+
         <div className="flex flex-wrap gap-3 mt-4">
           <ActionButton
             className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
             label="Delete Staff"
             variant="outline"
             onClick={() => {
-            if (!selectedStaff) {
-              alert("Please select a cashier first!");
-              return;
-            }
-            setDeletePopupOpen(true);
-          }}
+              if (!selectedStaff) {
+                alert("Please select a cashier first!");
+                return;
+              }
+              setDeletePopupOpen(true);
+            }}
           />
 
           <ActionButton
@@ -149,7 +173,6 @@ export default function StaffManagementPage() {
               setEditPopupOpen(true);
             }}
           />
-
 
           <ActionButton
             className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
@@ -175,13 +198,11 @@ export default function StaffManagementPage() {
           onSelectRow={(row) => {
             setSelectedStaff(row);
           }}
-
         />
       </div>
 
-      {showPopup && (
-        <AddStaffPopup onClose={() => setShowPopup(false)} />
-      )} 
+      {showPopup && <AddStaffPopup onClose={() => setShowPopup(false)} />}
+
       {selectedStaff && (
         <DeletePopup
           isOpen={deletePopupOpen}
@@ -189,15 +210,20 @@ export default function StaffManagementPage() {
           item={selectedStaff}
           itemName="Staff"
           getDisplayText={(c) => (
-          <><br /><br />
-            ID - {c.id}<br />
-            Staff Name- {c.name}<br />
-            Branch - {c.branch}<br />
-            position - {c.position}
-          </>
+            <>
+              <br />
+              <br />
+              ID - {c.id}
+              <br />
+              Staff Name- {c.name}
+              <br />
+              Branch - {c.branch}
+              <br />
+              position - {c.position}
+            </>
           )}
           onConfirm={() => {
-            const index = staffData.findIndex(c => c.id === selectedStaff.id);
+            const index = staffData.findIndex((c) => c.id === selectedStaff.id);
             if (index >= 0) staffData.splice(index, 1);
             setSelectedStaff(null);
             setDeletePopupOpen(false);
@@ -214,7 +240,7 @@ export default function StaffManagementPage() {
           onClose={() => setEditPopupOpen(false)}
           onSave={(updatedValues) => {
             // Update staffData array
-            const index = staffData.findIndex(s => s.id === selectedStaff.id);
+            const index = staffData.findIndex((s) => s.id === selectedStaff.id);
             if (index >= 0) {
               staffData[index] = updatedValues;
             }
@@ -223,7 +249,6 @@ export default function StaffManagementPage() {
           }}
         />
       )}
-
     </DashboardLayout>
   );
 }
