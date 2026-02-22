@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 type Filters = Record<string, string | undefined>;
 
@@ -21,9 +21,7 @@ export function useTableFilters<T>({
   end,
   filters = {},
 }: UseTableFiltersProps<T>) {
-  const [filteredData, setFilteredData] = useState<T[]>(data);
-
-  useEffect(() => {
+  return useMemo(() => {
     let result = [...data];
 
     // Search
@@ -46,23 +44,19 @@ export function useTableFilters<T>({
 
     // Dropdown filters
     Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
+      if (value && value.trim() !== "") {
         result = result.filter(
           (item) => String((item as any)[key]) === value
         );
       }
     });
 
-    setFilteredData(result);
-  }, [data, search, start, end, filters]);
+    return result;
 
-  return filteredData;
+  }, [data, search, start, end, JSON.stringify(filters)]);
 }
 
-export function getFilterOptions<T, K extends keyof T>(
-  data: T[],
-  key: K
-) {
+export function getFilterOptions<T, K extends keyof T>(data: T[], key: K) {
   return Array.from(new Set(data.map((item) => item[key])))
     .filter(Boolean)
     .map((value) => ({
@@ -70,4 +64,3 @@ export function getFilterOptions<T, K extends keyof T>(
       value: String(value),
     }));
 }
-

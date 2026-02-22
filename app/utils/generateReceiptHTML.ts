@@ -240,7 +240,7 @@ export const generateReceiptHTML = ({
         ${showCustomerDetails && customerDetails ? `
           <div class="section customer-info">
             <p><strong>Customer</strong></p>
-            <p>${customerDetails}</p>
+            ${customerDetails.split('\n').filter(Boolean).map(line => `<p>${line}</p>`).join('')}
           </div>
         ` : ''}
 

@@ -1,23 +1,35 @@
-import StatCard from '@/app/components/Admin/common/StatCard';;
+import StatCard from '@/app/components/Admin/common/StatCard';
+import { calcStatSummary } from '@/app/utils/statCardUtils';
+import { Expenses } from './ExpensesTable';
 
-const statCards = [
-  {
-    title: "Total Expenses",
-    amount: 34250,
-    percentage: "+4.2%",
-    trend: "up" as const,
-    caption: "vs last month",
-  },
-  {
-    title: "New Expenses",
-    amount: 12000,
-    percentage: "-1.5%",
-    trend: "down" as const,
-    caption: "vs last month",
-  },
-];
-  
-export default function StatCardGrid() {
+type Props = {
+  expenses?: Expenses[];
+};
+
+export default function StatCardGrid({ expenses = [] }: Props) {
+  const { total, thisMonthTotal, totalTrend, monthlyTrend } = calcStatSummary(
+    expenses,
+    "date",
+    "amount"
+  );
+
+  const statCards = [
+    {
+      title: "Total Expenses",
+      amount: total,
+      percentage: totalTrend.label,
+      trend: totalTrend.trend,
+      caption: "from previous 30 days",
+    },
+    {
+      title: "New Expenses (This Month)",
+      amount: thisMonthTotal,
+      percentage: monthlyTrend.label,
+      trend: monthlyTrend.trend,
+      caption: "from last month",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
       {statCards.map((card) => (
@@ -26,7 +38,7 @@ export default function StatCardGrid() {
           title={card.title}
           amount={card.amount}
           percentage={card.percentage}
-          trend={card.trend as 'up' | 'down'}
+          trend={card.trend}
           caption={card.caption}
           showDetailButton={false}
         />

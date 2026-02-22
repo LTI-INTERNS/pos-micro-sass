@@ -6,7 +6,7 @@ import ModalShell from "@/app/components/Admin/common/ModalShell";
 import FormField from "@/app/components/Admin/common/FormField";
 import PopupActions from "@/app/components/Admin/common/PopupActions";
 
-import { staffData } from "../mock/mockStaffData";
+import { staffData } from "../../../staffmanagement/mock/mockStaffData";
 
 type Props = {
   onClose: () => void;
