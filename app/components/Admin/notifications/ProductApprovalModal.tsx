@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import {
   X, CheckCircle2, XCircle, Package,
   User, Building2, Clock, AlertTriangle, ShieldCheck,
@@ -127,7 +128,6 @@ function AuditRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
-
 export default function ProductApprovalModal({
   open, data, onClose, onApprove, onReject,
 }: Props) {
@@ -152,7 +152,6 @@ export default function ProductApprovalModal({
   const warnings = validateProductData(data);
   const warningCount = Object.keys(warnings).length;
   const hasWarnings = warningCount > 0;
-
 
   const handleApprove = () => onApprove(data.id);
 
@@ -234,7 +233,6 @@ export default function ProductApprovalModal({
     </div>
   ) : null;
 
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -303,9 +301,7 @@ export default function ProductApprovalModal({
             </div>
           </div>
 
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${
-            warnings.submittedBy ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-100"
-          }`}>
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${warnings.submittedBy ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-100"}`}>
             <ShieldCheck size={13} className={warnings.submittedBy ? "text-red-400" : "text-orange-400"} />
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Submitted by</span>
             <span className={`text-xs font-semibold ml-1 ${warnings.submittedBy ? "text-red-500" : "text-gray-700"}`}>
@@ -313,13 +309,14 @@ export default function ProductApprovalModal({
             </span>
           </div>
 
-          <div className={`flex items-center gap-4 px-4 py-3 rounded-xl border ${
-            warnings.productName ? "bg-red-50 border-red-200" : "bg-orange-50 border-orange-100"
-          }`}>
+          <div className={`flex items-center gap-4 px-4 py-3 rounded-xl border ${warnings.productName ? "bg-red-50 border-red-200" : "bg-orange-50 border-orange-100"}`}>
             {data.imageUrl ? (
-              <img
-                src={data.imageUrl} alt={data.productName}
-                className="w-14 h-14 rounded-xl object-cover border border-orange-200 flex-shrink-0"
+              <Image
+                src={data.imageUrl}
+                alt={data.productName || "Product Image"}
+                width={56}
+                height={56}
+                className="rounded-xl object-cover border border-orange-200 flex-shrink-0"
               />
             ) : (
               <div className="w-14 h-14 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -385,9 +382,7 @@ export default function ProductApprovalModal({
                 <label className="text-xs font-semibold text-gray-700">
                   Rejection Reason <span className="text-red-400">*</span>
                 </label>
-                <span className={`text-[10px] ${
-                  reason.trim().length > MAX_REASON ? "text-red-500 font-bold" : "text-gray-400"
-                }`}>
+                <span className={`text-[10px] ${reason.trim().length > MAX_REASON ? "text-red-500 font-bold" : "text-gray-400"}`}>
                   {reason.trim().length}/{MAX_REASON}
                 </span>
               </div>

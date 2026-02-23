@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
+import Image from "next/image";
 import OrderTable, { Column } from "../Admin/common/CommonTable";
 import { Printer, Mail } from "lucide-react";
 import { useCurrency } from "@/app/context/CurrencyContext";
@@ -64,7 +65,14 @@ export function PaymentIcons({ paymentMethod }: { paymentMethod: string }) {
   return (
     <div className="flex items-center gap-2">
       {icons.map((ic) => (
-        <img key={ic.alt} src={ic.src} alt={ic.alt} className="w-6 h-6 object-contain" />
+        <Image
+          key={ic.alt}
+          src={ic.src}
+          alt={ic.alt}
+          width={24}
+          height={24}
+          className="object-contain"
+        />
       ))}
     </div>
   );
@@ -101,7 +109,11 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
   );
 
   const itemsSubtotal = useMemo(
-    () => items.reduce((sum, it) => sum + (Number.isFinite(it.subtotal) ? it.subtotal : 0), 0),
+    () =>
+      items.reduce(
+        (sum, it) => sum + (Number.isFinite(it.subtotal) ? it.subtotal : 0),
+        0
+      ),
     [items]
   );
 
@@ -117,7 +129,8 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
     cardPaid: payment.cardPaid,
     customerName: payment.customer?.name ?? null,
     customerPhone: payment.customer?.phoneNumber ?? null,
-    customerEmail: payment.customer?.email ?? payment.customerEmail ?? null,
+    customerEmail:
+      payment.customer?.email ?? payment.customerEmail ?? null,
   });
 
   const hasEmail = Boolean(payment.customer?.email || payment.customerEmail);

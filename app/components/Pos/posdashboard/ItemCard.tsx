@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Package } from "lucide-react";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { formatCurrency } from "@/app/context/formatCurrency";
@@ -33,11 +34,15 @@ export default function ItemCard({ item, onClick }: Props) {
     >
       {/* IMAGE OR ICON */}
       {hasImage ? (
-        <img
-          src={item.image}
-          alt={item.name}
-          className="w-full h-32 object-cover rounded-t-xl"
-        />
+        <div className="relative w-full h-32 rounded-t-xl overflow-hidden">
+          <Image
+            src={item.image!}
+            alt={item.name}
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
       ) : (
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
@@ -55,7 +60,9 @@ export default function ItemCard({ item, onClick }: Props) {
       {hasImage ? (
         <div className="p-3 text-center">
           <p className="text-sm font-semibold text-black">{item.name}</p>
-          <p className="text-xs text-orange-500">{formatCurrency(item.price, currency, useCents)}</p> 
+          <p className="text-xs text-orange-500">
+            {formatCurrency(item.price, currency, useCents)}
+          </p>
         </div>
       ) : (
         <p className="text-sm font-semibold text-orange-600">

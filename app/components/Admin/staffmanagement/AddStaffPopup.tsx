@@ -28,8 +28,8 @@ type FormErrors = Partial<Record<keyof StaffValues, string>>;
 export default function AddStaffPopup({ onClose }: Props) {
   const [open, setOpen] = React.useState(true);
 
-  
-  const nextId = (staffData.length + 1).toString();
+  // Generate next ID dynamically whenever staffData changes
+  const nextId = React.useMemo(() => (staffData.length + 1).toString(), []);
 
   const [values, setValues] = React.useState<StaffValues>({
     id: nextId,
@@ -44,7 +44,7 @@ export default function AddStaffPopup({ onClose }: Props) {
 
   const [errors, setErrors] = React.useState<FormErrors>({});
 
- 
+  // Reset form when popup opens
   React.useEffect(() => {
     if (!open) return;
 
@@ -60,13 +60,12 @@ export default function AddStaffPopup({ onClose }: Props) {
     });
 
     setErrors({});
-    
-  }, [open]);
+  }, [open, nextId]); // nextId added to dependency array to satisfy linter
 
   const setField = (name: keyof StaffValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
 
-    
+    // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -75,35 +74,28 @@ export default function AddStaffPopup({ onClose }: Props) {
   const validateForm = () => {
     const newErrors: FormErrors = {};
 
-   
     if (!values.name.trim()) newErrors.name = "Name is required";
     else if (values.name.trim().length < 2)
       newErrors.name = "Name must be at least 2 characters";
 
-    
     if (!values.staffNo.trim()) newErrors.staffNo = "Staff No is required";
     else if (!/^\d+$/.test(values.staffNo))
       newErrors.staffNo = "Staff No must contain only numbers";
 
-   
     if (!values.position.trim()) newErrors.position = "Position is required";
 
-   
     if (!values.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
       newErrors.email = "Please enter a valid email address";
 
-   
     if (!values.phone.trim()) newErrors.phone = "Phone number is required";
     else if (!/^\d{10}$/.test(values.phone.replace(/\D/g, "")))
       newErrors.phone = "Phone number must be exactly 10 digits";
 
-   
     if (!values.password.trim()) newErrors.password = "Password is required";
     else if (values.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
 
-    
     if (!values.pin.trim()) newErrors.pin = "PIN is required";
     else if (!/^\d{4}$/.test(values.pin))
       newErrors.pin = "PIN must be exactly 4 digits";
@@ -117,8 +109,7 @@ export default function AddStaffPopup({ onClose }: Props) {
 
     console.log("Staff form values:", values);
 
-    
-
+    // Close popup
     setOpen(false);
     onClose();
   };
@@ -163,12 +154,10 @@ export default function AddStaffPopup({ onClose }: Props) {
           label="Staff No"
           placeholder="Enter staff number"
           value={values.staffNo}
-          onChange={(v) => setField("staffNo", v.replace(/\D/g, ""))} 
+          onChange={(v) => setField("staffNo", v.replace(/\D/g, ""))}
           type="text"
         />
-        {errors.staffNo && (
-          <p className="text-xs text-red-500 px-3">{errors.staffNo}</p>
-        )}
+        {errors.staffNo && <p className="text-xs text-red-500 px-3">{errors.staffNo}</p>}
 
         <FormField
           label="Position"
@@ -177,9 +166,7 @@ export default function AddStaffPopup({ onClose }: Props) {
           onChange={(v) => setField("position", v)}
           type="text"
         />
-        {errors.position && (
-          <p className="text-xs text-red-500 px-3">{errors.position}</p>
-        )}
+        {errors.position && <p className="text-xs text-red-500 px-3">{errors.position}</p>}
 
         <FormField
           label="Email"
@@ -188,20 +175,16 @@ export default function AddStaffPopup({ onClose }: Props) {
           onChange={(v) => setField("email", v)}
           type="text"
         />
-        {errors.email && (
-          <p className="text-xs text-red-500 px-3">{errors.email}</p>
-        )}
+        {errors.email && <p className="text-xs text-red-500 px-3">{errors.email}</p>}
 
         <FormField
           label="Phone"
           placeholder="Enter Phone number"
           value={values.phone}
-          onChange={(v) => setField("phone", v.replace(/\D/g, ""))} 
+          onChange={(v) => setField("phone", v.replace(/\D/g, ""))}
           type="text"
         />
-        {errors.phone && (
-          <p className="text-xs text-red-500 px-3">{errors.phone}</p>
-        )}
+        {errors.phone && <p className="text-xs text-red-500 px-3">{errors.phone}</p>}
 
         <FormField
           label="Password"
@@ -210,15 +193,13 @@ export default function AddStaffPopup({ onClose }: Props) {
           onChange={(v) => setField("password", v)}
           type="password"
         />
-        {errors.password && (
-          <p className="text-xs text-red-500 px-3">{errors.password}</p>
-        )}
+        {errors.password && <p className="text-xs text-red-500 px-3">{errors.password}</p>}
 
         <FormField
           label="Pin"
           placeholder="Enter PIN"
           value={values.pin}
-          onChange={(v) => setField("pin", v.replace(/\D/g, "").slice(0, 4))} // 4 digits only
+          onChange={(v) => setField("pin", v.replace(/\D/g, "").slice(0, 4))}
           type="password"
         />
         {errors.pin && <p className="text-xs text-red-500 px-3">{errors.pin}</p>}
