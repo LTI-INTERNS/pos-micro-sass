@@ -58,7 +58,7 @@ export default function StepEmail({
         <br />
         <br />
         <p className="text-white/80 text-sm">
-          No worries, we'll send you reset instructions
+          No worries, we&apos;ll send you reset instructions
         </p>
         <br />
       </div>

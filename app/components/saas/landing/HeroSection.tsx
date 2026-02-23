@@ -9,7 +9,15 @@ export default function HeroSection() {
   const router = useRouter();
 
   return (
-    <section className="relative isolate overflow-hidden min-h-screen">
+    <section
+      className="
+        relative isolate overflow-hidden min-h-screen
+        2xl:min-h-screen
+        [@media(min-width:2560px)]:min-h-0
+        [@media(min-width:2560px)]:py-16
+        [@media(min-width:2560px)]:mt-20
+      "
+    >
       {/* Background */}
       <div className="absolute inset-0 -z-20">
         <Image

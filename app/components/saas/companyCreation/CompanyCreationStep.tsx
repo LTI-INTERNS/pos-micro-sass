@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { RegistrationData } from "@/app/companyregistration/page";
 
@@ -29,20 +29,15 @@ type Touched = {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
-// Sri Lanka phone formatter: 0771234567 -> +94 77 123 4567
 function formatPhone(input: string) {
   let value = input.replace(/[^\d+]/g, "");
-
-  // Convert 0XXXXXXXXX -> +94XXXXXXXXX
   if (value.startsWith("0")) value = "+94" + value.slice(1);
-
-  // Only format if it's +94...
   if (!value.startsWith("+94")) return value;
 
   const digits = value.replace("+94", "");
-  const p1 = digits.slice(0, 2); // 77
-  const p2 = digits.slice(2, 5); // 123
-  const p3 = digits.slice(5, 9); // 4567
+  const p1 = digits.slice(0, 2);
+  const p2 = digits.slice(2, 5);
+  const p3 = digits.slice(5, 9);
 
   return `+94 ${p1}${p2 ? " " + p2 : ""}${p3 ? " " + p3 : ""}`.trim();
 }
@@ -58,7 +53,7 @@ type Props = {
   onBack: () => void;
 };
 
-export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
+export default function CompanyCreationStep({ data, onNext }: Props) {
   const [companyName, setCompanyName] = useState(data.companyName);
   const [address, setAddress] = useState(data.address);
   const [contact, setContact] = useState(data.contact);
@@ -78,7 +73,7 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
-  const validate = () => {
+  const validate = useCallback(() => {
     const next: Errors = {};
 
     const name = companyName.trim();
@@ -103,11 +98,11 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
 
     setErrors(next);
     return Object.keys(next).length === 0;
-  };
+  }, [companyName, address, contact, email]);
 
   useEffect(() => {
     validate();
-  }, [companyName, address, contact, email, logo]);
+  }, [validate]);
 
   const isFormValid =
     companyName.trim().length >= 3 &&
@@ -242,38 +237,37 @@ export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
             }
             left={
               <div className="hidden md:block">
-              <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
-                <div className="flex justify-center mb-8">
-                  <div className="relative w-full max-w-[380px] h-48 md:h-[230px] mx-auto">
-                    <Image
-                      src="/saas/creationcompanylogo.svg"
-                      alt="Company illustration"
-                      fill
-                      className="object-contain"
-                      priority
-                    />
+                <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
+                  <div className="flex justify-center mb-8">
+                    <div className="relative w-full max-w-[380px] h-48 md:h-[230px] mx-auto">
+                      <Image
+                        src="/saas/creationcompanylogo.svg"
+                        alt="Company illustration"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {bullets.map((b) => (
+                      <div key={b} className="flex items-center gap-4">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40">
+                          ✓
+                        </span>
+                        <span className="text-white font-semibold">{b}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                <div className="space-y-4">
-                  {bullets.map((b) => (
-                    <div key={b} className="flex items-center gap-4">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black/40">
-                        ✓
-                      </span>
-                      <span className="text-white font-semibold">{b}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
               </div>
             }
           />
         </div>
       </GlassBackground>
 
-      <div className="mt-10 ml-50 flex justify-start text-white mb-20">
-      </div>
+      <div className="mt-10 ml-50 flex justify-start text-white mb-20" />
     </>
   );
 }

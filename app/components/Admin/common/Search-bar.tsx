@@ -58,7 +58,11 @@ export default function SearchBar({
 
   
   const handleInput = (next: string) => {
-    debounceMs > 0 ? setLocal(next) : onChange(next);
+    if (debounceMs > 0) {
+      setLocal(next);
+    } else {
+      onChange(next);
+    }
   };
 
 

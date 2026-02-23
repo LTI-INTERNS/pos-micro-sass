@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { Upload, Check, ExternalLink } from "lucide-react";
 import { useImage } from "@/app/context/ImageContext";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const PRESET_IMAGES = [
   { id: "bg1", url: "/backgrounds/mount.png", label: "Background 1" },
@@ -128,10 +129,12 @@ export default function SystemImageSection({
                     : "border-gray-200 opacity-40 hover:opacity-100 hover:border-gray-400"
                 }`}
             >
-              <img
+              <Image
                 src={img.url}
                 alt={img.label}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover w-full h-full"
+                sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
               />
 
               {selected && (
@@ -163,10 +166,11 @@ export default function SystemImageSection({
         >
           {uploadedUrl && isSelected("custom") ? (
             <>
-              <img
+              <Image
                 src={uploadedUrl}
                 alt="Custom background"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover w-full h-full"
               />
               <div className="absolute top-2 right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center shadow">
                 <Check className="w-4 h-4 text-white" strokeWidth={3} />

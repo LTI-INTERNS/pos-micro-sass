@@ -1,5 +1,4 @@
 import StatCard from '@/app/components/Admin/common/StatCard';
-import { ca } from 'date-fns/locale';
 
 const statCards = [
   {

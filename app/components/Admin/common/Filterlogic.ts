@@ -46,14 +46,14 @@ export function useTableFilters<T>({
     Object.entries(filters).forEach(([key, value]) => {
       if (value && value.trim() !== "") {
         result = result.filter(
-          (item) => String((item as any)[key]) === value
+          (item) => String((item as T & Record<string, unknown>)[key]) === value
         );
       }
     });
 
     return result;
 
-  }, [data, search, start, end, JSON.stringify(filters)]);
+  }, [data, search, searchKeys, start, end, dateKey, filters]);
 }
 
 export function getFilterOptions<T, K extends keyof T>(data: T[], key: K) {

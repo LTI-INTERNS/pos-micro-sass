@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCurrency } from '@/app/context/CurrencyContext';
 import { formatCurrency } from "@/app/context/formatCurrency";
 
@@ -24,11 +25,15 @@ export default function TopSellingItem({
   return (
     <div className="flex items-center justify-between py-3 border-b last:border-b-0">
       <div className="flex items-center gap-3">
-        <img
-          src={image}
-          alt={name}
-          className="w-12 h-12 rounded-lg object-cover"
-        />
+        <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0">
+          <Image
+            src={image}
+            alt={name}
+            fill
+            sizes="48px"
+            className="object-cover"
+          />
+        </div>
         <span className="text-sm font-medium text-gray-800 line-clamp-2 max-w-[180px]">
           {name}
         </span>

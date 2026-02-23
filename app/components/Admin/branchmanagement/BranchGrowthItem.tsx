@@ -1,12 +1,13 @@
-"use client"
-import React from 'react'
+"use client";
+import React from "react";
+import Image from "next/image";
 
 type BranchGrowthItemProps = {
-  name: string
-  avatar: string
-  amount: string
-  subAmount: string
-}
+  name: string;
+  avatar: string;
+  amount: string;
+  subAmount: string;
+};
 
 const BranchGrowthItem = ({
   name,
@@ -15,12 +16,14 @@ const BranchGrowthItem = ({
   subAmount,
 }: BranchGrowthItemProps) => {
   return (
-   <div className="flex items-center justify-between py-3 border-b last:border-b-0">
+    <div className="flex items-center justify-between py-3 border-b last:border-b-0">
       <div className="flex items-center gap-3">
-        <img
+        <Image
           src={avatar}
           alt={name}
-          className="w-9 h-9 rounded-full object-cover"
+          width={36}       // w-9 = 36px
+          height={36}      // h-9 = 36px
+          className="rounded-full object-cover"
         />
         <span className="text-sm font-medium text-gray-800">{name}</span>
       </div>
@@ -30,7 +33,7 @@ const BranchGrowthItem = ({
         <p className="text-xs text-green-500">{subAmount}</p>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BranchGrowthItem
+export default BranchGrowthItem;

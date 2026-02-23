@@ -65,7 +65,7 @@ export default function NotificationBell() {
     setPopupOpen(true);
   };
 
-  const handleApprove = (productId: number) => {
+  const handleApprove = () => {
     if (approvalNotifId !== null) {
       const notif = notifications.find((n) => n.id === approvalNotifId);
       updateNotification(approvalNotifId, {
@@ -85,7 +85,7 @@ export default function NotificationBell() {
     setApprovalOpen(false);
   };
 
-  const handleReject = (productId: number, reason: string) => {
+  const handleReject = (_productId: number, reason: string) => {
     if (approvalNotifId !== null) {
       const notif = notifications.find((n) => n.id === approvalNotifId);
       updateNotification(approvalNotifId, {

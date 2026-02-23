@@ -14,9 +14,10 @@ type PersistableData = Omit<RegistrationData, "logo">;
 
 export function saveRegistrationData(data: RegistrationData, step: number) {
   try {
-    const { logo: _logo, ...rest } = data;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { logo, ...rest } = data;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rest));
-    localStorage.setItem(STEP_KEY,    String(step));
+    localStorage.setItem(STEP_KEY, String(step));
   } catch {
     // quota exceeded or private browsing – fail silently
   }

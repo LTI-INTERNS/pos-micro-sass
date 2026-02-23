@@ -15,10 +15,11 @@ type Props<T> = {
   columns: Column<T>[];
   emptyMessage?: string;
   selectedRowId?: string | number;
-  onSelectRow?: (row: T | null) => void; 
+  onSelectRow?: (row: T | null) => void;
 };
 
-const ALIGN_CLASS: Record<NonNullable<Column<any>["align"]>, string> = {
+// Make ALIGN_CLASS generic-free
+const ALIGN_CLASS: Record<"left" | "right" | "center", string> = {
   left: "text-left",
   right: "text-right",
   center: "text-center",
@@ -36,9 +37,7 @@ function CommonTableInner<T extends { id?: string | number }>({
     <section className="bg-white rounded-xl border border-gray-100">
       {title && (
         <div className="px-6 py-3">
-          <h2 className="text-xs font-semibold text-gray-900">
-            {title}
-          </h2>
+          <h2 className="text-xs font-semibold text-gray-900">{title}</h2>
         </div>
       )}
 
@@ -69,7 +68,6 @@ function CommonTableInner<T extends { id?: string | number }>({
                   onClick={() => {
                     if (!onSelectRow) return;
 
-                    // toggle select / deselect
                     if (isSelected) {
                       onSelectRow(null);
                     } else {
@@ -87,9 +85,7 @@ function CommonTableInner<T extends { id?: string | number }>({
                         ALIGN_CLASS[col.align ?? "left"]
                       } text-gray-700`}
                     >
-                      {col.render
-                        ? col.render(row)
-                        : String(row[col.key])}
+                      {col.render ? col.render(row) : String(row[col.key])}
                     </td>
                   ))}
                 </tr>

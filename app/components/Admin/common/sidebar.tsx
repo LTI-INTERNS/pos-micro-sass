@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Settings, X } from 'lucide-react';
 
@@ -18,7 +18,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   // TODO: Replace with actual auth session/role
   const userRole: UserRole = "superadmin" as UserRole; // Get from auth context
 
-  const allMenuItems = [
+  const allMenuItems = useMemo(() => [
     { label: 'Dashboard', path: '/overview' },
     { label: 'Staff Management', path: '/staffmanagement' },
     { label: 'Customers Management', path: '/customermanagement' },
@@ -35,7 +35,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       path: '/branchmanagement',
       roles: ['superadmin'] as UserRole[] // Only superadmin can see this
     },
-  ];
+  ], []);
 
   // Memoize filtered menu items to prevent recreation on every render
   const menuItems = useMemo(() => {
@@ -43,7 +43,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       if (!item.roles) return true; // Show items without role restriction
       return item.roles.includes(userRole);
     });
-  }, [userRole]);
+  }, [userRole, allMenuItems]);
 
   // Determine active item based on current pathname
   const activeItem = useMemo(() => {

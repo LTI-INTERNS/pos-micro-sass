@@ -2,8 +2,15 @@
 
 import ActionButton from "@/app/components/Admin/common/ActionButton";
 
+type Product = {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+};
+
 type Props = {
-  selectedProduct: any;
+  selectedProduct: Product | null;
   onAddStock: () => void;
   onDelete: () => void;
   onEdit: () => void;
