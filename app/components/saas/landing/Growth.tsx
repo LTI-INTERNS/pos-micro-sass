@@ -113,11 +113,15 @@ function StatCard({ text, className = "" }: StatCardProps) {
     <div
       className={[
         "rounded-xl border border-orange-400/60 bg-black/40 backdrop-blur hover:bg-orange-500/10 transition",
-        "px-8 py-4 lg:px-10 lg:py-5 2xl:px-12 2xl:py-6",
+        // ✅ fixed consistent height across cards
+        "h-20 lg:h-24 2xl:h-28",
+        // ✅ padding + center content
+        "px-8 lg:px-10 2xl:px-12",
+        "flex items-center justify-center text-center",
         className,
       ].join(" ")}
     >
-      <span className="font-medium text-base lg:text-lg 2xl:text-xl">
+      <span className="font-medium text-base lg:text-lg 2xl:text-xl leading-snug">
         {text}
       </span>
     </div>
