@@ -13,7 +13,7 @@ export type PDFOptions = {
   footer?: string;
 };
 
-type RowData = Record<string, unknown>;
+export type RowData = Record<string, unknown>;
 
 
 export function useCSVExport<T extends RowData>() {
@@ -82,7 +82,7 @@ export function usePDFExport<T extends RowData>() {
       format: "a4",
     });
 
-    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageWidth  = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 40;
 

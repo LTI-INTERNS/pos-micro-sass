@@ -10,12 +10,17 @@ type LoginResult =
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
 type UserRecord = { name: string; email: string; passwordHash: string; createdAt: number };
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __LT_USERS_STORE: Map<string, UserRecord> | undefined;
+}
+
 const usersStore: Map<string, UserRecord> =
-  (globalThis as any).__LT_USERS_STORE ?? new Map<string, UserRecord>();
-(globalThis as any).__LT_USERS_STORE = usersStore;
+  globalThis.__LT_USERS_STORE ?? new Map<string, UserRecord>();
+globalThis.__LT_USERS_STORE = usersStore;
 
 function hashPassword(password: string) {
-  // demo hash
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
@@ -38,16 +43,13 @@ export async function loginAction(formData: FormData): Promise<LoginResult> {
     return { ok: false, message: "Invalid password", field: "password" };
   }
 
-  // demo session cookie
-const cookieStore = await cookies();
-
-cookieStore.set("lt_session", Buffer.from(email).toString("base64"), {
-  httpOnly: true,
-  sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-});
-
+  const cookieStore = await cookies();
+  cookieStore.set("lt_session", Buffer.from(email).toString("base64"), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
 
   return { ok: true, message: "Signed in successfully" };
 }

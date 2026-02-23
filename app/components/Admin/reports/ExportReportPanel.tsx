@@ -7,8 +7,8 @@ import {
   usePDFExport,
   type ExportColumn,
   type PDFOptions,
+  type RowData,
 } from "@/app/components/Admin/reports/exportUtils";
-
 
 
 export type ExportFormat = "pdf" | "csv";
@@ -19,7 +19,7 @@ type IncludeOption = {
   checked: boolean;
 };
 
-type Props<T> = {
+type Props<T extends RowData> = {
   data: T[];
   filename?: string;
   columns?: ExportColumn[];
@@ -33,15 +33,15 @@ const FORMATS: { id: ExportFormat; label: string }[] = [
   { id: "csv", label: "CSV" },
 ];
 
-export default function ExportReportPanel<T>({
+export default function ExportReportPanel<T extends RowData>({
   data,
   filename = "report",
   columns,
   pdfOptions,
   onGenerate,
 }: Props<T>) {
-  const [format, setFormat]   = useState<ExportFormat>("pdf");
-  const [loading, setLoading] = useState(false);
+  const [format, setFormat]     = useState<ExportFormat>("pdf");
+  const [loading, setLoading]   = useState(false);
   const [includes, setIncludes] = useState<IncludeOption[]>([
     { id: "charts",  label: "Charts",   checked: false },
     { id: "summary", label: "Summary",  checked: false },

@@ -10,7 +10,7 @@ type Props = {
   completedSteps: number;
 };
 
-export default function SubscriptionPlanStep({ data, onNext, onBack, completedSteps }: Props) {
+export default function SubscriptionPlanStep({ data, onNext, onBack }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<string>(data.subscriptionPlan);
 
   const canProceed = selectedPlan.length > 0;
