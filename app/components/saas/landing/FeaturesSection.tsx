@@ -50,7 +50,7 @@ export default function FeaturesSection({
   return (
     <div
       className={[
-        "min-h-screen w-full bg-cover bg-center bg-no-repeat",
+        "relative w-full py-16 sm:py-20 md:py-24 bg-cover bg-center bg-no-repeat",
         containerClassName,
       ].join(" ")}
       style={backgroundStyle}
