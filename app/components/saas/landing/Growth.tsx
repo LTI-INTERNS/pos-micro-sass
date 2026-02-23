@@ -11,7 +11,7 @@ export default function GrowthSection() {
       {/* ================= TOP SECTION  ================= */}
       <div className="relative">
        
-        <div className="absolute inset-0 bg-[url('/saas/landing/growthtop.png')] bg-cover bg-center" />
+        <div className="absolute inset-0  bg-cover bg-center" />
         
 
         <div className="relative max-w-6xl mx-auto px-6 py-20">
