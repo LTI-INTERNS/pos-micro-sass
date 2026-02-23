@@ -28,7 +28,7 @@ export default function SectionHeader({
   subtitle,
   align = "center",
 
-  // ✅ Bigger on 4K
+  // ✅ bigger on 4K
   titleSize = "text-2xl sm:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl",
   subtitleSize = "text-sm sm:text-base lg:text-lg 2xl:text-xl",
 
@@ -36,10 +36,7 @@ export default function SectionHeader({
   subtitleColor = "text-white/90",
   spacing = "space-y-4 sm:space-y-6",
   marginBottom = "mb-12 sm:mb-16 lg:mb-20",
-
-  // ✅ Slightly wider subtitle on 4K
   maxWidth = "max-w-5xl",
-
   titleWeight = "font-semibold",
   subtitleWeight = "font-normal",
   className = "",
