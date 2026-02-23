@@ -25,7 +25,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/60 to-black/10" />
 
       {/* Content */}
-      <div className="w-full min-h-screen px-10 lg:px-24 flex items-center">
+      <div className="w-full min-h-screen px-10 lg:px-28 flex items-center">
         <div className="grid items-center lg:grid-cols-12 w-full">
           {/* Left Content */}
           <div className="lg:col-span-6">

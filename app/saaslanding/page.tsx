@@ -11,9 +11,10 @@ import Testimonials from "../components/saas/landing/Testimonials";
 
 export default function LandingPage() {
   return (
-    <main className="bg-[url('/saas/landing/growthtop.png')] bg-cover bg-center bg-fixed" >
+    <main>
       <Navigation />
-
+      <div className="bg-[url('/saas/landing/growthtop.png')] bg-cover bg-center bg-fixed" >
+    
       <section id="home">
         <HeroSection />
       </section>
@@ -38,7 +39,8 @@ export default function LandingPage() {
       <section id="testimonials" className="scroll-mt-18">
         <Testimonials />
       </section>
-
+      
+      </div>
       <Footer />
     </main>
   );

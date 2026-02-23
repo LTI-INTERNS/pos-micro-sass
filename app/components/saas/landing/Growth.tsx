@@ -9,12 +9,11 @@ export default function GrowthSection() {
     <section className="text-white">
 
       {/* ================= TOP SECTION  ================= */}
-      <div className="relative">
+      <div className="relative lg:px-30">
        
         <div className="absolute inset-0  bg-cover bg-center" />
-        
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20">
+        <div className="relative max-w-6xl mx-auto px-6 py-20 ">
 
           <div className="text-center">
             <h3 className="text-2xl md:text-3xl font-bold mb-4">
@@ -55,7 +54,7 @@ export default function GrowthSection() {
 
 
       {/* ================= BOTTOM SECTION  ================= */}
-      <div className="relative">
+      <div className="relative lg:px-30">
         
         <div className="absolute inset-0 bg-[url('/saas/landing/growthbottom.png')] bg-cover bg-center" />
         
