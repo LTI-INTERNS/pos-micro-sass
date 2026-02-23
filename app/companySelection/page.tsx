@@ -38,7 +38,7 @@ export default function CompanySelectPage() {
 
   function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
-    router.push(`/dashboard?company=${companyId}`);
+    router.push(`/overview`);
   }
 
 
@@ -88,7 +88,7 @@ export default function CompanySelectPage() {
                         <div className="mt-6">
                           <ActionButton
                             className="py-4 text-base"
-                            onClick={() => router.push("/companycreation")}
+                            onClick={() => router.push("/companyregistration")}
                           >
                             Create Company
                           </ActionButton>
