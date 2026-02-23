@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import ModalShell from "../common/ModalShell";
 import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
@@ -12,12 +13,14 @@ type ExpenseValues = {
   amount: string;
 };
 
+type PaymentMethod = "card" | "cash" | null;
+
 type FormErrors = Partial<Record<keyof ExpenseValues, string>>;
 
 type AddExpensesPopupProps = {
   open: boolean;
   onClose: () => void;
-  onSave: (values: ExpenseValues) => void;
+  onSave: (values: ExpenseValues & { paymentMethod: PaymentMethod }) => void;
 };
 
 const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
@@ -28,9 +31,10 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
     amount: "",
   });
 
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>(null);
   const [errors, setErrors] = React.useState<FormErrors>({});
 
-  // reset form when popup opens
+  // Reset form when popup opens
   React.useEffect(() => {
     if (!open) return;
     setValues({
@@ -39,13 +43,12 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
       description: "",
       amount: "",
     });
+    setPaymentMethod(null);
     setErrors({});
   }, [open]);
 
   const setField = (name: keyof ExpenseValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
-
-    // clear error when user edits field
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -54,17 +57,12 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
   const validateForm = () => {
     const newErrors: FormErrors = {};
 
-    if (!values.date.trim()) {
-      newErrors.date = "Date is required";
-    }
-
-    if (!values.category.trim()) {
-      newErrors.category = "Category is required";
-    }
+    if (!values.date.trim()) newErrors.date = "Date is required";
+    if (!values.category.trim()) newErrors.category = "Category is required";
 
     if (!values.description.trim()) {
       newErrors.description = "Description is required";
-    } else if (values.description.trim().length < 3) {
+    } else if (values.description.length < 3) {
       newErrors.description = "Description must be at least 3 characters";
     }
 
@@ -82,7 +80,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 
   const handleSave = () => {
     if (!validateForm()) return;
-    onSave(values);
+    onSave({ ...values, paymentMethod });
   };
 
   const handleCancel = () => {
@@ -93,8 +91,18 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
       description: "",
       amount: "",
     });
+    setPaymentMethod(null);
     setErrors({});
   };
+
+  const cardBase =
+    "flex h-20 w-full cursor-pointer items-center justify-center rounded-md border transition-all";
+
+  const selectedCard =
+    "border-orange-500 ring-2 ring-orange-200 bg-orange-50";
+
+  const unselectedCard =
+    "border-gray-200 hover:border-orange-300";
 
   return (
     <ModalShell
@@ -126,9 +134,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
           onChange={(v) => setField("category", v)}
           type="dropdown"
         />
-        {errors.category && (
-          <p className="text-xs text-red-500 px-3">{errors.category}</p>
-        )}
+        {errors.category && <p className="text-xs text-red-500 px-3">{errors.category}</p>}
 
         <FormField
           label="Description"
@@ -137,9 +143,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
           onChange={(v) => setField("description", v)}
           type="text"
         />
-        {errors.description && (
-          <p className="text-xs text-red-500 px-3">{errors.description}</p>
-        )}
+        {errors.description && <p className="text-xs text-red-500 px-3">{errors.description}</p>}
 
         <FormField
           label="Amount"
@@ -148,31 +152,39 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
           onChange={(v) => setField("amount", v)}
           type="number"
         />
-        {errors.amount && (
-          <p className="text-xs text-red-500 px-3">{errors.amount}</p>
-        )}
+        {errors.amount && <p className="text-xs text-red-500 px-3">{errors.amount}</p>}
 
+        {/* Payment Method Selection */}
         <div className="mt-10 flex items-center justify-center gap-x-6">
-          <a
-            href="#"
-            className="flex h-20 w-full items-center justify-center rounded-md border border-gray-200"
+          <div
+            onClick={() => setPaymentMethod("card")}
+            className={`${cardBase} ${
+              paymentMethod === "card" ? selectedCard : unselectedCard
+            }`}
           >
-            <img
+            <Image
               src="/Popcard.png"
-              className="h-10 w-auto object-contain"
-              alt="card"
+              alt="Card Payment"
+              width={48}
+              height={48}
+              className="object-contain"
             />
-          </a>
-          <a
-            href="#"
-            className="flex h-20 w-full items-center justify-center rounded-md border border-gray-200"
+          </div>
+
+          <div
+            onClick={() => setPaymentMethod("cash")}
+            className={`${cardBase} ${
+              paymentMethod === "cash" ? selectedCard : unselectedCard
+            }`}
           >
-            <img
+            <Image
               src="/Popcash.png"
-              className="h-10 w-auto object-contain"
-              alt="cash"
+              alt="Cash Payment"
+              width={48}
+              height={40}
+              className="object-contain"
             />
-          </a>
+          </div>
         </div>
 
         <div className="flex items-center justify-center">

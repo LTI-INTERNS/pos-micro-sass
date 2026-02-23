@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   InputField,
@@ -36,13 +36,14 @@ export default function LoginForm() {
     setIsLocked(locked);
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
     setNeedsVerify(false);
     setResendMsg("");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setResendMsg("");
@@ -55,13 +56,14 @@ export default function LoginForm() {
         body: JSON.stringify(form),
       });
 
-      const data = (await res.json()) as LoginResponse;
+      const data: LoginResponse = await res.json();
 
-      if (!data.ok || !res.ok) {
-        throw new Error(!data.ok ? data.message : "Login failed");
+      if (!res.ok || (data.ok === false && "message" in data)) {
+        throw new Error(data.ok === false ? data.message : "Login failed");
       }
 
       if (
+        data.ok &&
         (data.role === "admin" || data.role === "cashier") &&
         !data.emailVerified
       ) {
@@ -74,28 +76,20 @@ export default function LoginForm() {
       localStorage.removeItem("isLocked");
       setIsLocked(false);
 
-      if (data.role === "superadmin") {
-        router.push("/overview");
-        console.log("Superadmin logged in");
-        return;
+      switch (data.ok ? data.role : "") {
+        case "superadmin":
+        case "admin":
+          router.push("/overview");
+          break;
+        case "cashier":
+          router.push("/switchuser");
+          break;
+        default:
+          router.push("/switchuser");
       }
-
-      if (data.role === "admin") {
-        router.push("/overview");
-        console.log("Admin logged in");
-        return;
-      }
-
-      if (data.role === "cashier") {
-        router.push("/switchuser");
-        console.log("Cashier logged in");
-        return;
-      }
-
-      router.push("/switchuser");
-      console.log("Login successful");
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      if (err instanceof Error) setError(err.message);
+      else setError("Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -114,17 +108,16 @@ export default function LoginForm() {
         body: JSON.stringify({ email: pendingEmail }),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const data: { message?: string } = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        throw new Error(
-          (data as any)?.message || "Failed to resend verification email"
-        );
+        throw new Error(data.message || "Failed to resend verification email");
       }
 
       setResendMsg("Verification email sent. Please check your inbox.");
-    } catch (err: any) {
-      setResendMsg(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      if (err instanceof Error) setResendMsg(err.message);
+      else setResendMsg("Something went wrong");
     } finally {
       setResendLoading(false);
     }
@@ -194,10 +187,7 @@ export default function LoginForm() {
           </a>
         </div>
 
-        <ActionButton
-          type="submit"
-          disabled={loading}
-        >
+        <ActionButton type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Log in"}
         </ActionButton>
 

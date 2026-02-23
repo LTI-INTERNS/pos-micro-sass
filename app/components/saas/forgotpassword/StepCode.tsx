@@ -25,7 +25,6 @@ export default function StepCode({ email, onNext, onBack }: Props) {
   }, [timer]);
 
   const handleChange = (index: number, value: string) => {
-    
     if (value && !/^\d$/.test(value)) return;
 
     const newCode = [...code];
@@ -39,7 +38,6 @@ export default function StepCode({ email, onNext, onBack }: Props) {
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Handle backspace
     if (e.key === "Backspace" && !code[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -49,7 +47,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
     e.preventDefault();
     const pastedData = e.clipboardData.getData("text").trim();
     const digits = pastedData.match(/\d/g);
-    
+
     if (digits) {
       const newCode = [...code];
       digits.slice(0, 6).forEach((digit, idx) => {
@@ -57,7 +55,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
       });
       setCode(newCode);
       setError("");
-      
+
       const nextIndex = Math.min(digits.length, 5);
       inputRefs.current[nextIndex]?.focus();
     }
@@ -136,7 +134,6 @@ export default function StepCode({ email, onNext, onBack }: Props) {
         </svg>
       </div>
 
-
       <div className="text-white/90 text-center text-xs">
         <p>
           We sent a 6-digit code to{" "}
@@ -170,7 +167,6 @@ export default function StepCode({ email, onNext, onBack }: Props) {
         ))}
       </div>
 
-      {/* Error */}
       {error && (
         <p className="text-red-400 text-xs text-center">
           {error}
@@ -178,7 +174,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
       )}
 
       <p className="text-white/80 text-xs mt-5">
-        Didn't receive it? You can resend in{" "}
+        Didn&apos;t receive it? You can resend in{" "}
         <span className="text-orange-400 font-medium">{formatTime(timer)}</span>
       </p>
 
@@ -201,4 +197,3 @@ export default function StepCode({ email, onNext, onBack }: Props) {
     </div>
   );
 }
-

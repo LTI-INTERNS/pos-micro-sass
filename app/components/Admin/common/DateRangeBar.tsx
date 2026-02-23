@@ -27,7 +27,7 @@ export default function DateRangePicker({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleChange = (dates: [Date | null, Date | null], event?: React.SyntheticEvent<any>) => {
+  const handleChange = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
     setRange([start ?? undefined, end ?? undefined]);
     onChange?.(start ?? undefined, end ?? undefined);
@@ -50,7 +50,6 @@ export default function DateRangePicker({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Format display value
   const displayValue = range[0] && range[1]
     ? `${isToday(range[0]) ? "Today" : format(range[0], "MMM dd, yyyy hh:mm a")} - ${format(range[1], "MMM dd, yyyy hh:mm a")}`
     : placeholder;

@@ -1,4 +1,7 @@
+"use client";
+
 import * as React from "react";
+import Image from "next/image"; // next/image for optimized images
 import ModalShell from "../common/ModalShell";
 import FormField from "../common/FormField";
 import PopupActions from "../common/PopupActions";
@@ -63,7 +66,6 @@ export default function AddProductPopup({
   });
 
   const [errors, setErrors] = React.useState<FormErrors>({});
-  const [imageFile, setImageFile] = React.useState<File | null>(null);
   const [imagePreview, setImagePreview] = React.useState<string | null>(null);
   const [imageError, setImageError] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -72,7 +74,6 @@ export default function AddProductPopup({
     if (!open) return;
     setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
     setErrors({});
-    setImageFile(null);
     setImagePreview(null);
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -81,7 +82,6 @@ export default function AddProductPopup({
   const handleCancel = () => {
     setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
     setErrors({});
-    setImageFile(null);
     setImagePreview(null);
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -158,7 +158,7 @@ export default function AddProductPopup({
 
   const handleImageChange = (file: File | null) => {
     setImageError(null);
-    if (!file) { setImageFile(null); setImagePreview(null); return; }
+    if (!file) { setImagePreview(null); return; }
 
     if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
       setImageError("Only JPG, JPEG, or PNG images are allowed");
@@ -169,12 +169,10 @@ export default function AddProductPopup({
       setImageError(`Image size must be less than ${MAX_IMAGE_SIZE_MB}MB`);
       return;
     }
-    setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   };
 
   const removeImage = () => {
-    setImageFile(null);
     setImagePreview(null);
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -351,10 +349,13 @@ export default function AddProductPopup({
 
           {imagePreview && (
             <div className="relative mt-2 h-28 w-28">
-              <img
+              <Image
                 src={imagePreview}
                 alt="Preview"
-                className="h-full w-full rounded-lg object-cover border"
+                className="rounded-lg border object-cover"
+                fill
+                sizes="112px"
+                style={{ objectFit: "cover" }}
               />
               <button
                 type="button"

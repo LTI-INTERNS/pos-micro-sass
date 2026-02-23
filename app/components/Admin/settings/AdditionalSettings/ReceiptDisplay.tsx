@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 export type ReceiptDisplayProps = {
   headerText?: string;
@@ -65,10 +66,13 @@ export default function ReceiptDisplay({
         <div className="flex items-center justify-center gap-3 mb-2">
           {showLogo && (
             logoUrl ? (
-              <img
+              <Image
                 src={logoUrl}
                 alt="Logo"
-                className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                width={48} 
+                height={48}
+                className="rounded-full object-cover flex-shrink-0"
+                priority={true}
               />
             ) : (
               <div className="w-12 h-12 bg-gray-200 flex items-center justify-center text-gray-500 rounded-full text-xs font-semibold flex-shrink-0">

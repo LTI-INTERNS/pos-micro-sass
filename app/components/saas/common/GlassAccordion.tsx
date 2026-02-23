@@ -32,7 +32,7 @@ export default function GlassAccordion({
 
   return (
     <div className={`w-full ${className}`}>
-      {items.map((item, index) => {
+      {items.map((item) => {
         const isOpen = openId === item.id;
 
         return (

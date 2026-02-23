@@ -98,7 +98,7 @@ type SelectedCustomer = {
   email: string;
 } | null;
 
-const page = () => {
+const Page = () => {
   const { currency } = useCurrency();
   const { posSettings } = usePosSettings();
 
@@ -210,24 +210,24 @@ const page = () => {
               setOrderItems([]);
               hardResetPaymentFlow();
             }}
-            onPay={({ total, customer }: any) => {
-              if (total <= 0) {
+            onPay={(summary) => {
+              if (summary.total <= 0) {
                 alert("Please add items to proceed with payment.");
                 return;
               }
 
               setSelectedCustomer(
-                customer
+                summary.customer
                   ? {
-                      name: customer.name ?? "",
-                      phoneNumber: customer.phoneNumber ?? "",
-                      email: customer.email ?? "",
+                      name: summary.customer.name ?? "",
+                      phoneNumber: summary.customer.phoneNumber ?? "",
+                      email: summary.customer.email ?? "",
                     }
                   : null
               );
 
               setPaymentForceEditable(false);
-              setPaymentData({ orderNo, totalAmount: total, tipAmount: 0 });
+              setPaymentData({ orderNo, totalAmount: summary.total, tipAmount: 0 });
               setPaymentOpen(true);
             }}
           />
@@ -301,4 +301,4 @@ const page = () => {
   );
 };
 
-export default page;
+export default Page;

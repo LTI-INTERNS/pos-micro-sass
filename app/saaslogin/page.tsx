@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
+import Image from "next/image";
 
 import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navigation from "@/app/components/saas/landing/Navigation";
@@ -79,21 +79,16 @@ export default function LoginPage() {
         if (res.field === "email") setServerFieldError({ email: res.message });
         if (res.field === "password") setServerFieldError({ pw: res.message });
 
-
         setTouched({ email: true, pw: true });
         return;
       }
-       setSuccess(res.message);
- 
-        
-          router.push("/companyregistration");
-         
+      setSuccess(res.message);
+      router.push("/companyregistration");
     });
   }
 
   return (
-    <CommonLayout navbar={<Navigation />} >
-      
+    <CommonLayout navbar={<Navigation />}>
       <div className="pt-5 pb-20 px-4">
         <GlassBackground>
           <div>
@@ -106,10 +101,12 @@ export default function LoginPage() {
                     padding="lg"
                     className="w-[420px] h-[460px] rounded-3xl bg-gradient-to-b from-orange-500 to-orange-600 flex items-center justify-center shadow-xl"
                   >
-                    <img
+                    <Image
                       src="/saas/logIn.png"
                       alt="Login Illustration"
-                      className="w-[300px] h-auto object-contain"
+                      width={300}
+                      height={300}
+                      className="object-contain"
                     />
                   </Card>
                 </div>
@@ -139,7 +136,6 @@ export default function LoginPage() {
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value);
-
                           if (serverFieldError.email) {
                             setServerFieldError((prev) => ({ ...prev, email: undefined }));
                           }
@@ -161,7 +157,6 @@ export default function LoginPage() {
                         value={pw}
                         onChange={(e) => {
                           setPw(e.target.value);
-   
                           if (serverFieldError.pw) {
                             setServerFieldError((prev) => ({ ...prev, pw: undefined }));
                           }
@@ -181,7 +176,7 @@ export default function LoginPage() {
 
                     <div className="pt-3 text-center text-sm text-white/60 space-y-2">
                       <p>
-                        Don’t have an account?{" "}
+                        Don&apos;t have an account?{" "}
                         <Link
                           href="/saasregistration"
                           className="text-white font-semibold hover:text-orange-300 transition"

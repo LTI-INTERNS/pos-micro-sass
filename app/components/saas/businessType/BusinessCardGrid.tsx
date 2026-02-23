@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import BaseCard from "../common/BaseCard";
 
 type Props = {
@@ -12,7 +13,7 @@ const BUSINESS_TYPES = [
   {
     id: "retail",
     title: "Retail",
-    icon: <img src="/saas/retail.png" alt="Retail" className="w-20 h-20 object-contain" />,
+    icon: <Image src="/saas/retail.png" alt="Retail" width={80} height={80} className="object-contain" />,
     features: [
       { label: "Inventory Management", available: true },
       { label: "Sales Tracking",       available: true },
@@ -24,7 +25,7 @@ const BUSINESS_TYPES = [
   {
     id: "restaurant",
     title: "Restaurant / Café",
-    icon: <img src="/saas/cafe.png" alt="Restaurant / Café" className="w-20 h-20 object-contain" />,
+    icon: <Image src="/saas/cafe.png" alt="Restaurant / Café" width={80} height={80} className="object-contain" />,
     features: [
       { label: "Inventory Management", available: true },
       { label: "Sales Tracking",       available: true },
@@ -36,7 +37,7 @@ const BUSINESS_TYPES = [
   {
     id: "grocery",
     title: "Grocery / Supermarket",
-    icon: <img src="/saas/supermarket.png" alt="Grocery / Supermarket" className="w-20 h-20 object-contain" />,
+    icon: <Image src="/saas/supermarket.png" alt="Grocery / Supermarket" width={80} height={80} className="object-contain" />,
     features: [
       { label: "Inventory Management", available: true },
       { label: "Sales Tracking",       available: true },

@@ -64,7 +64,6 @@ const suppliers: Supplier[] = [
 
 export default function SupplierPage() {
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
