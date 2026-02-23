@@ -18,7 +18,7 @@ export type FeaturesGridProps = {
     sm?: number;
     lg?: number;
     xl?: number;
-    "2xl"?: number; // ✅ add support for 4K
+    "2xl"?: number;
   };
 
   gap?: string;
@@ -77,21 +77,15 @@ const XXL_COLS: Record<number, string> = {
 export default function FeaturesGrid({
   features,
   columns = {},
-  gap = "gap-4", // ✅ a bit more breathing room for larger screens
-  maxWidth = "max-w-none", // ✅ remove width clamp
+  gap = "gap-4",
+  maxWidth = "max-w-none",
   cardProps = {},
   className = "",
 }: FeaturesGridProps) {
-  const {
-    mobile = 1,
-    sm = 2,
-    lg = 3,
-    xl = 4,
-    "2xl": xxl = 6, // ✅ default to 6 cols on 4K
-  } = columns;
+  const { mobile = 1, sm = 2, lg = 3, xl = 4, "2xl": xxl = 6 } = columns;
 
   const gridClasses = [
-    "grid w-full",               // ✅ ensure it can stretch
+    "grid w-full",
     COLS[mobile] ?? "grid-cols-1",
     SM_COLS[sm] ?? "sm:grid-cols-2",
     LG_COLS[lg] ?? "lg:grid-cols-3",
