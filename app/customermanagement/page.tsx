@@ -37,7 +37,6 @@ export default function CustomersPage() {
 
   const handleDeleteCustomer = () => {
     if (!selectedCustomer) return;
-
     setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
     setSelectedCustomer(null);
   };
@@ -67,7 +66,7 @@ export default function CustomersPage() {
   ];
 
   const filteredCustomers = useTableFilters<Customer>({
-    data: customersData as Customer[],
+    data: customers,          // ← was customersData; now tracks mutations
     search,
     start,
     end,
@@ -118,7 +117,6 @@ export default function CustomersPage() {
             filters={filters}
             onRemove={handleRemoveFilter}
           />
-
           <FilterPopup
             open={showFilter}
             onClose={() => setShowFilter(false)}
