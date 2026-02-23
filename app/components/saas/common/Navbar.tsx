@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Menu, X } from "lucide-react";
 
@@ -19,38 +19,52 @@ export default function Navbar({
 }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
+  // Prevent background scroll when mobile menu is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, [isOpen]);
+
   return (
     <>
-      <nav className="fixed top-0 left-0 w-full z-[100] bg-[#995518]/70 backdrop-blur-md supports-[backdrop-filter]:bg-[#995518]/20 px-6 py-3">
-        {/* relative container */}
-        <div className="relative w-full flex items-center">
-          
-          {/* LEFT */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsOpen(true)}
-              className="md:hidden text-white"
-            >
-              <Menu size={24} />
-            </button>
+      <nav className="fixed top-0 left-0 w-full z-[100] bg-[#995518]/70 backdrop-blur-md supports-[backdrop-filter]:bg-[#995518]/20">
+        {/* Responsive padding wrapper (keeps team requirement feel on large screens, but adapts on small screens) */}
+        <div className="px-4 sm:px-6 lg:px-10 xl:px-28 py-4 sm:py-5 xl:py-6">
+          {/* relative container */}
+          <div className="relative w-full flex items-center">
+            {/* LEFT */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsOpen(true)}
+                className="md:hidden text-white"
+                aria-label="Open menu"
+              >
+                <Menu size={24} />
+              </button>
 
-            <Image
-              src={logoSrc}
-              alt={logoAlt}
-              width={180}
-              height={40}
-              className="h-10 w-auto object-contain"
-              priority
-            />
-          </div>
+              <Image
+                src={logoSrc}
+                alt={logoAlt}
+                width={180}
+                height={40}
+                className="h-9 sm:h-10 w-auto object-contain"
+                priority
+              />
+            </div>
 
-          <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 text-white font-semibold text-base whitespace-nowrap">
-            {middleContent}
-          </div>
+            {/* MIDDLE (desktop only) */}
+            <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 text-white font-semibold text-sm lg:text-base whitespace-nowrap">
+              {middleContent}
+            </div>
 
-          {/* RIGHT */}
-          <div className="ml-auto hidden md:flex items-center gap-3">
-            {rightContent}
+            {/* RIGHT (desktop only) */}
+            <div className="ml-auto hidden md:flex items-center gap-3">
+              {rightContent}
+            </div>
           </div>
         </div>
       </nav>
@@ -63,9 +77,13 @@ export default function Navbar({
             onClick={() => setIsOpen(false)}
           />
 
-          <div className="relative mr-auto w-72 h-full backdrop-blur-lg bg-white/5 border-r border-white/20 shadow-2xl p-6 flex flex-col gap-6">
+          <div className="relative mr-auto w-72 max-w-[85vw] h-full backdrop-blur-lg bg-white/5 border-r border-white/20 shadow-2xl p-6 flex flex-col gap-6">
             <div className="flex justify-end">
-              <button onClick={() => setIsOpen(false)} className="text-white">
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-white"
+                aria-label="Close menu"
+              >
                 <X size={24} />
               </button>
             </div>
