@@ -105,7 +105,7 @@ export default function OrderConfirmation({
           >
             <X size={18} />
           </button>
-
+          <div className="mb-4 -mt-6">
           <OrderSummaryContent
             title="Order confirmation"
             subtitle="Please confirm the order below to completed payment"
@@ -138,6 +138,7 @@ export default function OrderConfirmation({
               )
             }
           />
+          </div>
 
           <div className="flex justify-between items-center pt-6 border-t">
             <div>

@@ -27,7 +27,7 @@ const About: React.FC = () => {
   ];
 
   return (
-    <section className="relative w-full min-h-screen py-24 overflow-hidden">
+    <section className="relative w-full py-16 sm:py-20 md:py-24 bg-cover bg-center bg-no-repeat">
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"

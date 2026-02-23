@@ -6,11 +6,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function HeroSection() {
-
-    const router = useRouter();
+  const router = useRouter();
 
   return (
-    <section className="relative isolate overflow-hidden min-h-screen">
+    <section
+      className="
+        relative isolate overflow-hidden min-h-screen
+        2xl:min-h-screen
+        [@media(min-width:2560px)]:min-h-0
+        [@media(min-width:2560px)]:py-16
+        [@media(min-width:2560px)]:mt-20
+      "
+    >
       {/* Background */}
       <div className="absolute inset-0 -z-20">
         <Image
@@ -27,7 +34,12 @@ export default function HeroSection() {
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/60 to-black/10" />
 
       {/* Content */}
-      <div className="w-full px-10 lg:px-24 py-28">
+      <div
+        className="
+          w-full px-10 lg:px-24 py-28
+          [@media(min-width:2560px)]:py-16
+        "
+      >
         <div className="grid items-center lg:grid-cols-12">
           <div className="lg:col-span-6">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl 2xl:text-7xl font-extrabold leading-tight text-white">
