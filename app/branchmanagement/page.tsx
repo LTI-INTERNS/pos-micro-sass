@@ -22,8 +22,8 @@ type Branch = {
 };
 
 export default function BranchesPage() {
-  const [start, setStart] = useState<Date | undefined>();
-  const [end, setEnd] = useState<Date | undefined>();
+  const [start] = useState<Date | undefined>();
+  const [end] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);

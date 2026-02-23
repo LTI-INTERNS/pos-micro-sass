@@ -3,7 +3,6 @@ import CommonLayout from "@/app/components/saas/common/CommonLayout";
 import Navigation from "@/app/components/saas/landing/Navigation";
 import AboutCard from "@/app/components/saas/aboutUs/AboutCard";
 import FeatureRowCard from "@/app/components/saas/aboutUs/FeatureRowCard";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function AboutPage() {
@@ -53,7 +52,7 @@ export default function AboutPage() {
 
         {/* Our Team / Mission / Vision */}
         <div className="grid md:grid-cols-3 gap-6">
-          <AboutCard 
+          <AboutCard
             icon="/team.png"
             title="Our Team"
             description="A diverse team of passionate developers, designers, and AI specialists dedicated to creating innovative tech solutions that transform businesses."
@@ -121,10 +120,10 @@ export default function AboutPage() {
 
           <AboutCard className="mt-16 mb-16">
             <p className="text-gray-300 italic text-sm mt-10">
-              "At LankaTech Innovations, we believe in harnessing the
+              &ldquo;At LankaTech Innovations, we believe in harnessing the
               power of technology to create meaningful change in how
               businesses operate and how people connect with digital
-              experiences."
+              experiences.&rdquo;
             </p>
 
             <p className="text-white font-semibold mt-4">

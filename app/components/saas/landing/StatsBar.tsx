@@ -17,7 +17,7 @@ const STATS: StatItem[] = [
 export default function StatsBar() {
   return (
     <section className="w-full">
-      <div className="relative overflow-hidden border border-white/20">
+      <div className="relative overflow-hidden border border-white/20 min-h-[100px]">
         {/* Background Image */}
         <Image
           src="/saas/landing/saas-landing-stat.png"
@@ -28,21 +28,15 @@ export default function StatsBar() {
         />
 
         {/* Glass Layer */}
-        <div
-          className={[
-            "absolute inset-0",
-            "backdrop-blur-sm",
-            "bg-white/1",
-            "border border-white/10",
-          ].join(" ")}
-        />
+        <div className="absolute inset-0 backdrop-blur-sm bg-white/1 border border-white/10" />
+        <div className="absolute inset-0 bg-cover bg-center" />
 
         {/* Content */}
-        <div className="relative px-6 py-10 sm:px-12">
+        <div className="relative py-10 px-4 sm:px-12 lg:px-28">
           <div className="grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:gap-y-0">
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-2xl font-extrabold text-white sm:text-2xl drop-shadow">
+                <div className="text-2xl font-extrabold text-white drop-shadow">
                   {stat.value}
                 </div>
                 <div className="mt-2 text-[15px] font-semibold tracking-[0.18em] text-white/80 drop-shadow">
@@ -53,7 +47,7 @@ export default function StatsBar() {
           </div>
         </div>
 
-        {/* Extra depth shadow (bottom inner) */}
+        {/* Bottom inner shadow */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_-30px_60px_rgba(0,0,0,0.25)]" />
       </div>
     </section>

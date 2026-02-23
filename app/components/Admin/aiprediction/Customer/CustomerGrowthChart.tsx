@@ -12,12 +12,24 @@ import {
 
 import { PRODUCT_FORECAST_DATA } from "@/app/reports/reportsMockData";
 
-const TooltipBox = ({ active, payload }: any) => {
+type TooltipPayload = {
+  name: string;
+  value: number;
+  color?: string;
+  dataKey?: string;
+};
+
+type CustomTooltipProps = {
+  active?: boolean;
+  payload?: TooltipPayload[];
+};
+
+const TooltipBox = ({ active, payload }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null;
 
   return (
     <div className="bg-gray-800 text-white rounded-xl px-4 py-3 text-xs shadow-lg">
-      {payload.map((p: any) => (
+      {payload.map((p) => (
         <div key={p.name} className="flex justify-between gap-6">
           <span>{p.name}</span>
           <span className="font-semibold">{p.value}</span>

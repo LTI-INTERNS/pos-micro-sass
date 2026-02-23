@@ -1,13 +1,13 @@
-export function useCSVExport<T>() {
+export function useCSVExport<T extends Record<string, unknown>>() {
   return function exportToCSV(data: T[], filename: string) {
     if (!data || !data.length) return;
 
-    const headers = Object.keys(data[0] as any);
+    const headers = Object.keys(data[0]);
 
     const csvRows = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((h) => `"${(row as any)[h]}"`).join(",")
+        headers.map((h) => `"${row[h]}"`).join(",")
       ),
     ];
 

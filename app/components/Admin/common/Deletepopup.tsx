@@ -4,7 +4,7 @@ import React from "react";
 import ActionButton from "../common/ActionButton";
 import ModalShell from "../common/ModalShell";
 
-type Props<T extends { id?: string | number } = any> = {
+type Props<T extends { id?: string | number }> = {
   isOpen: boolean;
   onClose: () => void;
   item?: T;

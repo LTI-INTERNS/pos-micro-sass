@@ -17,7 +17,7 @@ const TABS = [
   { id: "staffAnalysis", label: "Staff Work Analysis" },
 ];
 
-export default function settingPage() {
+export default function SettingPage() {
   const [activeTab, setActiveTab] = useState<string>("productAnalysis");
 
   return (

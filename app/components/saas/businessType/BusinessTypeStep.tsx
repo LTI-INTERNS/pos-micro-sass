@@ -10,7 +10,7 @@ type Props = {
   completedSteps: number;
 };
 
-export default function BusinessTypeStep({ data, onNext, onBack, completedSteps }: Props) {
+export default function BusinessTypeStep({ data, onNext, onBack }: Props) {
   const [selectedType, setSelectedType] = useState<string>(data.businessType);
 
   const canProceed = selectedType.length > 0;

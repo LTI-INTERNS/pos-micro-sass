@@ -15,21 +15,24 @@ type RegisterResult =
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
-// DEV ONLY store (memory)
 type UserRecord = { name: string; email: string; passwordHash: string; createdAt: number };
+
+declare global {
+  var __LT_USERS_STORE: Map<string, UserRecord> | undefined;
+}
+
 const usersStore: Map<string, UserRecord> =
-  (globalThis as any).__LT_USERS_STORE ?? new Map<string, UserRecord>();
-(globalThis as any).__LT_USERS_STORE = usersStore;
+  globalThis.__LT_USERS_STORE ?? new Map<string, UserRecord>();
+globalThis.__LT_USERS_STORE = usersStore;
 
 function hashPassword(password: string) {
-  // demo hash 
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
 export async function registerAction(formData: FormData): Promise<RegisterResult> {
-  const name = String(formData.get("name") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const name            = String(formData.get("name")            ?? "").trim();
+  const email           = String(formData.get("email")           ?? "").trim().toLowerCase();
+  const password        = String(formData.get("password")        ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
   if (!name) return { ok: false, message: "Name is required", field: "name" };
@@ -57,16 +60,13 @@ export async function registerAction(formData: FormData): Promise<RegisterResult
     createdAt: Date.now(),
   });
 
-  // demo "session"
-const cookieStore = await cookies();
-
-cookieStore.set("lt_session", Buffer.from(email).toString("base64"), {
-  httpOnly: true,
-  sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
-  path: "/",
-});
-
+  const cookieStore = await cookies();
+  cookieStore.set("lt_session", Buffer.from(email).toString("base64"), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  });
 
   return { ok: true, message: "Account created successfully" };
 }

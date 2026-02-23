@@ -12,8 +12,8 @@ type NavigationProps = {
     href: string;
   }[];
 
-  onSignIn?: () => void;
-  onSignUp?: () => void;
+  onSignIn?: () => void;  
+  onSignUp?: () => void;   
 
   logoSrc?: string;
   logoAlt?: string;
@@ -21,14 +21,12 @@ type NavigationProps = {
 
 export default function Navigation({
   links = [
-    { label: "Home", href: "/saaslanding#home" },
-    { label: "About", href: "/saaslanding#about" },
-    { label: "Features", href: "/saaslanding#features" },
-    { label: "Growth", href: "/saaslanding#growth" },
+    { label: "Home",         href: "/saaslanding#home"         },
+    { label: "About",        href: "/saaslanding#about"        },
+    { label: "Features",     href: "/saaslanding#features"     },
+    { label: "Growth",       href: "/saaslanding#growth"       },
     { label: "Testimonials", href: "/saaslanding#testimonials" },
   ],
-  onSignIn,
-  onSignUp,
   logoSrc,
   logoAlt,
 }: NavigationProps) {
@@ -67,7 +65,7 @@ export default function Navigation({
                   relative px-6 py-3 transition-all duration-300
                   ${
                     isActive
-                      ? "text-white font-semibold rounded-b-3xl border-b-2 border-orange-500"
+                      ? "text-white font-semibold rounded-b-3xl border-b-1 border-orange-500"
                       : "text-white/80 hover:text-white"
                   }
                 `}

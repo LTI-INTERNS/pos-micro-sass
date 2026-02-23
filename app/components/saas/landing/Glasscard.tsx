@@ -16,7 +16,7 @@ const GlassCard: React.FC<GlassCardProps> = ({
   return (
     <div
       className={`
-        group relative w-full max-w-[265px] h-[238px] 
+        group relative w-full max-w-[320px] sm:max-w-[265px] h-[238px] 
         rounded-3xl overflow-hidden
         backdrop-blur-md bg-white/1
         border border-white/20

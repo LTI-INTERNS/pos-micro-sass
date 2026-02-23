@@ -75,7 +75,8 @@ export default function DetailsForm({
 
   const [form, setForm] = useState<Details>(defaults);
 
-  const set = (key: keyof Details, value: any) =>
+  // Fully typed set function
+  const set = <K extends keyof Details>(key: K, value: Details[K]) =>
     setForm((p) => ({ ...p, [key]: value }));
 
   const handleEdit = () => {

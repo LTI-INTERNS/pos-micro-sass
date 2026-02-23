@@ -28,7 +28,7 @@ const mockSession = {
 type TableTab = "sales" | "expenses" | "products";
 
 type ExportConfig = {
-  data: any[];
+  data: Record<string, unknown>[];
   columns: ExportColumn[];
   filename: string;
   title: string;
@@ -63,21 +63,21 @@ export default function ReportsPage() {
 
   const EXPORT_CONFIGS: Record<TableTab, ExportConfig> = {
     sales: {
-      data:     salesData,
+      data:     salesData as Record<string, unknown>[],
       columns:  SALE_COLUMNS,
       filename: "sales-report",
       title:    "Sales Report",
       subtitle: `${branchLabel} – Sales`,
     },
     expenses: {
-      data:     expensesData,
+      data:     expensesData as Record<string, unknown>[],
       columns:  EXPENSE_COLUMNS,
       filename: "expenses-report",
       title:    "Expenses Report",
       subtitle: `${branchLabel} – Expenses`,
     },
     products: {
-      data:     PRODUCTS_DATA,
+      data:     PRODUCTS_DATA as Record<string, unknown>[],
       columns:  PRODUCT_COLUMNS,
       filename: "products-report",
       title:    "Products Report",

@@ -24,12 +24,15 @@ const USERS: Record<
 };
 
 const verifiedStore =
-  (globalThis as any).__verifiedEmails ?? new Map<string, boolean>();
-(globalThis as any).__verifiedEmails = verifiedStore;
+  globalThis.__verifiedEmails ?? new Map<string, boolean>();
+
+globalThis.__verifiedEmails = verifiedStore;
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json(); 
-  const user = USERS[email];              
+  const { email, password } = await req.json();
+
+  const user = USERS[email];
+
   if (!user || user.password !== password) {
     return NextResponse.json(
       { ok: false, message: "Invalid credentials" },

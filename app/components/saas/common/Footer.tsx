@@ -28,7 +28,7 @@ export default function Footer() {
       </div>
 
       {/* Main Content */}
-      <div className="w-full mx-auto px-6 py-16">
+      <div className="w-full mx-auto px-4 py-8 md:px-8 md:py-12 lg:p-16">
 
         {/* UPDATED ALIGNMENT SECTION */}
         <div className="flex flex-col md:flex-row md:justify-between gap-10">

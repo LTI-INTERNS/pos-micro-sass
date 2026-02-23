@@ -11,6 +11,7 @@ import Image from "next/image";
 import { Delete, CheckCircle, Clock, MonitorOff } from "lucide-react";
 import { usePosSettings } from "@/app/context/PosSettingsContext";
 
+// ── Dummy Customers ─────────────────────────────────────────────
 const customers = [
   { id: 1, name: "Kavindu Madushan", phone: "083894771983", email: "KavinduMadushan@mail.com" },
   { id: 2, name: "Manuga Dewhan",    phone: "081829748835", email: "ManugaDewhan@mail.com" },
@@ -29,6 +30,7 @@ function fmt(currency: string, amount: number) {
 
 type Screen = "dialpad" | "customer" | "billing" | "payment_preview" | "payment_success";
 
+// ── Main Component ─────────────────────────────────────────────
 export default function CustomerDisplayScreen() {
   const { currency } = useCurrency();
   const { backgroundImage } = useImage();
@@ -57,7 +59,6 @@ export default function CustomerDisplayScreen() {
     setFeatureEnabled(posSettings.customerDisplayEnabled);
 
     if (!posSettings.customerDisplayEnabled) {
-      // reset screen when disabled
       setScreen("dialpad");
       setPhone("");
       setError("");
@@ -74,7 +75,6 @@ export default function CustomerDisplayScreen() {
       switch (msg.type) {
         case "FEATURE_TOGGLE":
           setFeatureEnabled(msg.enabled);
-          // Reset to dialpad when disabled
           if (!msg.enabled) {
             setScreen("dialpad");
             setPhone("");
@@ -115,8 +115,6 @@ export default function CustomerDisplayScreen() {
           setScreen("payment_preview");
           break;
         case "ORDER_CONFIRMED":
-          setScreen("payment_success");
-          break;
         case "PAYMENT_DONE":
           setScreen("payment_success");
           break;
@@ -150,13 +148,15 @@ export default function CustomerDisplayScreen() {
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
       <Image
         src={backgroundImage || "/backgrounds/mount.png"}
-        alt="bg" fill priority className="object-cover"
+        alt="Background"
+        fill
+        priority
+        className="object-cover"
       />
       <div className="absolute inset-0 bg-black/40" />
 
       <div className="relative z-10 w-full max-w-md px-4">
 
-        {/* Feature disabled screen */}
         {!featureEnabled && <DisabledScreen />}
 
         {featureEnabled && (
@@ -190,7 +190,7 @@ export default function CustomerDisplayScreen() {
   );
 }
 
-// ── Feature Disabled ──────────────────────────────────────────────────────────
+// ── Feature Disabled ──────────────────────────────────────────
 function DisabledScreen() {
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-3xl p-10 border border-white/20 text-white text-center shadow-2xl">
@@ -200,13 +200,13 @@ function DisabledScreen() {
       <h2 className="text-2xl font-bold text-white/80">Customer Display Disabled</h2>
       <p className="text-white/50 text-sm mt-3 leading-relaxed">
         This feature has been turned off in settings.<br />
-        Enable "Customer displays" to use this screen.
+        Enable &quot;Customer displays&quot; to use this screen.
       </p>
     </div>
   );
 }
 
-// ── Dialpad ───────────────────────────────────────────────────────────────────
+// ── Dialpad Screen ───────────────────────────────────────────
 function DialpadScreen({ phone, error, onKey, onBackspace, onClear, onConfirm }: {
   phone: string; error: string;
   onKey: (k: string) => void; onBackspace: () => void;
@@ -249,7 +249,7 @@ function DialpadScreen({ phone, error, onKey, onBackspace, onClear, onConfirm }:
   );
 }
 
-// ── Customer found ────────────────────────────────────────────────────────────
+// ── Customer Screen ───────────────────────────────────────────
 function CustomerScreen({ customer }: { customer: CustomerFormValues }) {
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 border border-white/20 text-white text-center shadow-2xl">
@@ -266,7 +266,7 @@ function CustomerScreen({ customer }: { customer: CustomerFormValues }) {
   );
 }
 
-// ── Billing ───────────────────────────────────────────────────────────────────
+// ── Billing Screen ───────────────────────────────────────────
 function BillingScreen({ customer, items, subtotal, total, formatter }: {
   customer: CustomerFormValues | null;
   items: OrderItem[];
@@ -314,7 +314,7 @@ function BillingScreen({ customer, items, subtotal, total, formatter }: {
   );
 }
 
-// ── Payment Preview (cashier hit Done — awaiting confirm) ─────────────────────
+// ── Payment Preview Screen ────────────────────────────────────
 function PaymentPreviewScreen({ customer, summary, currency }: {
   customer: CustomerFormValues | null;
   summary: PaymentSummary | null;
@@ -366,7 +366,7 @@ function PaymentPreviewScreen({ customer, summary, currency }: {
   );
 }
 
-// ── Payment Success (cashier hit Confirm) ─────────────────────────────────────
+// ── Payment Success Screen ────────────────────────────────────
 function PaymentSuccessScreen({ customer, summary, currency }: {
   customer: CustomerFormValues | null;
   summary: PaymentSummary | null;
