@@ -143,13 +143,13 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
         <p className="text-xs text-slate-400 mt-1">Order #{orderNoLabel}</p>
       </div>
 
-      <div className="mb-4">
-      <OrderTable
-        data={items}
-        columns={(columns as Column<TItem>[]) ?? (commonColumns as Column<TItem>[])}
-        emptyMessage="No order items found"
-      />
-      </div>
+      <div className="mb-4 max-h-37.5 overflow-y-auto">
+  <OrderTable
+    data={items}
+    columns={(columns as Column<TItem>[]) ?? (commonColumns as Column<TItem>[])}
+    emptyMessage="No order items found"
+  />
+</div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {leftBlock}

@@ -34,18 +34,22 @@ export default function LogoUploadSection({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-2">{title}</h2>
-      <p className="text-sm text-gray-500 mb-6">
-        Upload a logo for your company profile.
-      </p>
+    <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col md:flex-row  items-center md:gap-15">
 
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">{title}</h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Upload a logo for your company profile.
+        </p>
+      </div>
+      
+    <div>
       <button
         type="button"
         disabled={disabled}
         onClick={() => fileInputRef.current?.click()}
         className={[
-          "relative w-full max-w-40 mx-auto",
+          "relative w-full max-w-40 mx-auto py-15",
           "cursor-pointer rounded-xl overflow-hidden aspect-video border-2 border-dashed",
           "transition-all duration-200 focus:outline-none flex items-center justify-center",
           disabled
@@ -65,7 +69,7 @@ export default function LogoUploadSection({
             </div>
           </>
         ) : (
-          <div className="flex flex-col items-center justify-center gap-2 text-orange-500">
+          <div className="flex flex-col items-center justify-center gap-2 text-orange-500 mt-2">
             <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center ">
               <Upload className="w-4 h-4" />
             </div>
@@ -83,6 +87,9 @@ export default function LogoUploadSection({
         onChange={handleUpload}
         disabled={disabled}
       />
+
+    </div>
+      
     </div>
   );
 }
