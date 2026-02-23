@@ -29,8 +29,7 @@ export default function HeroSection() {
         />
       </div>
 
-      {/* Overlays */}
-      <div className="absolute inset-0 -z-10 " />
+      {/* Overlay */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-r from-black via-black/60 to-black/10" />
 
       {/* Content */}
@@ -50,7 +49,7 @@ export default function HeroSection() {
 
             <p className="mt-6 max-w-xl text-base leading-relaxed text-white/80 sm:text-lg">
               Manage sales, inventory, customers, and reports with a modern
-              cloud-based POS built for growing businesses
+              cloud-based POS built for growing businesses.
             </p>
 
             <div className="mt-8 w-64">
@@ -67,6 +66,7 @@ export default function HeroSection() {
             </Link>
           </div>
 
+          {/* Right Empty Column (for future illustration or image) */}
           <div className="lg:col-span-6" />
         </div>
       </div>
