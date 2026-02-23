@@ -5,20 +5,19 @@ import React from "react";
 export type SectionHeaderProps = {
   title: string;
   subtitle?: string;
-  
-  align?: "left" | "center" | "right"; 
-  
-  titleSize?: string; 
-  subtitleSize?: string; 
-  titleColor?: string; 
-  subtitleColor?: string; 
-  
+
+  align?: "left" | "center" | "right";
+
+  titleSize?: string;
+  subtitleSize?: string;
+  titleColor?: string;
+  subtitleColor?: string;
+
   spacing?: string;
   marginBottom?: string;
   maxWidth?: string;
-  
-  
-  titleWeight?: string; 
+
+  titleWeight?: string;
   subtitleWeight?: string;
   className?: string;
   children?: React.ReactNode;
@@ -28,13 +27,19 @@ export default function SectionHeader({
   title,
   subtitle,
   align = "center",
-  titleSize = "text-2xl sm:text-3xl lg:text-4xl xl:text-5xl",
-  subtitleSize = "text-sm sm:text-base lg:text-lg",
+
+  // ✅ Bigger on 4K
+  titleSize = "text-2xl sm:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl",
+  subtitleSize = "text-sm sm:text-base lg:text-lg 2xl:text-xl",
+
   titleColor = "text-white",
   subtitleColor = "text-white/90",
   spacing = "space-y-4 sm:space-y-6",
   marginBottom = "mb-12 sm:mb-16 lg:mb-20",
-  maxWidth = "max-w-4xl",
+
+  // ✅ Slightly wider subtitle on 4K
+  maxWidth = "max-w-5xl",
+
   titleWeight = "font-semibold",
   subtitleWeight = "font-normal",
   className = "",
@@ -49,22 +54,8 @@ export default function SectionHeader({
   const alignClass = alignMap[align];
 
   return (
-    <div
-      className={[
-        alignClass,
-        marginBottom,
-        spacing,
-        className,
-      ].join(" ")}
-    >
-      <h1
-        className={[
-          titleColor,
-          titleSize,
-          titleWeight,
-          "px-4",
-        ].join(" ")}
-      >
+    <div className={[alignClass, marginBottom, spacing, className].join(" ")}>
+      <h1 className={[titleColor, titleSize, titleWeight, "px-4"].join(" ")}>
         {title}
       </h1>
 

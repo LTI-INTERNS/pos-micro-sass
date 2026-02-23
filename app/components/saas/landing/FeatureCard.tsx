@@ -7,21 +7,18 @@ export type FeatureCardProps = {
   label: string;
   onClick?: () => void;
   className?: string;
-  
- 
+
   hoverColor?: string;
-  borderColor?: string; 
-  hoverBorderColor?: string; 
+  borderColor?: string;
+  hoverBorderColor?: string;
   iconSize?: string;
-  textSize?: string; 
-  
- 
+  textSize?: string;
+
   padding?: string;
-  gap?: string; 
-  
-  
-  showGlowEffect?: boolean; 
-  animationDuration?: string; 
+  gap?: string;
+
+  showGlowEffect?: boolean;
+  animationDuration?: string;
 };
 
 export default function FeatureCard({
@@ -32,10 +29,13 @@ export default function FeatureCard({
   hoverColor = "orange-400",
   borderColor = "white/10",
   hoverBorderColor = "orange-400/50",
-  iconSize = "w-7 h-7",
-  textSize = "text-sm sm:text-base",
-  padding = "p-5 sm:p-6",
-  gap = "gap-4 sm:gap-5",
+
+  // ✅ Bigger on large + 4K
+  iconSize = "w-7 h-7 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10",
+  textSize = "text-sm sm:text-base lg:text-lg 2xl:text-xl",
+  padding = "p-5 sm:p-6 lg:p-7 2xl:p-8",
+  gap = "gap-4 sm:gap-5 lg:gap-6 2xl:gap-7",
+
   showGlowEffect = true,
   animationDuration = "duration-300",
 }: FeatureCardProps) {
