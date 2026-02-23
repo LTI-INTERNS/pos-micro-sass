@@ -1,7 +1,8 @@
 "use client";
+
 import { useState } from "react";
 import DateRangePicker from "../common/DateRangeBar";
-import SearchBar from "../common/Search-bar"; 
+import SearchBar from "../common/Search-bar";
 import FilterPopup from "../common/FilterPopup";
 import ActionButton from "../common/ActionButton";
 import ExpensesTable, { Expenses } from "./ExpensesTable";
@@ -12,6 +13,13 @@ import { useTableFilters, getFilterOptions } from "../common/Filterlogic";
 import FilterChips from "../common/FilterChips";
 import { useCSVExport } from "../common/csvExport";
 
+type UserRole = "superadmin" | "admin" | "manager";
+
+const mockSession = {
+  role: "admin" as UserRole,
+  name: "John Doe",
+  branch: "Colombo",             
+};
 
 export default function ExpensesContent() {
   const [start, setStart] = useState<Date | undefined>();
@@ -24,37 +32,44 @@ export default function ExpensesContent() {
     category?: string;
     payment?: string;
     addedby?: string;
+    branch?: string;
   }>({});
-  
-  const categoryOptions = getFilterOptions(mockExpenses, "category");
-  const paymentOptions = getFilterOptions(mockExpenses, "payment");
-  const addedByOptions = getFilterOptions(mockExpenses, "addedby");
+
+  const isSuperAdmin = mockSession.role === "superadmin";
+
+  // Superadmin sees all branches; admin/manager sees their branch only
+  const branchFilteredExpenses = isSuperAdmin
+    ? mockExpenses
+    : mockExpenses.filter((e) => e.branch === mockSession.branch);
+
+  const categoryOptions = getFilterOptions(branchFilteredExpenses, "category");
+  const paymentOptions = getFilterOptions(branchFilteredExpenses, "payment");
+  const addedByOptions = getFilterOptions(branchFilteredExpenses, "addedby");
+  const branchOptions = getFilterOptions(mockExpenses, "branch");
 
   const filteredExpenses = useTableFilters<Expenses>({
-        data: mockExpenses,
-        search,
-        start,
-        end,
-        dateKey: "date",
-        searchKeys: ["id", "category", "description"],
-        filters,
-      });
-  
-    const isFilterApplied = Object.values(filters).some(
-      (v) => v && v.trim() !== ""
-    );
+    data: branchFilteredExpenses,
+    search,
+    start,
+    end,
+    dateKey: "date",
+    searchKeys: ["id", "category", "description"],
+    filters,
+  });
 
-    const removeFilter = (key: string) => {
-      setFilters((prev) => ({
-        ...prev,
-        [key]: "",
-      }));
-    };
+  const isFilterApplied = Object.values(filters).some(
+    (v) => v && v.trim() !== ""
+  );
+
+  const removeFilter = (key: string) => {
+    setFilters((prev) => ({ ...prev, [key]: "" }));
+  };
 
   const exportCSV = useCSVExport<Expenses>();
-  
+
   return (
     <div className="w-full space-y-5">
+
       <DateRangePicker
         startDate={start}
         endDate={end}
@@ -64,7 +79,7 @@ export default function ExpensesContent() {
         }}
       />
 
-      <StatCardGrid />
+      <StatCardGrid expenses={filteredExpenses} />
 
       <div className="relative">
         <SearchBar
@@ -79,10 +94,7 @@ export default function ExpensesContent() {
           onClearFilters={() => setFilters({})}
         />
 
-        <FilterChips
-          filters={filters}
-          onRemove={removeFilter}
-        />
+        <FilterChips filters={filters} onRemove={removeFilter} />
 
         <FilterPopup
           open={showFilter}
@@ -92,21 +104,12 @@ export default function ExpensesContent() {
             setShowFilter(false);
           }}
           fields={[
-            {
-              name: "category",
-              placeholder: "Category",
-              options: categoryOptions,
-            },
-            {
-              name: "payment",
-              placeholder: "Payment",
-              options: paymentOptions,
-            },
-            {
-              name: "addedby",
-              placeholder: "Addedby",
-              options: addedByOptions,
-            },
+            ...(isSuperAdmin
+              ? [{ name: "branch", placeholder: "Branch", options: branchOptions }]
+              : []),
+            { name: "category", placeholder: "Category", options: categoryOptions },
+            { name: "payment", placeholder: "Payment", options: paymentOptions },
+            { name: "addedby", placeholder: "Added By", options: addedByOptions },
           ]}
         />
       </div>
@@ -117,15 +120,14 @@ export default function ExpensesContent() {
           variant="primary"
           onClick={() => setShowAddExpense(true)}
         />
-
         <ActionButton
           label="Export CSV"
           variant="primary"
           onClick={() => exportCSV(filteredExpenses, "Expenses.csv")}
         />
-      </div> 
-      
-      <ExpensesTable Expenses={filteredExpenses} />
+      </div>
+
+      <ExpensesTable Expenses={filteredExpenses} showBranch={isSuperAdmin} />
 
       <AddExpensesPopup
         open={showAddExpense}

@@ -5,7 +5,7 @@ import DashboardLayout from "../components/Admin/common/dashboard_layout";
 import DateRangeBar from "../components/Admin/common/DateRangeBar";
 import SearchBar from "../components/Admin/common/Search-bar";
 import CommonTable, { Column } from "../components/Admin/common/CommonTable";
-import AddStaffPopup from "./popup/AddStaffPopup";
+import AddStaffPopup from "../components/Admin/staffmanagement/AddStaffPopup";
 import ActionButton from "../components/Admin/common/ActionButton";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 import FilterPopup from "../components/Admin/common/FilterPopup";

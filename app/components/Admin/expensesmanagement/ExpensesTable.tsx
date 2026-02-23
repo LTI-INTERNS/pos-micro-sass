@@ -1,6 +1,6 @@
 "use client";
 
-import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable"; 
+import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
 import { useCurrency } from "@/app/context/CurrencyContext";
 import { formatCurrency } from "@/app/context/formatCurrency";
 
@@ -12,51 +12,38 @@ export type Expenses = {
   amount: number;
   payment: string;
   addedby: string;
+  branch: string;
 };
 
 type Props = {
   Expenses: Expenses[];
+  showBranch?: boolean;
 };
 
-export default function ExpensesTable({ Expenses }: Props) {
+export default function ExpensesTable({ Expenses, showBranch = false }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Expenses>[] = [
+    { key: "id", label: "ID" },
+    { key: "date", label: "Date" },
+    { key: "category", label: "Category" },
+    { key: "description", label: "Description" },
     {
-      key: "id",
-      label: "ID",
+      key: "amount",
+      label: "Amount",
+      render: (row) => formatCurrency(row.amount, currency, useCents),
     },
-    {
-      key: "date",
-      label: "Date",
-    },
-    {
-      key: "category",
-      label: "Category",
-    },
-    {
-      key: "description",
-      label: "Description",
-    },
-    { 
-      key: "amount", 
-      label: "Amount", 
-      render: (row) => formatCurrency(row.amount, currency, useCents) 
-    },
-    {
-      key: "payment",
-      label: "Payment Type",
-    },
-    {
-      key: "addedby",
-      label: "Added By",
-    },
+    { key: "payment", label: "Payment Type" },
+    { key: "addedby", label: "Added By" },
+    ...(showBranch
+      ? [{ key: "branch" as keyof Expenses, label: "Branch" }]
+      : []),
   ];
 
   return (
     <CommonTable
       title="Expenses"
-      data={Expenses} 
+      data={Expenses}
       columns={columns}
       emptyMessage="No Expenses found"
     />

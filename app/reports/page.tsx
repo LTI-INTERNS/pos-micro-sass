@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
 import SearchBar from "@/app/components/Admin/common/Search-bar";
 import DateRangeBar from "@/app/components/Admin/common/DateRangeBar";
@@ -9,43 +9,31 @@ import ReportStatCardGrid from "@/app/components/Admin/reports/ReportStatCardGri
 import ReportChart from "@/app/components/Admin/reports/ReportChart";
 import ReportActionsBar from "@/app/components/Admin/reports/ReportActionsBar";
 import ReportTable from "@/app/components/Admin/reports/ReportTable";
-
+import type { ExportColumn } from "@/app/components/Admin/reports/exportUtils";
 import {
-  SALES_DATA,   SALE_COLUMNS,
+  SALES_DATA,    SALE_COLUMNS,
   EXPENSES_DATA, EXPENSE_COLUMNS,
   PRODUCTS_DATA, PRODUCT_COLUMNS,
   type SaleRow, type ExpenseRow, type ProductRow,
 } from "@/app/reports/reportsMockData";
 
-type TableTab = "sales" | "expenses" | "products";
+type UserRole = "superadmin" | "admin" | "manager";
 
-const EXPORT_CONFIG: Record<
-  TableTab,
-  { data: any[]; columns: any[]; filename: string; title: string; subtitle: string }
-> = {
-  sales: {
-    data:     SALES_DATA,
-    columns:  SALE_COLUMNS,
-    filename: "sales-report",
-    title:    "Sales Report",
-    subtitle: "January 2026 – All sales transactions",
-  },
-  expenses: {
-    data:     EXPENSES_DATA,
-    columns:  EXPENSE_COLUMNS,
-    filename: "expenses-report",
-    title:    "Expenses Report",
-    subtitle: "January 2026 – All expense records",
-  },
-  products: {
-    data:     PRODUCTS_DATA,
-    columns:  PRODUCT_COLUMNS,
-    filename: "products-report",
-    title:    "Products Report",
-    subtitle: "January 2026 – Top selling products",
-  },
+const mockSession = {
+  role: "superadmin" as UserRole,
+  name: "John Doe",
+  branch: "Colombo",
 };
 
+type TableTab = "sales" | "expenses" | "products";
+
+type ExportConfig = {
+  data: any[];
+  columns: ExportColumn[];
+  filename: string;
+  title: string;
+  subtitle: string;
+};
 
 export default function ReportsPage() {
   const [search,    setSearch]    = useState("");
@@ -57,6 +45,47 @@ export default function ReportsPage() {
   const [selectedSale,    setSelectedSale]    = useState<SaleRow    | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<ProductRow | null>(null);
+
+  const isSuperAdmin = mockSession.role === "superadmin";
+
+  // Superadmin sees all; admin/manager sees their branch only
+  const salesData = isSuperAdmin
+    ? SALES_DATA
+    : SALES_DATA.filter((r) => r.branch === mockSession.branch);
+
+  const expensesData = isSuperAdmin
+    ? EXPENSES_DATA
+    : EXPENSES_DATA.filter((r) => r.branch === mockSession.branch);
+
+  // Products are a global catalogue — if want add branch filter
+
+  const branchLabel = isSuperAdmin ? "All Branches" : mockSession.branch;
+
+  const EXPORT_CONFIGS: Record<TableTab, ExportConfig> = {
+    sales: {
+      data:     salesData,
+      columns:  SALE_COLUMNS,
+      filename: "sales-report",
+      title:    "Sales Report",
+      subtitle: `${branchLabel} – Sales`,
+    },
+    expenses: {
+      data:     expensesData,
+      columns:  EXPENSE_COLUMNS,
+      filename: "expenses-report",
+      title:    "Expenses Report",
+      subtitle: `${branchLabel} – Expenses`,
+    },
+    products: {
+      data:     PRODUCTS_DATA,
+      columns:  PRODUCT_COLUMNS,
+      filename: "products-report",
+      title:    "Products Report",
+      subtitle: "Top selling products",
+    },
+  };
+
+  const exportConfig = EXPORT_CONFIGS[tableTab];
 
   const hasSelection =
     (tableTab === "sales"    && selectedSale    !== null) ||
@@ -72,23 +101,31 @@ export default function ReportsPage() {
   };
 
   const handleViewDetails = () => {
-    if (tableTab === "sales"    && selectedSale)    alert(`Invoice: ${selectedSale.invoiceId}\nCustomer: ${selectedSale.customer}\nAmount: $${selectedSale.amount}`);
-    if (tableTab === "expenses" && selectedExpense) alert(`Category: ${selectedExpense.category}\nDesc: ${selectedExpense.description}\nAmount: $${selectedExpense.amount}`);
-    if (tableTab === "products" && selectedProduct) alert(`SKU: ${selectedProduct.sku}\nProduct: ${selectedProduct.name}\nRevenue: $${selectedProduct.revenue}`);
+    if (tableTab === "sales"    && selectedSale)
+      alert(`Invoice: ${selectedSale.invoiceId}\nCustomer: ${selectedSale.customer}\nAmount: $${selectedSale.amount}\nBranch: ${selectedSale.branch}`);
+    if (tableTab === "expenses" && selectedExpense)
+      alert(`Category: ${selectedExpense.category}\nDesc: ${selectedExpense.description}\nAmount: $${selectedExpense.amount}\nBranch: ${selectedExpense.branch}`);
+    if (tableTab === "products" && selectedProduct)
+      alert(`SKU: ${selectedProduct.sku}\nProduct: ${selectedProduct.name}\nRevenue: $${selectedProduct.revenue}`);
   };
-
-  const exportConfig = EXPORT_CONFIG[tableTab];
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
 
-        <ReportStatCardGrid />
+        <ReportStatCardGrid
+          sales={salesData}
+          expenses={expensesData}
+          transactionCount={salesData.length}
+        />
 
         <DateRangeBar
           startDate={startDate}
           endDate={endDate}
-          onChange={(s, e) => { setStartDate(s); setEndDate(e); }}
+          onChange={(s, e) => {
+            setStartDate(s);
+            setEndDate(e);
+          }}
         />
 
         <div className="flex flex-col lg:flex-row gap-6">
@@ -128,6 +165,8 @@ export default function ReportsPage() {
         <ReportTable
           activeTab={tableTab}
           search={search}
+          salesData={salesData}
+          expensesData={expensesData}
           selectedSale={selectedSale}       onSelectSale={setSelectedSale}
           selectedExpense={selectedExpense} onSelectExpense={setSelectedExpense}
           selectedProduct={selectedProduct} onSelectProduct={setSelectedProduct}

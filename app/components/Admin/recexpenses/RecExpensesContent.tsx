@@ -15,6 +15,13 @@ import { useTableFilters, getFilterOptions } from "../common/Filterlogic";
 import FilterChips from "../common/FilterChips";
 import { useCSVExport } from "../common/csvExport";
 
+type UserRole = "superadmin" | "admin" | "manager";
+
+const mockSession = {
+  role: "superadmin" as UserRole,
+  name: "John Doe",
+  branch: "Colombo",             
+};
 
 export default function RecurringExpensesContent() {
   const [start, setStart] = useState<Date | undefined>();
@@ -27,14 +34,23 @@ export default function RecurringExpensesContent() {
     category?: string;
     payment?: string;
     addedby?: string;
+    branch?: string;
   }>({});
 
-  const categoryOptions = getFilterOptions(mockRecurringExpenses, "category");
-  const paymentOptions = getFilterOptions(mockRecurringExpenses, "payment");
-  const addedByOptions = getFilterOptions(mockRecurringExpenses, "addedby");
+  const isSuperAdmin = mockSession.role === "superadmin";
 
-  const filteredExpenses = useTableFilters<RecurringExpenses>({
-      data: mockRecurringExpenses,
+  // Superadmin sees all branches; admin/manager sees their branch only
+    const branchFilteredRecurringExpenses = isSuperAdmin
+      ? mockRecurringExpenses
+      : mockRecurringExpenses.filter((e) => e.branch === mockSession.branch);
+
+  const categoryOptions = getFilterOptions(branchFilteredRecurringExpenses, "category");
+  const paymentOptions = getFilterOptions(branchFilteredRecurringExpenses, "payment");
+  const addedByOptions = getFilterOptions(branchFilteredRecurringExpenses, "addedby");
+  const branchOptions = getFilterOptions(mockRecurringExpenses, "branch");
+
+  const filteredRecurringExpenses = useTableFilters<RecurringExpenses>({
+      data: branchFilteredRecurringExpenses,
       search,
       start,
       end,
@@ -67,7 +83,7 @@ export default function RecurringExpensesContent() {
         }}
       />
 
-      <StatCardGrid />
+      <StatCardGrid  recurringexpenses={filteredRecurringExpenses}/>
 
       <div className="relative">
         <SearchBar
@@ -94,6 +110,9 @@ export default function RecurringExpensesContent() {
               setShowFilter(false);
             }}
             fields={[
+              ...(isSuperAdmin
+              ? [{ name: "branch", placeholder: "Branch", options: branchOptions }]
+              : []),
               {
                 name: "category",
                 placeholder: "Category",
@@ -122,11 +141,11 @@ export default function RecurringExpensesContent() {
         <ActionButton
           label="Export CSV"
           variant="primary"
-          onClick={() => exportToCSV(filteredExpenses, "RecurringExpenses.csv")}
+          onClick={() => exportToCSV(filteredRecurringExpenses, "RecurringExpenses.csv")}
         />
       </div>
 
-      <RecurringExpensesTable RecurringExpenses={filteredExpenses} />
+      <RecurringExpensesTable RecurringExpenses={filteredRecurringExpenses} showBranch={isSuperAdmin} />
 
       <AddRecExpensesPopup
           open={showAddRecExpense}

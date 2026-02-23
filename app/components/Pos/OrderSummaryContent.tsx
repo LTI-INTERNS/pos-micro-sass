@@ -3,11 +3,8 @@
 import React, { useMemo } from "react";
 import OrderTable, { Column } from "../Admin/common/CommonTable";
 import { Printer, Mail } from "lucide-react";
-import { generateReceiptHTML } from "@/app/utils/generateReceiptHTML";
 import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
-import { useReceiptSettings } from "@/app/context/ReceiptSettingsContext";
-import { useStoreInfo } from "@/app/context/StoreInfoContext";
+import { useReceiptPrinter } from "@/app/hooks/useReceiptActions";
 
 export type CommonOrderItem = {
   id: number | string;
@@ -27,6 +24,12 @@ export type CommonPaymentSummary = {
   cashPaid: number;
   cardPaid: number;
   customerEmail?: string;
+
+  customer?: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+  } | null;
 };
 
 export const commonColumns: Column<CommonOrderItem>[] = [
@@ -88,114 +91,36 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
   leftBlock,
   rightAction,
 }: Props<TItem>) {
-  const { receiptSettings: contextSettings } = useReceiptSettings();
-  const { storeInfo } = useStoreInfo(); // ✅ all store info from context
-  const { currency, useCents } = useCurrency();
-
-  const itemsSubtotal = useMemo(
-    () => items.reduce((sum, it) => sum + (Number.isFinite(it.subtotal) ? it.subtotal : 0), 0),
-    [items]
-  );
+  const { currency } = useCurrency();
 
   const c = payment.currencyCode ?? currency ?? "LKR";
-  const format = (value: number) => formatCurrency(value, c, useCents);
 
   const receiptItems = useMemo(
     () => items.map((it) => ({ name: it.name, qty: it.qty, price: it.price })),
     [items]
   );
 
-  function buildReceiptHTML() {
-    const now = new Date();
+  const itemsSubtotal = useMemo(
+    () => items.reduce((sum, it) => sum + (Number.isFinite(it.subtotal) ? it.subtotal : 0), 0),
+    [items]
+  );
 
-    const absoluteLogoUrl = storeInfo.logoUrl
-    ? storeInfo.logoUrl.startsWith("http")
-      ? storeInfo.logoUrl                          // already absolute (e.g. S3/Cloudinary)
-      : `${window.location.origin}${storeInfo.logoUrl}` // e.g. http://localhost:3000/logo.png
-    : null;
+  const { handlePrint, handleEmail } = useReceiptPrinter({
+    orderId: payment.orderNo,
+    currencyCode: c,
+    items: receiptItems,
+    discountValue: payment.discountValue,
+    cardTax: payment.cardTax,
+    grandTotal: payment.grandTotal,
+    paymentMethod: payment.paymentMethod,
+    cashPaid: payment.cashPaid,
+    cardPaid: payment.cardPaid,
+    customerName: payment.customer?.name ?? null,
+    customerPhone: payment.customer?.phoneNumber ?? null,
+    customerEmail: payment.customer?.email ?? payment.customerEmail ?? null,
+  });
 
-    return generateReceiptHTML({
-      // ✅ Receipt customization — from context (set by admin settings)
-      headerText: contextSettings.headerText,
-      footerMessage: contextSettings.footerMessage,
-      showLogo: contextSettings.showLogo,
-      showTaxNumber: contextSettings.showTaxNumber,
-      taxNumber: contextSettings.taxNumber,
-      showCustomerDetails: contextSettings.showCustomerDetails,
-      customerDetails: payment.customerEmail ?? "",
-      // ✅ Store info — from StoreInfoContext (will come from DB)
-      storeName: storeInfo.storeName,
-      branchName: storeInfo.branchName,
-      cashierName: storeInfo.cashierName, // ✅ was missing
-      telephone: storeInfo.telephone,
-      logoUrl: absoluteLogoUrl, 
-      // ✅ Order data
-      orderId: String(payment.orderNo),
-      date: now.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }),
-      time: now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      items: receiptItems,
-      discount: payment.discountValue,
-      tax: payment.cardTax,
-      total: payment.grandTotal,
-      paymentMethod: payment.paymentMethod,
-      cashPaid: payment.cashPaid,
-      cardPaid: payment.cardPaid,
-      formatPrice: format,
-    });
-  }
-
-  function handleGetReceipt() {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    printWindow.document.open();
-    printWindow.document.write(buildReceiptHTML());
-    printWindow.document.close();
-
-    printWindow.onload = () => {
-      const images = printWindow.document.images;
-      let loaded = 0;
-
-      if (images.length === 0) {
-        printWindow.print();
-        printWindow.close();
-        return;
-      }
-
-      for (const img of images) {
-        if (img.complete) {
-          loaded++;
-        } else {
-          img.onload = img.onerror = () => {
-            loaded++;
-            if (loaded === images.length) {
-              printWindow.print();
-              printWindow.close();
-            }
-          };
-        }
-      }
-
-      if (loaded === images.length) {
-        printWindow.print();
-        printWindow.close();
-      }
-    };
-  }
-
-  function handleEmailReceipt() {
-    const email = payment.customerEmail;
-    if (!email) return;
-    const subject = encodeURIComponent(`Your Receipt - Order #${payment.orderNo}`);
-    const body = encodeURIComponent(
-      `Dear Customer,\n\nPlease find your receipt for Order #${payment.orderNo}.\n\nTotal: ${c} ${payment.grandTotal.toFixed(2)}\nPayment Method: ${payment.paymentMethod}\n\nThank you for your purchase!`
-    );
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
-  }
+  const hasEmail = Boolean(payment.customer?.email || payment.customerEmail);
 
   return (
     <>
@@ -212,31 +137,25 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* LEFT */}
         {leftBlock}
 
-        {/* RIGHT */}
         <div className="space-y-3 text-sm">
           <div className="flex justify-between text-slate-500">
             <span>SUBTOTAL (Items)</span>
             <span className="text-black">{c} {itemsSubtotal.toFixed(2)}</span>
           </div>
-
           <div className="flex justify-between text-slate-500">
             <span>ORDER DISCOUNT</span>
             <span className="text-black">{c} {payment.discountValue.toFixed(2)}</span>
           </div>
-
           <div className="flex justify-between text-slate-500">
             <span>CARD TAX</span>
             <span className="text-black">{c} {payment.cardTax.toFixed(2)}</span>
           </div>
-
           <div className="border-t pt-3 flex justify-between font-semibold">
             <span className="text-black">BILL AMOUNT</span>
             <span className="text-orange-500">{c} {payment.grandTotal.toFixed(2)}</span>
           </div>
-
           <div className="pt-3 border-t space-y-2">
             <div className="flex justify-between text-slate-500">
               <span>PAYMENT METHOD</span>
@@ -252,19 +171,18 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
             </div>
           </div>
 
-          {/* ACTION BUTTONS */}
           <div className="pt-3 border-t flex gap-3">
             <button
-              onClick={handleGetReceipt}
+              onClick={handlePrint}
               className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
             >
               <Printer size={16} />
               <span>Get Receipt</span>
             </button>
 
-            {payment.customerEmail ? (
+            {hasEmail ? (
               <button
-                onClick={handleEmailReceipt}
+                onClick={handleEmail}
                 className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
               >
                 <Mail size={16} />

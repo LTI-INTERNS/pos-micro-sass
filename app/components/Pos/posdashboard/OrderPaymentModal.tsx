@@ -26,6 +26,12 @@ export type PaymentSummary = {
   changeToGive: number; // only for pure-cash flow
 
   grandTotal: number; // netDue + cardTaxApplied
+
+  customer?: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+  } | null;
 };
 
 type Props = {
@@ -37,11 +43,11 @@ type Props = {
   tipAmount: number; // kept for compatibility, NOT used
   totalAmount: number; // Base amount
 
-  currencyCode?: string; // default "LKR"
+  currencyCode?: string;
 
   onDone?: (summary: PaymentSummary) => void;
 
-  // ✅ NEW: when coming back from confirmation, allow editing even if fully paid
+  // when coming back from confirmation, allow editing even if fully paid
   forceEditable?: boolean;
 };
 

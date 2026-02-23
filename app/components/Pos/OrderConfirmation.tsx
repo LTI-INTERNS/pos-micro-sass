@@ -12,6 +12,9 @@ import OrderSummaryContent, {
   type CommonOrderItem,
 } from "./OrderSummaryContent";
 
+import FormField from "../Admin/common/FormField";
+import PopupActions from "../Admin/common/PopupActions";
+
 export type ConfirmItem = CommonOrderItem;
 
 type Props = {
@@ -19,13 +22,8 @@ type Props = {
   onClose: () => void;
   items: ConfirmItem[];
   payment: PaymentSummary;
-
-  //  RESTORED
   customerEmail?: string | null;
-
   onCancelEdit?: () => void;
-
-  //  keep compatible with both: onConfirm() and onConfirm(email)
   onConfirm?: (email?: string) => void;
 };
 
@@ -42,10 +40,9 @@ export default function OrderConfirmation({
 
   const [showEmailPopup, setShowEmailPopup] = useState(false);
   const [manualEmail, setManualEmail] = useState<string>("");
-  const [addedEmail, setAddedEmail] = useState<string>(""); //  official email (only saved after Add)
+  const [addedEmail, setAddedEmail] = useState<string>("");
   const [emailError, setEmailError] = useState("");
 
-  //  Initialize when popup opens
   useEffect(() => {
     if (open) {
       const initial = customerEmail?.trim() || "";
@@ -64,24 +61,22 @@ export default function OrderConfirmation({
 
   function handleAddEmail() {
     const trimmed = manualEmail.trim();
-
     if (!validateEmail(trimmed)) {
       setEmailError("Please enter a valid email address.");
       return;
     }
-
-    //  only now we store and switch button to "Email"
     setAddedEmail(trimmed);
     setEmailError("");
     setShowEmailPopup(false);
   }
 
   function handleCancelPopup() {
-    //  cancel means NOT added => revert typed value
     setManualEmail(addedEmail);
     setEmailError("");
     setShowEmailPopup(false);
   }
+
+  const effectiveEmail = addedEmail || payment.customer?.email || undefined;
 
   const commonPayment: CommonPaymentSummary = {
     orderNo: payment.orderNo,
@@ -92,7 +87,11 @@ export default function OrderConfirmation({
     paymentMethod: payment.paymentMethod,
     cashPaid: payment.cashPaid,
     cardPaid: payment.cardPaid,
-    customerEmail: addedEmail || undefined,
+    
+    customer: payment.customer
+      ? { ...payment.customer, email: effectiveEmail ?? payment.customer.email }
+      : null,
+    customerEmail: effectiveEmail,
   };
 
   return (
@@ -101,7 +100,7 @@ export default function OrderConfirmation({
         <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl p-8 space-y-8 relative">
           <button
             onClick={onClose}
-            className="absolute right-5 top-5 w-9 h-9 rounded-full border border-slate-200 hover:border-slate-300 grid place-items-center text-slate-500 hover:text-black transition"
+            className="absolute right-5 top-5 w-9 h-9 rounded-full border border-slate-200 hover:border-slate-300 grid place-items-center text-slate-500 hover:text-black transition cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
@@ -140,7 +139,6 @@ export default function OrderConfirmation({
             }
           />
 
-          {/*  Bottom payment section preserved exactly */}
           <div className="flex justify-between items-center pt-6 border-t">
             <div>
               <p className="text-sm text-slate-500">Payment method</p>
@@ -162,7 +160,7 @@ export default function OrderConfirmation({
               <Buttons
                 label="confirm"
                 variant="primary"
-                onClick={() => onConfirm?.(addedEmail || undefined)}
+                onClick={() => onConfirm?.(effectiveEmail)}
                 className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600"
               />
             </div>
@@ -170,31 +168,27 @@ export default function OrderConfirmation({
         </div>
       </div>
 
-      {/*  ADD EMAIL POPUP (same behavior) */}
       {showEmailPopup && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-semibold text-black">Add Customer Email</h3>
 
-            <input
+            <FormField
+              label="Email"
               type="email"
               value={manualEmail}
-              onChange={(e) => setManualEmail(e.target.value)}
+              onChange={(next) => setManualEmail(next)}
               placeholder="Enter email address"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none placeholder:text-[#000000] placeholder:opacity-25 text-black/50"
             />
 
             {emailError && <p className="text-xs text-red-500">{emailError}</p>}
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={handleCancelPopup} className="px-4 py-2 text-sm text-slate-500">
-                Cancel
-              </button>
-
-              <button onClick={handleAddEmail} className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg">
-                Add
-              </button>
-            </div>
+            <PopupActions
+              actions={[
+                { label: "Cancel", onClick: handleCancelPopup, variant: "secondary" },
+                { label: "Add", onClick: handleAddEmail, variant: "primary" },
+              ]}
+            />
           </div>
         </div>
       )}

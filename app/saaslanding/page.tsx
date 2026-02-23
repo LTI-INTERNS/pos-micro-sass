@@ -11,7 +11,7 @@ import Testimonials from "../components/saas/landing/Testimonials";
 
 export default function LandingPage() {
   return (
-    <main >
+    <main className="bg-[url('/saas/landing/growthtop.png')] bg-cover bg-center bg-fixed" >
       <Navigation />
 
       <section id="home">

@@ -13,6 +13,14 @@ import { useTableFilters, getFilterOptions } from "../components/Admin/common/Fi
 import FilterChips from "../components/Admin/common/FilterChips";
 import { useCSVExport } from "../components/Admin/common/csvExport";
 
+type UserRole = "superadmin" | "admin" | "manager";
+
+const mockSession = {
+  role: "superadmin" as UserRole,
+  name: "John Doe",
+  branch: "Colombo",             
+};
+
 export default function ProfitPage() {
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
@@ -22,13 +30,21 @@ export default function ProfitPage() {
   const [filters, setFilters] = useState<{
     category?: string;
     payment?: string;
+    branch?: string;
   }>({});
 
-  const categoryOptions = getFilterOptions(mockProfits, "category");
-  const paymentOptions = getFilterOptions(mockProfits, "payment");
+  const isSuperAdmin = mockSession.role === "superadmin";
+  
+  const branchFilteredProfits = isSuperAdmin
+    ? mockProfits
+    : mockProfits.filter((e) => e.branch === mockSession.branch);
+
+  const categoryOptions = getFilterOptions(branchFilteredProfits, "category");
+  const paymentOptions = getFilterOptions(branchFilteredProfits, "payment");
+  const branchOptions = getFilterOptions(mockProfits, "branch");
 
   const filteredProfits = useTableFilters<Profit>({
-    data: mockProfits,
+    data: branchFilteredProfits,
     search,
     start,
     end,
@@ -62,7 +78,7 @@ export default function ProfitPage() {
           }}
         />
 
-        <StatCardGrid />
+        <StatCardGrid profits={filteredProfits}/>
         <div className="relative">
           <SearchBar
             value={search}
@@ -89,6 +105,9 @@ export default function ProfitPage() {
                 setShowFilter(false);
               }}
               fields={[
+                ...(isSuperAdmin
+              ? [{ name: "branch", placeholder: "Branch", options: branchOptions }]
+              : []),
                 {
                   name: "category",
                   placeholder: "Category",
@@ -111,7 +130,7 @@ export default function ProfitPage() {
             onClick={() => exportToCSV(filteredProfits, "Profits.csv")}
           />
         </div>
-        <ProfitTable profits={filteredProfits} />
+        <ProfitTable profits={filteredProfits} showBranch={isSuperAdmin}/>
       </div>
     </DashboardLayout>
   );
