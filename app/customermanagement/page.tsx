@@ -9,7 +9,7 @@ import CustomersTable from "@/app/components/Admin/customermanagement/customers-
 import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
 import StatCardGrid from "@/app/components/Admin/customermanagement/customerStarGrid";
 import { customersData } from "./data";
-import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
+import { useTableFilters } from "@/app/components/Admin/common/Filterlogic";
 import FilterChips from "@/app/components/Admin/common/FilterChips";
 
 
@@ -28,10 +28,8 @@ export default function CustomersPage() {
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customers, setCustomers] = useState<Customer[]>(customersData);
-  
 
   const [filters, setFilters] = useState<{
     outstandingRange?: string;
@@ -131,6 +129,7 @@ export default function CustomersPage() {
             fields={filterFields}
           />
         </div>
+
         <CustomerActionsBar
           selectedCustomer={selectedCustomer}
           onDelete={handleDeleteCustomer}

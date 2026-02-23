@@ -5,6 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+import type { NameType, ValueType, Payload } from "recharts/types/component/DefaultTooltipContent";
 import {
   SALES_TREND_DATA,
   DAILY_BREAKDOWN_DATA,
@@ -18,13 +19,18 @@ const CHART_TABS = [
   { id: "category-breakdown", label: "Category Breakdown" },
 ];
 
-const CHART_CONFIGS: Record<
-  string,
-  {
-    data: Record<string, string | number>[];
-    lines: { key: string; color: string; name: string }[];
-  }
-> = {
+type ChartLine = {
+  key: string;
+  color: string;
+  name: string;
+};
+
+type ChartConfig = {
+  data: Record<string, string | number>[];
+  lines: ChartLine[];
+};
+
+const CHART_CONFIGS: Record<string, ChartConfig> = {
   "sales-trends": {
     data: SALES_TREND_DATA,
     lines: [
@@ -50,12 +56,18 @@ const CHART_CONFIGS: Record<
   },
 };
 
+type TooltipEntry = Payload<ValueType, NameType>;
 
-const ChartTooltip = ({ active, payload }: any) => {
+type ChartTooltipProps = {
+  active?: boolean;
+  payload?: TooltipEntry[];
+};
+
+const ChartTooltip = ({ active, payload }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-gray-800 text-white rounded-xl px-4 py-3 shadow-lg text-xs flex flex-col gap-1.5 min-w-[140px]">
-      {payload.map((p: any) => (
+      {payload.map((p: TooltipEntry) => (
         <div key={p.name} className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-1.5">
             <span
@@ -77,7 +89,7 @@ type Props = {
 };
 
 export default function ReportChart({ activeTab, onTabChange }: Props) {
-  const config = CHART_CONFIGS[activeTab] ?? CHART_CONFIGS["sales-trends"];
+  const config: ChartConfig = CHART_CONFIGS[activeTab] ?? CHART_CONFIGS["sales-trends"];
 
   return (
     <div className="flex-1 bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] p-6 flex flex-col gap-4">
@@ -106,7 +118,7 @@ export default function ReportChart({ activeTab, onTabChange }: Props) {
               tickLine={false}
             />
             <Tooltip content={<ChartTooltip />} />
-            {config.lines.map((l) => (
+            {config.lines.map((l: ChartLine) => (
               <Line
                 key={l.key}
                 type="monotone"
@@ -123,7 +135,7 @@ export default function ReportChart({ activeTab, onTabChange }: Props) {
       </div>
 
       <div className="flex items-center gap-4 flex-wrap">
-        {config.lines.map((l) => (
+        {config.lines.map((l: ChartLine) => (
           <span key={l.key} className="flex items-center gap-1.5 text-[11px] text-gray-500">
             <span
               className="w-3 h-[2px] rounded-full inline-block"
