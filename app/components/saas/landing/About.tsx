@@ -27,7 +27,7 @@ const About: React.FC = () => {
   ];
 
   return (
-    <section className="relative w-full min-h-screen py-24 overflow-hidden sm:px-12 lg:px-28">
+    <section className="relative w-full py-16 sm:py-20 md:py-24 bg-cover bg-center bg-no-repeat">
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -46,7 +46,7 @@ const About: React.FC = () => {
       management. Our cloud-based POS platform brings everything together in one simple, secure, and scalable
       solution—designed to grow with your business.
      </p>
-     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 w-full">
+     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 w-full lg:px-28">
       {features.map((feature, index) => (
         <div key={index} className="flex justify-center">
           <GlassCard
