@@ -42,10 +42,10 @@ export default function StatsBar() {
           <div className="grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:gap-y-0">
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-2xl font-extrabold text-white sm:text-xl drop-shadow">
+                <div className="text-2xl font-extrabold text-white sm:text-2xl drop-shadow">
                   {stat.value}
                 </div>
-                <div className="mt-2 text-[11px] font-semibold tracking-[0.18em] text-white/80 drop-shadow">
+                <div className="mt-2 text-[15px] font-semibold tracking-[0.18em] text-white/80 drop-shadow">
                   {stat.label}
                 </div>
               </div>
