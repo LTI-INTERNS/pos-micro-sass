@@ -67,7 +67,7 @@ export default function Navigation({
                   relative px-6 py-3 transition-all duration-300
                   ${
                     isActive
-                      ? "text-white font-semibold rounded-b-3xl border-b-2 border-orange-500"
+                      ? "text-white font-semibold rounded-b-3xl border-b-1 border-orange-500"
                       : "text-white/80 hover:text-white"
                   }
                 `}

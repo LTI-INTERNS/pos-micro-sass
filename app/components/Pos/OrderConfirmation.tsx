@@ -105,7 +105,7 @@ export default function OrderConfirmation({
           >
             <X size={18} />
           </button>
-
+          <div className="mb-4 -mt-6">
           <OrderSummaryContent
             title="Order confirmation"
             subtitle="Please confirm the order below to completed payment"
@@ -138,6 +138,7 @@ export default function OrderConfirmation({
               )
             }
           />
+          </div>
 
           <div className="flex justify-between items-center pt-6 border-t">
             <div>
@@ -169,7 +170,7 @@ export default function OrderConfirmation({
       </div>
 
       {showEmailPopup && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-semibold text-black">Add Customer Email</h3>
 

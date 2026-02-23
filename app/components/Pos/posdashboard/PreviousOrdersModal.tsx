@@ -57,6 +57,7 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
             placeholder="Search by Order ID or Cashier"
             showFilter={false}
           />
+         <div className="mb-4 max-h-50 overflow-y-auto">
 
           <CommonTable
             data={filteredOrders}
@@ -69,6 +70,8 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
               setDetailsOpen(true);
             }}
           />
+         </div>
+          
         </div>
       </ModalShell>
 
