@@ -12,7 +12,6 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 type UserRecord = { name: string; email: string; passwordHash: string; createdAt: number };
 
 declare global {
-  // eslint-disable-next-line no-var
   var __LT_USERS_STORE: Map<string, UserRecord> | undefined;
 }
 
@@ -25,7 +24,7 @@ function hashPassword(password: string) {
 }
 
 export async function loginAction(formData: FormData): Promise<LoginResult> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const email    = String(formData.get("email")    ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
   if (!email) return { ok: false, message: "Email is required", field: "email" };
