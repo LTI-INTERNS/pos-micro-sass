@@ -30,7 +30,7 @@ export default function FeatureCard({
   borderColor = "white/10",
   hoverBorderColor = "orange-400/50",
 
-  // ✅ Bigger on large + 4K
+  // ✅ bigger on 4K
   iconSize = "w-7 h-7 lg:w-8 lg:h-8 2xl:w-10 2xl:h-10",
   textSize = "text-sm sm:text-base lg:text-lg 2xl:text-xl",
   padding = "p-5 sm:p-6 lg:p-7 2xl:p-8",
