@@ -46,7 +46,10 @@ export default function Navigation({
     <Navbar
       logoSrc={logoSrc}
       logoAlt={logoAlt}
-      className="[@media(min-width:2560px)]:h-24 [@media(min-width:2560px)]:px-48"
+      className="
+        [@media(min-width:1920px)]:h-28 [@media(min-width:1920px)]:px-28
+        
+      "
       middleContent={
         <>
           {links.map((link, index) => {
@@ -66,9 +69,14 @@ export default function Navigation({
                   relative px-6 py-3 transition-all duration-300
                   [@media(min-width:768px)_and_(max-width:1023px)]:px-2
                   [@media(min-width:768px)_and_(max-width:1023px)]:py-1
+
+                  [@media(min-width:1920px)]:px-8
+                  [@media(min-width:1920px)]:py-4
+                  [@media(min-width:1920px)]:text-xl
+
                   [@media(min-width:2560px)]:px-10
                   [@media(min-width:2560px)]:py-5
-                  [@media(min-width:2560px)]:text-2xl
+                  
                   ${
                     isActive
                       ? "text-white font-semibold rounded-b-3xl border-b border-orange-500"
@@ -83,7 +91,7 @@ export default function Navigation({
         </>
       }
       rightContent={
-        <div className="flex items-center gap-3 [@media(min-width:2560px)]:gap-6">
+        <div className="flex items-center gap-3 [@media(min-width:1920px)]:gap-5 [@media(min-width:2560px)]:gap-6">
           <ActionButton
             label="Sign In"
             onClick={() => router.push("/saaslogin")}
@@ -94,9 +102,11 @@ export default function Navigation({
               [@media(min-width:768px)_and_(max-width:1023px)]:px-2
               [@media(min-width:768px)_and_(max-width:1023px)]:py-1
               [@media(min-width:768px)_and_(max-width:1023px)]:text-xs
-              [@media(min-width:2560px)]:px-10
-              [@media(min-width:2560px)]:py-4
-              [@media(min-width:2560px)]:text-2xl
+
+              [@media(min-width:1920px)]:px-8
+              [@media(min-width:1920px)]:py-3
+              [@media(min-width:1920px)]:text-xl   
+              
             "
           />
 
@@ -110,9 +120,13 @@ export default function Navigation({
               [@media(min-width:768px)_and_(max-width:1023px)]:px-2
               [@media(min-width:768px)_and_(max-width:1023px)]:py-1
               [@media(min-width:768px)_and_(max-width:1023px)]:text-xs
-              [@media(min-width:2560px)]:px-10
-              [@media(min-width:2560px)]:py-4
-              [@media(min-width:2560px)]:text-2xl
+
+              [@media(min-width:1920px)]:px-8
+              [@media(min-width:1920px)]:py-3
+              [@media(min-width:1920px)]:text-xl
+
+              
+              
             "
           />
         </div>
