@@ -72,8 +72,8 @@ export default function TestimonialSection() {
       }}
     >
       {/* This clips all non-adjacent slides so only 3 are visible */}
-      <div className="relative w-full px-6 lg:px-28 2xl:px-28 py-20 2xl:py-28">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-10 sm:mb-12 md:mb-16 [@media(min-width:2560px)]:text-6xl text-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center overflow-hidden [@media(min-width:2560px)]:max-w-[120rem] [@media(min-width:2560px)]:px-0">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-10 sm:mb-12 md:mb-16 [@media(min-width:2560px)]:text-6xl">
           What Our Clients Say
         </h2>
 
