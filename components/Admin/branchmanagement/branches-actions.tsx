@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import ActionButton from "@/components/Admin/common/ActionButton";  
+import ActionButton from "@/components/Admin/common/ActionButton";
 import AddBranchForm from "@/components/Admin/branchmanagement/AddBranchForm";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
-import type { Branch } from "@/components/Admin/branchmanagement/branches-table";
-import EditEntityModal, {EditField} from "@/components/Admin/common/EditPopup";
+import { Branch } from "@/lib/services";
+import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 
 type Props = {
   selectedBranch: Branch | null;
@@ -29,34 +29,34 @@ export default function BranchActionsBar({ selectedBranch, onEdit, onDelete }: P
 
   return (
     <>
-        <div className="grid grid-cols-3 gap-3">
-          <ActionButton
-            label="Delete Branch"
-            onClick={() => {
+      <div className="grid grid-cols-3 gap-3">
+        <ActionButton
+          label="Delete Branch"
+          onClick={() => {
             if (!selectedBranch) {
               alert("Please select a Branch first!");
               return;
             }
             setDeletePopupOpen(true);
-        }}
-          />
-          <ActionButton
-            label="Edit Branch"
-            onClick={() => {
-              if (!selectedBranch) {
-                alert("Please select a branch first!");
-                return;
-              }
-              setEditPopupOpen(true);
-            }}
-          />
+          }}
+        />
+        <ActionButton
+          label="Edit Branch"
+          onClick={() => {
+            if (!selectedBranch) {
+              alert("Please select a branch first!");
+              return;
+            }
+            setEditPopupOpen(true);
+          }}
+        />
 
-          <ActionButton
-            label="Add New Branch"
-            variant="primary"
-            onClick={() => setShowPopup(true)}
-          />
-        </div>
+        <ActionButton
+          label="Add New Branch"
+          variant="primary"
+          onClick={() => setShowPopup(true)}
+        />
+      </div>
       {showPopup && (
         <AddBranchForm
           open={showPopup}
