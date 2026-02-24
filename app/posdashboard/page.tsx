@@ -3,7 +3,6 @@ import React, { useMemo, useRef, useState } from "react";
 import ItemGrid from "@/components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, {
   CustomerInfoPanelHandle,
-  OrderItem,
 } from "@/components/Pos/posdashboard/CustomerInfoPanel";
 import DashboardLayout from "@/components/Pos/posdashboard/posdashboardlayout";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -26,15 +25,13 @@ function OrderCompletePopup({
 }) {
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
-        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-      }`}
+      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
       aria-hidden={!open}
     >
       <div
-        className={`relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden transform transition-all duration-300 ${
-          open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
-        }`}
+        className={`relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden transform transition-all duration-300 ${open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
+          }`}
       >
         <button
           onClick={onClose}
@@ -98,12 +95,14 @@ type SelectedCustomer = {
   email: string;
 } | null;
 
+import { usePosStore } from "@/store/usePosStore";
+
 const Page = () => {
   const { currency } = useCurrency();
   const { posSettings } = usePosSettings();
+  const { orderItems, addItem, increaseQty, decreaseQty, setQty, clearCart } = usePosStore();
 
   const [search, setSearch] = useState("");
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<{
@@ -140,25 +139,7 @@ const Page = () => {
   );
 
   const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
-    setOrderItems((prev) => {
-      const existing = prev.find((it) => it.id === String(item.id));
-      if (existing) {
-        return prev.map((it) =>
-          it.id === String(item.id) ? { ...it, qty: it.qty + 1 } : it
-        );
-      }
-
-      return [
-        ...prev,
-        {
-          id: String(item.id),
-          name: item.name,
-          price: item.price,
-          qty: 1,
-          imageUrl: item.image,
-        },
-      ];
-    });
+    addItem(item);
   };
 
   const hardResetPaymentFlow = () => {
@@ -191,23 +172,11 @@ const Page = () => {
             ref={panelRef}
             items={orderItems}
             customerDisplayEnabled={posSettings.customerDisplayEnabled}
-            onInc={(id) =>
-              setOrderItems((prev) =>
-                prev.map((it) => (it.id === id ? { ...it, qty: it.qty + 1 } : it))
-              )
-            }
-            onDec={(id) =>
-              setOrderItems((prev) =>
-                prev
-                  .map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it))
-                  .filter((it) => it.qty > 0)
-              )
-            }
-            onSetQty={(id, qty) =>
-              setOrderItems((prev) => prev.map((it) => (it.id === id ? { ...it, qty } : it)))
-            }
+            onInc={(id) => increaseQty(id)}
+            onDec={(id) => decreaseQty(id)}
+            onSetQty={(id, qty) => setQty(id, qty)}
             onCancel={() => {
-              setOrderItems([]);
+              clearCart();
               hardResetPaymentFlow();
             }}
             onPay={(summary) => {
@@ -219,10 +188,10 @@ const Page = () => {
               setSelectedCustomer(
                 summary.customer
                   ? {
-                      name: summary.customer.name ?? "",
-                      phoneNumber: summary.customer.phoneNumber ?? "",
-                      email: summary.customer.email ?? "",
-                    }
+                    name: summary.customer.name ?? "",
+                    phoneNumber: summary.customer.phoneNumber ?? "",
+                    email: summary.customer.email ?? "",
+                  }
                   : null
               );
 
@@ -265,7 +234,7 @@ const Page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-          
+
           customerEmail={selectedCustomer?.email ?? null}
           onCancelEdit={() => {
             setConfirmOpen(false);
@@ -278,7 +247,7 @@ const Page = () => {
             setConfirmOpen(false);
             setPaymentOpen(false);
 
-            setOrderItems([]);
+            clearCart();
             hardResetPaymentFlow();
 
             setCompleteOpen(true);
