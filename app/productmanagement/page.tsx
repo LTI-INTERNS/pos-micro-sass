@@ -17,28 +17,35 @@ import EditEntityModal from "@/components/Admin/common/EditPopup";
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
-import { productsData } from "@/lib/mocks/productmanagement";
+import { productService } from "@/lib/services";
 import type { Product } from "@/lib/mocks/productmanagement";
+import { useEffect } from "react";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 
 export default function DashboardPage() {
-  const [products, setProducts] = useState<Product[]>(productsData);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    productService.getProducts().then(setProducts);
+  }, []);
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const { filters: urlFilters, setFilter } = useUrlFilters();
+  const search = urlFilters.search || "";
+  const setSearch = (val: string) => setFilter("search", val);
+  const filterOpen = !!urlFilters.filterOpen;
+  const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
 
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const [filters, setFilters] = useState<{
-    category?: string;
-    discount?: string;
-    tax?: string;
-    stock?: string;
-    lowstock?: string;
-  }>({});
+  const filters = urlFilters;
+  const setFilters = (newFilters: Record<string, string | null>) => {
+    Object.entries(newFilters).forEach(([k, v]) => setFilter(k, v));
+  };
 
   useLowStockNotifications({
     products,
@@ -62,11 +69,11 @@ export default function DashboardPage() {
   });
 
   const isFilterApplied = Object.values(filters).some(
-    (v) => v && v.trim() !== ""
+    (v) => v && String(v).trim() !== ""
   );
 
   const removeFilter = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: "" }));
+    setFilter(key, null);
   };
 
   return (
