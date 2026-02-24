@@ -17,16 +17,18 @@ import EditEntityModal from "@/components/Admin/common/EditPopup";
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
-import { productService } from "@/lib/services";
-import type { Product } from "@/lib/mocks/productmanagement";
+import { productService, Product } from "@/lib/services";
 import { useEffect } from "react";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 
 export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    productService.getProducts().then(setProducts);
+    productService.getAll()
+      .then(setProducts)
+      .finally(() => setIsLoading(false));
   }, []);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -120,11 +122,15 @@ export default function DashboardPage() {
           onAddNew={() => setAddOpen(true)}
         />
 
-        <ProductsTable
-          products={filteredProducts}
-          selectedProduct={selectedProduct}
-          setSelectedProduct={setSelectedProduct}
-        />
+        {isLoading ? (
+          <div className="p-8 text-center text-slate-500">Loading products...</div>
+        ) : (
+          <ProductsTable
+            products={filteredProducts}
+            selectedProduct={selectedProduct}
+            setSelectedProduct={setSelectedProduct}
+          />
+        )}
       </div>
 
       <AddProductPopup

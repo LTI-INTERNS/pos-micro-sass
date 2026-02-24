@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNotifications } from "@/lib/context/NotificationsContext";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
-import type { Product } from "@/lib/mocks/productmanagement";
+import { Product } from "@/lib/services";
 
 /**
  * useLowStockNotifications

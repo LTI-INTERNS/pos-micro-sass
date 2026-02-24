@@ -2,12 +2,7 @@
 
 import ActionButton from "@/components/Admin/common/ActionButton";
 
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  stock: number;
-};
+import { Product } from "@/lib/services";
 
 type Props = {
   selectedProduct: Product | null;

@@ -1,12 +1,12 @@
 "use client";
 
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
-import { Product } from "@/lib/mocks/productmanagement";
+import { Product } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type Props = {
-  products: Product [];
+  products: Product[];
   selectedProduct: Product | null;
   setSelectedProduct: (p: Product | null) => void;
 }
@@ -15,17 +15,17 @@ export default function ProductsTable({ products, selectedProduct, setSelectedPr
   const { currency, useCents } = useCurrency();
 
   const productColumns: Column<Product>[] = [
-  { key: "id", label: "ID" },
-  { key: "name", label: "Name" },
-  { key: "category", label: "Category" },
-  { key: "supplier", label: "Supplier"},
-  { key: "price", label: "Price", render: (row) => formatCurrency(row.price, currency, useCents) },
-  { key: "discount", label: "Discount (%)" },
-  { key: "tax", label: "Tax (%)" },
-  { key: "stock", label: "Stock" },
-  { key: "lowstock", label: "Low Stock/ Availability" },
+    { key: "id", label: "ID" },
+    { key: "name", label: "Name" },
+    { key: "category", label: "Category" },
+    { key: "supplier", label: "Supplier" },
+    { key: "price", label: "Price", render: (row) => formatCurrency(row.price, currency, useCents) },
+    { key: "discount", label: "Discount (%)" },
+    { key: "tax", label: "Tax (%)" },
+    { key: "stock", label: "Stock" },
+    { key: "lowstock", label: "Low Stock/ Availability" },
 
-];
+  ];
 
   return (
     <CommonTable
