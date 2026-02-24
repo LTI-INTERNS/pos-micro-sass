@@ -1,12 +1,25 @@
-
 "use client";
-
 import { useRouter } from 'next/navigation';
 import StatCard from '@/components/Admin/common/StatCard';
-import { statCards } from '@/lib/mocks/overview/mockData';
+import { analyticsService } from '@/lib/services';
+import { useEffect, useState } from 'react';
+
+type StatCardData = {
+  title: string;
+  value?: string;
+  amount?: number;
+  percentage: string;
+  trend: 'up' | 'down';
+  caption: string;
+};
 
 export default function StatCardGrid() {
+  const [stats, setStats] = useState<StatCardData[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    analyticsService.getStats().then(setStats);
+  }, []);
 
   const handleDetailClick = (title: string) => {
     const routeMap: Record<string, string> = {
@@ -24,7 +37,7 @@ export default function StatCardGrid() {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statCards.map((card) => (
+      {stats.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}

@@ -8,15 +8,31 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { salesLineData } from '@/lib/mocks/overview/mockData';
+
+import { analyticsService } from '@/lib/services';
+import { useEffect, useState } from 'react';
+
+type SalesLineData = {
+  day: string;
+  coffeetalk: number;
+  lowSlow: number;
+  coldBrew: number;
+  eplus: number;
+  sinergy: number;
+};
 
 export default function SalesLineChart() {
+  const [data, setData] = useState<SalesLineData[]>([]);
+
+  useEffect(() => {
+    analyticsService.getSalesLine().then(setData);
+  }, []);
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <h3 className="text-sm font-semibold mb-4 text-black">Sales</h3>
 
       <ResponsiveContainer width="100%" height={250}>
-        <LineChart data={salesLineData}>
+        <LineChart data={data}>
           <XAxis
             dataKey="day"
             tick={{ fontSize: 14 }}

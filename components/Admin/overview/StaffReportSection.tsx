@@ -1,11 +1,24 @@
 'use client';
-
 import { useRouter } from 'next/navigation';
 import StaffReportItem from '@/components/Admin/overview/StaffReportItem';
-import { staffReportData } from '@/lib/mocks/overview/mockData';
+import { analyticsService } from '@/lib/services';
+import { useEffect, useState } from 'react';
+
+type StaffReportData = {
+  id: number | string;
+  name: string;
+  avatar: string;
+  amount: number;
+  subAmount: number;
+};
 
 export default function StaffReportSection() {
+  const [reportData, setReportData] = useState<StaffReportData[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    analyticsService.getStaffPerformance().then(setReportData);
+  }, []);
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
@@ -20,7 +33,7 @@ export default function StaffReportSection() {
         </button>
       </div>
 
-      {staffReportData.slice(0, 4).map((staff) => (
+      {reportData.slice(0, 4).map((staff) => (
         <StaffReportItem
           key={staff.id}
           name={staff.name}

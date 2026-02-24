@@ -9,9 +9,20 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { salesBarData } from '@/lib/mocks/overview/mockData';
+import { analyticsService } from '@/lib/services';
+import { useEffect, useState } from 'react';
+
+type SalesBarData = {
+  hour: string;
+  value: number;
+};
 
 export default function SalesBarChart() {
+  const [data, setData] = useState<SalesBarData[]>([]);
+
+  useEffect(() => {
+    analyticsService.getSalesBar().then(setData);
+  }, []);
   const router = useRouter();
 
   return (
@@ -28,7 +39,7 @@ export default function SalesBarChart() {
 
       <ResponsiveContainer width="100%" height={250}>
         <BarChart
-          data={salesBarData}
+          data={data}
           margin={{
             top: 10,
             right: 10,
