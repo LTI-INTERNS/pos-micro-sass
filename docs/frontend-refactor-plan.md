@@ -1,7 +1,7 @@
 # Frontend Refactor Roadmap: Micro SaaS POS
-## Phase 3: Migration & Integration
+## Phase 4: Production Stabilization & Scaling
 
-This document outlines the next steps to migrate the frontend prototype logic into the newly established production-grade infrastructure.
+This document outlines the progress and remaining steps to reach a 100% production-ready frontend.
 
 ---
 
@@ -9,51 +9,40 @@ This document outlines the next steps to migrate the frontend prototype logic in
 
 | Task | Status | Priority | Phase |
 | :--- | :--- | :--- | :--- |
-| **Foundation: Zustand Stores** | ✅ Completed | High | Phase 2 |
-| **Foundation: API Client (Axios)** | ✅ Completed | High | Phase 2 |
-| **Foundation: TanStack Query Setup** | ✅ Completed | High | Phase 2 |
-| **Foundation: Service Layer Base** | ✅ Completed | High | Phase 2 |
-| **Foundation: Middleware & Auth Structure**| ✅ Completed | High | Phase 2 |
-| **Migrate POS Cart to Zustand** | 🔄 Next | High | Phase 3 |
-| **Replace Mock Data with API Services** | 🔄 Planned | High | Phase 3 |
-| **Implement URL-Driven Filtering** | 🔄 Planned | Medium | Phase 3 |
-| **Convert Static Forms to Zod** | 🔄 Planned | Medium | Phase 3 |
+| **Foundation: Infrastructure Setup** | ✅ Completed | High | Phase 2 |
+| **Migration: POS Cart to Zustand** | ✅ Completed | High | Phase 3 |
+| **Integrate: Product Service Layer** | ✅ Completed | High | Phase 3 |
+| **Feature: URL-Driven Filtering** | ✅ Completed | High | Phase 3 |
+| **Validation: Zod Form Migration** | ✅ Completed | High | Phase 3 |
+| **Expansion: Complete Service Layer** | 🔄 Next | High | Phase 4 |
+| **Security: Removal of Legacy Hashing** | 🔄 Planned | Medium | Phase 4 |
+| **Performance: Server Component Optimization** | 🔄 Planned | Medium | Phase 4 |
 
 ---
 
-## 🧠 1. Infrastructure (COMPLETED)
-The core foundation has been established to support a scaleable, backend-ready application:
+## 🏗️ 1. Recently Completed (Phase 3)
+We have successfully transitioned the core application logic to a scalable architecture:
 
-*   **State Management**: `zustand` is installed with foundational stores in `/store` (Auth, Pos, Config).
-*   **Networking**: `Axios` client configured in `lib/api-client.ts` with multi-tenancy and JWT interceptors.
-*   **Data Fetching**: `TanStack Query` integrated into the root layout via `Providers`.
-*   **Routing**: Next.js Middleware implemented for protected route handling.
-*   **Validation**: `Zod` schemas started in `lib/validation/`.
-
----
-
-## 🏗️ 2. Phase 3: Migration Strategy
-
-### A. POS Component Refactor
-*   Remove local `cart` states and local storage logic.
-*   Connect `ItemGrid.tsx` and `OrderSummaryContent.tsx` to `usePosStore`.
-
-### B. API Integration
-*   Switch components from searching `lib/mocks/` directly to using `lib/services/`.
-*   Wrap service calls with `useQuery` or `useMutation` for automated state management.
-
-### C. Server-Side Table States
-*   Update `Filterlogic.ts` to push filter states to URL search parameters.
-*   Allow the API layer to read these params for server-side filtering and pagination.
+*   **State Management**: POS Cart state is now 100% managed by `usePosStore` (Zustand), eliminating local prop drilling and inconsistent storage logic.
+*   **Service Layer Integration**: Initial migration from direct mock imports to a service-based architecture (`productService`) has begun in `productmanagement`.
+*   **Dynamic State**: Admin tables (e.g., Product Management) now sync state with URL parameters using the custom `useUrlFilters` hook, supporting shareable views and server-side readiness.
+*   **Data Integrity**: Manual validation in `AddProductPopup` has been replaced with a robust `productSchema` (Zod), ensuring strict data types.
 
 ---
 
-### Recently Completed (Phase 1 & 2)
-- ✅ Standardized absolute imports (`@/`).
-- ✅ Consolidated project folder structure.
-- ✅ Centralized all mock data to `lib/mocks`.
-- ✅ Resolved all build-time resolution errors.
-- ✅ Implemented foundational Refactor Architecture (Stores, Services, API).
+## 🛤️ 2. Phase 4: Scaling & Stabilization
+
+### A. Full Service Layer Coverage
+*   Extend service patterns to `customerService`, `staffService`, and `orderService`.
+*   Ensure all data fetching uses `TanStack Query` for caching and loading states.
+
+### B. UI/UX Refinement
+*   Standardize error surfacing using the established `NotificationsProvider`.
+*   Implement Skeleton loaders for service-driven data fetching.
+
+### C. Backend Finalization
+*   Replace mock returns in `lib/services/` with actual `apiClient` calls as endpoints become available.
+*   Finalize NextAuth login flow with the established `authOptions`.
 
 ---
 
