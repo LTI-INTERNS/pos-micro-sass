@@ -72,8 +72,8 @@ export default function TestimonialSection() {
       }}
     >
       {/* This clips all non-adjacent slides so only 3 are visible */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center overflow-hidden">
-        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-10 sm:mb-12 md:mb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center overflow-hidden [@media(min-width:2560px)]:max-w-[120rem] [@media(min-width:2560px)]:px-0">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-10 sm:mb-12 md:mb-16 [@media(min-width:2560px)]:text-6xl">
           What Our Clients Say
         </h2>
 
@@ -105,6 +105,11 @@ export default function TestimonialSection() {
               slidesPerView: 3,
               spaceBetween: -220,
             },
+            // 4K tuning (ONLY affects >= 2560px width screens)
+            2560: {
+              slidesPerView: 3,
+              spaceBetween: -340,
+            },
           }}
           className="!overflow-visible"
           onSwiper={handleInitOrChange}
@@ -135,7 +140,9 @@ export default function TestimonialSection() {
                     className={[
                       "relative rounded-2xl p-6 sm:p-8 text-left transition-all duration-500",
                       "w-[300px] sm:w-[360px] md:w-[420px] lg:w-[440px]",
-                      "h-[200px]",
+                      // 4K: make cards noticeably wider to fill the screen
+                      "[@media(min-width:2560px)]:w-[680px]",
+                      "h-[200px] [@media(min-width:2560px)]:h-[240px]",
                       isActive
                         ? "scale-110 opacity-100"
                         : isPrev || isNext
@@ -157,20 +164,20 @@ export default function TestimonialSection() {
                     )}
 
                     <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center [@media(min-width:2560px)]:w-16 [@media(min-width:2560px)]:h-16">
                         <User className="text-white" size={24} />
                       </div>
                       <div>
-                        <h3 className="text-white font-semibold text-base sm:text-lg">
+                        <h3 className="text-white font-semibold text-base sm:text-lg [@media(min-width:2560px)]:text-2xl">
                           {item.name}
                         </h3>
-                        <p className="text-gray-300 text-xs sm:text-sm">
+                        <p className="text-gray-300 text-xs sm:text-sm [@media(min-width:2560px)]:text-lg">
                           {item.role}
                         </p>
                       </div>
                     </div>
 
-                    <p className="text-gray-200 text-xs sm:text-sm md:text-base leading-relaxed">
+                    <p className="text-gray-200 text-xs sm:text-sm md:text-base leading-relaxed [@media(min-width:2560px)]:text-xl">
                       “{item.message}”
                     </p>
                   </div>

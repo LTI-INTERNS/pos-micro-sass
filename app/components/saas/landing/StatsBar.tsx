@@ -17,7 +17,7 @@ const STATS: StatItem[] = [
 export default function StatsBar() {
   return (
     <section className="w-full">
-      <div className="relative overflow-hidden border border-white/20 min-h-[100px]">
+      <div className="relative overflow-hidden border border-white/20 min-h-[100px] [@media(min-width:2560px)]:min-h-[180px]">
         {/* Background Image */}
         <Image
           src="/saas/landing/saas-landing-stat.png"
@@ -32,14 +32,32 @@ export default function StatsBar() {
         <div className="absolute inset-0 bg-cover bg-center" />
 
         {/* Content */}
-        <div className="relative py-10 px-4 sm:px-12 lg:px-28">
-          <div className="grid grid-cols-2 gap-y-8 sm:grid-cols-4 sm:gap-y-0">
+        <div
+          className="
+            relative py-5 px-4 sm:px-12 lg:px-28
+            [@media(min-width:2560px)]:py-16
+            [@media(min-width:2560px)]:px-48
+          "
+        >
+          <div className="grid grid-cols-2 gap-y-4 sm:grid-cols-4 sm:gap-y-0">
             {STATS.map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-2xl font-extrabold text-white drop-shadow">
+                <div
+                  className="
+                    text-xs sm:text-sm md:text-base lg:text-xl xl:text-2xl font-extrabold text-white drop-shadow
+                    [@media(min-width:2560px)]:text-5xl
+                  "
+                >
                   {stat.value}
                 </div>
-                <div className="mt-2 text-[15px] font-semibold tracking-[0.18em] text-white/80 drop-shadow">
+                <div
+                  className="
+                    mt-1 text-[8px] sm:text-[9px] md:text-[10px] lg:text-[12px] xl:text-[13px] font-semibold tracking-[0.12em] text-white/80 drop-shadow
+                    [@media(min-width:2560px)]:text-2xl
+                    [@media(min-width:2560px)]:mt-4
+                    [@media(min-width:2560px)]:tracking-[0.2em]
+                  "
+                >
                   {stat.label}
                 </div>
               </div>
