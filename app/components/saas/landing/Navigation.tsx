@@ -12,8 +12,8 @@ type NavigationProps = {
     href: string;
   }[];
 
-  onSignIn?: () => void;  
-  onSignUp?: () => void;   
+  onSignIn?: () => void;
+  onSignUp?: () => void;
 
   logoSrc?: string;
   logoAlt?: string;
@@ -46,6 +46,7 @@ export default function Navigation({
     <Navbar
       logoSrc={logoSrc}
       logoAlt={logoAlt}
+      className="[@media(min-width:2560px)]:h-24 [@media(min-width:2560px)]:px-48"
       middleContent={
         <>
           {links.map((link, index) => {
@@ -63,9 +64,14 @@ export default function Navigation({
                 onClick={() => setActiveHash(link.href)}
                 className={`
                   relative px-6 py-3 transition-all duration-300
+                  [@media(min-width:768px)_and_(max-width:1023px)]:px-2
+                  [@media(min-width:768px)_and_(max-width:1023px)]:py-1
+                  [@media(min-width:2560px)]:px-10
+                  [@media(min-width:2560px)]:py-5
+                  [@media(min-width:2560px)]:text-2xl
                   ${
                     isActive
-                      ? "text-white font-semibold rounded-b-3xl border-b-1 border-orange-500"
+                      ? "text-white font-semibold rounded-b-3xl border-b border-orange-500"
                       : "text-white/80 hover:text-white"
                   }
                 `}
@@ -77,13 +83,21 @@ export default function Navigation({
         </>
       }
       rightContent={
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 [@media(min-width:2560px)]:gap-6">
           <ActionButton
             label="Sign In"
             onClick={() => router.push("/saaslogin")}
             variant="outline"
             fullWidth={false}
-            className="px-5 !bg-transparent"
+            className="
+              px-5 !bg-transparent
+              [@media(min-width:768px)_and_(max-width:1023px)]:px-2
+              [@media(min-width:768px)_and_(max-width:1023px)]:py-1
+              [@media(min-width:768px)_and_(max-width:1023px)]:text-xs
+              [@media(min-width:2560px)]:px-10
+              [@media(min-width:2560px)]:py-4
+              [@media(min-width:2560px)]:text-2xl
+            "
           />
 
           <ActionButton
@@ -91,7 +105,15 @@ export default function Navigation({
             onClick={() => router.push("/saasregistration")}
             variant="primary"
             fullWidth={false}
-            className="px-5"
+            className="
+              px-5
+              [@media(min-width:768px)_and_(max-width:1023px)]:px-2
+              [@media(min-width:768px)_and_(max-width:1023px)]:py-1
+              [@media(min-width:768px)_and_(max-width:1023px)]:text-xs
+              [@media(min-width:2560px)]:px-10
+              [@media(min-width:2560px)]:py-4
+              [@media(min-width:2560px)]:text-2xl
+            "
           />
         </div>
       }
