@@ -14,25 +14,15 @@ import {
   getFilterOptions,
 } from "@/components/Admin/common/Filterlogic";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
-import { staffData } from "@/lib/mocks/staffmanagement/mockStaffData";
+import { staffService, Staff } from "@/lib/services";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
-
-type Staff = {
-  id: string;
-  name: string;
-  staffNo: string;
-  branch: string;
-  position: string;
-  email: string;
-  phone: number;
-  password: string;
-  pin: string;
-};
 
 type UserRole = "superadmin" | "admin" | "manager";
 
 export default function StaffManagementPage() {
+  const [allStaff, setAllStaff] = useState<Staff[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
@@ -41,9 +31,20 @@ export default function StaffManagementPage() {
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
-  // TODO: Replace with actual auth session/role + branch
+  useEffect(() => {
+    staffService.getAll()
+      .then(setAllStaff)
+      .finally(() => setIsLoading(false));
+  }, []);
+
   const userRole: UserRole = "superadmin" as UserRole;
-  const userBranch = "Kandy" as const; // Get from auth context/session
+  const userBranch = "Kandy" as const;
+
+  const baseData = useMemo(() => {
+    return userRole === "superadmin"
+      ? allStaff
+      : allStaff.filter((s) => s.branch === userBranch);
+  }, [userRole, userBranch, allStaff]);
 
   const exportCSV = useCSVExport();
 
@@ -58,20 +59,6 @@ export default function StaffManagementPage() {
     { key: "password", label: "Password" },
     { key: "pin", label: "Pin" },
   ];
-
-  // Base data: superadmin sees all branches; admin/manager only see their branch
-  const baseData = useMemo(() => {
-    return userRole === "superadmin"
-      ? staffData
-      : staffData.filter((s) => s.branch === userBranch);
-  }, [userRole, userBranch]);
-
-  // Optional: clear any leftover branch filter if user isn't allowed to use it
-  useEffect(() => {
-    if (userRole !== "superadmin") {
-      setFilters((prev) => ({ ...prev, branch: "" }));
-    }
-  }, [userRole]);
 
   const filteredStaff = useTableFilters<Staff>({
     data: baseData,
@@ -92,12 +79,12 @@ export default function StaffManagementPage() {
           {
             name: "branch",
             placeholder: "Branch",
-            options: getFilterOptions(staffData, "branch"),
+            options: getFilterOptions(allStaff, "branch"),
           },
         ]
         : []),
     ];
-  }, [userRole, baseData]);
+  }, [userRole, baseData, allStaff]);
 
   const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -189,42 +176,36 @@ export default function StaffManagementPage() {
           />
         </div>
 
-        <CommonTable
-          title="Staff List"
-          data={filteredStaff}
-          columns={columns}
-          emptyMessage="No staff found"
-          selectedRowId={selectedStaff?.id}
-          onSelectRow={(row) => {
-            setSelectedStaff(row);
-          }}
-        />
+        {isLoading ? (
+          <div className="flex justify-center p-12">
+            <span className="text-gray-400">Loading staff data...</span>
+          </div>
+        ) : (
+          <CommonTable
+            title="Staff List"
+            data={filteredStaff}
+            columns={columns}
+            emptyMessage="No staff found"
+            selectedRowId={selectedStaff?.id}
+            onSelectRow={(row) => {
+              setSelectedStaff(row);
+            }}
+          />
+        )}
       </div>
 
-      {showPopup && <AddStaffPopup onClose={() => setShowPopup(false)} />}
+      {showPopup && (
+        <AddStaffPopup onClose={() => setShowPopup(false)} />
+      )}
 
-      {selectedStaff && (
+      {selectedStaff && deletePopupOpen && (
         <DeletePopup
           isOpen={deletePopupOpen}
-          onClose={() => setDeletePopupOpen(false)}
           item={selectedStaff}
           itemName="Staff"
-          getDisplayText={(c) => (
-            <>
-              <br />
-              <br />
-              ID - {c.id}
-              <br />
-              Staff Name- {c.name}
-              <br />
-              Branch - {c.branch}
-              <br />
-              position - {c.position}
-            </>
-          )}
+          onClose={() => setDeletePopupOpen(false)}
           onConfirm={() => {
-            const index = staffData.findIndex((c) => c.id === selectedStaff.id);
-            if (index >= 0) staffData.splice(index, 1);
+            setAllStaff((prev) => prev.filter((c) => c.id !== selectedStaff.id));
             setSelectedStaff(null);
             setDeletePopupOpen(false);
           }}
@@ -236,17 +217,15 @@ export default function StaffManagementPage() {
           open={editPopupOpen}
           title="Edit Staff"
           initialValues={selectedStaff}
-          fields={editFields}
           onClose={() => setEditPopupOpen(false)}
-          onSave={(updatedValues) => {
-            // Update staffData array
-            const index = staffData.findIndex((s) => s.id === selectedStaff.id);
-            if (index >= 0) {
-              staffData[index] = updatedValues;
-            }
-            setSelectedStaff(updatedValues); // update selected staff
+          onSave={(values) => {
+            setAllStaff((prev) =>
+              prev.map((s) => (s.id === selectedStaff.id ? { ...s, ...values } : s))
+            );
+            setSelectedStaff(null);
             setEditPopupOpen(false);
           }}
+          fields={editFields}
         />
       )}
     </DashboardLayout>

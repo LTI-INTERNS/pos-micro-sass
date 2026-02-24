@@ -6,7 +6,7 @@ import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
 
-import { staffData } from "@/lib/mocks/staffmanagement/mockStaffData";
+
 
 type Props = {
   onClose: () => void;
@@ -29,7 +29,7 @@ export default function AddStaffPopup({ onClose }: Props) {
   const [open, setOpen] = React.useState(true);
 
   // Generate next ID dynamically whenever staffData changes
-  const nextId = React.useMemo(() => (staffData.length + 1).toString(), []);
+  const nextId = "AUTO";
 
   const [values, setValues] = React.useState<StaffValues>({
     id: nextId,
