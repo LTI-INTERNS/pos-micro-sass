@@ -11,7 +11,7 @@ export type EditField = {
   readOnly?: boolean;
 };
 
-type Props<T extends Record<string, unknown>> = {
+type Props<T extends object> = {
   open: boolean;
   title: string;
   initialValues: T | null;
@@ -20,7 +20,7 @@ type Props<T extends Record<string, unknown>> = {
   onSave: (values: T) => void;
 };
 
-export default function EditEntityModal<T extends Record<string, unknown>>({
+export default function EditEntityModal<T extends object>({
   open,
   title,
   initialValues,
@@ -39,7 +39,7 @@ export default function EditEntityModal<T extends Record<string, unknown>>({
   if (!open || !values) return null;
 
   const handleChange = (name: string, value: string) => {
-    setValues((prev) => ({ ...prev!, [name]: value }));
+    setValues((prev) => ({ ...prev!, [name]: value } as T));
   };
 
   return (
@@ -59,7 +59,7 @@ export default function EditEntityModal<T extends Record<string, unknown>>({
             <div className="col-span-8">
               {field.type === "textarea" ? (
                 <textarea
-                  value={values[field.name] as string ?? ""}
+                  value={String(values[field.name as keyof T] ?? "")}
                   readOnly={field.readOnly}
                   onChange={(e) =>
                     handleChange(field.name, e.target.value)
@@ -69,7 +69,7 @@ export default function EditEntityModal<T extends Record<string, unknown>>({
               ) : (
                 <input
                   type={field.type || "text"}
-                  value={values[field.name] as string ?? ""}
+                  value={String(values[field.name as keyof T] ?? "")}
                   readOnly={field.readOnly}
                   onChange={(e) =>
                     handleChange(field.name, e.target.value)

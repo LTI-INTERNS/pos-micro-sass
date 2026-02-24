@@ -1,4 +1,4 @@
-export function useCSVExport<T extends Record<string, unknown>>() {
+export function useCSVExport<T extends object>() {
   return function exportToCSV(data: T[], filename: string) {
     if (!data || !data.length) return;
 
@@ -7,7 +7,7 @@ export function useCSVExport<T extends Record<string, unknown>>() {
     const csvRows = [
       headers.join(","),
       ...data.map((row) =>
-        headers.map((h) => `"${row[h]}"`).join(",")
+        headers.map((h) => `"${row[h as keyof T] ?? ""}"`).join(",")
       ),
     ];
 
