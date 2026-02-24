@@ -1,14 +1,9 @@
 import { create } from 'zustand';
-
-interface AuthState {
-    user: any | null;
-    setUser: (user: any) => void;
-    logout: () => void;
-}
+import { AuthState, User } from '@/types/user.types';
 
 export const useAuthStore = create<AuthState>((set) => ({
     user: null,
-    setUser: (user) => set({ user }),
+    setUser: (user: User | null) => set({ user }),
     logout: () => {
         localStorage.removeItem('token');
         set({ user: null });
