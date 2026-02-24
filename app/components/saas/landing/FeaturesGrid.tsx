@@ -74,6 +74,12 @@ const XXL_COLS: Record<number, string> = {
   6: "2xl:grid-cols-6",
 };
 
+function clampCols(n: unknown, fallback: number) {
+  const num = typeof n === "number" ? n : Number(n);
+  if (Number.isNaN(num)) return fallback;
+  return Math.min(6, Math.max(1, num));
+}
+
 export default function FeaturesGrid({
   features,
   columns = {},
@@ -82,15 +88,19 @@ export default function FeaturesGrid({
   cardProps = {},
   className = "",
 }: FeaturesGridProps) {
-  const { mobile = 1, sm = 2, lg = 3, xl = 4, "2xl": xxl = 6 } = columns;
+  const mobile = clampCols(columns.mobile, 1);
+  const sm = clampCols(columns.sm, 2);
+  const lg = clampCols(columns.lg, 3);
+  const xl = clampCols(columns.xl, 4);
+  const xxl = clampCols(columns["2xl"], 4); // ✅ default 4 on 2xl
 
   const gridClasses = [
     "grid w-full",
-    COLS[mobile] ?? "grid-cols-1",
-    SM_COLS[sm] ?? "sm:grid-cols-2",
-    LG_COLS[lg] ?? "lg:grid-cols-3",
-    XL_COLS[xl] ?? "xl:grid-cols-4",
-    XXL_COLS[xxl] ?? "2xl:grid-cols-6",
+    COLS[mobile],
+    SM_COLS[sm],
+    LG_COLS[lg],
+    XL_COLS[xl],
+    XXL_COLS[xxl], // ✅ always valid now, no wrong fallback
     gap,
     maxWidth,
     className,
@@ -99,13 +109,14 @@ export default function FeaturesGrid({
   return (
     <div className={gridClasses}>
       {features.map((feature) => (
-        <FeatureCard
-          key={feature.id}
-          icon={feature.icon}
-          label={feature.label}
-          onClick={feature.onClick}
-          {...cardProps}
-        />
+        <div key={feature.id} className="min-w-0">
+          <FeatureCard
+            icon={feature.icon}
+            label={feature.label}
+            onClick={feature.onClick}
+            {...cardProps}
+          />
+        </div>
       ))}
     </div>
   );
