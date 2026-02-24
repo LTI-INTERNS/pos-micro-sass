@@ -1,18 +1,10 @@
 "use client";
 
-import CommonTable, { Column } from "@/components/Admin/common/CommonTable"; 
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { Customer } from "@/lib/services/customer-service";
 
-export type Customer = {
-  id: number;
-  name: string;
-  phone: string;
-  promoCard: string;
-  points: number;
-  email: string;
-  outstanding: number;
-};
 type Props = {
   customers: Customer[];
   selectedCustomer: Customer | null;
@@ -22,12 +14,12 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Customer>[] = [
-    {key: "id",label: "ID",},
-    {key: "name",label: "Name",},
-    {key: "phone",label: "Phone",},
-    {key: "promoCard",label: "Promo Card",},
-    {key: "points",label: "Points",},
-    {key: "email",label: "Email",},
+    { key: "id", label: "ID", },
+    { key: "name", label: "Name", },
+    { key: "phone", label: "Phone", },
+    { key: "promoCard", label: "Promo Card", },
+    { key: "points", label: "Points", },
+    { key: "email", label: "Email", },
     {
       key: "outstanding",
       label: "Outstanding",
@@ -39,7 +31,7 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
   return (
     <CommonTable
       title="Customers"
-      data={customers} 
+      data={customers}
       columns={columns}
       emptyMessage="No Customers found"
       selectedRowId={selectedCustomer?.id}

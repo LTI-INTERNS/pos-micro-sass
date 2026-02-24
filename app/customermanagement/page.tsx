@@ -8,20 +8,10 @@ import CustomerActionsBar from "@/components/Admin/customermanagement/customer-a
 import CustomersTable from "@/components/Admin/customermanagement/customers-table";
 import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
 import StatCardGrid from "@/components/Admin/customermanagement/customerStarGrid";
-import { customersData } from "@/lib/mocks/customermanagement";
+import { customerService, Customer } from "@/lib/services";
 import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
-
-
-type Customer = {
-  id: number;
-  name: string;
-  phone: string;
-  promoCard: string;
-  points: number;
-  email: string;
-  outstanding: number;
-};
+import { useEffect } from "react";
 
 export default function CustomersPage() {
   const [start, setStart] = useState<Date | undefined>();
@@ -29,7 +19,11 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>(customersData);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  useEffect(() => {
+    customerService.getAll().then(setCustomers);
+  }, []);
 
   const [filters, setFilters] = useState<{
     outstandingRange?: string;
