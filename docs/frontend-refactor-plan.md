@@ -1,68 +1,59 @@
 # Frontend Refactor Roadmap: Micro SaaS POS
-## Phase 2: Implementation (Remaining Tasks)
+## Phase 3: Migration & Integration
 
-This document outlines the remaining steps to transition the frontend from a stabilized prototype into a production-grade system.
+This document outlines the next steps to migrate the frontend prototype logic into the newly established production-grade infrastructure.
 
 ---
 
 ## 🚀 Priority Status Tracking
 
-| Task | Status | Priority | Timeline |
+| Task | Status | Priority | Phase |
 | :--- | :--- | :--- | :--- |
-| **Integrate Zustand (State Management)** | 🔄 Planned | High | Week 1 |
-| **API Client Implementation (Axios)** | 🔄 Planned | High | Week 2 |
-| **TanStack Query (Data Fetching/Caching)** | 🔄 Planned | High | Week 2 |
-| **Server-Driven Logic (URL Params)** | 🔄 Planned | Medium | Week 3 |
-| **Zod Form Validation** | 🔄 Planned | Medium | Week 3 |
-| **NextAuth.js Integration** | 🔄 Planned | Medium | Week 4 |
-| **Service Layer Abstraction** | 🔄 Planned | Low | Week 4 |
+| **Foundation: Zustand Stores** | ✅ Completed | High | Phase 2 |
+| **Foundation: API Client (Axios)** | ✅ Completed | High | Phase 2 |
+| **Foundation: TanStack Query Setup** | ✅ Completed | High | Phase 2 |
+| **Foundation: Service Layer Base** | ✅ Completed | High | Phase 2 |
+| **Foundation: Middleware & Auth Structure**| ✅ Completed | High | Phase 2 |
+| **Migrate POS Cart to Zustand** | 🔄 Next | High | Phase 3 |
+| **Replace Mock Data with API Services** | 🔄 Planned | High | Phase 3 |
+| **Implement URL-Driven Filtering** | 🔄 Planned | Medium | Phase 3 |
+| **Convert Static Forms to Zod** | 🔄 Planned | Medium | Phase 3 |
 
 ---
 
-## 🧠 1. State Management: The "Zustand" Strategy
-Move 7+ Context Providers in `layout.tsx` into unified stores to improve performance and maintainability.
+## 🧠 1. Infrastructure (COMPLETED)
+The core foundation has been established to support a scaleable, backend-ready application:
 
-*   **Goal**: Create central stores for `usePosStore`, `useAuthStore`, and `useConfigStore`.
-*   **Target**: Replace the POS Cart logic first.
-
----
-
-## 📡 2. API Layer & Data Fetching
-Move from localized mock imports to a centralized service-driven architecture.
-
-*   **Step A (Axios)**: Create `@/lib/api-client.ts` with interceptors for JWT and `X-Company-ID` (Multi-tenancy).
-*   **Step B (TanStack Query)**: Implement hooks to handle loading, error, and caching automatically.
+*   **State Management**: `zustand` is installed with foundational stores in `/store` (Auth, Pos, Config).
+*   **Networking**: `Axios` client configured in `lib/api-client.ts` with multi-tenancy and JWT interceptors.
+*   **Data Fetching**: `TanStack Query` integrated into the root layout via `Providers`.
+*   **Routing**: Next.js Middleware implemented for protected route handling.
+*   **Validation**: `Zod` schemas started in `lib/validation/`.
 
 ---
 
-## ⚖️ 3. Architecture: URL-Driven State
-Implement `useSearchParams` to handle table filtering, sorting, and pagination.
+## 🏗️ 2. Phase 3: Migration Strategy
 
-*   **Why**: Essential for 100% backend integration (Server-side pagination).
-*   **Target**: Admin tables (Product, Staff, Orders).
+### A. POS Component Refactor
+*   Remove local `cart` states and local storage logic.
+*   Connect `ItemGrid.tsx` and `OrderSummaryContent.tsx` to `usePosStore`.
 
----
+### B. API Integration
+*   Switch components from searching `lib/mocks/` directly to using `lib/services/`.
+*   Wrap service calls with `useQuery` or `useMutation` for automated state management.
 
-## 🔐 4. Auth, Security & Multi-Tenancy
-*   **NextAuth.js**: Standardize session handling.
-*   **Security**: Remove any frontend hashing (sha256). Passwords must be handled by the backend.
-*   **Tenant Resolution**: Ensure Every API request includes the `CompanyID` in the headers.
-
----
-
-## 📋 5. Data Modeling: Zod Validation
-Replace manual error checking in forms with Zod schemas.
-
-*   **Target**: Add Product, Staff Registration, and Payment forms.
-*   **Benefit**: Guaranteed data integrity before hitting API endpoints.
+### C. Server-Side Table States
+*   Update `Filterlogic.ts` to push filter states to URL search parameters.
+*   Allow the API layer to read these params for server-side filtering and pagination.
 
 ---
 
-### Recently Completed (Phase 1)
+### Recently Completed (Phase 1 & 2)
 - ✅ Standardized absolute imports (`@/`).
 - ✅ Consolidated project folder structure.
 - ✅ Centralized all mock data to `lib/mocks`.
 - ✅ Resolved all build-time resolution errors.
+- ✅ Implemented foundational Refactor Architecture (Stores, Services, API).
 
 ---
 
