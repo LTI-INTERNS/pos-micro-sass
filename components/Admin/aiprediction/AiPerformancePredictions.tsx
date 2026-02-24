@@ -1,5 +1,5 @@
 import React from "react";
-import PerformanceCard, { PerformanceItem } from "./AiPerformanceCard";
+import PerformanceCard, { PerformanceItem } from "@/components/Admin/aiprediction/AiPerformanceCard";
 
 type Props = {
   title?: string;

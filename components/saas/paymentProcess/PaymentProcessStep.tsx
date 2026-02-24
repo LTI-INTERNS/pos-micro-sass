@@ -1,15 +1,15 @@
 import { useMemo, useState } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
 
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 import {
   InputField,
   FormErrorMessage,
-} from "@/app/components/saas/common/FormFields";
-import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
+} from "@/components/saas/common/FormFields";
+import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
+import GlassBackground from "@/components/saas/common/GlassBackground";
 
-import PaymentSuccessPopup from "./Paymentsuccesspopup";
+import PaymentSuccessPopup from "@/components/saas/paymentProcess/Paymentsuccesspopup";
 
 // Plan pricing 
 const PLAN_PRICES: Record<string, number> = {

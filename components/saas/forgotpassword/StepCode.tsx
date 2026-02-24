@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type Props = {
   email: string;

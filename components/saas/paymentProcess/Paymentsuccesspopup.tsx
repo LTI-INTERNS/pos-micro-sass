@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type PaymentSuccessPopupProps = {
   isOpen: boolean;

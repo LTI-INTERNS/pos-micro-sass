@@ -1,9 +1,9 @@
 "use client";
 
-import SalesForecastChart from "./SalesForecastChart";
-import InsightCard from "../MetricCard";
+import SalesForecastChart from "@/components/Admin/aiprediction/Sales/SalesForecastChart";
+import InsightCard from "@/components/Admin/aiprediction/MetricCard";
 import { TrendingUp } from "lucide-react";
-import SalesInsightsMetrics from "./SalesInsightsMetrics";
+import SalesInsightsMetrics from "@/components/Admin/aiprediction/Sales/SalesInsightsMetrics";
 
 export default function ProductAnalysisContent() {
   return (

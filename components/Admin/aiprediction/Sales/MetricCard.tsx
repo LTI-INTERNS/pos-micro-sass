@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export type MetricCardProps = {
   title: string;

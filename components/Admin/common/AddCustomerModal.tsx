@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import ModalShell from "./ModalShell";
-import FormField from "./FormField";
-import PopupActions from "./PopupActions";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import FormField from "@/components/Admin/common/FormField";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
 export type CustomerFormValues = {
   name: string;

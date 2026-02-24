@@ -1,5 +1,5 @@
 import React from "react";
-import MetricCard, { MetricCardProps } from "./MetricCard";
+import MetricCard, { MetricCardProps } from "@/components/Admin/aiprediction/Sales/MetricCard";
 
 export type MetricGridProps = {
   items: MetricCardProps[];

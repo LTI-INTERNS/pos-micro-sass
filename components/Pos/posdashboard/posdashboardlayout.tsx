@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import PosNavbar from './PosNav';
-import PreviousOrdersModal from './PreviousOrdersModal';
+import PosNavbar from '@/components/Pos/posdashboard/PosNav';
+import PreviousOrdersModal from '@/components/Pos/posdashboard/PreviousOrdersModal';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
-import PlanCardGrid from "@/app/components/saas/subscriptionPlan/PlanCardGrid";
+import GlassBackground from "@/components/saas/common/GlassBackground";
+import PlanCardGrid from "@/components/saas/subscriptionPlan/PlanCardGrid";
 
 type Props = {
   data: RegistrationData;

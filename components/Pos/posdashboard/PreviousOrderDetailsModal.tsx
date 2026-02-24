@@ -7,8 +7,8 @@ import type { PreviousOrderDetails, PreviousOrderItem } from "@/app/ordermanagem
 import OrderSummaryContent, {
   PaymentIcons,
   type CommonPaymentSummary,
-} from "../OrderSummaryContent";
-import { useReceiptPrinter } from "@/app/hooks/useReceiptActions";
+} from "@/components/Pos/OrderSummaryContent";
+import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 
 type Props = {
   open: boolean;

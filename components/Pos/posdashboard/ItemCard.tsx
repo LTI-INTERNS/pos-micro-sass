@@ -3,8 +3,8 @@
 import React from "react";
 import Image from "next/image";
 import { Package } from "lucide-react";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type Item = {
   id: number;

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import PopupActions from "./PopupActions";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
 export type SelectField = {
   name: string;

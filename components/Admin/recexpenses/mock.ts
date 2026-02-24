@@ -1,4 +1,4 @@
-import { RecurringExpenses } from "@/app/components/Admin/recexpenses/RecExpensesTable";
+import { RecurringExpenses } from "@/components/Admin/recexpenses/RecExpensesTable";
 
 export const mockRecurringExpenses: RecurringExpenses[] = [
   

@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import LogoUploadSection from "./LogoUploadSection";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import LogoUploadSection from "@/components/Admin/settings/Details/LogoUploadSection";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type Details = {
   name: string;

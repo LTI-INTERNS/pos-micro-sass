@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import FormField from "@/app/components/Admin/common/FormField";
-import ToggleSwitch from "../../common/ToggleSwitch";
+import FormField from "@/components/Admin/common/FormField";
+import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
 import { ExternalLink } from "lucide-react";
-import ReceiptPreviewModal from "./ReceiptPreviewModal";
+import ReceiptPreviewModal from "@/components/Admin/settings/AdditionalSettings/ReceiptPreviewModal";
 
 type ReceiptCustomizationProps = {
   headerText: string;

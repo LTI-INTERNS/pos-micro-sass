@@ -1,9 +1,9 @@
 "use client";
 
-import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
-import { Order } from "@/app/ordermanagement/data";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import { Order } from "@/lib/mocks/ordermanagement";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export default function OrdersTable({ orders }: { orders: Order[] }) {
     const { currency, useCents } = useCurrency();

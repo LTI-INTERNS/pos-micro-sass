@@ -1,8 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import StaffReportItem from './StaffReportItem';
-import { staffReportData } from '@/app/overview/mock/mockData';
+import StaffReportItem from '@/components/Admin/overview/StaffReportItem';
+import { staffReportData } from '@/lib/mocks/overview/mockData';
 
 export default function StaffReportSection() {
   const router = useRouter();
@@ -13,7 +13,7 @@ export default function StaffReportSection() {
         <h3 className="text-sm font-semibold text-black">
           Staff wise report
         </h3>
-        <button 
+        <button
           onClick={() => router.push('/staffmanagement')}
           className="text-sm text-orange-500 font-medium hover:underline cursor-pointer">
           View All

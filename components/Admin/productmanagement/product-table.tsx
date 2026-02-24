@@ -1,9 +1,9 @@
 "use client";
 
-import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
-import { Product } from "@/app/productmanagement/data";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import { Product } from "@/lib/mocks/productmanagement";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type Props = {
   products: Product [];

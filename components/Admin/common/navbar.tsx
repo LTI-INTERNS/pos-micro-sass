@@ -1,10 +1,10 @@
 'use client';
 
-import Clock from '../../Landing/clock';
+import Clock from '@/components/Landing/clock';
 import { Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import NotificationBell from '@/app/components/Admin/notifications/NotificationBell';
-import { useStoreInfo } from "@/app/context/StoreInfoContext";
+import NotificationBell from '@/components/Admin/notifications/NotificationBell';
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import Image from 'next/image'; // <-- Import Next.js Image
 
 interface NavbarProps {

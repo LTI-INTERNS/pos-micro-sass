@@ -1,18 +1,18 @@
 "use client";
 import React, { useMemo, useRef, useState } from "react";
-import ItemGrid from "../components/Pos/posdashboard/ItemGrid";
+import ItemGrid from "@/components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, {
   CustomerInfoPanelHandle,
   OrderItem,
-} from "../components/Pos/posdashboard/CustomerInfoPanel";
-import DashboardLayout from "../components/Pos/posdashboard/posdashboardlayout";
-import SearchBar from "../components/Admin/common/Search-bar";
+} from "@/components/Pos/posdashboard/CustomerInfoPanel";
+import DashboardLayout from "@/components/Pos/posdashboard/posdashboardlayout";
+import SearchBar from "@/components/Admin/common/Search-bar";
 import OrderPaymentModal, {
   PaymentSummary,
-} from "../components/Pos/posdashboard/OrderPaymentModal";
-import OrderConfirmation, { ConfirmItem } from "../components/Pos/OrderConfirmation";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { usePosSettings } from "@/app/context/PosSettingsContext";
+} from "@/components/Pos/posdashboard/OrderPaymentModal";
+import OrderConfirmation, { ConfirmItem } from "@/components/Pos/OrderConfirmation";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 import { Check, X } from "lucide-react";
 
 function OrderCompletePopup({

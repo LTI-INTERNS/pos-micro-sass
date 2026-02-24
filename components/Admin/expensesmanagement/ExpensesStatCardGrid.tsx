@@ -1,6 +1,6 @@
-import StatCard from '@/app/components/Admin/common/StatCard';
-import { calcStatSummary } from '@/app/utils/statCardUtils';
-import { Expenses } from './ExpensesTable';
+import StatCard from '@/components/Admin/common/StatCard';
+import { calcStatSummary } from '@/lib/utils/statCardUtils';
+import { Expenses } from '@/components/Admin/expensesmanagement/ExpensesTable';
 
 type Props = {
   expenses?: Expenses[];

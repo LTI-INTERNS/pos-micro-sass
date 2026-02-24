@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import CommonTable, { Column } from "../Admin/common/CommonTable";
-import Buttons from "../Admin/common/ActionButton";
-import SearchBar from "../Admin/common/Search-bar";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import Buttons from "@/components/Admin/common/ActionButton";
+import SearchBar from "@/components/Admin/common/Search-bar";
 
 type Customer = {
   id: number;

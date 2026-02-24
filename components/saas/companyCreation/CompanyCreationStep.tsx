@@ -2,14 +2,14 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { RegistrationData } from "@/app/companyregistration/page";
 
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
-import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import GlassBackground from "@/components/saas/common/GlassBackground";
+import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
+import ActionButton from "@/components/Admin/common/ActionButton";
 import {
   InputField,
   FormErrorMessage,
-} from "@/app/components/saas/common/FormFields";
-import LogoUploadPill from "@/app/components/saas/companyCreation/LogoUploadPill";
+} from "@/components/saas/common/FormFields";
+import LogoUploadPill from "@/components/saas/companyCreation/LogoUploadPill";
 
 type Errors = {
   companyName?: string;

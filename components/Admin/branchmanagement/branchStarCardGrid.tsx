@@ -1,4 +1,4 @@
-import StatCard from '@/app/components/Admin/common/StatCard';
+import StatCard from '@/components/Admin/common/StatCard';
 
 const statCards = [
   {

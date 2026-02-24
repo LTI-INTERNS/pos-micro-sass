@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ProductDemand, mockProducts } from "./mockProductData";
+import { ProductDemand, mockProducts } from "@/components/Admin/aiprediction/Product/mockProductData";
 
 const statusColors: Record<ProductDemand["status"], string> = {
   "High Demand": "bg-green-100 text-green-600",

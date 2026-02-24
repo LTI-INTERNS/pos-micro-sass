@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import FeaturesSection from "./FeaturesSection";
-import RegionalSettingsSection from "./RegionalSettingsSection";
-import LoyaltySettingsSection from "./LoyaltySettingsSection";
-import ReceiptCustomizationSection from "./ReceiptCustomizationSection";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import SystemImageSection from "./SystemImageSection";
-import SuccessPopup from "@/app/components/Admin/common/SuccessPopup";
-import { usePosSettings } from "@/app/context/PosSettingsContext";
-import { useReceiptSettings } from "@/app/context/ReceiptSettingsContext";
+import FeaturesSection from "@/components/Admin/settings/AdditionalSettings/FeaturesSection";
+import RegionalSettingsSection from "@/components/Admin/settings/AdditionalSettings/RegionalSettingsSection";
+import LoyaltySettingsSection from "@/components/Admin/settings/AdditionalSettings/LoyaltySettingsSection";
+import ReceiptCustomizationSection from "@/components/Admin/settings/AdditionalSettings/ReceiptCustomizationSection";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import SystemImageSection from "@/components/Admin/settings/AdditionalSettings/SystemImageSection";
+import SuccessPopup from "@/components/Admin/common/SuccessPopup";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
+import { useReceiptSettings } from "@/lib/context/ReceiptSettingsContext";
 
 type LocalReceiptSettings = {
   headerText: string;

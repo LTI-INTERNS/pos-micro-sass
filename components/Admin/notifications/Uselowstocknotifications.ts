@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useNotifications } from "@/app/context/NotificationsContext";
-import { usePosSettings } from "@/app/context/PosSettingsContext";
-import type { Product } from "@/app/productmanagement/data";
+import { useNotifications } from "@/lib/context/NotificationsContext";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
+import type { Product } from "@/lib/mocks/productmanagement";
 
 /**
  * useLowStockNotifications

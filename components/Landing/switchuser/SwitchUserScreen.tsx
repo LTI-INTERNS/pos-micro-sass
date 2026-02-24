@@ -3,9 +3,9 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import TimeDisplay from "../clock";
-import UserRow from "./UserRow";
-import { useImage } from "@/app/context/ImageContext";
+import TimeDisplay from "@/components/Landing/clock";
+import UserRow from "@/components/Landing/switchuser/UserRow";
+import { useImage } from "@/lib/context/ImageContext";
 
 export default function SwitchUserScreen() {
   const router = useRouter();

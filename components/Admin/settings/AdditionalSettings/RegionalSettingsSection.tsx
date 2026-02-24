@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import FormField from "@/app/components/Admin/common/FormField";
-import ToggleSwitch from "@/app/components/Admin/common/ToggleSwitch";
+import FormField from "@/components/Admin/common/FormField";
+import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
 
 type RegionalSettingsProps = {
   country: string;

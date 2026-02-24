@@ -2,7 +2,7 @@
 
 import AddCustomerModal, {
   CustomerFormValues,
-} from "@/app/components/Admin/common/AddCustomerModal";
+} from "@/components/Admin/common/AddCustomerModal";
 
 type AddCustomerFormProps = {
   open: boolean;

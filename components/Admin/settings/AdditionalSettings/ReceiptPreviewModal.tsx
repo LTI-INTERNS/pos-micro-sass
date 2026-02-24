@@ -2,13 +2,13 @@
 
 import React from "react";
 import { Printer } from "lucide-react";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
-import { useStoreInfo } from "@/app/context/StoreInfoContext";
-import ModalShell from "@/app/components/Admin/common/ModalShell";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import ReceiptDisplay from "./ReceiptDisplay";
-import { generateReceiptHTML } from "@/app/utils/generateReceiptHTML";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import ReceiptDisplay from "@/components/Admin/settings/AdditionalSettings/ReceiptDisplay";
+import { generateReceiptHTML } from "@/lib/utils/generateReceiptHTML";
 
 export type ReceiptPreviewProps = {
   open: boolean;

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 

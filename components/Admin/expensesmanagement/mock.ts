@@ -1,4 +1,4 @@
-import { Expenses } from "@/app/components/Admin/expensesmanagement/ExpensesTable";
+import { Expenses } from "@/components/Admin/expensesmanagement/ExpensesTable";
 
 export const mockExpenses: Expenses[] = [
   {

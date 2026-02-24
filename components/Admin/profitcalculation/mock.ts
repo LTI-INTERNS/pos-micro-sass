@@ -1,4 +1,4 @@
-import { Profit } from "@/app/components/Admin/profitcalculation/ProfitTable";
+import { Profit } from "@/components/Admin/profitcalculation/ProfitTable";
 
 export const mockProfits: Profit[] = [
   {

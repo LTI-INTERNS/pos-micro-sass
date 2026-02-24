@@ -2,7 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { Upload, Check, ExternalLink } from "lucide-react";
-import { useImage } from "@/app/context/ImageContext";
+import { useImage } from "@/lib/context/ImageContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 

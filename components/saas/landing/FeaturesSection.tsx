@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import SectionHeader, { SectionHeaderProps } from "./SectionHeader";
-import FeaturesGrid, { FeaturesGridProps, Feature } from "./FeaturesGrid";
+import SectionHeader, { SectionHeaderProps } from "@/components/saas/landing/SectionHeader";
+import FeaturesGrid, { FeaturesGridProps, Feature } from "@/components/saas/landing/FeaturesGrid";
 
 export type FeaturesSectionProps = {
   title: string;

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 import {
   useCSVExport,
   usePDFExport,
   type ExportColumn,
   type PDFOptions,
   type RowData,
-} from "@/app/components/Admin/reports/exportUtils";
+} from "@/components/Admin/reports/exportUtils";
 
 
 export type ExportFormat = "pdf" | "csv";

@@ -1,5 +1,5 @@
-import TopSellingItem from './TopSellingItem';
-import { topSellingItemsData } from '@/app/overview/mock/mockData';
+import TopSellingItem from '@/components/Admin/overview/TopSellingItem';
+import { topSellingItemsData } from '@/lib/mocks/overview/mockData';
 
 export default function TopSellingSection() {
   return (

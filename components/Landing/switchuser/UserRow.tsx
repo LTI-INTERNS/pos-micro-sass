@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import UserAvatar from "./UserAvatar";
+import UserAvatar from "@/components/Landing/switchuser/UserAvatar";
 
 const users = [
   { name: "Beby Jovancy", img: "https://i.pravatar.cc/150?img=32" },

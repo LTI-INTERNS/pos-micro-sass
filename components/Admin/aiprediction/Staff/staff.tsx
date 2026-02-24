@@ -1,8 +1,8 @@
 "use client";
 
-import PerformancePredictions, { PerformanceItem } from "@/app/components/Admin/aiprediction/AiPerformancePredictions";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import PerformancePredictions, { PerformanceItem } from "@/components/Admin/aiprediction/AiPerformancePredictions";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export default function Staff() {
   const { currency, useCents } = useCurrency();

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "../components/Admin/common/dashboard_layout";
-import DateRangePicker from "../components/Admin/common/DateRangeBar";
-import SearchBar from "../components/Admin/common/Search-bar";
-import FilterPopup from "../components/Admin/common/FilterPopup"; 
-import ActionButton from "../components/Admin/common/ActionButton";
-import ProfitTable, {Profit} from "../components/Admin/profitcalculation/ProfitTable";
-import StatCardGrid from "../components/Admin/profitcalculation/ProfitStatCardGrid";
-import { mockProfits } from "../components/Admin/profitcalculation/mock";
-import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
-import FilterChips from "../components/Admin/common/FilterChips";
-import { useCSVExport } from "../components/Admin/common/csvExport";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import FilterPopup from "@/components/Admin/common/FilterPopup"; 
+import ActionButton from "@/components/Admin/common/ActionButton";
+import ProfitTable, {Profit} from "@/components/Admin/profitcalculation/ProfitTable";
+import StatCardGrid from "@/components/Admin/profitcalculation/ProfitStatCardGrid";
+import { mockProfits } from "@/components/Admin/profitcalculation/mock";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import { useCSVExport } from "@/components/Admin/common/csvExport";
 
 type UserRole = "superadmin" | "admin" | "manager";
 

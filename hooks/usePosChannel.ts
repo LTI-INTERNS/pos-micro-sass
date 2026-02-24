@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { CustomerFormValues } from "@/app/components/Admin/common/AddCustomerModal";
-import { OrderItem } from "@/app/components/Pos/posdashboard/CustomerInfoPanel";
-import { PaymentSummary } from "@/app/components/Pos/posdashboard/OrderPaymentModal";
+import { CustomerFormValues } from "@/components/Admin/common/AddCustomerModal";
+import { OrderItem } from "@/components/Pos/posdashboard/CustomerInfoPanel";
+import { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
 
 export type PosMessage =
   | { type: "FEATURE_TOGGLE"; enabled: boolean } 

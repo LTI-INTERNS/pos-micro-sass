@@ -9,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { salesBarData } from '@/app/overview/mock/mockData';
+import { salesBarData } from '@/lib/mocks/overview/mockData';
 
 export default function SalesBarChart() {
   const router = useRouter();
@@ -18,14 +18,14 @@ export default function SalesBarChart() {
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-semibold text-black">Sales report</h3>
-        <button 
+        <button
           className="text-sm text-orange-500 font-medium hover:underline cursor-pointer"
           onClick={() => router.push('/reports')}>
           View All
         </button>
       </div>
 
-      
+
       <ResponsiveContainer width="100%" height={250}>
         <BarChart
           data={salesBarData}
@@ -33,7 +33,7 @@ export default function SalesBarChart() {
             top: 10,
             right: 10,
             left: 0,
-            bottom: 10, 
+            bottom: 10,
           }}
         >
           <XAxis
@@ -42,13 +42,13 @@ export default function SalesBarChart() {
             angle={-90}
             textAnchor="end"
             height={50}
-            tickMargin={27}     
+            tickMargin={27}
             tick={{ fontSize: 14 }}
           />
 
           <YAxis tick={{ fontSize: 14 }} />
 
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000',
               border: 'none',
@@ -59,7 +59,7 @@ export default function SalesBarChart() {
           <Bar
             dataKey="value"
             fill="#93c5fd"
-            radius={[4, 4, 0, 0]} 
+            radius={[4, 4, 0, 0]}
           />
         </BarChart>
       </ResponsiveContainer>

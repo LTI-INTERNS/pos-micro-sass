@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import CustomerActionsBar from "@/app/components/Admin/customermanagement/customer-actions";
-import CustomersTable from "@/app/components/Admin/customermanagement/customers-table";
-import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
-import StatCardGrid from "@/app/components/Admin/customermanagement/customerStarGrid";
-import { customersData } from "./data";
-import { useTableFilters } from "@/app/components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import CustomerActionsBar from "@/components/Admin/customermanagement/customer-actions";
+import CustomersTable from "@/components/Admin/customermanagement/customers-table";
+import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
+import StatCardGrid from "@/components/Admin/customermanagement/customerStarGrid";
+import { customersData } from "@/lib/mocks/customermanagement";
+import { useTableFilters } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
 
 
 type Customer = {

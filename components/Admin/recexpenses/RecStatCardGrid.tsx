@@ -1,6 +1,6 @@
-import StatCard from '@/app/components/Admin/common/StatCard';
-import { calcStatSummary } from '@/app/utils/statCardUtils';
-import { RecurringExpenses } from './RecExpensesTable';
+import StatCard from '@/components/Admin/common/StatCard';
+import { calcStatSummary } from '@/lib/utils/statCardUtils';
+import { RecurringExpenses } from '@/components/Admin/recexpenses/RecExpensesTable';
 
 type Props = {
   recurringexpenses?: RecurringExpenses[];

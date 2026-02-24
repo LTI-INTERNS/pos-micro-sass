@@ -1,9 +1,9 @@
 "use client";
 
-import BranchPerformanceChart from "./BranchPerformanceChart";
-import InsightCard from "../MetricCard";
-import BranchForecastCard from "./BranchForecastCard";
-import { mockBranchData } from "./mockBranchData";
+import BranchPerformanceChart from "@/components/Admin/aiprediction/Branch/BranchPerformanceChart";
+import InsightCard from "@/components/Admin/aiprediction/MetricCard";
+import BranchForecastCard from "@/components/Admin/aiprediction/Branch/BranchForecastCard";
+import { mockBranchData } from "@/components/Admin/aiprediction/Branch/mockBranchData";
 import { TrendingUp } from "lucide-react";
 
 export default function ProductAnalysisContent() {

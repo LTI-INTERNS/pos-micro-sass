@@ -1,7 +1,7 @@
 // StaffAnalysisContent.tsx
 "use client";
 
-import Staff from "./staff";
+import Staff from "@/components/Admin/aiprediction/Staff/staff";
 
 export default function StaffAnalysisContent() {
   return (

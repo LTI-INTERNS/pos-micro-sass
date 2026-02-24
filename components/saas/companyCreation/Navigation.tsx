@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import Navbar from "../common/Navbar";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import Navbar from "@/components/saas/common/Navbar";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type NavigationProps = {
   title?: string;

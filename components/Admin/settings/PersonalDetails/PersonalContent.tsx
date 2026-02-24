@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import EditEntityModal, { EditField } from "@/app/components/Admin/common/EditPopup";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 export default function PersonalContent() {
   const [modalOpen, setModalOpen] = React.useState(false);

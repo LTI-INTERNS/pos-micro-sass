@@ -1,5 +1,5 @@
 import React from 'react';
-import GlassCard from './Glasscard';
+import GlassCard from '@/components/saas/landing/Glasscard';
 import { Zap, Cloud, BarChart3, Target } from 'lucide-react';
 
 const About: React.FC = () => {

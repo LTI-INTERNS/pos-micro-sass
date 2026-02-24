@@ -8,7 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { salesLineData } from '@/app/overview/mock/mockData';
+import { salesLineData } from '@/lib/mocks/overview/mockData';
 
 export default function SalesLineChart() {
   return (
@@ -24,7 +24,7 @@ export default function SalesLineChart() {
           <YAxis
             tick={{ fontSize: 14 }}
           />
-          <Tooltip 
+          <Tooltip
             contentStyle={{
               backgroundColor: '#000',
               border: 'none',

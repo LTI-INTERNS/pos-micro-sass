@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import FeaturesSection from "@/app/components/saas/landing/FeaturesSection";
+import FeaturesSection from "@/components/saas/landing/FeaturesSection";
 import { 
   FileUser, 
   TrendingUp, 

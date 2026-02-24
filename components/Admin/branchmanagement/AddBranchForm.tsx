@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import ModalShell from "@/app/components/Admin/common/ModalShell";
-import PopupActions from "@/app/components/Admin/common/PopupActions";
-import FormField from "@/app/components/Admin/common/FormField";
-import { branchesData } from "@/app/branchmanagement/data";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import PopupActions from "@/components/Admin/common/PopupActions";
+import FormField from "@/components/Admin/common/FormField";
+import { branchesData } from "@/lib/mocks/branchmanagement";
 
 type FormValues = {
   branchId: string;

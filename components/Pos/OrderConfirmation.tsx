@@ -1,19 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Buttons from "../Admin/common/ActionButton";
-import type { PaymentSummary } from "./posdashboard/OrderPaymentModal";
-import { useCurrency } from "@/app/context/CurrencyContext";
+import Buttons from "@/components/Admin/common/ActionButton";
+import type { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
+import { useCurrency } from "@/lib/context/CurrencyContext";
 import { Mail, X } from "lucide-react";
 
 import OrderSummaryContent, {
   PaymentIcons,
   type CommonPaymentSummary,
   type CommonOrderItem,
-} from "./OrderSummaryContent";
+} from "@/components/Pos/OrderSummaryContent";
 
-import FormField from "../Admin/common/FormField";
-import PopupActions from "../Admin/common/PopupActions";
+import FormField from "@/components/Admin/common/FormField";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
 export type ConfirmItem = CommonOrderItem;
 

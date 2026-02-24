@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Delete, Check, X } from "lucide-react";
 
-import DiscountPopup, { DiscountOption } from "./DiscountPopup";
+import DiscountPopup, { DiscountOption } from "@/components/Pos/posdashboard/DiscountPopup";
 
 export type PaymentSummary = {
   orderNo: string | number;

@@ -1,4 +1,4 @@
-import DetailsForm from "./DetailsForm";
+import DetailsForm from "@/components/Admin/settings/Details/DetailsForm";
 
 type BranchDetailsProps = {
   initial?: {

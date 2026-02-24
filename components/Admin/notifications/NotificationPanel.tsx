@@ -2,7 +2,7 @@
 
 import React from "react";
 import { CheckCheck, X } from "lucide-react";
-import type { Notification, NotificationType } from "../../../context/NotificationsContext";
+import type { Notification, NotificationType } from "@/lib/context/NotificationsContext";
 
 export type { Notification, NotificationType };
 

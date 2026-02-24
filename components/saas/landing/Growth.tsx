@@ -1,7 +1,7 @@
 "use client";
 
 import { CloudLightning, BarChart3, Box, UserCheck } from "lucide-react";
-import FeatureCard from "./FeatureCard";
+import FeatureCard from "@/components/saas/landing/FeatureCard";
 
 export default function GrowthSection() {
   return (

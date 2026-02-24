@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
-import StatCardGrid from "@/app/components/Admin/ordermanagement/orderStarCardGrid";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
-import OrdersTable from "@/app/components/Admin/ordermanagement/order-table";
-import { ordersData } from "./data";
-import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/components/Admin/ordermanagement/orderStarCardGrid";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
+import OrdersTable from "@/components/Admin/ordermanagement/order-table";
+import { ordersData } from "@/lib/mocks/ordermanagement";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
 
 type Order = {
   id: number;

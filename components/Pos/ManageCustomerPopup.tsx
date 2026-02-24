@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import ManageCustomer from "./ManageCustomer";
-import AddCustomerForm from "./posdashboard/AddCustomerForm";
-import { CustomerFormValues } from "@/app/components/Admin/common/AddCustomerModal";
+import ManageCustomer from "@/components/Pos/ManageCustomer";
+import AddCustomerForm from "@/components/Pos/posdashboard/AddCustomerForm";
+import { CustomerFormValues } from "@/components/Admin/common/AddCustomerModal";
 
 type Customer = {
   id: number;

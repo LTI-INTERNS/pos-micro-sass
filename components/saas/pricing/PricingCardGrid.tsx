@@ -1,5 +1,5 @@
 import React from 'react'
-import BaseCard from '../common/BaseCard'
+import BaseCard from '@/components/saas/common/BaseCard'
 
 const PricingCardGrid = () => {
   return (

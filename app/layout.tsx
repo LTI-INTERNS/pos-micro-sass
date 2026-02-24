@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Poppins } from "next/font/google";
-import { CurrencyProvider } from "@/app/context/CurrencyContext";
-import { ImageProvider } from "@/app/context/ImageContext";
-import { PosSettingsProvider } from "@/app/context/PosSettingsContext";
-import { NotificationsProvider } from "@/app/context/NotificationsContext";
-import { StoreInfoProvider } from "@/app/context/StoreInfoContext";
-import { ReceiptSettingsProvider } from "@/app/context/ReceiptSettingsContext";
+import { CurrencyProvider } from "@/lib/context/CurrencyContext";
+import { ImageProvider } from "@/lib/context/ImageContext";
+import { PosSettingsProvider } from "@/lib/context/PosSettingsContext";
+import { NotificationsProvider } from "@/lib/context/NotificationsContext";
+import { StoreInfoProvider } from "@/lib/context/StoreInfoContext";
+import { ReceiptSettingsProvider } from "@/lib/context/ReceiptSettingsContext";
 
-import "./globals.css";
+import "@/app/globals.css";
 
 const poppins = Poppins({
   subsets: ["latin"],

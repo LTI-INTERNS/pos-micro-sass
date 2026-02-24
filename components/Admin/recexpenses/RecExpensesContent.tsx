@@ -1,19 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import DateRangePicker from "../common/DateRangeBar";
-import SearchBar from "../common/Search-bar";
-import FilterPopup from "../common/FilterPopup";
-import ActionButton from "../common/ActionButton";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";
 import RecurringExpensesTable, {
   RecurringExpenses,
-} from "./RecExpensesTable";
-import StatCardGrid from "./RecStatCardGrid";
-import AddRecExpensesPopup from "./AddRecExpensesPopup";
-import { mockRecurringExpenses } from "./mock";
-import { useTableFilters, getFilterOptions } from "../common/Filterlogic";
-import FilterChips from "../common/FilterChips";
-import { useCSVExport } from "../common/csvExport";
+} from "@/components/Admin/recexpenses/RecExpensesTable";
+import StatCardGrid from "@/components/Admin/recexpenses/RecStatCardGrid";
+import AddRecExpensesPopup from "@/components/Admin/recexpenses/AddRecExpensesPopup";
+import { mockRecurringExpenses } from "@/components/Admin/recexpenses/mock";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import { useCSVExport } from "@/components/Admin/common/csvExport";
 
 type UserRole = "superadmin" | "admin" | "manager";
 

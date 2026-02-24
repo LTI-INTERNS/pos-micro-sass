@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bell } from "lucide-react";
-import { useNotifications } from "../../../context/NotificationsContext";
-import type { Notification, ProductApprovalData } from "../../../context/NotificationsContext";
-import NotificationPanel from "./NotificationPanel";
-import NotificationMessagePopup from "@/app/components/Admin/notifications/NotificationMessagePopup";
-import ProductApprovalModal from "./ProductApprovalModal";
-import NegativeStockAlertModal from "./NegativeStockAlertModal";
-import type { NegativeStockAlertData } from "./useNegativeStockAlerts";
+import { useNotifications } from "@/lib/context/NotificationsContext";
+import type { Notification, ProductApprovalData } from "@/lib/context/NotificationsContext";
+import NotificationPanel from "@/components/Admin/notifications/NotificationPanel";
+import NotificationMessagePopup from "@/components/Admin/notifications/NotificationMessagePopup";
+import ProductApprovalModal from "@/components/Admin/notifications/ProductApprovalModal";
+import NegativeStockAlertModal from "@/components/Admin/notifications/NegativeStockAlertModal";
+import type { NegativeStockAlertData } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
 export default function NotificationBell() {
   const {

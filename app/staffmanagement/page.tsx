@@ -1,22 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import DashboardLayout from "../components/Admin/common/dashboard_layout";
-import DateRangeBar from "../components/Admin/common/DateRangeBar";
-import SearchBar from "../components/Admin/common/Search-bar";
-import CommonTable, { Column } from "../components/Admin/common/CommonTable";
-import AddStaffPopup from "../components/Admin/staffmanagement/AddStaffPopup";
-import ActionButton from "../components/Admin/common/ActionButton";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
-import FilterPopup from "../components/Admin/common/FilterPopup";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangeBar from "@/components/Admin/common/DateRangeBar";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import AddStaffPopup from "@/components/Admin/staffmanagement/AddStaffPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
 import {
   useTableFilters,
   getFilterOptions,
-} from "../components/Admin/common/Filterlogic";
-import { useCSVExport } from "../components/Admin/common/csvExport";
-import { staffData } from "./mock/mockStaffData";
-import DeletePopup from "../components/Admin/common/Deletepopup";
-import EditEntityModal, { EditField } from "@/app/components/Admin/common/EditPopup";
+} from "@/components/Admin/common/Filterlogic";
+import { useCSVExport } from "@/components/Admin/common/csvExport";
+import { staffData } from "@/lib/mocks/staffmanagement/mockStaffData";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 
 type Staff = {
   id: string;
@@ -89,12 +89,12 @@ export default function StaffManagementPage() {
       },
       ...(userRole === "superadmin"
         ? [
-            {
-              name: "branch",
-              placeholder: "Branch",
-              options: getFilterOptions(staffData, "branch"),
-            },
-          ]
+          {
+            name: "branch",
+            placeholder: "Branch",
+            options: getFilterOptions(staffData, "branch"),
+          },
+        ]
         : []),
     ];
   }, [userRole, baseData]);

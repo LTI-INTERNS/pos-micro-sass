@@ -2,9 +2,9 @@
 
 import React from "react";
 import { AlertTriangle, Package, MapPin, User, Clock, TrendingDown, X } from "lucide-react";
-import ModalShell from "@/app/components/Admin/common/ModalShell";
-import PopupActions from "@/app/components/Admin/common/PopupActions";
-import type { NegativeStockAlertData } from "./useNegativeStockAlerts";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import PopupActions from "@/components/Admin/common/PopupActions";
+import type { NegativeStockAlertData } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
 type Props = {
   open: boolean;

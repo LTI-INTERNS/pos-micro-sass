@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Clock from '../../Landing/clock';
+import Clock from '@/components/Landing/clock';
 import { Menu, History, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useStoreInfo } from "@/app/context/StoreInfoContext";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
 interface NavbarProps {
   toggleSidebar: () => void;

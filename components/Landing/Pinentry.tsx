@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { useImage } from "@/app/context/ImageContext";
+import { useImage } from "@/lib/context/ImageContext";
 
 type Cashier = {
   name: string;

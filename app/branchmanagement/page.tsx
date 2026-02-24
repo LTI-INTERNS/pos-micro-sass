@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import BranchActionsBar from "@/app/components/Admin/branchmanagement/branches-actions";
-import BranchesTable from "@/app/components/Admin/branchmanagement/branches-table";
-import StatCardGrid from "@/app/components/Admin/branchmanagement/branchStarCardGrid";
-import FilterPopup from "@/app/components/Admin/common/FilterPopup";
-import { branchesData } from "./data";
-import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import BranchActionsBar from "@/components/Admin/branchmanagement/branches-actions";
+import BranchesTable from "@/components/Admin/branchmanagement/branches-table";
+import StatCardGrid from "@/components/Admin/branchmanagement/branchStarCardGrid";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
+import { branchesData } from "@/lib/mocks/branchmanagement";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
 
 type Branch = {
   id: string;

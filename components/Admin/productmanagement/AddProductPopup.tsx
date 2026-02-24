@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import Image from "next/image"; // next/image for optimized images
-import ModalShell from "../common/ModalShell";
-import FormField from "../common/FormField";
-import PopupActions from "../common/PopupActions";
-import { useNotifications } from "../../../context/NotificationsContext";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import FormField from "@/components/Admin/common/FormField";
+import PopupActions from "@/components/Admin/common/PopupActions";
+import { useNotifications } from "@/lib/context/NotificationsContext";
 
 type SoldBy = "each" | "volume_weight";
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import ModalShell from "../common/ModalShell";
-import ActionButton from "../common/ActionButton";
-import type { Product } from "../../../productmanagement/data";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import type { Product } from "@/lib/mocks/productmanagement";
 
 type Props = {
   product: Product;

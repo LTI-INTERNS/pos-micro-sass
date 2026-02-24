@@ -2,9 +2,9 @@
 
 import React from "react";
 import Image from "next/image";
-import ModalShell from "../common/ModalShell";
-import FormField from "../common/FormField";
-import PopupActions from "../common/PopupActions";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import FormField from "@/components/Admin/common/FormField";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
 type ExpenseValues = {
   date: string;

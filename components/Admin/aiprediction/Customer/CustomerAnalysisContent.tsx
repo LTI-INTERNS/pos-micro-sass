@@ -1,11 +1,11 @@
 
 "use client";
 
-import CustomerReportChart from "./CustomerReportChart";
-import StatCardGrid from "./CustomerStatCardGrid"
-import PeakVisitDaysCard from "./PeakVisitDaysCard";
-import { PEAK_VISIT_DATA } from "./mock";
-import InsightCard from "../MetricCard";
+import CustomerReportChart from "@/components/Admin/aiprediction/Customer/CustomerReportChart";
+import StatCardGrid from "@/components/Admin/aiprediction/Customer/CustomerStatCardGrid"
+import PeakVisitDaysCard from "@/components/Admin/aiprediction/Customer/PeakVisitDaysCard";
+import { PEAK_VISIT_DATA } from "@/components/Admin/aiprediction/Customer/mock";
+import InsightCard from "@/components/Admin/aiprediction/MetricCard";
 import { TrendingUp } from "lucide-react";
 
 export default function StaffAnalysisContent() {

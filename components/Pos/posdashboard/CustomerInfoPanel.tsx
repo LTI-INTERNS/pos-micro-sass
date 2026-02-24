@@ -9,11 +9,11 @@ import {
   useState,
   forwardRef,
 } from "react";
-import ManageCustomersPopup from "@/app/components/Pos/ManageCustomerPopup";
-import { CustomerFormValues } from "@/app/components/Admin/common/AddCustomerModal";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { usePosChannel, PosMessage } from "@/app/hooks/usePosChannel";
-import { PaymentSummary } from "@/app/components/Pos/posdashboard/OrderPaymentModal";
+import ManageCustomersPopup from "@/components/Pos/ManageCustomerPopup";
+import { CustomerFormValues } from "@/components/Admin/common/AddCustomerModal";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { usePosChannel, PosMessage } from "@/hooks/usePosChannel";
+import { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
 
 export type CustomerInfoPanelHandle = {
   sendPaymentSummary: (summary: PaymentSummary) => void;

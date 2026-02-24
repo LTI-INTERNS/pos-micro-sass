@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import FormField from "@/app/components/Admin/common/FormField";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import FormField from "@/components/Admin/common/FormField";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type LoyaltySettingsProps = {
   pointsEarningPercentage: number;

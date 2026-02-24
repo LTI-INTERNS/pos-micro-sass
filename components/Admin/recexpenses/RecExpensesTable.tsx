@@ -1,8 +1,8 @@
 "use client";
 
-import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable"; 
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable"; 
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export type RecurringExpenses = {
   id: string;

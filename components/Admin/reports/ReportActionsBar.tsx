@@ -1,7 +1,7 @@
 "use client";
 
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import TabSelector from "@/app/components/Admin/common/TabSelector";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import TabSelector from "@/components/Admin/common/TabSelector";
 
 const TABLE_TABS = [
   { id: "sales",    label: "Sales"    },

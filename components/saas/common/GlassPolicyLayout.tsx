@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import GlassBackground from "./GlassBackground";
+import GlassBackground from "@/components/saas/common/GlassBackground";
 
 type GlassPolicyLayoutProps = {
   title: string;

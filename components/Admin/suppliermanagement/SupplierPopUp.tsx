@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import ModalShell from "../common/ModalShell";
-import ReusableForm, { FieldConfig } from "../common/ReusableForm";
-import FormField from "../common/FormField";
-import PopupActions from "../common/PopupActions";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import ReusableForm, { FieldConfig } from "@/components/Admin/common/ReusableForm";
+import FormField from "@/components/Admin/common/FormField";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
 type SupplierType = "co-operate" | "individual";
 

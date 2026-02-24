@@ -1,11 +1,11 @@
 "use client";
 
 import { useCallback } from "react";
-import { generateReceiptHTML } from "@/app/utils/generateReceiptHTML";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
-import { useReceiptSettings } from "@/app/context/ReceiptSettingsContext";
-import { useStoreInfo } from "@/app/context/StoreInfoContext";
+import { generateReceiptHTML } from "@/lib/utils/generateReceiptHTML";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
+import { useReceiptSettings } from "@/lib/context/ReceiptSettingsContext";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
 // ─── The data shape this hook needs — generic enough for any order source ───
 export type ReceiptOrderData = {

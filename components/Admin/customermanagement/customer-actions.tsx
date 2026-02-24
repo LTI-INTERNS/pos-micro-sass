@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import AddCustomerForm from "@/app/components/Admin/customermanagement/AddCustomerForm";
-import DeletePopup from "../common/Deletepopup";
-import type { Customer } from "./customers-table";
-import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import AddCustomerForm from "@/components/Admin/customermanagement/AddCustomerForm";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import type { Customer } from "@/components/Admin/customermanagement/customers-table";
+import EditEntityModal, {EditField} from "@/components/Admin/common/EditPopup";
 
 type Props = {
   selectedCustomer: Customer | null;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ModalShell from "./ModalShell";
-import PopupActions from "./PopupActions";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
 export type EditField = {
   name: string;

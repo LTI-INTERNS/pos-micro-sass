@@ -1,8 +1,8 @@
 import React from 'react'
-import CommonLayout from '../components/saas/common/CommonLayout'
-import GlassBackground from '../components/saas/common/GlassBackground'
-import PricingCardGrid from '../components/saas/pricing/PricingCardGrid'
-import Navbar from '../components/saas/landing/Navigation'
+import CommonLayout from '@/components/saas/common/CommonLayout'
+import GlassBackground from '@/components/saas/common/GlassBackground'
+import PricingCardGrid from '@/components/saas/pricing/PricingCardGrid'
+import Navbar from '@/components/saas/landing/Navigation'
      
 
 const page = () => {

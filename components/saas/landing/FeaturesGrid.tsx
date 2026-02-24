@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import FeatureCard, { FeatureCardProps } from "./FeatureCard";
+import FeatureCard, { FeatureCardProps } from "@/components/saas/landing/FeatureCard";
 
 export type Feature = {
   id: string;

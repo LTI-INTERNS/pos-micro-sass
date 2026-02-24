@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useMemo, useCallback } from "react";
-import type { NegativeStockAlertData } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
+import type { NegativeStockAlertData } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
 export type NotificationType =
   | "info"

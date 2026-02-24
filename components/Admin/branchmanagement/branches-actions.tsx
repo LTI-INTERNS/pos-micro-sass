@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import ActionButton from "@/app/components/Admin/common/ActionButton";  
-import AddBranchForm from "@/app/components/Admin/branchmanagement/AddBranchForm";
-import DeletePopup from "../common/Deletepopup";
-import type { Branch } from "./branches-table";
-import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";  
+import AddBranchForm from "@/components/Admin/branchmanagement/AddBranchForm";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import type { Branch } from "@/components/Admin/branchmanagement/branches-table";
+import EditEntityModal, {EditField} from "@/components/Admin/common/EditPopup";
 
 type Props = {
   selectedBranch: Branch | null;

@@ -1,6 +1,6 @@
 "use client";
 
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type Product = {
   id: string;

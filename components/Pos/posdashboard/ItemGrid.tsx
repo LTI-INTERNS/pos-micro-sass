@@ -1,6 +1,6 @@
 "use client";
 
-import ItemCard from "./ItemCard";
+import ItemCard from "@/components/Pos/posdashboard/ItemCard";
 
 type Item = {
   id: number;

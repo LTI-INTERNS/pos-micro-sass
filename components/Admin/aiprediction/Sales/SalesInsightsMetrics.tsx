@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import MetricGrid from "./MetricGrid";
-import type { MetricCardProps } from "./MetricCard";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import MetricGrid from "@/components/Admin/aiprediction/Sales/MetricGrid";
+import type { MetricCardProps } from "@/components/Admin/aiprediction/Sales/MetricCard";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export type SalesInsightsMetricsProps = {
   className?: string;

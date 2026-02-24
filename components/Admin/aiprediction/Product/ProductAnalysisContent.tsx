@@ -1,8 +1,8 @@
 "use client";
 
-import ProductForecastChart from "./ProductForecastChart";
-import InsightCard from "../MetricCard";
-import ProductDemandList from "./ProductDemanCard";
+import ProductForecastChart from "@/components/Admin/aiprediction/Product/ProductForecastChart";
+import InsightCard from "@/components/Admin/aiprediction/MetricCard";
+import ProductDemandList from "@/components/Admin/aiprediction/Product/ProductDemanCard";
 import { Brain } from "lucide-react";
 
 export default function ProductAnalysisContent() {

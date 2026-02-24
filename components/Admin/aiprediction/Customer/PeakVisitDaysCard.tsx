@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ProgressBar from "../AiProgressBar";
+import ProgressBar from "@/components/Admin/aiprediction/AiProgressBar";
 
 type PeakVisitItem = {
   id: string;

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import PlanCard from "./PlanCard";
-import { planCardsData, PlanCardData } from "./planCardsData";
-import PaymentModal, { PaymentPlan } from "./PaymentModal";
+import PlanCard from "@/components/Admin/settings/subscriptionplan/PlanCard";
+import { planCardsData, PlanCardData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
+import PaymentModal, { PaymentPlan } from "@/components/Admin/settings/subscriptionplan/PaymentModal";
 
 type Props = {
   defaultPlanId?: string;

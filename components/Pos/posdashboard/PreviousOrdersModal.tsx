@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ModalShell from "../../Admin/common/ModalShell";
-import SearchBar from "../../Admin/common/Search-bar";
-import CommonTable, { Column } from "../../Admin/common/CommonTable";
-import { ordersData, Order } from "@/app/ordermanagement/data";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import { ordersData, Order } from "@/lib/mocks/ordermanagement";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
-import PreviousOrderDetailsModal from "./PreviousOrderDetailsModal";
+import PreviousOrderDetailsModal from "@/components/Pos/posdashboard/PreviousOrderDetailsModal";
 import { previousOrderDetailsMap } from "@/app/ordermanagement/previousOrderDetailsMock";
 
 type Props = {

@@ -2,11 +2,11 @@
 
 import * as React from "react";
 
-import ModalShell from "@/app/components/Admin/common/ModalShell";
-import FormField from "@/app/components/Admin/common/FormField";
-import PopupActions from "@/app/components/Admin/common/PopupActions";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import FormField from "@/components/Admin/common/FormField";
+import PopupActions from "@/components/Admin/common/PopupActions";
 
-import { staffData } from "../../../staffmanagement/mock/mockStaffData";
+import { staffData } from "@/lib/mocks/staffmanagement/mockStaffData";
 
 type Props = {
   onClose: () => void;

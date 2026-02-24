@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import TabSelector from "@/app/components/Admin/common/TabSelector";
-import CustomerGrowthChart from "./CustomerGrowthChart";
-import CustomerBranchChart from "./CustomerBranchChart";
+import TabSelector from "@/components/Admin/common/TabSelector";
+import CustomerGrowthChart from "@/components/Admin/aiprediction/Customer/CustomerGrowthChart";
+import CustomerBranchChart from "@/components/Admin/aiprediction/Customer/CustomerBranchChart";
 
 const CUSTOMER_TABS = [
   { id: "growth", label: "Customer Growth" },

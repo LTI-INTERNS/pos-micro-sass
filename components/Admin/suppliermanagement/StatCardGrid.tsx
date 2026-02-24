@@ -1,5 +1,5 @@
-import StatCard from '../common/StatCard';
-import type { Supplier } from './SupplierTable';
+import StatCard from '@/components/Admin/common/StatCard';
+import type { Supplier } from '@/components/Admin/suppliermanagement/SupplierTable';
 
 type Props = {
   suppliers?: Supplier[];

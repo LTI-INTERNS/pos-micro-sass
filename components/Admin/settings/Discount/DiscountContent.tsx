@@ -1,16 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import DateRangePicker from "../../common/DateRangeBar";
-import SearchBar from "../../common/Search-bar";
-import FilterPopup from "../../common/FilterPopup";
-import ActionButton from "../../common/ActionButton";
-import DiscountTable, { Discount } from "./DiscountTable";
-import AddDiscountPopup from "./AddDiscountPopup";
-import DeletePopup from "@/app/components/Admin/common/Deletepopup";
-import { mockDiscounts } from "./mock";
-import { useTableFilters, getFilterOptions } from "../../common/Filterlogic";
-import FilterChips from "../../common/FilterChips";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import DiscountTable, { Discount } from "@/components/Admin/settings/Discount/DiscountTable";
+import AddDiscountPopup from "@/components/Admin/settings/Discount/AddDiscountPopup";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import { mockDiscounts } from "@/components/Admin/settings/Discount/mock";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
 
 export default function DiscountContent() {
   const [start, setStart] = useState<Date | undefined>();

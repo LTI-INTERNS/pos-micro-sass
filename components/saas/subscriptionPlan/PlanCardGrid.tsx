@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import BaseCard from "../common/BaseCard";
+import BaseCard from "@/components/saas/common/BaseCard";
 
 type Props = {
   selected: string;

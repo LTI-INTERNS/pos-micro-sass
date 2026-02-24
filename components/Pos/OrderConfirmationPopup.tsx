@@ -1,7 +1,7 @@
 import React from "react";
-import OrderConfirmation from "./OrderConfirmation";
-import type { PaymentSummary } from "./posdashboard/OrderPaymentModal";
-import type { ConfirmItem } from "./OrderConfirmation";
+import OrderConfirmation from "@/components/Pos/OrderConfirmation";
+import type { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
+import type { ConfirmItem } from "@/components/Pos/OrderConfirmation";
 
 type Props = {
   open: boolean;

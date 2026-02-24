@@ -1,4 +1,4 @@
-import type { AccordionItem } from "@/app/components/saas/common/GlassAccordion";
+import type { AccordionItem } from "@/components/saas/common/GlassAccordion";
 
 export const privacyItems: AccordionItem[] = [
   {

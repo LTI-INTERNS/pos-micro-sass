@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import BranchGrowthItem from './BranchGrowthItem'
+import BranchGrowthItem from '@/components/Admin/branchmanagement/BranchGrowthItem'
 export const BranchData =[
   {
     id: 1,

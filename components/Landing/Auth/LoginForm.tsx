@@ -6,8 +6,8 @@ import {
   InputField,
   PasswordField,
   FormErrorMessage,
-} from "@/app/components/saas/common/FormFields";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+} from "@/components/saas/common/FormFields";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type LoginResponse =
   | {

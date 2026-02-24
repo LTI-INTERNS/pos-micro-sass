@@ -1,6 +1,6 @@
 "use client";
 
-import TabSelector from "@/app/components/Admin/common/TabSelector";
+import TabSelector from "@/components/Admin/common/TabSelector";
 import {
   LineChart, Line, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer,

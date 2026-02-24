@@ -1,7 +1,7 @@
 "use client";
 
-import { useCurrency } from '@/app/context/CurrencyContext';
-import { formatCurrency } from "@/app/context/formatCurrency";
+import { useCurrency } from '@/lib/context/CurrencyContext';
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type StatCardProps = {
   title: string;

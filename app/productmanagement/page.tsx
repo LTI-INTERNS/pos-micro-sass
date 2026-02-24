@@ -1,24 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
-import StatCardGrid from "@/app/components/Admin/productmanagement/productStarCardGrid";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import ProductActionsBar from "@/app/components/Admin/productmanagement/product-actions";
-import FilterPopup from "../components/Admin/common/FilterPopup";
-import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
-import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
-import AddProductPopup from "@/app/components/Admin/productmanagement/AddProductPopup";
-import AddStockPopup from "@/app/components/Admin/productmanagement/addStockPopup";
-import DeletePopup from "@/app/components/Admin/common/Deletepopup";
-import EditEntityModal from "@/app/components/Admin/common/EditPopup";
-import { useLowStockNotifications } from "@/app/components/Admin/notifications/Uselowstocknotifications";
-import { useNegativeStockAlerts } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/components/Admin/productmanagement/productStarCardGrid";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import ProductActionsBar from "@/components/Admin/productmanagement/product-actions";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import ProductsTable from "@/components/Admin/productmanagement/product-table";
+import AddProductPopup from "@/components/Admin/productmanagement/AddProductPopup";
+import AddStockPopup from "@/components/Admin/productmanagement/addStockPopup";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import EditEntityModal from "@/components/Admin/common/EditPopup";
+import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
+import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
-import { productsData } from "./data";
-import type { Product } from "./data";
+import { productsData } from "@/lib/mocks/productmanagement";
+import type { Product } from "@/lib/mocks/productmanagement";
 
 export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>(productsData);

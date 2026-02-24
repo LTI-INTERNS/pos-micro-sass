@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import BaseCard from "../common/BaseCard";
+import BaseCard from "@/components/saas/common/BaseCard";
 
 type Props = {
   selected: string;

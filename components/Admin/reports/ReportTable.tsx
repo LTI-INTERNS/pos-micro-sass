@@ -1,10 +1,10 @@
 "use client";
 
-import CommonTable, { Column } from "@/app/components/Admin/common/CommonTable";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import type { SaleRow, ExpenseRow, ProductRow } from "@/app/reports/reportsMockData";
 import { PRODUCTS_DATA } from "@/app/reports/reportsMockData";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type Props = {
   activeTab: string;

@@ -2,10 +2,10 @@
 
 import React, { useMemo } from "react";
 import Image from "next/image";
-import OrderTable, { Column } from "../Admin/common/CommonTable";
+import OrderTable, { Column } from "@/components/Admin/common/CommonTable";
 import { Printer, Mail } from "lucide-react";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { useReceiptPrinter } from "@/app/hooks/useReceiptActions";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 
 export type CommonOrderItem = {
   id: number | string;

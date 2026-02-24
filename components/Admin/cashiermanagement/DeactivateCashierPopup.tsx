@@ -1,7 +1,7 @@
 "use client";
 
-import ActionButton from "../common/ActionButton";
-import ModalShell from "../common/ModalShell";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import ModalShell from "@/components/Admin/common/ModalShell";
 
 type Props = {
   isOpen: boolean;

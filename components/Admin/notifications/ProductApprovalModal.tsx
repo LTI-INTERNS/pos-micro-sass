@@ -6,9 +6,9 @@ import {
   X, CheckCircle2, XCircle, Package,
   User, Building2, Clock, AlertTriangle, ShieldCheck,
 } from "lucide-react";
-import type { ProductApprovalData } from "../../../context/NotificationsContext";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { formatCurrency } from "@/app/context/formatCurrency";
+import type { ProductApprovalData } from "@/lib/context/NotificationsContext";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type Props = {
   open: boolean;

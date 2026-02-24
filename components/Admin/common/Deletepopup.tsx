@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import ActionButton from "../common/ActionButton";
-import ModalShell from "../common/ModalShell";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import ModalShell from "@/components/Admin/common/ModalShell";
 
 type Props<T extends { id?: string | number }> = {
   isOpen: boolean;

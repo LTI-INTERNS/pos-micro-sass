@@ -2,8 +2,8 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import StatCard from '../common/StatCard';
-import { statCards } from '@/app/overview/mock/mockData';
+import StatCard from '@/components/Admin/common/StatCard';
+import { statCards } from '@/lib/mocks/overview/mockData';
 
 export default function StatCardGrid() {
   const router = useRouter();
@@ -29,7 +29,7 @@ export default function StatCardGrid() {
           key={card.title}
           title={card.title}
           value={card.value}
-          amount={card.amount} 
+          amount={card.amount}
           percentage={card.percentage}
           trend={card.trend as 'up' | 'down'}
           caption={card.caption}

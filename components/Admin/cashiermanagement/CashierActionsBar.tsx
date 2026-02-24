@@ -1,6 +1,6 @@
 "use client";
 
-import ActionButton from "../common/ActionButton";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type Props = {
   onDeactivate?: () => void;

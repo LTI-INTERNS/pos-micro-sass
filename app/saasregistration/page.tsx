@@ -3,19 +3,19 @@
 import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/landing/Navigation";
-import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import Card from "@/app/components/saas/common/formCard";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/landing/Navigation";
+import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
+import Card from "@/components/saas/common/formCard";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import GlassBackground from "@/components/saas/common/GlassBackground";
 import {
   InputField,
   PasswordField,
   FormErrorMessage,
-} from "@/app/components/saas/common/FormFields";
+} from "@/components/saas/common/FormFields";
 
-import { registerAction } from "./auth";
+import { registerAction } from "@/app/saasregistration/auth";
 
 type RegisterFields = "name" | "email" | "password" | "confirmPassword";
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import ToggleSwitch from "../../common/ToggleSwitch";
+import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
 import { Monitor, Mail, ShoppingBag, Barcode, X, ExternalLink } from "lucide-react";
 
 type Feature = {

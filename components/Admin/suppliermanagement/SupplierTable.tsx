@@ -1,6 +1,6 @@
 "use client";
 
-import CommonTable, { Column } from "../common/CommonTable";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 
 export type Supplier = {
   id: number;

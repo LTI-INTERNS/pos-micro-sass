@@ -1,5 +1,5 @@
-import StatCard from '@/app/components/Admin/common/StatCard';
-import { calcStatSummary } from '@/app/utils/statCardUtils';
+import StatCard from '@/components/Admin/common/StatCard';
+import { calcStatSummary } from '@/lib/utils/statCardUtils';
 
 type ProfitItem = {
   date: string;

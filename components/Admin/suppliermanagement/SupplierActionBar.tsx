@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import DeletePopup from "../common/Deletepopup";
-import SupplierPopUp from "./SupplierPopUp";
-import type { Supplier } from "./SupplierTable";
-import EditEntityModal, {EditField} from "@/app/components/Admin/common/EditPopup";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import SupplierPopUp from "@/components/Admin/suppliermanagement/SupplierPopUp";
+import type { Supplier } from "@/components/Admin/suppliermanagement/SupplierTable";
+import EditEntityModal, {EditField} from "@/components/Admin/common/EditPopup";
 
 type Props = {
   selectedSupplier: Supplier | null;

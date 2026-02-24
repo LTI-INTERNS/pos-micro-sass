@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/companyCreation/Navigation";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
-import LoginForm from "@/app/components/Landing/Auth/LoginForm";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/companyCreation/Navigation";
+import GlassBackground from "@/components/saas/common/GlassBackground";
+import LoginForm from "@/components/Landing/Auth/LoginForm";
 
 export default function LoginPage() {
   return (

@@ -1,5 +1,5 @@
-import SalesLineChart from './SalesLineChart';
-import SalesBarChart from './SalesBarChart';
+import SalesLineChart from '@/components/Admin/overview/SalesLineChart';
+import SalesBarChart from '@/components/Admin/overview/SalesBarChart';
 
 export default function ChartsSection() {
   return (
