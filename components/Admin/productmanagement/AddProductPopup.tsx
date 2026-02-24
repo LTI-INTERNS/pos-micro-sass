@@ -6,6 +6,7 @@ import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import { useNotifications } from "@/lib/context/NotificationsContext";
+import { productSchema } from "@/lib/validation";
 
 type SoldBy = "each" | "volume_weight";
 
@@ -98,62 +99,19 @@ export default function AddProductPopup({
     setErrors((prev) => ({ ...prev, unit: "" }));
   };
 
-  const isValidNumber = (v: string) =>
-    v.trim() !== "" && !Number.isNaN(Number(v));
 
   const validateForm = () => {
-    const newErrors: FormErrors = {};
-
-    if (!values.name.trim()) {
-      newErrors.name = "Name is required";
-    } else if (values.name.trim().length < 2) {
-      newErrors.name = "Name must be at least 2 characters";
+    const result = productSchema.safeParse(values);
+    if (!result.success) {
+      const newErrors: FormErrors = {};
+      result.error.issues.forEach((issue) => {
+        newErrors[issue.path[0] as keyof ProductValues] = issue.message;
+      });
+      setErrors(newErrors);
+      return false;
     }
-
-    if (!values.price.trim()) {
-      newErrors.price = "Price is required";
-    } else if (!isValidNumber(values.price)) {
-      newErrors.price = "Price must be a valid number";
-    } else if (Number(values.price) <= 0) {
-      newErrors.price = "Price must be greater than 0";
-    }
-
-    if (!values.discount.trim()) {
-      newErrors.discount = "Discount is required";
-    } else if (!isValidNumber(values.discount)) {
-      newErrors.discount = "Discount must be a valid number";
-    } else if (Number(values.discount) < 0) {
-      newErrors.discount = "Discount cannot be negative";
-    } else if (Number(values.discount) > 100) {
-      newErrors.discount = "Discount cannot exceed 100%";
-    }
-
-    if (!values.tax.trim()) {
-      newErrors.tax = "Tax is required";
-    } else if (!isValidNumber(values.tax)) {
-      newErrors.tax = "Tax must be a valid number";
-    } else if (Number(values.tax) < 0) {
-      newErrors.tax = "Tax cannot be negative";
-    } else if (Number(values.tax) > 100) {
-      newErrors.tax = "Tax cannot exceed 100%";
-    }
-
-    if (!values.stock.trim()) {
-      newErrors.stock = "Stock is required";
-    } else if (!isValidNumber(values.stock)) {
-      newErrors.stock = "Stock must be a valid number";
-    } else if (Number(values.stock) < 0) {
-      newErrors.stock = "Stock cannot be negative";
-    } else if (!Number.isInteger(Number(values.stock))) {
-      newErrors.stock = "Stock must be a whole number";
-    }
-
-    if (values.soldBy === "volume_weight" && !values.unit.trim()) {
-      newErrors.unit = "Please select a unit";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors({});
+    return true;
   };
 
   const handleImageChange = (file: File | null) => {
