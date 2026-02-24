@@ -1,14 +1,14 @@
 "use client";
 
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
-import { Order } from "@/lib/mocks/ordermanagement";
+import { Order } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export default function OrdersTable({ orders }: { orders: Order[] }) {
-    const { currency, useCents } = useCurrency();
+  const { currency, useCents } = useCurrency();
 
-    const orderColumns: Column<Order>[] = [
+  const orderColumns: Column<Order>[] = [
     { key: "id", label: "Order ID" },
     { key: "dateTime", label: "Date & Time" },
     { key: "branch", label: "Branch" },

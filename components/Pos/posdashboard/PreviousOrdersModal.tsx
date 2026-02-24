@@ -1,13 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
-import { ordersData, Order } from "@/lib/mocks/ordermanagement";
+import { orderService } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
-
 import PreviousOrderDetailsModal from "@/components/Pos/posdashboard/PreviousOrderDetailsModal";
 import { previousOrderDetailsMap } from "@/app/ordermanagement/previousOrderDetailsMock";
 
@@ -16,7 +15,22 @@ type Props = {
   onClose: () => void;
 };
 
+type Order = {
+  id: number;
+  dateTime?: string;
+  branch?: string;
+  cashier?: string;
+  paymenttype?: string;
+  totalamount?: number;
+  status?: string;
+  action?: string;
+};
+
 export default function PreviousOrdersModal({ open, onClose }: Props) {
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  useEffect(() => {
+    orderService.getAll().then(setAllOrders);
+  }, []);
   const { currency, useCents } = useCurrency();
   const [search, setSearch] = useState("");
 
@@ -27,10 +41,10 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
 
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return ordersData;
+    if (!q) return allOrders;
 
-    return ordersData.filter((o) => String(o.id).includes(q) || o.cashier?.toLowerCase().includes(q));
-  }, [search]);
+    return allOrders.filter((o: Order) => String(o.id).includes(q) || o.cashier?.toLowerCase().includes(q));
+  }, [search, allOrders]);
 
   const columns: Column<Order>[] = [
     { key: "id", label: "Order ID" },
@@ -40,8 +54,8 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
     {
       key: "totalamount",
       label: "Total Amount",
-      render: (row) => row.totalamount !== undefined 
-        ? formatCurrency(row.totalamount, currency, useCents) 
+      render: (row) => row.totalamount !== undefined
+        ? formatCurrency(row.totalamount, currency, useCents)
         : "-",
     },
     { key: "status", label: "Status" },
@@ -57,21 +71,21 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
             placeholder="Search by Order ID or Cashier"
             showFilter={false}
           />
-         <div className="mb-4 max-h-50 overflow-y-auto">
+          <div className="mb-4 max-h-50 overflow-y-auto">
 
-          <CommonTable
-            data={filteredOrders}
-            columns={columns}
-            emptyMessage="No orders found"
-            onSelectRow={(row) => {
-              if (!row) return;
+            <CommonTable
+              data={filteredOrders}
+              columns={columns}
+              emptyMessage="No orders found"
+              onSelectRow={(row) => {
+                if (!row) return;
 
-              setSelectedOrderId(Number(row.id));
-              setDetailsOpen(true);
-            }}
-          />
-         </div>
-          
+                setSelectedOrderId(Number(row.id));
+                setDetailsOpen(true);
+              }}
+            />
+          </div>
+
         </div>
       </ModalShell>
 
