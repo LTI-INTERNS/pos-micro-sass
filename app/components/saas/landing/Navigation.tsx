@@ -47,8 +47,8 @@ export default function Navigation({
       logoSrc={logoSrc}
       logoAlt={logoAlt}
       className="
-        [@media(min-width:1920px)]:h-28 [@media(min-width:1920px)]:px-36
-        [@media(min-width:2560px)]:h-34 [@media(min-width:2560px)]:px-48
+        [@media(min-width:1920px)]:h-28 [@media(min-width:1920px)]:px-28
+        
       "
       middleContent={
         <>
@@ -76,7 +76,7 @@ export default function Navigation({
 
                   [@media(min-width:2560px)]:px-10
                   [@media(min-width:2560px)]:py-5
-                  [@media(min-width:2560px)]:text-2xl
+                  
                   ${
                     isActive
                       ? "text-white font-semibold rounded-b-3xl border-b border-orange-500"
@@ -105,11 +105,8 @@ export default function Navigation({
 
               [@media(min-width:1920px)]:px-8
               [@media(min-width:1920px)]:py-3
-              [@media(min-width:1920px)]:text-xl
-
-              [@media(min-width:2560px)]:px-10
-              [@media(min-width:2560px)]:py-4
-              [@media(min-width:2560px)]:text-2xl
+              [@media(min-width:1920px)]:text-xl   
+              
             "
           />
 
@@ -128,9 +125,8 @@ export default function Navigation({
               [@media(min-width:1920px)]:py-3
               [@media(min-width:1920px)]:text-xl
 
-              [@media(min-width:2560px)]:px-10
-              [@media(min-width:2560px)]:py-4
-              [@media(min-width:2560px)]:text-2xl
+              
+              
             "
           />
         </div>

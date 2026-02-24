@@ -44,8 +44,8 @@ export default function Navbar({
             py-4 sm:py-5 xl:py-6
             [@media(min-width:768px)_and_(max-width:1023px)]:px-5
             [@media(min-width:768px)_and_(max-width:1023px)]:py-2
-            [@media(min-width:2560px)]:px-64
-            [@media(min-width:2560px)]:py-10
+            [@media(min-width:2560px)]:px-28
+            [@media(min-width:2560px)]:py-6
           "
         >
           <div className="relative w-full flex items-center">
