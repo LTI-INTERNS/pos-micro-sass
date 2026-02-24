@@ -1,5 +1,6 @@
 "use client";
 
+import { ReactNode } from "react";
 import { CloudLightning, BarChart3, Box, UserCheck } from "lucide-react";
 import FeatureCard from "./FeatureCard";
 
@@ -8,11 +9,12 @@ export default function GrowthSection() {
     <section className="text-white">
 
       {/* ================= TOP SECTION  ================= */}
-      <div className="relative lg:px-30">
+      <div className="relative">
        
         <div className="absolute inset-0  bg-cover bg-center" />
+        
 
-        <div className="relative max-w-6xl mx-auto px-6 py-20 ">
+        <div className="relative max-w-6xl mx-auto px-6 py-20">
 
           <div className="text-center">
             <h3 className="text-2xl md:text-3xl font-bold mb-4">
@@ -25,18 +27,25 @@ export default function GrowthSection() {
             </p>
 
             <div className="flex flex-wrap justify-center gap-6">
-              <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out hover:transform hover:scale-105">
-                <StatCard text="Reduce Billing Time by 40%" />
-              </div>
-              <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out hover:transform hover:scale-105">
-                <StatCard text="Increase Sales Visibility" />
-              </div>
-              <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out hover:transform hover:scale-105">
-                <StatCard text="Reduce Inventory Loss" />
-              </div>
-              <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out hover:transform hover:scale-105">
-                <StatCard text="Better Profit Tracking" />
-              </div>
+  
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105 ">
+                  <StatCard text="Reduce Billing Time by 40%" />
+                </div>
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105">
+                  <StatCard text="Increase Sales Visibility" /> 
+                </div>
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105">
+                  <StatCard text="Reduce Inventory Loss" />
+                </div>
+
+                
+                <div className="w-full md:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-1.5rem)] hover:cursor-pointer transition-all duration-300 ease-in-out
+        hover:transform hover:scale-105">
+                  <StatCard text="Better Profit Tracking"/>
+                </div>
             </div>
 
           </div>
@@ -46,14 +55,16 @@ export default function GrowthSection() {
 
 
       {/* ================= BOTTOM SECTION  ================= */}
-      <div className="relative lg:px-30">
+      <div className="relative">
         
         <div className="absolute inset-0 bg-[url('/saas/landing/growthbottom.png')] bg-cover bg-center" />
+        
 
         <div className="relative max-w-6xl mx-auto px-6 py-20">
 
           <div className="grid md:grid-cols-2 gap-10 items-center">
 
+            
             <div>
               <h2 className="text-3xl font-bold mb-6">Growth Benefits</h2>
 
@@ -70,13 +81,14 @@ export default function GrowthSection() {
               </p>
             </div>
 
+            
             <div className="space-y-5">
               <FeatureCard key={1} icon={<CloudLightning size={22} />} label="Faster Checkout" className="hover:cursor-pointer" />
               <FeatureCard key={2} icon={<BarChart3 size={22} />} label="Data-Driven Decisions" className="hover:cursor-pointer" />
               <FeatureCard key={3} icon={<Box size={22} />} label="Smart Inventory" className="hover:cursor-pointer" />
               <FeatureCard key={4} icon={<UserCheck size={22} />} label="Better Customer Retention" className="hover:cursor-pointer" />
             </div>
-
+              
           </div>
 
         </div>
@@ -88,6 +100,7 @@ export default function GrowthSection() {
 
 
 /* ================= TYPES ================= */
+
 
 type StatCardProps = {
   text: string;
