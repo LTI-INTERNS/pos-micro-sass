@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/companyCreation/Navigation";
-import StepProgressBar from "@/app/components/saas/common/StepProgressBar";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/companyCreation/Navigation";
+import StepProgressBar from "@/components/saas/common/StepProgressBar";
 
-import CompanyCreationStep  from "@/app/components/saas/companyCreation/CompanyCreationStep";
-import BusinessTypeStep     from "@/app/components/saas/businessType/BusinessTypeStep";
-import SubscriptionPlanStep from "@/app/components/saas/subscriptionPlan/SubscriptionPlanStep";
-import PaymentProcessStep   from "@/app/components/saas/paymentProcess/PaymentProcessStep";
-import { useRegistrationPersistence } from "./useRegistrationPersistence";
+import CompanyCreationStep  from "@/components/saas/companyCreation/CompanyCreationStep";
+import BusinessTypeStep     from "@/components/saas/businessType/BusinessTypeStep";
+import SubscriptionPlanStep from "@/components/saas/subscriptionPlan/SubscriptionPlanStep";
+import PaymentProcessStep   from "@/components/saas/paymentProcess/PaymentProcessStep";
+import { useRegistrationPersistence } from "@/app/companyregistration/useRegistrationPersistence";
 
 export type RegistrationData = {
   companyName: string;

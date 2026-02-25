@@ -1,8 +1,8 @@
 "use client";
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/landing/Navigation";
-import AboutCard from "@/app/components/saas/aboutUs/AboutCard";
-import FeatureRowCard from "@/app/components/saas/aboutUs/FeatureRowCard";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/landing/Navigation";
+import AboutCard from "@/components/saas/aboutUs/AboutCard";
+import FeatureRowCard from "@/components/saas/aboutUs/FeatureRowCard";
 import { useRouter } from "next/navigation";
 
 export default function AboutPage() {

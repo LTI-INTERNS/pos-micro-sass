@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "../components/Admin/common/dashboard_layout";
-import TabSelector from "../components/Admin/common/TabSelector";
-import DiscountContent from "@/app/components/Admin/settings/Discount/DiscountContent";
-import PersonalContent from "@/app/components/Admin/settings/PersonalDetails/PersonalContent";
-import SubscriptionPlanCards from "@/app/components/Admin/settings/subscriptionplan/SubscriptionPlanCards";
-import CompanyDetailsForm from "@/app/components/Admin/settings/Details/CompanyDetailsContent";
-import BranchDetailsForm from "@/app/components/Admin/settings/Details/BranchDetailsContent";
-import AdditionalSettingsContent from "@/app/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import TabSelector from "@/components/Admin/common/TabSelector";
+import DiscountContent from "@/components/Admin/settings/Discount/DiscountContent";
+import PersonalContent from "@/components/Admin/settings/PersonalDetails/PersonalContent";
+import SubscriptionPlanCards from "@/components/Admin/settings/subscriptionplan/SubscriptionPlanCards";
+import CompanyDetailsForm from "@/components/Admin/settings/Details/CompanyDetailsContent";
+import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetailsContent";
+import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 
 type UserRole = "superadmin" | "admin" | "manager";
 

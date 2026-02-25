@@ -1,0 +1,99 @@
+"use client";
+
+import { useMemo, useState, useEffect } from "react";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import { orderService } from "@/lib/services";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
+import PreviousOrderDetailsModal from "@/components/Pos/posdashboard/PreviousOrderDetailsModal";
+import { previousOrderDetailsMap } from "@/app/ordermanagement/previousOrderDetailsMock";
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+};
+
+type Order = {
+  id: number;
+  dateTime?: string;
+  branch?: string;
+  cashier?: string;
+  paymenttype?: string;
+  totalamount?: number;
+  status?: string;
+  action?: string;
+};
+
+export default function PreviousOrdersModal({ open, onClose }: Props) {
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  useEffect(() => {
+    orderService.getAll().then(setAllOrders);
+  }, []);
+  const { currency, useCents } = useCurrency();
+  const [search, setSearch] = useState("");
+
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+
+  const selectedDetails = selectedOrderId ? previousOrderDetailsMap[selectedOrderId] ?? null : null;
+
+  const filteredOrders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return allOrders;
+
+    return allOrders.filter((o: Order) => String(o.id).includes(q) || o.cashier?.toLowerCase().includes(q));
+  }, [search, allOrders]);
+
+  const columns: Column<Order>[] = [
+    { key: "id", label: "Order ID" },
+    { key: "dateTime", label: "Date & Time" },
+    { key: "cashier", label: "Cashier" },
+    { key: "paymenttype", label: "Payment" },
+    {
+      key: "totalamount",
+      label: "Total Amount",
+      render: (row) => row.totalamount !== undefined
+        ? formatCurrency(row.totalamount, currency, useCents)
+        : "-",
+    },
+    { key: "status", label: "Status" },
+  ];
+
+  return (
+    <>
+      <ModalShell open={open} title="Previous Orders" onClose={onClose} widthClassName="w-[1100px] max-w-[95vw]">
+        <div className="space-y-4">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by Order ID or Cashier"
+            showFilter={false}
+          />
+          <div className="mb-4 max-h-50 overflow-y-auto">
+
+            <CommonTable
+              data={filteredOrders}
+              columns={columns}
+              emptyMessage="No orders found"
+              onSelectRow={(row) => {
+                if (!row) return;
+
+                setSelectedOrderId(Number(row.id));
+                setDetailsOpen(true);
+              }}
+            />
+          </div>
+
+        </div>
+      </ModalShell>
+
+      <PreviousOrderDetailsModal
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        details={selectedDetails}
+      />
+    </>
+  );
+}

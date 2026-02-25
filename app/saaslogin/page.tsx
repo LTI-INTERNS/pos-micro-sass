@@ -5,20 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/landing/Navigation";
-import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import Card from "@/app/components/saas/common/formCard";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/landing/Navigation";
+import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
+import Card from "@/components/saas/common/formCard";
+import GlassBackground from "@/components/saas/common/GlassBackground";
 
 import {
   InputField,
   PasswordField,
   FormErrorMessage,
-} from "@/app/components/saas/common/FormFields";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+} from "@/components/saas/common/FormFields";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
-import { loginAction } from "./auth";
+import { loginAction } from "@/app/saaslogin/auth";
 
 export default function LoginPage() {
   const router = useRouter();

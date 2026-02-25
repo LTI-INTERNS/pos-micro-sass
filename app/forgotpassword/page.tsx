@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/landing/Navigation";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/landing/Navigation";
+import GlassBackground from "@/components/saas/common/GlassBackground";
 
-import StepEmail from "@/app/components/saas/forgotpassword/StepEmail";
-import StepCode from "@/app/components/saas/forgotpassword/StepCode";
-import StepPassword from "@/app/components/saas/forgotpassword/StepPassword";
+import StepEmail from "@/components/saas/forgotpassword/StepEmail";
+import StepCode from "@/components/saas/forgotpassword/StepCode";
+import StepPassword from "@/components/saas/forgotpassword/StepPassword";
 
 export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1);
