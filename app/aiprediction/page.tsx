@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "../components/Admin/common/dashboard_layout";
-import TabSelector from "../components/Admin/common/TabSelector";
-import ProductAnalysisContent from "@/app/components/Admin/aiprediction/Product/ProductAnalysisContent";
-import SalesAnalysisContent from "@/app/components/Admin/aiprediction/Sales/SalesAnalysisContent";
-import BranchAnalysisContent from "@/app/components/Admin/aiprediction/Branch/BranchAnalysisContent";
-import CustomerAnalysisContent from "@/app/components/Admin/aiprediction/Customer/CustomerAnalysisContent";
-import StaffAnalysisContent from "@/app/components/Admin/aiprediction/Staff/StaffAnalysisContent";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import TabSelector from "@/components/Admin/common/TabSelector";
+import ProductAnalysisContent from "@/components/Admin/aiprediction/Product/ProductAnalysisContent";
+import SalesAnalysisContent from "@/components/Admin/aiprediction/Sales/SalesAnalysisContent";
+import BranchAnalysisContent from "@/components/Admin/aiprediction/Branch/BranchAnalysisContent";
+import CustomerAnalysisContent from "@/components/Admin/aiprediction/Customer/CustomerAnalysisContent";
+import StaffAnalysisContent from "@/components/Admin/aiprediction/Staff/StaffAnalysisContent";
 
 const TABS = [
   { id: "productAnalysis", label: "Product Analysis" },

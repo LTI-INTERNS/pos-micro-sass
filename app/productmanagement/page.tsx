@@ -1,44 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
-import StatCardGrid from "@/app/components/Admin/productmanagement/productStarCardGrid";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import ProductActionsBar from "@/app/components/Admin/productmanagement/product-actions";
-import FilterPopup from "../components/Admin/common/FilterPopup";
-import { useTableFilters, getFilterOptions } from "../components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
-import ProductsTable from "@/app/components/Admin/productmanagement/product-table";
-import AddProductPopup from "@/app/components/Admin/productmanagement/AddProductPopup";
-import AddStockPopup from "@/app/components/Admin/productmanagement/addStockPopup";
-import DeletePopup from "@/app/components/Admin/common/Deletepopup";
-import EditEntityModal from "@/app/components/Admin/common/EditPopup";
-import { useLowStockNotifications } from "@/app/components/Admin/notifications/Uselowstocknotifications";
-import { useNegativeStockAlerts } from "@/app/components/Admin/notifications/useNegativeStockAlerts";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/components/Admin/productmanagement/productStarCardGrid";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import ProductActionsBar from "@/components/Admin/productmanagement/product-actions";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import ProductsTable from "@/components/Admin/productmanagement/product-table";
+import AddProductPopup from "@/components/Admin/productmanagement/AddProductPopup";
+import AddStockPopup from "@/components/Admin/productmanagement/addStockPopup";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import EditEntityModal from "@/components/Admin/common/EditPopup";
+import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
+import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
-import { productsData } from "./data";
-import type { Product } from "./data";
+import { productService, Product } from "@/lib/services";
+import { useEffect } from "react";
+import { useUrlFilters } from "@/hooks/useUrlFilters";
 
 export default function DashboardPage() {
-  const [products, setProducts] = useState<Product[]>(productsData);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    productService.getAll()
+      .then(setProducts)
+      .finally(() => setIsLoading(false));
+  }, []);
+
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
+  const { filters: urlFilters, setFilter } = useUrlFilters();
+  const search = urlFilters.search || "";
+  const setSearch = (val: string) => setFilter("search", val);
+  const filterOpen = !!urlFilters.filterOpen;
+  const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
 
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const [filters, setFilters] = useState<{
-    category?: string;
-    discount?: string;
-    tax?: string;
-    stock?: string;
-    lowstock?: string;
-  }>({});
+  const filters = urlFilters;
+  const setFilters = (newFilters: Record<string, string | null>) => {
+    Object.entries(newFilters).forEach(([k, v]) => setFilter(k, v));
+  };
 
   useLowStockNotifications({
     products,
@@ -62,11 +71,11 @@ export default function DashboardPage() {
   });
 
   const isFilterApplied = Object.values(filters).some(
-    (v) => v && v.trim() !== ""
+    (v) => v && String(v).trim() !== ""
   );
 
   const removeFilter = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: "" }));
+    setFilter(key, null);
   };
 
   return (
@@ -113,11 +122,15 @@ export default function DashboardPage() {
           onAddNew={() => setAddOpen(true)}
         />
 
-        <ProductsTable
-          products={filteredProducts}
-          selectedProduct={selectedProduct}
-          setSelectedProduct={setSelectedProduct}
-        />
+        {isLoading ? (
+          <div className="p-8 text-center text-slate-500">Loading products...</div>
+        ) : (
+          <ProductsTable
+            products={filteredProducts}
+            selectedProduct={selectedProduct}
+            setSelectedProduct={setSelectedProduct}
+          />
+        )}
       </div>
 
       <AddProductPopup

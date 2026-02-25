@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import DashboardLayout from "../components/Admin/common/dashboard_layout";
-import SearchBar from "../components/Admin/common/Search-bar";
-import DateRangeBar from "../components/Admin/common/DateRangeBar";
-import FilterPopup, { type SelectField } from "../components/Admin/common/FilterPopup";
-import CashierActionsBar from "../components/Admin/cashiermanagement/CashierActionsBar";
-import CashiersTable, { type Cashier } from "../components/Admin/cashiermanagement/CashiersTable";
-import { AddCashierForm } from "../components/Admin/cashiermanagement/AddCashierForm";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
-import DeactivateCashierPopup from "../components/Admin/cashiermanagement/DeactivateCashierPopup";
-import DeletePopup from "../components/Admin/common/Deletepopup";
-import EditEntityModal, { EditField } from "@/app/components/Admin/common/EditPopup";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import DateRangeBar from "@/components/Admin/common/DateRangeBar";
+import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
+import CashierActionsBar from "@/components/Admin/cashiermanagement/CashierActionsBar";
+import CashiersTable, { type Cashier } from "@/components/Admin/cashiermanagement/CashiersTable";
+import { AddCashierForm } from "@/components/Admin/cashiermanagement/AddCashierForm";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import DeactivateCashierPopup from "@/components/Admin/cashiermanagement/DeactivateCashierPopup";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
+import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 
 type UserRole = "superadmin" | "admin" | "manager";
 

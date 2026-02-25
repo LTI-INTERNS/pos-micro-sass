@@ -3,11 +3,11 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navbar from '../components/saas/landing/Navigation'
-import ActionButton from "@/app/components/Admin/common/ActionButton";
-import { InputField, TextAreaField } from "@/app/components/saas/common/FormFields";
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navbar from '@/components/saas/landing/Navigation'
+import ActionButton from "@/components/Admin/common/ActionButton";
+import { InputField, TextAreaField } from "@/components/saas/common/FormFields";
+import GlassBackground from "@/components/saas/common/GlassBackground";
 
 import { MapPin, Phone, Mail } from "lucide-react";
 

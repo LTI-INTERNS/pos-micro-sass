@@ -1,32 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import BranchActionsBar from "@/app/components/Admin/branchmanagement/branches-actions";
-import BranchesTable from "@/app/components/Admin/branchmanagement/branches-table";
-import StatCardGrid from "@/app/components/Admin/branchmanagement/branchStarCardGrid";
-import FilterPopup from "@/app/components/Admin/common/FilterPopup";
-import { branchesData } from "./data";
-import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
-
-type Branch = {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-  regno: number;
-  email: string;
-  password: string;
-};
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import BranchActionsBar from "@/components/Admin/branchmanagement/branches-actions";
+import BranchesTable from "@/components/Admin/branchmanagement/branches-table";
+import StatCardGrid from "@/components/Admin/branchmanagement/branchStarCardGrid";
+import FilterPopup from "@/components/Admin/common/FilterPopup";
+import { branchService, Branch } from "@/lib/services";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
+import { useEffect } from "react";
 
 export default function BranchesPage() {
+  const [allBranches, setAllBranches] = useState<Branch[]>([]);
   const [start] = useState<Date | undefined>();
   const [end] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+
+  useEffect(() => {
+    branchService.getAll().then(setAllBranches);
+  }, []);
 
   const [filters, setFilters] = useState<{
     name?: string;
@@ -45,11 +41,11 @@ export default function BranchesPage() {
     setFilters({});
   };
 
-  const nameOptions = getFilterOptions(branchesData, "name");
-  const addressOptions = getFilterOptions(branchesData, "address");
+  const nameOptions = getFilterOptions(allBranches, "name");
+  const addressOptions = getFilterOptions(allBranches, "address");
 
   const filteredBranches = useTableFilters<Branch>({
-    data: branchesData as Branch[],
+    data: allBranches as Branch[],
     search,
     start,
     end,
@@ -59,8 +55,7 @@ export default function BranchesPage() {
 
   const handleDeleteBranch = () => {
     if (!selectedBranch) return;
-    const index = branchesData.findIndex((b) => b.id === selectedBranch.id);
-    if (index >= 0) branchesData.splice(index, 1);
+    setAllBranches((prev) => prev.filter((b) => b.id !== selectedBranch.id));
     setSelectedBranch(null);
   };
 
@@ -95,7 +90,7 @@ export default function BranchesPage() {
             ]}
           />
         </div>
-        
+
         <BranchActionsBar
           selectedBranch={selectedBranch}
           onDelete={handleDeleteBranch}

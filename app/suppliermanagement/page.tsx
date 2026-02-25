@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import DashboardLayout from "../components/Admin/common/dashboard_layout";
-import SearchBar from "../components/Admin/common/Search-bar";
-import SupplierActionsBar from "../components/Admin/suppliermanagement/SupplierActionBar";
-import SupplierTable from "../components/Admin/suppliermanagement/SupplierTable";
-import StatCardGrid from "../components/Admin/suppliermanagement/StatCardGrid";
-import DateRangeBar from "../components/Admin/common/DateRangeBar";
-import FilterPopup from "../components/Admin/common/FilterPopup"; 
-import FilterChips from "@/app/components/Admin/common/FilterChips";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import SupplierActionsBar from "@/components/Admin/suppliermanagement/SupplierActionBar";
+import SupplierTable from "@/components/Admin/suppliermanagement/SupplierTable";
+import StatCardGrid from "@/components/Admin/suppliermanagement/StatCardGrid";
+import DateRangeBar from "@/components/Admin/common/DateRangeBar";
+import FilterPopup from "@/components/Admin/common/FilterPopup"; 
+import FilterChips from "@/components/Admin/common/FilterChips";
 
 type UserRole = "superadmin" | "admin" | "manager";
 

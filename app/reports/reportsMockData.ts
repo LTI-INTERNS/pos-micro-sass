@@ -31,7 +31,7 @@ export type ProductRow = {
   stock: number;
 };
 
-import type { ExportColumn } from "@/app/components/Admin/reports/exportUtils";
+import type { ExportColumn } from "@/components/Admin/reports/exportUtils";
 
 export const SALE_COLUMNS: ExportColumn[] = [
   { key: "date",          label: "Date"           },
