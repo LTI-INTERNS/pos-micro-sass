@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import DateRangePicker from "@/app/components/Admin/common/DateRangeBar";
-import StatCardGrid from "@/app/components/Admin/ordermanagement/orderStarCardGrid";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import FilterPopup, { type SelectField } from "@/app/components/Admin/common/FilterPopup";
-import OrdersTable from "@/app/components/Admin/ordermanagement/order-table";
-import { ordersData } from "./data";
-import { useTableFilters, getFilterOptions } from "@/app/components/Admin/common/Filterlogic";
-import FilterChips from "@/app/components/Admin/common/FilterChips";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import DateRangePicker from "@/components/Admin/common/DateRangeBar";
+import StatCardGrid from "@/components/Admin/ordermanagement/orderStarCardGrid";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
+import OrdersTable from "@/components/Admin/ordermanagement/order-table";
+import { orderService } from "@/lib/services";
+import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import FilterChips from "@/components/Admin/common/FilterChips";
 
 type Order = {
   id: number;
@@ -25,10 +25,15 @@ type Order = {
 type UserRole = "superadmin" | "admin" | "manager";
 
 export default function DashboardPage() {
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
+
+  useEffect(() => {
+    orderService.getAll().then(setAllOrders);
+  }, []);
 
   const [filters, setFilters] = useState<{
     branch?: string;
@@ -36,17 +41,14 @@ export default function DashboardPage() {
     status?: string;
   }>({});
 
-  // TODO: Replace with actual auth session/role + branch
   const userRole: UserRole = "superadmin" as UserRole;
-  const userBranch = "Colombo 01" as const; // Get from auth context/session
+  const userBranch = "Colombo 01" as const;
 
-  // Base data: superadmin sees all; admin/manager only their branch
   const baseData = useMemo(() => {
-    const all = ordersData as Order[];
     return userRole === "superadmin"
-      ? all
-      : all.filter((o) => o.branch === userBranch);
-  }, [userRole, userBranch]);
+      ? allOrders
+      : allOrders.filter((o) => o.branch === userBranch);
+  }, [userRole, userBranch, allOrders]);
 
   // Optional but recommended: ensure branch filter isn't kept for admin/manager
   useEffect(() => {
@@ -71,19 +73,19 @@ export default function DashboardPage() {
 
   // Branch options only needed for superadmin
   const branchOptions = useMemo(() => {
-    return getFilterOptions(ordersData as Order[], "branch");
-  }, []);
+    return getFilterOptions(allOrders as Order[], "branch");
+  }, [allOrders]);
 
   const filterFields: SelectField[] = useMemo(() => {
     return [
       ...(userRole === "superadmin"
         ? [
-            {
-              name: "branch",
-              placeholder: "Select Branch",
-              options: branchOptions,
-            } as SelectField,
-          ]
+          {
+            name: "branch",
+            placeholder: "Select Branch",
+            options: branchOptions,
+          } as SelectField,
+        ]
         : []),
       {
         name: "paymenttype",

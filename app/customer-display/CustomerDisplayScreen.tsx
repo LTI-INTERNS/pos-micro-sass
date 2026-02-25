@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { usePosChannel, PosMessage } from "@/app/hooks/usePosChannel";
-import { CustomerFormValues } from "@/app/components/Admin/common/AddCustomerModal";
-import { OrderItem } from "@/app/components/Pos/posdashboard/CustomerInfoPanel";
-import { PaymentSummary } from "@/app/components/Pos/posdashboard/OrderPaymentModal";
-import { useCurrency } from "@/app/context/CurrencyContext";
-import { useImage } from "@/app/context/ImageContext";
+import { usePosChannel, PosMessage } from "@/hooks/usePosChannel";
+import { CustomerFormValues } from "@/components/Admin/common/AddCustomerModal";
+import { OrderItem } from "@/components/Pos/posdashboard/CustomerInfoPanel";
+import { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { useImage } from "@/lib/context/ImageContext";
 import Image from "next/image";
 import { Delete, CheckCircle, Clock, MonitorOff } from "lucide-react";
-import { usePosSettings } from "@/app/context/PosSettingsContext";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 // ── Dummy Customers ─────────────────────────────────────────────
 const customers = [

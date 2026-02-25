@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import CommonLayout from "@/app/components/saas/common/CommonLayout";
-import Navigation from "@/app/components/saas/companyCreation/Navigation";
+import CommonLayout from "@/components/saas/common/CommonLayout";
+import Navigation from "@/components/saas/companyCreation/Navigation";
 
-import GlassBackground from "@/app/components/saas/common/GlassBackground";
-import SplitPanelLayout from "@/app/components/saas/common/SplitPanelLayout";
-import ActionButton from "@/app/components/Admin/common/ActionButton";
+import GlassBackground from "@/components/saas/common/GlassBackground";
+import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
-import CompanySelectItem from "@/app/components/saas/companySelection/CompanySelectItem";
+import CompanySelectItem from "@/components/saas/companySelection/CompanySelectItem";
 
 type Company = {
   id: string;

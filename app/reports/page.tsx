@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import DashboardLayout from "@/app/components/Admin/common/dashboard_layout";
-import SearchBar from "@/app/components/Admin/common/Search-bar";
-import DateRangeBar from "@/app/components/Admin/common/DateRangeBar";
-import ExportReportPanel from "@/app/components/Admin/reports/ExportReportPanel";
-import ReportStatCardGrid from "@/app/components/Admin/reports/ReportStatCardGrid";
-import ReportChart from "@/app/components/Admin/reports/ReportChart";
-import ReportActionsBar from "@/app/components/Admin/reports/ReportActionsBar";
-import ReportTable from "@/app/components/Admin/reports/ReportTable";
-import type { ExportColumn } from "@/app/components/Admin/reports/exportUtils";
+import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import SearchBar from "@/components/Admin/common/Search-bar";
+import DateRangeBar from "@/components/Admin/common/DateRangeBar";
+import ExportReportPanel from "@/components/Admin/reports/ExportReportPanel";
+import ReportStatCardGrid from "@/components/Admin/reports/ReportStatCardGrid";
+import ReportChart from "@/components/Admin/reports/ReportChart";
+import ReportActionsBar from "@/components/Admin/reports/ReportActionsBar";
+import ReportTable from "@/components/Admin/reports/ReportTable";
+import type { ExportColumn } from "@/components/Admin/reports/exportUtils";
 import {
   SALES_DATA,    SALE_COLUMNS,
   EXPENSES_DATA, EXPENSE_COLUMNS,
