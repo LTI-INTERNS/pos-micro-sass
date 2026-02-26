@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import Buttons from "@/components/Admin/common/ActionButton";
 import SearchBar from "@/components/Admin/common/Search-bar";
-import { customerService, PosCustomer } from "@/lib/services/customer-service";
+import { customerService, Customer } from "@/lib/services/customer-service";
 
 // Shape the parent (ManageCustomersPopup) expects
 type CustomerForParent = {
@@ -20,7 +20,7 @@ type Props = {
   onCustomerSelected: (customer: CustomerForParent) => void;
 };
 
-const columns: Column<PosCustomer>[] = [
+const columns: Column<Customer>[] = [
   { key: "name",  label: "CUSTOMER NAME"  },
   { key: "phone", label: "PHONE NUMBER"   },
   { key: "email", label: "EMAIL ADDRESS"  },
@@ -28,7 +28,7 @@ const columns: Column<PosCustomer>[] = [
 
 export default function ManageCustomer({ onClose, onAddCustomer, onCustomerSelected }: Props) {
   const [search, setSearch]       = useState("");
-  const [customers, setCustomers] = useState<PosCustomer[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading]     = useState(false);
 
   const fetchCustomers = useCallback(async (q: string) => {
@@ -93,8 +93,17 @@ export default function ManageCustomer({ onClose, onAddCustomer, onCustomerSelec
 
       <div className="flex justify-center gap-4 mt-8">
         <div className="flex justify-center gap-4 w-full max-w-md mx-auto">
-                <Buttons onClick={onClose} label="Cancel" className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50 transition-all active:scale-90"/>
-                <Buttons onClick={onAddCustomer} label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-90"/>
+          <Buttons
+            onClick={onClose}
+            label="Cancel"
+            className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50 transition-all active:scale-90"
+          />
+          <Buttons
+            onClick={onAddCustomer}
+            label="New Customer"
+            variant="primary"
+            className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-90"
+          />
         </div>
       </div>
     </div>

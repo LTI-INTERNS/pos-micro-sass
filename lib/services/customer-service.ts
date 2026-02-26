@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 
-export interface PosCustomer {
+export interface Customer {
     id:          string;
     name:        string;
     phone:       string;
@@ -8,6 +8,7 @@ export interface PosCustomer {
     email:       string | null;
     points:      number;
     outstanding: number;
+    promoCard:   string | null;
     createdAt:   string;
 }
 
@@ -20,7 +21,7 @@ export interface CreateCustomerInput {
 
 interface CustomersResponse {
     success: boolean;
-    data:    PosCustomer[];
+    data:    Customer[];
     meta: {
         total:      number;
         page:       number;
@@ -30,32 +31,32 @@ interface CustomersResponse {
 }
 
 export const customerService = {
-    getAll: (params?: { search?: string; page?: number; limit?: number }): Promise<PosCustomer[]> =>
+    getAll: (params?: { search?: string; page?: number; limit?: number }): Promise<Customer[]> =>
         apiClient
             .get<CustomersResponse>('/customers', { params })
             .then((res) => res.data.data)
             .catch(() => []),
 
-    search: (query: string): Promise<PosCustomer[]> =>
+    search: (query: string): Promise<Customer[]> =>
         apiClient
             .get<CustomersResponse>('/customers', { params: { search: query, limit: 20 } })
             .then((res) => res.data.data)
             .catch(() => []),
 
-    getById: (id: string): Promise<PosCustomer | null> =>
+    getById: (id: string): Promise<Customer | null> =>
         apiClient
-            .get<{ success: boolean; data: PosCustomer }>(`/customers/${id}`)
+            .get<{ success: boolean; data: Customer }>(`/customers/${id}`)
             .then((res) => res.data.data)
             .catch(() => null),
 
-    create: (data: CreateCustomerInput): Promise<PosCustomer> =>
+    create: (data: CreateCustomerInput): Promise<Customer> =>
         apiClient
-            .post<{ success: boolean; data: PosCustomer }>('/customers', data)
+            .post<{ success: boolean; data: Customer }>('/customers', data)
             .then((res) => res.data.data),
 
-    update: (id: string, data: Partial<CreateCustomerInput>): Promise<PosCustomer> =>
+    update: (id: string, data: Partial<CreateCustomerInput>): Promise<Customer> =>
         apiClient
-            .patch<{ success: boolean; data: PosCustomer }>(`/customers/${id}`, data)
+            .patch<{ success: boolean; data: Customer }>(`/customers/${id}`, data)
             .then((res) => res.data.data),
 
     delete: (id: string): Promise<void> =>
