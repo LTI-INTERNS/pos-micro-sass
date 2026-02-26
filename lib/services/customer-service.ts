@@ -1,22 +1,63 @@
 import { apiClient } from '@/lib/api-client';
-import { customersData } from '@/lib/mocks/customermanagement';
-import { Customer, CreateCustomerInput, UpdateCustomerInput } from '@/types/customer.types';
 
-export type { Customer, CreateCustomerInput, UpdateCustomerInput };
+export interface PosCustomer {
+    id:          string;
+    name:        string;
+    phone:       string;
+    phone2:      string | null;
+    email:       string | null;
+    points:      number;
+    outstanding: number;
+    createdAt:   string;
+}
+
+export interface CreateCustomerInput {
+    name:   string;
+    phone:  string;
+    phone2?: string;
+    email?: string;
+}
+
+interface CustomersResponse {
+    success: boolean;
+    data:    PosCustomer[];
+    meta: {
+        total:      number;
+        page:       number;
+        limit:      number;
+        totalPages: number;
+    };
+}
 
 export const customerService = {
-    getAll: (): Promise<Customer[]> =>
-        apiClient.get<Customer[]>('/customers').then(res => res.data).catch(() => customersData),
+    getAll: (params?: { search?: string; page?: number; limit?: number }): Promise<PosCustomer[]> =>
+        apiClient
+            .get<CustomersResponse>('/customers', { params })
+            .then((res) => res.data.data)
+            .catch(() => []),
 
-    getById: (id: string): Promise<Customer> =>
-        apiClient.get<Customer>(`/customers/${id}`).then(res => res.data),
+    search: (query: string): Promise<PosCustomer[]> =>
+        apiClient
+            .get<CustomersResponse>('/customers', { params: { search: query, limit: 20 } })
+            .then((res) => res.data.data)
+            .catch(() => []),
 
-    create: (data: CreateCustomerInput): Promise<Customer> =>
-        apiClient.post<Customer>('/customers', data).then(res => res.data),
+    getById: (id: string): Promise<PosCustomer | null> =>
+        apiClient
+            .get<{ success: boolean; data: PosCustomer }>(`/customers/${id}`)
+            .then((res) => res.data.data)
+            .catch(() => null),
 
-    update: (id: string, data: UpdateCustomerInput): Promise<Customer> =>
-        apiClient.put<Customer>(`/customers/${id}`, data).then(res => res.data),
+    create: (data: CreateCustomerInput): Promise<PosCustomer> =>
+        apiClient
+            .post<{ success: boolean; data: PosCustomer }>('/customers', data)
+            .then((res) => res.data.data),
+
+    update: (id: string, data: Partial<CreateCustomerInput>): Promise<PosCustomer> =>
+        apiClient
+            .patch<{ success: boolean; data: PosCustomer }>(`/customers/${id}`, data)
+            .then((res) => res.data.data),
 
     delete: (id: string): Promise<void> =>
-        apiClient.delete(`/customers/${id}`).then(res => res.data),
+        apiClient.delete(`/customers/${id}`).then(() => undefined),
 };
