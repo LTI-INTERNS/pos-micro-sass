@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState, useCallback } from "react";
 import ItemCard from "@/components/Pos/posdashboard/ItemCard";
+import { posService, PosProduct } from "@/lib/services/pos-service";
 
-type Item = {
+type ItemForCart = {
   id: number;
   name: string;
   price: number;
@@ -11,94 +13,103 @@ type Item = {
 
 type Props = {
   search: string;
-  onAdd: (item: Item) => void;
+  onAdd: (item: ItemForCart) => void;
 };
 
-const items: Item[] = [
-  {
-    id: 1,
-    name: "Burger",
-    price: 1200,
-    image: "/food/burger.jpg",
-  },
-  {
-    id: 2,
-    name: "Pizza",
-    price: 2500,
-    image: "/food/pizza.jpg",
-  },
-  {
-    id: 3,
-    name: "Fries",
-    price: 800,
-    image: "/food/fries.jpg",
-  },
-  {
-    id: 4,
-    name: "Salad",
-    price: 1000,
-    image: "/food/salad.jpg",
-  },
-  {
-    id: 5,
-    name: "Sandwich",
-    price: 900,
-    image: "/food/burger.jpg",
-  },
-  {
-    id: 6,
-    name: "Noodles",
-    price: 1100,
-    image: "/food/pizza.jpg",
-  },
-  {
-    id: 7,
-    name: "Rice",
-    price: 1000,
-    image: "/food/fries.jpg",
-  },
-  {
-    id: 8,
-    name: "Pasta",
-    price: 1300,
-    image: "/food/salad.jpg",
-  },
-  {
-    id: 9,
-    name: "Sushi",
-    price: 2000,
-    image: "/food/burger.jpg",
-  },
-  {
-    id: 10,
-    name: "Tacos",
-    price: 1500,
-    image: "/food/pizza.jpg",
-  }
-];
-
-
 export default function ItemGrid({ search, onAdd }: Props) {
-  const filteredItems = items.filter((i) =>
-    i.name.toLowerCase().includes(search.toLowerCase())
+  const [products, setProducts] = useState<PosProduct[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState<string | null>(null);
+
+  // Fetch all products once on mount (search filtering done client-side to avoid debounce lag)
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await posService.getProducts({ limit: 100 });
+      setProducts(data);
+    } catch {
+      setError("Failed to load products.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // Client-side search filter
+  const filtered = products.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    (p.sku ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (p.barcode ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const hasAnyImage = filteredItems.some(
-    (i) => i.image && i.image.trim() !== ""
-  );
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-36 rounded-xl bg-gray-100 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
-  /* LIST VIEW (no images) */
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 gap-3 text-slate-500">
+        <p>{error}</p>
+        <button
+          onClick={fetchProducts}
+          className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm hover:bg-orange-600 transition"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (filtered.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-48 text-slate-400 text-sm">
+        No products found{search ? ` for "${search}"` : ""}.
+      </div>
+    );
+  }
+
+  const hasAnyImage = filtered.some((p) => p.image && p.image.trim() !== "");
+
+  // Map backend PosProduct → cart-compatible shape (id as number for usePosStore compatibility)
+  const toCartItem = (p: PosProduct): ItemForCart => ({
+    id:    parseInt(p.id, 10) || p.id.charCodeAt(0), // UUID → use hash fallback; store handles string ids fine
+    name:  p.name,
+    price: p.price,
+    image: p.image ?? undefined,
+  });
+
+  /* LIST VIEW — no images */
   if (!hasAnyImage) {
     return (
       <div className="space-y-2">
-        {filteredItems.map((item) => (
+        {filtered.map((p) => (
           <div
-            key={item.id}
-            onClick={() => onAdd(item)}
+            key={p.id}
+            onClick={() => onAdd(toCartItem(p))}
             className="flex justify-between items-center p-3 border rounded cursor-pointer hover:bg-gray-50"
           >
-            <span className="font-semibold text-gray-600">{item.name}</span>
-            <span className="text-sm font-semibold text-gray-600">LKR {item.price}</span>
+            <div>
+              <span className="font-semibold text-gray-600">{p.name}</span>
+              {p.category && (
+                <span className="ml-2 text-xs text-slate-400">{p.category}</span>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold text-gray-600">LKR {p.price.toFixed(2)}</p>
+              {p.stock <= 0 && (
+                <p className="text-xs text-red-500">Out of stock</p>
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -108,11 +119,11 @@ export default function ItemGrid({ search, onAdd }: Props) {
   /* GRID VIEW (with images) */
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-      {filteredItems.map((item) => (
+      {filtered.map((p) => (
         <ItemCard
-          key={item.id}
-          item={item}
-          onClick={() => onAdd(item)}
+          key={p.id}
+          item={toCartItem(p)}
+          onClick={() => onAdd(toCartItem(p))}
         />
       ))}
     </div>
