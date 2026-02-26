@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import Buttons from "@/components/Admin/common/ActionButton";
 import SearchBar from "@/components/Admin/common/Search-bar";
+import { customerService, PosCustomer } from "@/lib/services/customer-service";
 
-type Customer = {
+// Shape the parent (ManageCustomersPopup) expects
+type CustomerForParent = {
   id: number;
   name: string;
   phone: string;
@@ -15,54 +17,39 @@ type Customer = {
 type Props = {
   onClose: () => void;
   onAddCustomer: () => void;
-  onCustomerSelected: (customer: Customer) => void; 
+  onCustomerSelected: (customer: CustomerForParent) => void;
 };
 
-const customers: Customer[] = [
-  {
-    id: 1,
-    name: "Kavindu Madushan",
-    phone: "083894771983",
-    email: "KavinduMadushan@mail.com",
-  },
-  {
-    id: 2,
-    name: "Manuga Dewhan",
-    phone: "081829748835",
-    email: "ManugaDewhan@mail.com",
-  },
-  {
-    id: 3,
-    name: "Malsha Ashen",
-    phone: "087837829837",
-    email: "MalshaAshen@mail.com",
-  },
+const columns: Column<PosCustomer>[] = [
+  { key: "name",  label: "CUSTOMER NAME"  },
+  { key: "phone", label: "PHONE NUMBER"   },
+  { key: "email", label: "EMAIL ADDRESS"  },
 ];
 
-const columns: Column<Customer>[] = [
-  { key: "name", label: "CUSTOMER NAME" },
-  { key: "phone", label: "PHONE NUMBER" },
-  { key: "email", label: "EMAIL ADDRESS" },
-];
+export default function ManageCustomer({ onClose, onAddCustomer, onCustomerSelected }: Props) {
+  const [search, setSearch]       = useState("");
+  const [customers, setCustomers] = useState<PosCustomer[]>([]);
+  const [loading, setLoading]     = useState(false);
 
-export default function ManageCustomer({
-  onClose,
-  onAddCustomer,
-  onCustomerSelected,
-}: Props) {
-  const [search, setSearch] = useState("");
+  const fetchCustomers = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setCustomers([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await customerService.search(q);
+      setCustomers(data);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filteredCustomers = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return [];
-
-    return customers.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
-        c.phone.includes(q)
-    );
-  }, [search]);
+  // Debounce search — 300 ms
+  useEffect(() => {
+    const timer = setTimeout(() => fetchCustomers(search), 300);
+    return () => clearTimeout(timer);
+  }, [search, fetchCustomers]);
 
   return (
     <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto">
@@ -78,17 +65,29 @@ export default function ManageCustomer({
 
       {search.trim() !== "" && (
         <div className="mt-6">
-          <CommonTable
-            columns={columns}
-            data={filteredCustomers}
-            emptyMessage="No customers found"
-            onSelectRow={(customer) => {
-              if (!customer) return;
-
-              onCustomerSelected(customer);
-              onClose();
-            }}
-          />
+          {loading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <CommonTable
+              columns={columns}
+              data={customers}
+              emptyMessage="No customers found"
+              onSelectRow={(customer) => {
+                if (!customer) return;
+                onCustomerSelected({
+                  id:    0,                       // legacy numeric id — not used downstream
+                  name:  customer.name,
+                  phone: customer.phone,
+                  email: customer.email ?? "",
+                });
+                onClose();
+              }}
+            />
+          )}
         </div>
       )}
 
