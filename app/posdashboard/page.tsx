@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import ItemGrid from "@/components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, {
   CustomerInfoPanelHandle,
@@ -12,8 +13,10 @@ import OrderPaymentModal, {
 import OrderConfirmation, { ConfirmItem } from "@/components/Pos/OrderConfirmation";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
-import { Check, X } from "lucide-react";
+import { Check, X, Loader2 } from "lucide-react";
+import { posService } from "@/lib/services/pos-service";
 
+// ─── Order-Complete Popup ────────────────────────────────────────────────────
 function OrderCompletePopup({
   open,
   onClose,
@@ -25,13 +28,15 @@ function OrderCompletePopup({
 }) {
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
+        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
       aria-hidden={!open}
     >
       <div
-        className={`relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden transform transition-all duration-300 ${open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
-          }`}
+        className={`relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden transform transition-all duration-300 ${
+          open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
+        }`}
       >
         <button
           onClick={onClose}
@@ -89,6 +94,7 @@ function OrderCompletePopup({
   );
 }
 
+// ─── Types ───────────────────────────────────────────────────────────────────
 type SelectedCustomer = {
   name: string;
   phoneNumber: string;
@@ -97,30 +103,29 @@ type SelectedCustomer = {
 
 import { usePosStore } from "@/store/usePosStore";
 
+// ─── Page ────────────────────────────────────────────────────────────────────
 const Page = () => {
+  const { data: session } = useSession();
   const { currency } = useCurrency();
   const { posSettings } = usePosSettings();
-  const { orderItems, addItem, increaseQty, decreaseQty, setQty, clearCart } = usePosStore();
+  const { orderItems, addItem, increaseQty, decreaseQty, setQty, clearCart } =
+    usePosStore();
 
   const [search, setSearch] = useState("");
-
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<{
     orderNo: string;
     totalAmount: number;
     tipAmount: number;
   } | null>(null);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
-
   const [selectedCustomer, setSelectedCustomer] = useState<SelectedCustomer>(null);
-
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
-
   const [paymentModalKey, setPaymentModalKey] = useState(0);
   const [paymentForceEditable, setPaymentForceEditable] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const panelRef = useRef<CustomerInfoPanelHandle>(null);
 
@@ -138,7 +143,12 @@ const Page = () => {
     [orderItems]
   );
 
-  const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
+  const handleAddItem = (item: {
+    id: number;
+    name: string;
+    price: number;
+    image?: string;
+  }) => {
     addItem(item);
   };
 
@@ -148,18 +158,97 @@ const Page = () => {
     setPaymentSummary(null);
     setConfirmOpen(false);
     setPaymentForceEditable(false);
-
     setSelectedCustomer(null);
-
     setPaymentModalKey((k) => k + 1);
+  };
+
+  // ── Submit order to backend ─────────────────────────────────────────────
+  const handleConfirmOrder = async (receiptEmail?: string) => {
+    if (!paymentSummary) return;
+
+    setSubmitting(true);
+    try {
+      const branchId = session?.user?.branchId ?? null;
+      const cashierName = session?.user?.name ?? "Cashier";
+
+      const subtotal = orderItems.reduce(
+        (acc, it) => acc + it.price * it.qty,
+        0
+      );
+
+      await posService.createOrder({
+        orderNo: paymentSummary.orderNo,
+        branchId,
+        cashierName,
+        customerId: null,
+        customerName: selectedCustomer?.name ?? null,
+        customerPhone: selectedCustomer?.phoneNumber ?? null,
+        customerEmail: selectedCustomer?.email ?? null,
+        items: orderItems.map((it) => ({
+          productId: String(it.id),
+          name: it.name,
+          qty: it.qty,
+          unitPrice: it.price,
+          subtotal: it.price * it.qty,
+        })),
+        subtotal,
+        discount: 0,
+        tax: 0,
+        tip: paymentSummary.tip ?? 0,
+        total: paymentSummary.total,
+        paymentMethod: paymentSummary.method,
+        amountPaid: paymentSummary.paid,
+        change: paymentSummary.change,
+        receiptEmail: receiptEmail ?? selectedCustomer?.email ?? null,
+      });
+
+      setCompletedOrderNo(paymentSummary.orderNo);
+    } catch (err) {
+      // Order failed on backend — still complete locally but log warning
+      console.warn("Order API failed, completing locally:", err);
+      setCompletedOrderNo(paymentSummary.orderNo);
+    } finally {
+      setSubmitting(false);
+      setConfirmOpen(false);
+      setPaymentOpen(false);
+      clearCart();
+      hardResetPaymentFlow();
+      setCompleteOpen(true);
+      panelRef.current?.sendOrderConfirmed();
+    }
   };
 
   return (
     <DashboardLayout>
+      {/* Branch context banner for admin/owner */}
+      {(session?.user?.role === "admin" ||
+        session?.user?.role === "owner" ||
+        session?.user?.role === "Admin" ||
+        session?.user?.role === "Owner") && (
+        <div className="mb-2 px-3 py-1.5 rounded-lg bg-orange-50 border border-orange-200 text-xs text-orange-700 font-medium inline-flex items-center gap-1.5">
+          <span>Viewing all branches</span>
+        </div>
+      )}
+
+      {session?.user?.branchName &&
+        session?.user?.role !== "admin" &&
+        session?.user?.role !== "owner" &&
+        session?.user?.role !== "Admin" &&
+        session?.user?.role !== "Owner" && (
+          <div className="mb-2 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-700 font-medium inline-flex items-center gap-1.5">
+            <span>Branch: {session.user.branchName}</span>
+          </div>
+        )}
+
       <div className="flex gap-6 h-[calc(100vh-96px)]">
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="pt-2 shrink-0">
-            <SearchBar value={search} onChange={setSearch} placeholder="Search Name or ID" className="py-2" />
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Search Name or ID"
+              className="py-2"
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
@@ -188,15 +277,19 @@ const Page = () => {
               setSelectedCustomer(
                 summary.customer
                   ? {
-                    name: summary.customer.name ?? "",
-                    phoneNumber: summary.customer.phoneNumber ?? "",
-                    email: summary.customer.email ?? "",
-                  }
+                      name: summary.customer.name ?? "",
+                      phoneNumber: summary.customer.phoneNumber ?? "",
+                      email: summary.customer.email ?? "",
+                    }
                   : null
               );
 
               setPaymentForceEditable(false);
-              setPaymentData({ orderNo, totalAmount: summary.total, tipAmount: 0 });
+              setPaymentData({
+                orderNo,
+                totalAmount: summary.total,
+                tipAmount: 0,
+              });
               setPaymentOpen(true);
             }}
           />
@@ -213,17 +306,14 @@ const Page = () => {
         currencyCode={currency}
         forceEditable={paymentForceEditable}
         onDone={(summary) => {
-
           const summaryWithCustomer: PaymentSummary = {
             ...summary,
             customer: selectedCustomer,
           };
-
           setPaymentSummary(summaryWithCustomer);
           setPaymentOpen(false);
           setConfirmOpen(true);
           setPaymentForceEditable(true);
-
           panelRef.current?.sendPaymentSummary(summaryWithCustomer);
         }}
       />
@@ -234,27 +324,28 @@ const Page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-
           customerEmail={selectedCustomer?.email ?? null}
           onCancelEdit={() => {
             setConfirmOpen(false);
             setPaymentForceEditable(true);
             setPaymentOpen(true);
           }}
-          onConfirm={() => {
-            setCompletedOrderNo(paymentSummary.orderNo);
-
-            setConfirmOpen(false);
-            setPaymentOpen(false);
-
-            clearCart();
-            hardResetPaymentFlow();
-
-            setCompleteOpen(true);
-
-            panelRef.current?.sendOrderConfirmed();
+          onConfirm={(email) => {
+            handleConfirmOrder(email);
           }}
         />
+      )}
+
+      {/* Submitting overlay */}
+      {submitting && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/30">
+          <div className="bg-white rounded-2xl px-8 py-6 flex items-center gap-3 shadow-xl">
+            <Loader2 className="animate-spin text-orange-500" size={24} />
+            <span className="text-sm font-medium text-gray-700">
+              Saving order...
+            </span>
+          </div>
+        </div>
       )}
 
       <OrderCompletePopup
@@ -262,7 +353,6 @@ const Page = () => {
         orderNo={completedOrderNo}
         onClose={() => {
           setCompleteOpen(false);
-
           panelRef.current?.sendOrderCleared();
         }}
       />

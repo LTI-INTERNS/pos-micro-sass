@@ -7,7 +7,7 @@ import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 
 type Item = {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image?: string;
