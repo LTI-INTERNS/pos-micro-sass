@@ -2,21 +2,13 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import {
   InputField,
   PasswordField,
   FormErrorMessage,
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
-
-type LoginResponse =
-  | {
-      ok: true;
-      role: "admin" | "cashier" | "superadmin";
-      emailVerified: boolean;
-      email: string;
-    }
-  | { ok: false; message: string };
 
 export default function LoginForm() {
   const router = useRouter();
@@ -26,11 +18,6 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
-  const [needsVerify, setNeedsVerify] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState("");
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMsg, setResendMsg] = useState("");
-
   useEffect(() => {
     const locked = localStorage.getItem("isLocked") === "true";
     setIsLocked(locked);
@@ -39,87 +26,37 @@ export default function LoginForm() {
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setNeedsVerify(false);
-    setResendMsg("");
+    setError("");
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setResendMsg("");
     setLoading(true);
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      const result = await signIn("credentials", {
+        email: form.email,
+        password: form.password,
+        redirect: false, // handle redirect manually below
       });
 
-      const data: LoginResponse = await res.json();
-
-      if (!res.ok || (data.ok === false && "message" in data)) {
-        throw new Error(data.ok === false ? data.message : "Login failed");
-      }
-
-      if (
-        data.ok &&
-        (data.role === "admin" || data.role === "cashier") &&
-        !data.emailVerified
-      ) {
-        setNeedsVerify(true);
-        setPendingEmail(data.email);
-        setError("Your email is not verified. Please verify to continue.");
-        return;
+      if (!result?.ok || result.error) {
+        throw new Error("Invalid email or password");
       }
 
       localStorage.removeItem("isLocked");
       setIsLocked(false);
 
-      switch (data.ok ? data.role : "") {
-        case "superadmin":
-        case "admin":
-          router.push("/overview");
-          break;
-        case "cashier":
-          router.push("/switchuser");
-          break;
-        default:
-          router.push("/switchuser");
-      }
+      // role-based redirect is handled in next-auth callback
+      // default redirect to overview; switchuser for cashier handled server-side
+      router.push("/overview");
+
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError("Something went wrong");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const resendVerification = async () => {
-    if (!pendingEmail) return;
-
-    setResendLoading(true);
-    setResendMsg("");
-
-    try {
-      const res = await fetch("/api/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingEmail }),
-      });
-
-      const data: { message?: string } = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to resend verification email");
-      }
-
-      setResendMsg("Verification email sent. Please check your inbox.");
-    } catch (err: unknown) {
-      if (err instanceof Error) setResendMsg(err.message);
-      else setResendMsg("Something went wrong");
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -133,26 +70,6 @@ export default function LoginForm() {
         )}
 
         {error && <FormErrorMessage message={error} />}
-
-        {needsVerify && (
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 text-sm text-white space-y-2">
-            <p>
-              Please verify your email:
-              <span className="block font-semibold mt-1">{pendingEmail}</span>
-            </p>
-
-            <button
-              type="button"
-              disabled={resendLoading}
-              onClick={resendVerification}
-              className="text-orange-400 font-medium hover:underline disabled:opacity-60"
-            >
-              {resendLoading ? "Sending..." : "Resend verification email"}
-            </button>
-
-            {resendMsg && <p className="text-xs text-white/70">{resendMsg}</p>}
-          </div>
-        )}
 
         {/* Input fields */}
         <InputField
