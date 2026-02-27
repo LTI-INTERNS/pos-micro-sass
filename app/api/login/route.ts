@@ -1,49 +1,28 @@
-import { NextResponse } from "next/server";
-
-type Role = "admin" | "cashier" | "superadmin";
-
-const USERS: Record<
-  string,
-  { password: string; role: Role; emailVerified: boolean }
-> = {
-  "superadmin@coca.lk": {
-    password: "123",
-    role: "superadmin",
-    emailVerified: true,
-  },
-  "admin@coca.lk": {
-    password: "123",
-    role: "admin",
-    emailVerified: false,
-  },
-  "cashier@coca.lk": {
-    password: "123",
-    role: "cashier",
-    emailVerified: false,
-  },
-};
-
-const verifiedStore =
-  globalThis.__verifiedEmails ?? new Map<string, boolean>();
-
-globalThis.__verifiedEmails = verifiedStore;
+import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
+    const body = await req.json();
 
-  const user = USERS[email];
+    // Forward the login to your real Express backend
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
 
-  if (!user || user.password !== password) {
-    return NextResponse.json(
-      { ok: false, message: "Invalid credentials" },
-      { status: 401 }
-    );
-  }
+    const data = await res.json();
 
-  return NextResponse.json({
-    ok: true,
-    role: user.role,
-    email,
-    emailVerified: verifiedStore.get(email) ?? user.emailVerified,
-  });
+    if (!res.ok) {
+        return NextResponse.json({ ok: false, message: data.message || 'Login failed' }, { status: 401 });
+    }
+
+    // Store token in a cookie so middleware can protect routes
+    const response = NextResponse.json(data);
+    response.cookies.set('pos-token', data.token, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
 }
