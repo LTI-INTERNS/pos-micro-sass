@@ -2,16 +2,11 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import ItemCard from "@/components/Pos/posdashboard/ItemCard";
+import ItemCard, { Item } from "@/components/Pos/posdashboard/ItemCard";
 import { posService, PosProduct } from "@/lib/services/pos-service";
 import { Package, RefreshCw, AlertCircle } from "lucide-react";
 
-type Item = {
-  id: number;
-  name: string;
-  price: number;
-  image?: string;
-};
+// Item type is imported from ItemCard to guarantee a single shared definition
 
 type Props = {
   search: string;
@@ -87,9 +82,9 @@ export default function ItemGrid({ search, onAdd }: Props) {
     );
   }
 
-  // Normalise PosProduct → Item (ItemCard expects numeric id)
+  // Normalise PosProduct → Item (shared type from ItemCard)
   const items: Item[] = filteredProducts.map((p) => ({
-    id: Number(p.id) || parseInt(p.id, 36),
+    id: parseInt(p.id, 10) || p.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0),
     name: p.name,
     price: p.price,
     image: p.image,

@@ -6,8 +6,8 @@ import { Package } from "lucide-react";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 
-type Item = {
-  id: string;
+export type Item = {
+  id: number;
   name: string;
   price: number;
   image?: string;

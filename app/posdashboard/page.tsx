@@ -177,7 +177,7 @@ const Page = () => {
       );
 
       await posService.createOrder({
-        orderNo: paymentSummary.orderNo,
+        orderNo: String(paymentSummary.orderNo),
         branchId,
         cashierName,
         customerId: null,
@@ -194,11 +194,11 @@ const Page = () => {
         subtotal,
         discount: 0,
         tax: 0,
-        tip: paymentSummary.tip ?? 0,
-        total: paymentSummary.total,
-        paymentMethod: paymentSummary.method,
-        amountPaid: paymentSummary.paid,
-        change: paymentSummary.change,
+        tip: 0,
+        total: paymentSummary.grandTotal,
+        paymentMethod: paymentSummary.paymentMethod,
+        amountPaid: paymentSummary.totalPaid,
+        change: paymentSummary.changeToGive,
         receiptEmail: receiptEmail ?? selectedCustomer?.email ?? null,
       });
 
