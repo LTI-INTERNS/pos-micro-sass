@@ -9,36 +9,41 @@ const handler = NextAuth({
                 email:    { label: 'Email',    type: 'email' },
                 password: { label: 'Password', type: 'password' },
             },
-            async authorize(credentials) {
-                if (!credentials?.email || !credentials?.password) return null;
+async authorize(credentials) {
+    if (!credentials?.email || !credentials?.password) return null;
 
-                const res = await fetch(
-                    process.env.NEXT_PUBLIC_API_URL + '/api/v1/auth/login',
-                    {
-                        method:  'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body:    JSON.stringify({
-                            email:    credentials.email,
-                            password: credentials.password,
-                        }),
-                    }
-                );
+    const res = await fetch(
+        process.env.NEXT_PUBLIC_API_URL + '/api/v1/auth/login',
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: credentials.email,
+                password: credentials.password,
+            }),
+        }
+    );
 
-                const data = await res.json();
-                if (!res.ok || !data.ok) return null;
+    const result = await res.json();
 
-                return {
-                    id:               data.token,
-                    email:            data.email,
-                    name:             data.name,
-                    role:             data.role,
-                    branchId:         data.branchId,
-                    branchName:       data.branchName,
-                    organizationId:   data.organizationId,
-                    organizationName: data.organizationName,
-                    token:            data.token,
-                };
-            },
+    if (!res.ok || !result.success || !result.data?.ok) {
+        return null;
+    }
+
+    const user = result.data;
+
+    return {
+        id: user.token,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        branchId: user.branchId,
+        branchName: user.branchName,
+        organizationId: user.organizationId,
+        organizationName: user.organizationName,
+        token: user.token,
+    };
+}
         }),
     ],
 
