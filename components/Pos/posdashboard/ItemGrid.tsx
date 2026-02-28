@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import ItemCard from "@/components/Pos/posdashboard/ItemCard";
+import { productService } from "@/lib/services/product-service";
+import { Package, RefreshCw } from "lucide-react";
 
 type Item = {
-  id: number;
+  id: string;
   name: string;
   price: number;
   image?: string;
@@ -14,80 +17,80 @@ type Props = {
   onAdd: (item: Item) => void;
 };
 
-const items: Item[] = [
-  {
-    id: 1,
-    name: "Burger",
-    price: 1200,
-    image: "/food/burger.jpg",
-  },
-  {
-    id: 2,
-    name: "Pizza",
-    price: 2500,
-    image: "/food/pizza.jpg",
-  },
-  {
-    id: 3,
-    name: "Fries",
-    price: 800,
-    image: "/food/fries.jpg",
-  },
-  {
-    id: 4,
-    name: "Salad",
-    price: 1000,
-    image: "/food/salad.jpg",
-  },
-  {
-    id: 5,
-    name: "Sandwich",
-    price: 900,
-    image: "/food/burger.jpg",
-  },
-  {
-    id: 6,
-    name: "Noodles",
-    price: 1100,
-    image: "/food/pizza.jpg",
-  },
-  {
-    id: 7,
-    name: "Rice",
-    price: 1000,
-    image: "/food/fries.jpg",
-  },
-  {
-    id: 8,
-    name: "Pasta",
-    price: 1300,
-    image: "/food/salad.jpg",
-  },
-  {
-    id: 9,
-    name: "Sushi",
-    price: 2000,
-    image: "/food/burger.jpg",
-  },
-  {
-    id: 10,
-    name: "Tacos",
-    price: 1500,
-    image: "/food/pizza.jpg",
-  }
-];
-
-
 export default function ItemGrid({ search, onAdd }: Props) {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = () => {
+    setLoading(true);
+    setError(null);
+
+    productService
+      .getAll({ limit: 100 })
+      .then((products) => {
+        const mapped: Item[] = products
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            image: p.image ?? undefined,
+          }));
+        setItems(mapped);
+      })
+      .catch(() => {
+        setError("Failed to load products. Please try again.");
+      })
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   const filteredItems = items.filter((i) =>
     i.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="bg-gray-100 rounded-xl h-44 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-center gap-3">
+        <p className="text-sm text-red-500">{error}</p>
+        <button
+          onClick={fetchProducts}
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500 text-white text-sm hover:bg-orange-600 transition"
+        >
+          <RefreshCw size={14} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (filteredItems.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-48 text-center gap-2 text-gray-400">
+        <Package size={40} className="text-gray-300" />
+        <p className="text-sm">
+          {search ? `No products match "${search}"` : "No active products found."}
+        </p>
+      </div>
+    );
+  }
 
   const hasAnyImage = filteredItems.some(
     (i) => i.image && i.image.trim() !== ""
   );
 
-  /* LIST VIEW (no images) */
   if (!hasAnyImage) {
     return (
       <div className="space-y-2">
@@ -98,22 +101,17 @@ export default function ItemGrid({ search, onAdd }: Props) {
             className="flex justify-between items-center p-3 border rounded cursor-pointer hover:bg-gray-50"
           >
             <span className="font-semibold text-gray-600">{item.name}</span>
-            <span className="text-sm font-semibold text-gray-600">LKR {item.price}</span>
+            <span className="text-sm font-semibold text-gray-600">{item.price}</span>
           </div>
         ))}
       </div>
     );
   }
 
-  /* GRID VIEW (with images) */
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {filteredItems.map((item) => (
-        <ItemCard
-          key={item.id}
-          item={item}
-          onClick={() => onAdd(item)}
-        />
+        <ItemCard key={item.id} item={item} onClick={() => onAdd(item)} />
       ))}
     </div>
   );

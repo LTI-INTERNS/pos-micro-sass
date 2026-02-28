@@ -3,7 +3,7 @@ import { getSession } from 'next-auth/react';
 import { useConfigStore } from '@/store/useConfigStore';
 
 export const apiClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
+    baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000') + '/api/v1',
 });
 
 apiClient.interceptors.request.use(async (config) => {
