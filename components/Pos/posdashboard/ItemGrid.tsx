@@ -2,23 +2,16 @@
 
 import { useEffect, useState } from "react";
 import ItemCard from "@/components/Pos/posdashboard/ItemCard";
-import { productService } from "@/lib/services/product-service";
+import { posService, PosProduct } from "@/lib/services/pos-service";
 import { Package, RefreshCw } from "lucide-react";
-
-type Item = {
-  id: string;
-  name: string;
-  price: number;
-  image?: string;
-};
 
 type Props = {
   search: string;
-  onAdd: (item: Item) => void;
+  onAdd: (item: PosProduct) => void;
 };
 
 export default function ItemGrid({ search, onAdd }: Props) {
-  const [items, setItems] = useState<Item[]>([]);
+  const [items, setItems] = useState<PosProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,21 +19,10 @@ export default function ItemGrid({ search, onAdd }: Props) {
     setLoading(true);
     setError(null);
 
-    productService
-      .getAll({ limit: 100 })
-      .then((products) => {
-        const mapped: Item[] = products
-          .map((p) => ({
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            image: p.image ?? undefined,
-          }));
-        setItems(mapped);
-      })
-      .catch(() => {
-        setError("Failed to load products. Please try again.");
-      })
+    posService
+      .getProducts({ limit: 100 })
+      .then(setItems)
+      .catch(() => setError("Failed to load products. Please try again."))
       .finally(() => setLoading(false));
   };
 
@@ -52,6 +34,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     i.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  /* ── LOADING ── */
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -62,6 +45,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     );
   }
 
+  /* ── ERROR ── */
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-48 text-center gap-3">
@@ -76,6 +60,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     );
   }
 
+  /* ── EMPTY ── */
   if (filteredItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-48 text-center gap-2 text-gray-400">
@@ -91,6 +76,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     (i) => i.image && i.image.trim() !== ""
   );
 
+  /* ── LIST VIEW (no images) ── */
   if (!hasAnyImage) {
     return (
       <div className="space-y-2">
@@ -108,6 +94,7 @@ export default function ItemGrid({ search, onAdd }: Props) {
     );
   }
 
+  /* ── GRID VIEW (with images) ── */
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {filteredItems.map((item) => (
