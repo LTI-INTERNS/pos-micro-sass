@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 type ManagerVerificationProps = {
   onVerified: () => void;
@@ -20,6 +20,7 @@ export default function ManagerVerification({
   const [managerEmail, setManagerEmail] = useState<string>("");
   const [managerPassword, setManagerPassword] = useState<string>("");
   const [verificationError, setVerificationError] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const handleManagerVerification = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +30,6 @@ export default function ManagerVerification({
       managerEmail === MANAGER_CREDENTIALS.email &&
       managerPassword === MANAGER_CREDENTIALS.password
     ) {
-      // Credentials verified
       setVerificationError("");
       setManagerEmail("");
       setManagerPassword("");
@@ -59,6 +59,7 @@ export default function ManagerVerification({
         </div>
       )}
 
+      {/* Email */}
       <div className="text-left">
         <label className="block text-sm font-medium text-white/90 mb-1 mt-10">
           Email Address
@@ -73,18 +74,30 @@ export default function ManagerVerification({
         />
       </div>
 
+      {/* Password */}
       <div className="text-left">
         <label className="block text-sm font-medium text-white/90 mb-1">
           Password
         </label>
-        <input
-          type="password"
-          value={managerPassword}
-          onChange={(e) => setManagerPassword(e.target.value)}
-          required
-          className="w-full px-4 py-2 rounded-4xl bg-white/10 backdrop-blur-md border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-          placeholder="Enter password"
-        />
+
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            value={managerPassword}
+            onChange={(e) => setManagerPassword(e.target.value)}
+            required
+            className="w-full px-4 py-2 pr-10 rounded-4xl bg-white/10 backdrop-blur-md border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+            placeholder="Enter password"
+          />
+
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </div>
       </div>
 
       <button
