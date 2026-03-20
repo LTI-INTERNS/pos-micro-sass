@@ -18,6 +18,7 @@ export type RegistrationData = {
   email: string;
   logo: File | null;
   businessType: string;
+  subCategory?: string;
   subscriptionPlan: string;
   paymentMethod: "mastercard" | "visa";
   nameOnCard: string;
