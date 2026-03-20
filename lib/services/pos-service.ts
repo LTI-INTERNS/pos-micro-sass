@@ -21,5 +21,5 @@ export const posService = {
             .catch(() => productsData.map(p => ({ id: p.id, name: p.name, price: p.price }))),
 
     createOrder: (data: unknown) =>
-        apiClient.post<ApiResponse<unknown>>('/sales', data).then(res => res.data.data),
+        apiClient.post<ApiResponse<unknown>>('/orders', data).then(res => res.data.data),
 };

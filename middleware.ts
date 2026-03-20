@@ -7,13 +7,27 @@ export default withAuth(
         const pathname = req.nextUrl.pathname;
         const role     = token?.role?.toUpperCase();
 
-        // CASHIER — can only access posdashboard
+        // ── BRANCH_SESSION ──────────────────────────────────────────────────
+        // A BRANCH_SESSION token is only valid to visit /switchuser.
+        // It cannot access any protected page — the cashier must enter their PIN first.
+        if (role === 'BRANCH_SESSION') {
+            if (!pathname.startsWith('/switchuser') && !pathname.startsWith('/pinentry')) {
+                return NextResponse.redirect(new URL('/switchuser', req.url));
+            }
+            return NextResponse.next();
+        }
+
+        // ── CASHIER — POS only ───────────────────────────────────────────────
         if (role === 'CASHIER' && !pathname.startsWith('/posdashboard')) {
             return NextResponse.redirect(new URL('/posdashboard', req.url));
         }
 
-        // MANAGER, ADMIN, OWNER — cannot access posdashboard
-        if (role !== 'CASHIER' && pathname.startsWith('/posdashboard')) {
+        // ── MANAGER / ADMIN / OWNER — admin dashboard only ───────────────────
+        if (
+            role !== 'CASHIER' &&
+            role !== 'BRANCH_SESSION' &&
+            pathname.startsWith('/posdashboard')
+        ) {
             return NextResponse.redirect(new URL('/overview', req.url));
         }
 
@@ -36,6 +50,7 @@ export const config = {
         '/overview/:path*',
         '/posdashboard/:path*',
         '/switchuser/:path*',
+        '/pinentry/:path*',
         '/staffmanagement/:path*',
         '/customermanagement/:path*',
         '/productmanagement/:path*',

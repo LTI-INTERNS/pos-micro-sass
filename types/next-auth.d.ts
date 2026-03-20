@@ -7,13 +7,14 @@ declare module 'next-auth' {
         branchName:       string;
         organizationId:   string;
         organizationName: string;
-        token:            string;
+        token:            string;   // backend JWT — mapped to backendToken in session
     }
 
     interface Session {
         user: {
             name?:            string | null;
             email?:           string | null;
+            image?:           string | null;
             role:             string;
             branchId:         string;
             branchName:       string;

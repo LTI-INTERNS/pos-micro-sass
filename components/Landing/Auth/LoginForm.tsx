@@ -2,7 +2,7 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import {
   InputField,
   PasswordField,
@@ -19,8 +19,7 @@ export default function LoginForm() {
   const [showAgreement, setShowAgreement] = useState(false);
 
   useEffect(() => {
-    const locked = localStorage.getItem("isLocked") === "true";
-    setIsLocked(locked);
+    setIsLocked(localStorage.getItem("isLocked") === "true");
   }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -35,6 +34,9 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
+      // Single unified provider handles both staff and branch credentials.
+      // The NextAuth authorize() function tries staff login first, then branch
+      // login, and encodes the result type in the returned role field.
       const result = await signIn("credentials", {
         email:    form.email,
         password: form.password,
@@ -46,21 +48,26 @@ export default function LoginForm() {
       }
 
       localStorage.removeItem("isLocked");
-      setIsLocked(false);
 
-      // Read role from session and redirect accordingly
-      const session = await getSession();
-      const role = session?.user?.role?.toUpperCase();
+      // Read the session to find out what role was returned so we can route
+      // to the right page without an extra round-trip.
+      const sessionRes = await fetch("/api/auth/session");
+      const session    = await sessionRes.json();
+      const role       = (session?.user?.role as string | undefined)?.toUpperCase();
 
-      if (role === "CASHIER") {
+      if (role === "BRANCH_SESSION") {
+        // Branch credentials were matched — go pick a cashier
+        router.push("/switchuser");
+      } else if (role === "CASHIER") {
+        // Cashier personal login (edge case) — go straight to POS
         router.push("/posdashboard");
       } else {
+        // OWNER / ADMIN / MANAGER — go to admin dashboard
         router.push("/overview");
       }
-
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError("Something went wrong");
+      else setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
