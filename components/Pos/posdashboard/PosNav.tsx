@@ -4,6 +4,7 @@ import Image from "next/image";
 import Clock from '@/components/Landing/clock';
 import { Menu, History, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
 interface NavbarProps {
@@ -15,13 +16,27 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   const router = useRouter();
   const { storeInfo } = useStoreInfo();
 
-  const handleLock = () => {
+  /**
+   * Lock — keeps the branch session alive so the switch-user screen
+   * can still show cashier avatars, but clears the cashier's personal
+   * session by signing out and redirecting to /switchuser.
+   */
+  const handleLock = async () => {
     localStorage.setItem('isLocked', 'true');
-    router.push('/switchuser');
+    sessionStorage.removeItem('cashier');
+    // Sign out clears the NextAuth cookie (cashier JWT).
+    // callbackUrl sends them to /switchuser after the sign-out completes.
+    await signOut({ callbackUrl: '/switchuser' });
   };
 
-  const handleLogout = () => {
-    router.push('/login');
+  /**
+   * Log Out — full sign-out. Clears NextAuth session, sessionStorage,
+   * and the lock flag, then sends to /login.
+   */
+  const handleLogout = async () => {
+    localStorage.removeItem('isLocked');
+    sessionStorage.removeItem('cashier');
+    await signOut({ callbackUrl: '/login' });
   };
 
   return (
@@ -44,7 +59,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
             />
           </div>
 
-          <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
+          <div className="w-px h-8 bg-gray-200 hidden sm:block" />
 
           <div className="flex items-center gap-4">
             {storeInfo.logoUrl && (
@@ -81,6 +96,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
           <History size={20} />
         </button>
 
+        {/* Lock — clears cashier session, keeps branch session */}
         <button
           onClick={handleLock}
           title="Lock POS"
@@ -91,6 +107,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
           Lock
         </button>
 
+        {/* Log Out — full sign-out */}
         <button
           onClick={handleLogout}
           className="bg-orange-100 text-primary px-4 py-1 hover:bg-orange-500 hover:text-white cursor-pointer

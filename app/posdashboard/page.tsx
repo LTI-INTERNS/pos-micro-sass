@@ -138,7 +138,7 @@ const Page = () => {
     [orderItems]
   );
 
-  const handleAddItem = (item: { id: number; name: string; price: number; image?: string }) => {
+  const handleAddItem = (item: { id: string; name: string; price: number; image?: string }) => {
     addItem(item);
   };
 

@@ -2,21 +2,13 @@
 
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import {
   InputField,
   PasswordField,
   FormErrorMessage,
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
-
-type LoginResponse =
-  | {
-      ok: true;
-      role: "admin" | "cashier" | "superadmin";
-      emailVerified: boolean;
-      email: string;
-    }
-  | { ok: false; message: string };
 
 export default function LoginForm() {
   const router = useRouter();
@@ -26,100 +18,58 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
-  const [needsVerify, setNeedsVerify] = useState(false);
-  const [pendingEmail, setPendingEmail] = useState("");
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMsg, setResendMsg] = useState("");
-
   useEffect(() => {
-    const locked = localStorage.getItem("isLocked") === "true";
-    setIsLocked(locked);
+    setIsLocked(localStorage.getItem("isLocked") === "true");
   }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setNeedsVerify(false);
-    setResendMsg("");
+    setError("");
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setResendMsg("");
     setLoading(true);
 
     try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      // Single unified provider handles both staff and branch credentials.
+      // The NextAuth authorize() function tries staff login first, then branch
+      // login, and encodes the result type in the returned role field.
+      const result = await signIn("credentials", {
+        email:    form.email,
+        password: form.password,
+        redirect: false,
       });
 
-      const data: LoginResponse = await res.json();
-
-      if (!res.ok || (data.ok === false && "message" in data)) {
-        throw new Error(data.ok === false ? data.message : "Login failed");
-      }
-
-      if (
-        data.ok &&
-        (data.role === "admin" || data.role === "cashier") &&
-        !data.emailVerified
-      ) {
-        setNeedsVerify(true);
-        setPendingEmail(data.email);
-        setError("Your email is not verified. Please verify to continue.");
-        return;
+      if (!result?.ok || result.error) {
+        throw new Error("Invalid email or password");
       }
 
       localStorage.removeItem("isLocked");
-      setIsLocked(false);
 
-      switch (data.ok ? data.role : "") {
-        case "superadmin":
-        case "admin":
-          router.push("/overview");
-          break;
-        case "cashier":
-          router.push("/switchuser");
-          break;
-        default:
-          router.push("/switchuser");
+      // Read the session to find out what role was returned so we can route
+      // to the right page without an extra round-trip.
+      const sessionRes = await fetch("/api/auth/session");
+      const session    = await sessionRes.json();
+      const role       = (session?.user?.role as string | undefined)?.toUpperCase();
+
+      if (role === "BRANCH_SESSION") {
+        // Branch credentials were matched — go pick a cashier
+        router.push("/switchuser");
+      } else if (role === "CASHIER") {
+        // Cashier personal login (edge case) — go straight to POS
+        router.push("/posdashboard");
+      } else {
+        // OWNER / ADMIN / MANAGER — go to admin dashboard
+        router.push("/overview");
       }
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
-      else setError("Something went wrong");
+      else setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const resendVerification = async () => {
-    if (!pendingEmail) return;
-
-    setResendLoading(true);
-    setResendMsg("");
-
-    try {
-      const res = await fetch("/api/resend-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: pendingEmail }),
-      });
-
-      const data: { message?: string } = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.message || "Failed to resend verification email");
-      }
-
-      setResendMsg("Verification email sent. Please check your inbox.");
-    } catch (err: unknown) {
-      if (err instanceof Error) setResendMsg(err.message);
-      else setResendMsg("Something went wrong");
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -134,27 +84,6 @@ export default function LoginForm() {
 
         {error && <FormErrorMessage message={error} />}
 
-        {needsVerify && (
-          <div className="bg-white/10 border border-white/20 rounded-2xl p-4 text-sm text-white space-y-2">
-            <p>
-              Please verify your email:
-              <span className="block font-semibold mt-1">{pendingEmail}</span>
-            </p>
-
-            <button
-              type="button"
-              disabled={resendLoading}
-              onClick={resendVerification}
-              className="text-orange-400 font-medium hover:underline disabled:opacity-60"
-            >
-              {resendLoading ? "Sending..." : "Resend verification email"}
-            </button>
-
-            {resendMsg && <p className="text-xs text-white/70">{resendMsg}</p>}
-          </div>
-        )}
-
-        {/* Input fields */}
         <InputField
           id="login-email"
           label="Email Address"
@@ -179,10 +108,7 @@ export default function LoginForm() {
         />
 
         <div className="flex justify-end">
-          <a
-            href="/forgotpassword"
-            className="text-sm text-orange-400 hover:underline"
-          >
+          <a href="/forgotpassword" className="text-sm text-orange-400 hover:underline">
             Forgot password?
           </a>
         </div>
@@ -191,7 +117,6 @@ export default function LoginForm() {
           {loading ? "Logging in..." : "Log in"}
         </ActionButton>
 
-        {/* End user agreement */}
         <div className="text-center text-sm text-white/60 pt-2">
           <button
             type="button"
@@ -207,13 +132,11 @@ export default function LoginForm() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <h3 className="text-lg font-semibold">End User Agreement</h3>
-
             <p className="text-sm text-gray-600">
               This system is for authorized employees only. By continuing, you
               agree to follow company policies, maintain data confidentiality,
               and use the system responsibly.
             </p>
-
             <button
               type="button"
               onClick={() => setShowAgreement(false)}
