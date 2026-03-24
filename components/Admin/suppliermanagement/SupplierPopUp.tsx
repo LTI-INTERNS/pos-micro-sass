@@ -164,7 +164,7 @@ export default function SupplierPopUp({
             />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
-                label="Contact person Name"
+                label="Name"
                 placeholder="Enter name"
                 value={values.contactPersonName ?? ""}
                 onChange={(next) => setField("contactPersonName", next)}
