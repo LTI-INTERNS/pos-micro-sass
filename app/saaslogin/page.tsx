@@ -2,7 +2,6 @@
 
 import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signIn } from "next-auth/react";
 
@@ -17,11 +16,8 @@ import {
   FormErrorMessage,
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
-import { companyService } from "@/lib/services/company-service";
 
 export default function SaasLoginPage() {
-  const router = useRouter();
-
   const [isPending, startTransition] = useTransition();
   const [submitted, setSubmitted]    = useState(false);
   const [touched, setTouched]        = useState({ email: false, pw: false });
@@ -74,31 +70,17 @@ export default function SaasLoginPage() {
       const session    = await sessionRes.json();
       const role       = session?.user?.role?.toUpperCase();
 
-      if (role === "OWNER") {
-        // OWNER: go to company selection only if they have more than one company
-        try {
-          const companies = await companyService.getMyCompanies();
-          router.push(companies.length === 1 ? "/overview" : "/companySelection");
-        } catch {
-          // Fallback to selection page — let it handle the error state
-          router.push("/companySelection");
-        }
-        return;
-      }
-
-      if (role === "ADMIN") {
-        // ADMIN: skip selection if only one company
-        try {
-          const companies = await companyService.getMyCompanies();
-          router.push(companies.length === 1 ? "/overview" : "/companySelection");
-        } catch {
-          router.push("/companySelection");
-        }
+      if (role === "OWNER" || role === "ADMIN") {
+        // Hard navigation so the browser sends the fresh session cookie with
+        // the request. A client-side router.push() would navigate before
+        // NextAuth finishes writing the cookie, causing companySelection to
+        // see status="unauthenticated" briefly and redirect back here.
+        window.location.href = "/companySelection";
         return;
       }
 
       // Any other role that somehow reaches saaslogin → send to overview
-      router.push("/overview");
+      window.location.href = "/overview";
     });
   }
 
