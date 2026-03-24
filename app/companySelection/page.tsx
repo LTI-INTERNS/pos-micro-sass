@@ -25,9 +25,6 @@ export default function CompanySelectPage() {
   const role = session?.user?.role?.toUpperCase();
 
   // ── Fetch companies from the real API ────────────────────────────────────────
-  // router is intentionally omitted from deps: in Next.js App Router, router is
-  // a new object reference on every render, so including it would recreate
-  // fetchCompanies on every render and cause the useEffect below to loop.
   const fetchCompanies = useCallback(async () => {
     try {
       setLoading(true);
@@ -39,7 +36,6 @@ export default function CompanySelectPage() {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
