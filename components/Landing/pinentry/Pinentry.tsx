@@ -265,7 +265,7 @@ export default function PinEntryPage() {
             {error && (
               <div className="mb-4 text-left">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-sm text-white/90">{error}</p>
                     <button
@@ -305,12 +305,13 @@ export default function PinEntryPage() {
                 0
               </button>
               <button
+                aria-label="Backspace"
                 onClick={backspace}
                 disabled={loading}
                 className="py-3 cursor-pointer rounded-3xl bg-gray/8 backdrop-blur-md hover:bg-white/20 border border-white/30 disabled:opacity-50"
               >
                 <div className="relative w-6 h-6 mx-auto">
-                  <Image src="/backspace.png" alt="Backspace" fill className="object-contain" />
+                  <Image src="/backspace.png" alt="" fill className="object-contain" />
                 </div>
               </button>
             </div>
@@ -356,7 +357,7 @@ export default function PinEntryPage() {
             {error && (
               <div className="mb-6 text-left">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                   <p className="text-sm text-white/90">{error}</p>
                 </div>
               </div>
@@ -388,12 +389,13 @@ export default function PinEntryPage() {
                 0
               </button>
               <button
+                aria-label="Backspace"
                 onClick={backspace}
                 disabled={loading}
                 className="py-3 rounded-3xl bg-gray/8 backdrop-blur-md hover:bg-white/20 border border-white/30 disabled:opacity-50"
               >
                 <div className="relative w-6 h-6 mx-auto">
-                  <Image src="/backspace.png" alt="Backspace" fill className="object-contain" />
+                  <Image src="/backspace.png" alt="" fill className="object-contain" />
                 </div>
               </button>
             </div>
