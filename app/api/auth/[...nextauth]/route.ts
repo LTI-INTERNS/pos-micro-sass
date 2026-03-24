@@ -14,14 +14,15 @@ interface BackendJwt {
 const handler = NextAuth({
     providers: [
         /**
-         * Unified credentials provider — used by the /login page.
+         * Unified credentials provider — used by /login and /saaslogin.
          *
          * Flow:
          *  1. Try staff login  (OWNER / ADMIN / MANAGER personal email + password)
          *  2. If that fails, try branch login (branch email + password)
          *  3. Encode the result type in `role` so the login form can route:
-         *       BRANCH_SESSION      → /switchuser  (cashier picks their avatar)
-         *       OWNER / ADMIN       → /companySelection
+         *       BRANCH_SESSION      → /switchuser        (cashier picks their avatar)
+         *       OWNER               → /companySelection  (via saaslogin)
+         *       ADMIN               → /companySelection or /overview
          *       MANAGER             → /overview
          */
         CredentialsProvider({
@@ -48,10 +49,10 @@ const handler = NextAuth({
                         email:       u.email,
                         name:        u.name,
                         role:        u.role,
-                        branchId:    u.branchId,
-                        branchName:  u.branchName,
-                        companyId:   u.companyId,
-                        companyName: u.companyName,
+                        branchId:    u.branchId    ?? '',
+                        branchName:  u.branchName  ?? '',
+                        companyId:   u.companyId   ?? '',
+                        companyName: u.companyName ?? '',
                         token:       u.token,
                     };
                 }
@@ -111,10 +112,47 @@ const handler = NextAuth({
                 };
             },
         }),
+
+        /**
+         * Company selection provider — called when OWNER or ADMIN picks a company
+         * from the company selection page. Rewrites the JWT with the chosen companyId
+         * so the middleware's companyId guard is satisfied on the next navigation.
+         * All other session fields (role, backendToken, tokenExpiry, etc.) are
+         * preserved by passing them through as credentials.
+         */
+        CredentialsProvider({
+            id:   'select-company',
+            name: 'Select Company',
+            credentials: {
+                companyId:    { label: 'Company ID',    type: 'text' },
+                companyName:  { label: 'Company Name',  type: 'text' },
+                role:         { label: 'Role',          type: 'text' },
+                email:        { label: 'Email',         type: 'text' },
+                name:         { label: 'Name',          type: 'text' },
+                branchId:     { label: 'Branch ID',     type: 'text' },
+                branchName:   { label: 'Branch Name',   type: 'text' },
+                token:        { label: 'Backend Token', type: 'text' },
+                tokenExpiry:  { label: 'Token Expiry',  type: 'text' },
+            },
+            async authorize(credentials) {
+                if (!credentials?.companyId || !credentials?.token) return null;
+                return {
+                    id:          credentials.companyId,
+                    email:       credentials.email        ?? '',
+                    name:        credentials.name         ?? '',
+                    role:        credentials.role         ?? '',
+                    branchId:    credentials.branchId     ?? '',
+                    branchName:  credentials.branchName   ?? '',
+                    companyId:   credentials.companyId,
+                    companyName: credentials.companyName  ?? '',
+                    token:       credentials.token,
+                };
+            },
+        }),
     ],
 
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user, account }) {
             // First sign-in — map from authorize() return value
             if (user) {
                 token.role         = user.role;
@@ -124,13 +162,22 @@ const handler = NextAuth({
                 token.companyName  = user.companyName;
                 token.backendToken = user.token;
 
+                // select-company re-sign-in: the backend JWT hasn't changed, so
+                // preserve the tokenExpiry already stored in the existing token
+                // rather than re-decoding (which would reset the clock to now).
+                if (account?.provider === 'select-company') {
+                    // tokenExpiry is already on the incoming token — keep it.
+                    return token;
+                }
+
                 // Decode expiry from the backend JWT immediately on first sign-in
                 try {
-                    const decoded    = jwtDecode<BackendJwt>(user.token);
+                    const decoded     = jwtDecode<BackendJwt>(user.token);
                     token.tokenExpiry = decoded.exp;
-                    // Use companyId from the signed JWT as the authoritative source
-                    token.companyId  = decoded.companyId || user.companyId;
-                    token.branchId   = decoded.branchId  || user.branchId;
+                    // Only override companyId/branchId from JWT if they are non-empty
+                    // OWNER has companyId '' until they select one — keep it as-is
+                    if (decoded.companyId) token.companyId = decoded.companyId;
+                    if (decoded.branchId)  token.branchId  = decoded.branchId;
                 } catch {
                     // jwtDecode failed — keep values from authorize()
                 }
@@ -162,7 +209,11 @@ const handler = NextAuth({
     },
 
     pages: {
-        signIn: '/login',
+        // OWNER logs in via /saaslogin, staff via /login.
+        // NextAuth uses this as the redirect target when auth fails.
+        // We use /saaslogin as the default since OWNER is the one who
+        // hits unauthenticated protected routes (/companySelection).
+        signIn: '/saaslogin',
     },
 
     session: {
