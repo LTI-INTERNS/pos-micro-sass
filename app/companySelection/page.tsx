@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { AlertCircle } from "lucide-react";
 
 import CommonLayout from "@/components/saas/common/CommonLayout";
 import Navigation from "@/components/saas/companyCreation/Navigation";
@@ -9,50 +11,128 @@ import GlassBackground from "@/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import CompanySelectItem from "@/components/saas/companySelection/CompanySelectItem";
-
-type Role = "OWNER" | "ADMIN" ;
-
-type Company = {
-  id: string;
-  name: string;
-  type: string;
-};
+import { companyService, Company } from "@/lib/services/company-service";
 
 export default function CompanySelectPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
 
-  const role = (searchParams.get("role") ?? "OWNER") as Role;
-
-  const companies: Company[] = useMemo(
-    () => [
-      { id: "1", name: "Company Name", type: "Retail" },
-      { id: "2", name: "Company Name", type: "Restaurant / Café" },
-      { id: "3", name: "Company Name", type: "Grocery / Supermarket" },
-      { id: "4", name: "Company Name", type: "Retail" },
-    ],
-    []
-  );
-
+  const [companies, setCompanies]   = useState<Company[]>([]);
   const [selectedId, setSelectedId] = useState("");
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState("");
 
-  // Role-based access
-  useEffect(() => {
+  const role = session?.user?.role?.toUpperCase();
 
-    if (role === "ADMIN" && companies.length === 1) {
-      router.replace("/overview");
+  // ── Fetch companies from the real API ────────────────────────────────────────
+  const fetchCompanies = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const data = await companyService.getMyCompanies();
+      setCompanies(data);
+    } catch {
+      setError("Failed to load companies. Please try again.");
+    } finally {
+      setLoading(false);
     }
-  }, [role, companies.length, router]);
+  }, []);
 
-  function onSelectCompany(id: string) {
-    setSelectedId(id);
-    router.push("/overview");
+  useEffect(() => {
+    // Never act while NextAuth is still resolving the session.
+    if (status === "loading") return;
+    // Only redirect once the session is definitively gone — not during hydration.
+    if (status === "unauthenticated") { router.replace("/saaslogin"); return; }
+    // Wait until role is hydrated — can be undefined briefly after navigation.
+    if (!role) return;
+    // Only OWNER and ADMIN reach this page.
+    if (role !== "OWNER" && role !== "ADMIN") { router.replace("/overview"); return; }
+
+    fetchCompanies();
+  // router excluded from deps intentionally — new reference every render in
+  // App Router would cause this effect to re-fire and hit the unauthenticated
+  // branch during the session hydration window.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, role]);
+
+  async function onSelectCompany(companyId: string) {
+    setSelectedId(companyId);
+
+    const chosen = companies.find(c => c.companyId === companyId);
+
+    // Re-sign-in with the selected company so the NextAuth JWT is rewritten
+    // with the chosen companyId. Without this the middleware's companyId guard
+    // would reject the navigation to /overview (companyId is '' for OWNER/ADMIN
+    // until a company is explicitly selected).
+    await signIn('select-company', {
+      redirect:    false,
+      companyId,
+      companyName: chosen?.name        ?? '',
+      role:        session?.user?.role         ?? '',
+      email:       session?.user?.email        ?? '',
+      name:        session?.user?.name         ?? '',
+      branchId:    session?.user?.branchId     ?? '',
+      branchName:  session?.user?.branchName   ?? '',
+      token:       session?.user?.backendToken ?? '',
+    });
+
+    router.push('/overview');
   }
+
+  // ── Loading ──────────────────────────────────────────────────────────────────
+  if (status === "loading" || loading) {
+    return (
+      <CommonLayout navbar={<Navigation title="Company Selection" />}>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="text-white/50 text-sm animate-pulse">Loading companies...</div>
+        </div>
+      </CommonLayout>
+    );
+  }
+
+  // ── Shared sub-components ────────────────────────────────────────────────────
+  const ErrorBanner = error ? (
+    <div className="mb-6 flex items-start gap-3 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
+      <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
+      <div>
+        <p className="text-sm text-red-300">{error}</p>
+        <button
+          onClick={fetchCompanies}
+          className="text-xs text-red-400 hover:text-red-300 underline mt-1"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  ) : null;
+
+  const EmptyState = !error && companies.length === 0 ? (
+    <div className="py-10 text-center text-white/30 text-sm">
+      No companies assigned to your account.
+      <br />
+      Please contact your administrator.
+    </div>
+  ) : null;
+
+  const CompanyList = companies.length > 0 ? (
+    <div className="space-y-4">
+      {companies.map((c) => (
+        <CompanySelectItem
+          key={c.companyId}
+          name={c.name}
+          type={c.businessType}
+          selected={c.companyId === selectedId}
+          onClick={() => onSelectCompany(c.companyId)}
+        />
+      ))}
+    </div>
+  ) : null;
 
   return (
     <CommonLayout navbar={<Navigation title="Company Selection" />}>
       <div className={`pt-10 pb-10 px-4 ${role === "ADMIN" ? "max-w-2xl mx-auto" : ""}`}>
         <GlassBackground className={role === "ADMIN" ? "w-full max-w-md mx-auto" : ""}>
+
           {/* ================= ADMIN VIEW ================= */}
           {role === "ADMIN" && (
             <div className="max-w-2xl mx-auto p-6 lg:p-8">
@@ -63,16 +143,17 @@ export default function CompanySelectPage() {
                 Click a company to continue.
               </p>
 
-              <div className="space-y-4">
-                {companies.map((c) => (
-                  <CompanySelectItem
-                    key={c.id}
-                    name={c.name}
-                    type={c.type}
-                    selected={c.id === selectedId}
-                    onClick={() => onSelectCompany(c.id)}
-                  />
-                ))}
+              {ErrorBanner}
+              {EmptyState}
+              {CompanyList}
+
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="text-xs text-white/40 hover:text-white/70 underline transition"
+                >
+                  Sign out
+                </button>
               </div>
             </div>
           )}
@@ -92,16 +173,17 @@ export default function CompanySelectPage() {
                     Click a company to continue.
                   </p>
 
-                  <div className="space-y-4">
-                    {companies.map((c) => (
-                      <CompanySelectItem
-                        key={c.id}
-                        name={c.name}
-                        type={c.type}
-                        selected={c.id === selectedId}
-                        onClick={() => onSelectCompany(c.id)}
-                      />
-                    ))}
+                  {ErrorBanner}
+                  {EmptyState}
+                  {CompanyList}
+
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/saaslogin" })}
+                      className="text-xs text-white/40 hover:text-white/70 underline transition"
+                    >
+                      Sign out
+                    </button>
                   </div>
                 </div>
               }
@@ -113,16 +195,14 @@ export default function CompanySelectPage() {
                         Create a new company
                       </h3>
                       <p className="mt-2 text-sm text-white/70">
-                        Don’t see your company? Create one and start configuring
+                        Don&apos;t see your company? Create one and start configuring
                         your system.
                       </p>
 
                       <div className="mt-6">
                         <ActionButton
                           className="py-4 text-base"
-                          onClick={() =>
-                            router.push("/companyregistration")
-                          }
+                          onClick={() => router.push("/companyregistration")}
                         >
                           Create Company
                         </ActionButton>
@@ -140,6 +220,7 @@ export default function CompanySelectPage() {
               }
             />
           )}
+
         </GlassBackground>
       </div>
     </CommonLayout>

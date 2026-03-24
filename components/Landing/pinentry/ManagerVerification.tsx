@@ -2,40 +2,80 @@
 
 import { useState } from "react";
 import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 type ManagerVerificationProps = {
   onVerified: () => void;
-  onCancel: () => void;
+  onCancel:   () => void;
 };
 
-// Mock manager credentials - replace with actual authentication
-const MANAGER_CREDENTIALS = {
-  email: "manager@example.com",
-  password: "manager123",
-};
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export default function ManagerVerification({
   onVerified,
 }: ManagerVerificationProps) {
-  const [managerEmail, setManagerEmail] = useState<string>("");
-  const [managerPassword, setManagerPassword] = useState<string>("");
-  const [verificationError, setVerificationError] = useState<string>("");
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const { data: session } = useSession();
 
-  const handleManagerVerification = (e: React.FormEvent) => {
+  const [managerEmail, setManagerEmail]       = useState("");
+  const [managerPassword, setManagerPassword] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const [showPassword, setShowPassword]       = useState(false);
+  const [loading, setLoading]                 = useState(false);
+
+  const handleManagerVerification = async (e: React.FormEvent) => {
     e.preventDefault();
+    setVerificationError("");
+    setLoading(true);
 
-    // Verify manager credentials
-    if (
-      managerEmail === MANAGER_CREDENTIALS.email &&
-      managerPassword === MANAGER_CREDENTIALS.password
-    ) {
-      setVerificationError("");
+    try {
+      // Verify the manager against the backend auth endpoint.
+      // We accept MANAGER, OWNER, or ADMIN roles as valid approvers.
+      const res = await fetch(`${API}/api/v1/auth/login`, {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          // Pass branch context so the backend can scope the check
+          ...(session?.user?.backendToken
+            ? { Authorization: `Bearer ${session.user.backendToken}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          email:    managerEmail.trim(),
+          password: managerPassword,
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok || !result.success || !result.data?.ok) {
+        setVerificationError("Invalid manager credentials. Please try again.");
+        return;
+      }
+
+      const role = result.data.role?.toUpperCase();
+      if (!["MANAGER", "OWNER", "ADMIN"].includes(role)) {
+        setVerificationError("Only managers, owners, or admins can approve this action.");
+        return;
+      }
+
+      // Optionally: ensure the manager belongs to the same branch
+      if (
+        session?.user?.branchId &&
+        result.data.branchId &&
+        result.data.branchId !== session.user.branchId
+      ) {
+        setVerificationError("Manager does not belong to this branch.");
+        return;
+      }
+
       setManagerEmail("");
       setManagerPassword("");
       onVerified();
-    } else {
-      setVerificationError("Invalid manager credentials. Please try again.");
+
+    } catch {
+      setVerificationError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,7 +99,6 @@ export default function ManagerVerification({
         </div>
       )}
 
-      {/* Email */}
       <div className="text-left">
         <label className="block text-sm font-medium text-white/90 mb-1 mt-10">
           Email Address
@@ -69,27 +108,26 @@ export default function ManagerVerification({
           value={managerEmail}
           onChange={(e) => setManagerEmail(e.target.value)}
           required
-          className="w-full px-4 py-2 rounded-4xl bg-white/10 backdrop-blur-md border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-          placeholder="manager@example.com"
+          disabled={loading}
+          className="w-full px-4 py-2 rounded-4xl bg-white/10 backdrop-blur-md border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50 disabled:opacity-50"
+          placeholder="manager@branch.com"
         />
       </div>
 
-      {/* Password */}
       <div className="text-left">
         <label className="block text-sm font-medium text-white/90 mb-1">
           Password
         </label>
-
         <div className="relative">
           <input
             type={showPassword ? "text" : "password"}
             value={managerPassword}
             onChange={(e) => setManagerPassword(e.target.value)}
             required
-            className="w-full px-4 py-2 pr-10 rounded-4xl bg-white/10 backdrop-blur-md border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+            disabled={loading}
+            className="w-full px-4 py-2 pr-10 rounded-4xl bg-white/10 backdrop-blur-md border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-orange-500/50 disabled:opacity-50"
             placeholder="Enter password"
           />
-
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
@@ -102,9 +140,10 @@ export default function ManagerVerification({
 
       <button
         type="submit"
-        className="w-full py-2 rounded-full bg-orange-500 hover:bg-orange-600 font-semibold hover:text-white cursor-pointer transition-all active:scale-90 mt-5"
+        disabled={loading}
+        className="w-full py-2 rounded-full bg-orange-500 hover:bg-orange-600 font-semibold hover:text-white cursor-pointer transition-all active:scale-90 mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Verify
+        {loading ? "Verifying..." : "Verify"}
       </button>
     </form>
   );
