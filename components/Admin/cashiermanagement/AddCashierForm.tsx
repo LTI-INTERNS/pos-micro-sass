@@ -8,10 +8,8 @@ import PopupActions from "@/components/Admin/common/PopupActions";
 type FormValues = {
   name: string;
   number: string;
-  displayName: string;
   branchName: string;
   email: string;
-  password: string;
   pin: string;
 };
 
@@ -26,10 +24,8 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
   const [formValues, setFormValues] = React.useState<FormValues>({
     name: "",
     number: "",
-    displayName: "",
     branchName: "",
     email: "",
-    password: "",
     pin: "",
   });
 
@@ -69,10 +65,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
       newErrors.number = "Number is required";
     }
 
-    if (!formValues.displayName.trim()) {
-      newErrors.displayName = "Display name is required";
-    }
-
     if (!formValues.branchName) {
       newErrors.branchName = "Please select a branch";
     }
@@ -81,12 +73,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
       newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formValues.password) {
-      newErrors.password = "Password is required";
-    } else if (formValues.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
     }
 
     if (!formValues.pin) {
@@ -103,10 +89,8 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     setFormValues({
       name: "",
       number: "",
-      displayName: "",
       branchName: "",
       email: "",
-      password: "",
       pin: "",
     });
     setErrors({});
@@ -139,7 +123,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
         )}
 
         <FormField
-          label="Number"
+          label="Cashier No"
           placeholder="Enter Number"
           value={formValues.number}
           onChange={(val) => setNumericField("number", val)}
@@ -148,16 +132,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           <p className="text-xs text-red-500 px-3">{errors.number}</p>
         )}
 
-        <FormField
-          label="Display Name"
-          placeholder="Enter display name"
-          value={formValues.displayName}
-          onChange={(val) => setField("displayName", val)}
-        />
-        {errors.displayName && (
-          <p className="text-xs text-red-500 px-3">{errors.displayName}</p>
-        )}
-
+        
         <FormField
           label="Branch Name"
           placeholder="Select Branch"
@@ -184,16 +159,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           <p className="text-xs text-red-500 px-3">{errors.email}</p>
         )}
 
-        <FormField
-          label="Password"
-          placeholder="Enter Password"
-          value={formValues.password}
-          onChange={(val) => setField("password", val)}
-          type="password"
-        />
-        {errors.password && (
-          <p className="text-xs text-red-500 px-3">{errors.password}</p>
-        )}
         
         <FormField
           label="PIN"
