@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import {
   InputField,
@@ -11,7 +10,6 @@ import {
 import ActionButton from "@/components/Admin/common/ActionButton";
 
 export default function LoginForm() {
-  const router = useRouter();
   const [isLocked, setIsLocked]           = useState(false);
   const [form, setForm]                   = useState({ email: "", password: "" });
   const [loading, setLoading]             = useState(false);
@@ -52,29 +50,23 @@ export default function LoginForm() {
       const role       = (session?.user?.role as string | undefined)?.toUpperCase();
 
       switch (role) {
-        case "ADMIN": {
-          // Check company count — skip selection page if only one company
-          try {
-            const { companyService } = await import("@/lib/services/company-service");
-            const companies = await companyService.getMyCompanies();
-            router.push(companies.length === 1 ? "/overview" : "/companySelection");
-          } catch {
-            // Fallback: let companySelection page handle the error state
-            router.push("/companySelection");
-          }
+        case "ADMIN":
+          // ADMIN has no companyId at login — must select a company first.
+          // Hard navigation ensures the fresh session cookie is sent with the
+          // request so companySelection does not see a hydration gap.
+          window.location.href = "/companySelection";
           break;
-        }
         case "MANAGER":
           // Single-branch role — go straight to dashboard
-          router.push("/overview");
+          window.location.href = "/overview";
           break;
         case "BRANCH_SESSION":
           // Branch credentials matched — cashier must pick their avatar
-          router.push("/switchuser");
+          window.location.href = "/switchuser";
           break;
         case "CASHIER":
           // Direct cashier login — go straight to POS
-          router.push("/posdashboard");
+          window.location.href = "/posdashboard";
           break;
         default:
           throw new Error("Unrecognised account role. Please contact support.");
