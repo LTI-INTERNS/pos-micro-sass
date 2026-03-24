@@ -203,3 +203,91 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 };
 
 export default AddExpensesPopup;
+
+
+// // ============================================
+//   // Seed ExpenseCategory
+//   // ============================================
+//  // await prisma.expenseCategory.createMany({
+//    // data: [
+//       // CAFE
+//       { categoryId: 'ec-001', businessTypeId: 'bt-001', category: 'Ingredients' },
+//       { categoryId: 'ec-002', businessTypeId: 'bt-001', category: 'Utilities' },
+//       { categoryId: 'ec-003', businessTypeId: 'bt-001', category: 'Staff Salaries' },
+//       { categoryId: 'ec-004', businessTypeId: 'bt-001', category: 'Rent' },
+//       { categoryId: 'ec-005', businessTypeId: 'bt-001', category: 'Equipment Maintenance' },
+//       { categoryId: 'ec-006', businessTypeId: 'bt-001', category: 'Packaging' },
+//       { categoryId: 'ec-007', businessTypeId: 'bt-001', category: 'Marketing' },
+//       { categoryId: 'ec-008', businessTypeId: 'bt-001', category: 'Cleaning Supplies' },
+//       { categoryId: 'ec-009', businessTypeId: 'bt-001', category: 'Licenses & Permits' },
+//       { categoryId: 'ec-010', businessTypeId: 'bt-001', category: 'Insurance' },
+//       { categoryId: 'ec-011', businessTypeId: 'bt-001', category: 'Repairs' },
+//       { categoryId: 'ec-012', businessTypeId: 'bt-001', category: 'Transportation' },
+
+//       // CLOTHING
+//       { categoryId: 'ec-101', businessTypeId: 'bt-002', category: 'Stock Purchase' },
+//       { categoryId: 'ec-102', businessTypeId: 'bt-002', category: 'Utilities' },
+//       { categoryId: 'ec-103', businessTypeId: 'bt-002', category: 'Staff Salaries' },
+//       { categoryId: 'ec-104', businessTypeId: 'bt-002', category: 'Rent' },
+//       { categoryId: 'ec-105', businessTypeId: 'bt-002', category: 'Marketing' },
+//       { categoryId: 'ec-106', businessTypeId: 'bt-002', category: 'Packaging' },
+//       { categoryId: 'ec-107', businessTypeId: 'bt-002', category: 'Equipment Maintenance' },
+//       { categoryId: 'ec-108', businessTypeId: 'bt-002', category: 'Cleaning Supplies' },
+//       { categoryId: 'ec-109', businessTypeId: 'bt-002', category: 'Licenses & Permits' },
+//       { categoryId: 'ec-110', businessTypeId: 'bt-002', category: 'Insurance' },
+//       { categoryId: 'ec-111', businessTypeId: 'bt-002', category: 'Security' },
+//       { categoryId: 'ec-112', businessTypeId: 'bt-002', category: 'Transportation' },
+
+//       // SUPERMARKET
+//       { categoryId: 'ec-201', businessTypeId: 'bt-003', category: 'Stock Purchase' },
+//       { categoryId: 'ec-202', businessTypeId: 'bt-003', category: 'Utilities' },
+//       { categoryId: 'ec-203', businessTypeId: 'bt-003', category: 'Staff Salaries' },
+//       { categoryId: 'ec-204', businessTypeId: 'bt-003', category: 'Rent' },
+//       { categoryId: 'ec-205', businessTypeId: 'bt-003', category: 'Logistics' },
+//       { categoryId: 'ec-206', businessTypeId: 'bt-003', category: 'Cold Storage' },
+//       { categoryId: 'ec-207', businessTypeId: 'bt-003', category: 'Marketing' },
+//       { categoryId: 'ec-208', businessTypeId: 'bt-003', category: 'Equipment Maintenance' },
+//       { categoryId: 'ec-209', businessTypeId: 'bt-003', category: 'Cleaning Supplies' },
+//       { categoryId: 'ec-210', businessTypeId: 'bt-003', category: 'Licenses & Permits' },
+//       { categoryId: 'ec-211', businessTypeId: 'bt-003', category: 'Insurance' },
+//       { categoryId: 'ec-212', businessTypeId: 'bt-003', category: 'Security' },
+
+//       // PHARMACY
+//       { categoryId: 'ec-301', businessTypeId: 'bt-004', category: 'Medicine Purchase' },
+//       { categoryId: 'ec-302', businessTypeId: 'bt-004', category: 'Utilities' },
+//       { categoryId: 'ec-303', businessTypeId: 'bt-004', category: 'Staff Salaries' },
+//       { categoryId: 'ec-304', businessTypeId: 'bt-004', category: 'Rent' },
+//       { categoryId: 'ec-305', businessTypeId: 'bt-004', category: 'Cold Storage' },
+//       { categoryId: 'ec-306', businessTypeId: 'bt-004', category: 'Licenses & Permits' },
+//       { categoryId: 'ec-307', businessTypeId: 'bt-004', category: 'Insurance' },
+//       { categoryId: 'ec-308', businessTypeId: 'bt-004', category: 'Security' },
+//       { categoryId: 'ec-309', businessTypeId: 'bt-004', category: 'Cleaning Supplies' },
+//       { categoryId: 'ec-310', businessTypeId: 'bt-004', category: 'Equipment Maintenance' },
+//       { categoryId: 'ec-311', businessTypeId: 'bt-004', category: 'Packaging' },
+
+//       // HARDWARE
+//       { categoryId: 'ec-401', businessTypeId: 'bt-005', category: 'Stock Purchase' },
+//       { categoryId: 'ec-402', businessTypeId: 'bt-005', category: 'Utilities' },
+//       { categoryId: 'ec-403', businessTypeId: 'bt-005', category: 'Staff Salaries' },
+//       { categoryId: 'ec-404', businessTypeId: 'bt-005', category: 'Rent' },
+//       { categoryId: 'ec-405', businessTypeId: 'bt-005', category: 'Transportation' },
+//       { categoryId: 'ec-406', businessTypeId: 'bt-005', category: 'Equipment Maintenance' },
+//       { categoryId: 'ec-407', businessTypeId: 'bt-005', category: 'Marketing' },
+//       { categoryId: 'ec-408', businessTypeId: 'bt-005', category: 'Security' },
+//       { categoryId: 'ec-409', businessTypeId: 'bt-005', category: 'Insurance' },
+//       { categoryId: 'ec-410', businessTypeId: 'bt-005', category: 'Licenses & Permits' },
+
+//       // BOOKSHOP
+//       { categoryId: 'ec-501', businessTypeId: 'bt-006', category: 'Book Purchase' },
+//       { categoryId: 'ec-502', businessTypeId: 'bt-006', category: 'Utilities' },
+//       { categoryId: 'ec-503', businessTypeId: 'bt-006', category: 'Staff Salaries' },
+//       { categoryId: 'ec-504', businessTypeId: 'bt-006', category: 'Rent' },
+//       { categoryId: 'ec-505', businessTypeId: 'bt-006', category: 'Marketing' },
+//       { categoryId: 'ec-506', businessTypeId: 'bt-006', category: 'Packaging' },
+//       { categoryId: 'ec-507', businessTypeId: 'bt-006', category: 'Equipment Maintenance' },
+//       { categoryId: 'ec-508', businessTypeId: 'bt-006', category: 'Cleaning Supplies' },
+//       { categoryId: 'ec-509', businessTypeId: 'bt-006', category: 'Licenses & Permits' },
+//       { categoryId: 'ec-510', businessTypeId: 'bt-006', category: 'Insurance' }
+//     ],
+//     skipDuplicates: true
+//   })
