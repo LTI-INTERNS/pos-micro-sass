@@ -7,19 +7,28 @@ export default withAuth(
         const pathname = req.nextUrl.pathname;
         const role     = token?.role?.toUpperCase();
 
-        // Expired backend token — force back to login
+        // Expired backend token — force back to appropriate login
         if (token?.error === 'TokenExpired') {
-            return NextResponse.redirect(new URL('/login', req.url));
-        }
-
-        // Tenant identity must always be present on protected routes
-        if (!token?.companyId) {
-            return NextResponse.redirect(new URL('/login', req.url));
+            const dest = role === 'OWNER' ? '/saaslogin' : '/login';
+            return NextResponse.redirect(new URL(dest, req.url));
         }
 
         // ── Company selection — OWNER and ADMIN only ─────────────────────────
-        if (pathname.startsWith('/companySelection') && role !== 'OWNER' && role !== 'ADMIN') {
-            return NextResponse.redirect(new URL('/overview', req.url));
+        // Checked BEFORE the companyId guard — OWNER legitimately has no
+        // companyId yet (they haven't selected one). Let them through.
+        if (pathname.startsWith('/companySelection')) {
+            if (role !== 'OWNER' && role !== 'ADMIN') {
+                return NextResponse.redirect(new URL('/overview', req.url));
+            }
+            return NextResponse.next();
+        }
+
+        // Tenant identity must be present on all other protected routes.
+        // OWNER lands here when they try to access a page without having
+        // selected a company yet — send them back to saaslogin, not /login.
+        if (!token?.companyId) {
+            const dest = role === 'OWNER' ? '/saaslogin' : '/login';
+            return NextResponse.redirect(new URL(dest, req.url));
         }
 
         // ── BRANCH_SESSION ───────────────────────────────────────────────────
@@ -50,7 +59,8 @@ export default withAuth(
     },
     {
         callbacks: {
-            // Token must exist and must not be expired
+            // Allow through if token exists and is not expired.
+            // OWNER with empty companyId is valid — they're heading to /companySelection.
             authorized: ({ token }) => !!token && token.error !== 'TokenExpired',
         },
     }
