@@ -29,8 +29,9 @@ type Order = {
 export default function PreviousOrdersModal({ open, onClose }: Props) {
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   useEffect(() => {
-    orderService.getAll().then(setAllOrders);
-  }, []);
+    if (!open) return;
+    orderService.getAll().then(setAllOrders).catch(() => setAllOrders([]));
+  }, [open]);
   const { currency, useCents } = useCurrency();
   const [search, setSearch] = useState("");
 

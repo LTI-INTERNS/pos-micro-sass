@@ -24,6 +24,7 @@ const BUSINESS_TYPES = [
   },
   {
     id: "restaurant",
+    Business_type_ID: "BT001",
     title: "Restaurant / Café",
     icon: <Image src="/saas/cafe.png" alt="Restaurant / Café" width={80} height={80} className="object-contain" />,
     features: [
@@ -36,6 +37,7 @@ const BUSINESS_TYPES = [
   },
   {
     id: "grocery",
+    Business_type_ID: "BT003",
     title: "Grocery / Supermarket",
     icon: <Image src="/saas/supermarket.png" alt="Grocery / Supermarket" width={80} height={80} className="object-contain" />,
     features: [

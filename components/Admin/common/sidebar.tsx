@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Settings, X } from 'lucide-react';
 
 interface SidebarProps {
@@ -9,58 +10,49 @@ interface SidebarProps {
   onClose: () => void;
 }
 
-type UserRole = "superadmin" | "admin" | "manager";
+type UserRole = 'OWNER' | 'ADMIN' | 'MANAGER' | 'CASHIER';
 
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
-  const router = useRouter();
+  const router   = useRouter();
   const pathname = usePathname();
-  
-  // TODO: Replace with actual auth session/role
-  const userRole: UserRole = "superadmin" as UserRole; // Get from auth context
+  const { data: session } = useSession();
+
+  const userRole = (session?.user?.role?.toUpperCase() ?? 'CASHIER') as UserRole;
 
   const allMenuItems = useMemo(() => [
-    { label: 'Dashboard', path: '/overview' },
-    { label: 'Staff Management', path: '/staffmanagement' },
-    { label: 'Customers Management', path: '/customermanagement' },
-    { label: 'Products Management', path: '/productmanagement' },
-    { label: 'Order Management', path: '/ordermanagement' },
-    { label: 'Cashier Management', path: '/cashiermanagement' },
-    { label: 'Expenses Management', path: '/expensesmanagement' },
-    { label: 'Profit Calculation', path: '/profitcalculation' },
-    { label: 'Supplier Management', path: '/suppliermanagement' },
-    { label: 'Reports', path: '/reports' },
-    { label: 'Ai Prediction', path: '/aiprediction' },
-    { 
-      label: 'Branches', 
-      path: '/branchmanagement',
-      roles: ['superadmin'] as UserRole[] // Only superadmin can see this
-    },
+    { label: 'Dashboard',            path: '/overview',          roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Staff Management',     path: '/staffmanagement',   roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Customers Management', path: '/customermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Products Management',  path: '/productmanagement', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Order Management',     path: '/ordermanagement',   roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Cashier Management',   path: '/cashiermanagement', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Expenses Management',  path: '/expensesmanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Profit Calculation',   path: '/profitcalculation', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Supplier Management',  path: '/suppliermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Reports',              path: '/reports',           roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Branches',             path: '/branchmanagement',  roles: ['OWNER', 'ADMIN'] as UserRole[] },
+    { label: 'POS Dashboard',        path: '/posdashboard',      roles: ['CASHIER'] as UserRole[] },
   ], []);
 
-  // Memoize filtered menu items to prevent recreation on every render
   const menuItems = useMemo(() => {
     return allMenuItems.filter(item => {
-      if (!item.roles) return true; // Show items without role restriction
+      if (!item.roles) return true;
       return item.roles.includes(userRole);
     });
   }, [userRole, allMenuItems]);
 
-  // Determine active item based on current pathname
   const activeItem = useMemo(() => {
-    if (pathname.startsWith('/settings')) {
-      return 'Settings';
-    }
-    
+    if (pathname.startsWith('/settings')) return 'Settings';
     const active = menuItems.find(item =>
       pathname === item.path || pathname.startsWith(item.path + '/')
     );
-
-    return active ? active.label : 'Dashboard';
+    return active ? active.label : '';
   }, [pathname, menuItems]);
 
   const handleNavigation = (item: { label: string; path: string }) => {
     router.push(item.path);
-    onClose(); // close sidebar on mobile
+    onClose();
   };
 
   return (
@@ -71,7 +63,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
         }`}
         onClick={onClose}
-      ></div>
+      />
 
       <aside
         className={`fixed z-50 top-0 left-0 min-h-full w-64 bg-white border-r border-gray-200 flex flex-col transform transition-transform
@@ -100,22 +92,22 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
           ))}
         </div>
 
-        <div className="p-5">
-          <div
-            onClick={() => {
-              router.push('/settings');
-              onClose();
-            }}
-            className={`flex items-center gap-3 px-4 py-3 rounded cursor-pointer
-              ${activeItem === 'Settings' 
-                ? "bg-orange-50 text-orange-500 border-r-orange-500" 
-                : "text-gray-400 hover:bg-gray-50 border-r-4 border-r-transparent"
-              }`}
-          >
-            <Settings size={20} />
-            <span>Settings</span>
+        {/* Settings — hidden for CASHIER */}
+        {userRole !== 'CASHIER' && (
+          <div className="p-5">
+            <div
+              onClick={() => { router.push('/settings'); onClose(); }}
+              className={`flex items-center gap-3 px-4 py-3 rounded cursor-pointer
+                ${activeItem === 'Settings'
+                  ? 'bg-orange-50 text-orange-500 border-r-orange-500'
+                  : 'text-gray-400 hover:bg-gray-50 border-r-4 border-r-transparent'
+                }`}
+            >
+              <Settings size={20} />
+              <span>Settings</span>
+            </div>
           </div>
-        </div>
+        )}
       </aside>
     </>
   );

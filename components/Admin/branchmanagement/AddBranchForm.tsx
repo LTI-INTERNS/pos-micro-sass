@@ -59,6 +59,8 @@ export default function AddBranchForm({
     // Name validation
     if (!values.name.trim()) {
       newErrors.name = "Name is required";
+    } else if (values.name.length > 15) {
+      newErrors.name = "Name must be less than or equal to 15 characters";
     }
 
     // Phone number validation - exactly 10 digits

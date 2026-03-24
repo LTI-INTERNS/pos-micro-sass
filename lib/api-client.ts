@@ -1,15 +1,28 @@
 import axios from 'axios';
-import { useConfigStore } from '@/store/useConfigStore';
+import { getSession, signOut } from 'next-auth/react';
 
 export const apiClient = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
+    baseURL: (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000') + '/api/v1',
 });
 
-apiClient.interceptors.request.use((config) => {
-    if (typeof window !== 'undefined') {
-        // Dynamic tenant header from Zustand store
-        const tenantId = useConfigStore.getState().tenantId || localStorage.getItem('companyId');
-        if (tenantId) config.headers['X-Company-ID'] = tenantId;
+apiClient.interceptors.request.use(async (config) => {
+    const session = await getSession();
+
+    // Token expired — redirect to the correct login page based on role
+    if (session?.error === 'TokenExpired') {
+        const role = session?.user?.role?.toUpperCase();
+        await signOut({ callbackUrl: role === 'OWNER' ? '/saaslogin' : '/login' });
+        return Promise.reject(new Error('Session expired'));
     }
+
+    // Inject tenant identity from the verified session (never from localStorage)
+    if (session?.user?.companyId) {
+        config.headers['X-Company-ID'] = session.user.companyId;
+    }
+
+    if (session?.user?.backendToken) {
+        config.headers['Authorization'] = `Bearer ${session.user.backendToken}`;
+    }
+
     return config;
 });
