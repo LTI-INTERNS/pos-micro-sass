@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { AlertCircle } from "lucide-react";
 
 import CommonLayout from "@/components/saas/common/CommonLayout";
@@ -25,37 +25,62 @@ export default function CompanySelectPage() {
   const role = session?.user?.role?.toUpperCase();
 
   // ── Fetch companies from the real API ────────────────────────────────────────
+  // router is intentionally omitted from deps: in Next.js App Router, router is
+  // a new object reference on every render, so including it would recreate
+  // fetchCompanies on every render and cause the useEffect below to loop.
   const fetchCompanies = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
       const data = await companyService.getMyCompanies();
       setCompanies(data);
-
-      // Single company — skip selection entirely
-      if (data.length === 1) {
-        router.replace("/overview");
-      }
     } catch {
       setError("Failed to load companies. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
+    // Never act while NextAuth is still resolving the session.
     if (status === "loading") return;
-    if (status === "unauthenticated") { router.replace("/login"); return; }
-
-    // Only OWNER and ADMIN reach this page
+    // Only redirect once the session is definitively gone — not during hydration.
+    if (status === "unauthenticated") { router.replace("/saaslogin"); return; }
+    // Wait until role is hydrated — can be undefined briefly after navigation.
+    if (!role) return;
+    // Only OWNER and ADMIN reach this page.
     if (role !== "OWNER" && role !== "ADMIN") { router.replace("/overview"); return; }
 
     fetchCompanies();
-  }, [status, role, fetchCompanies, router]);
+  // router excluded from deps intentionally — new reference every render in
+  // App Router would cause this effect to re-fire and hit the unauthenticated
+  // branch during the session hydration window.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, role]);
 
-  function onSelectCompany(companyId: string) {
+  async function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
-    router.push("/overview");
+
+    const chosen = companies.find(c => c.companyId === companyId);
+
+    // Re-sign-in with the selected company so the NextAuth JWT is rewritten
+    // with the chosen companyId. Without this the middleware's companyId guard
+    // would reject the navigation to /overview (companyId is '' for OWNER/ADMIN
+    // until a company is explicitly selected).
+    await signIn('select-company', {
+      redirect:    false,
+      companyId,
+      companyName: chosen?.name        ?? '',
+      role:        session?.user?.role         ?? '',
+      email:       session?.user?.email        ?? '',
+      name:        session?.user?.name         ?? '',
+      branchId:    session?.user?.branchId     ?? '',
+      branchName:  session?.user?.branchName   ?? '',
+      token:       session?.user?.backendToken ?? '',
+    });
+
+    router.push('/overview');
   }
 
   // ── Loading ──────────────────────────────────────────────────────────────────
