@@ -212,3 +212,79 @@ const AddRecExpensesPopup = ({
 };
 
 export default AddRecExpensesPopup;
+
+
+
+// / ============================================
+//   // Seed RecExpenseCategory
+//   // ============================================
+//   await prisma.recExpenseCategory.createMany({
+//     data: [
+//       // CAFE
+//       { categoryId: 'rc-001', businessTypeId: 'bt-001', category: 'Monthly Rent' },
+//       { categoryId: 'rc-002', businessTypeId: 'bt-001', category: 'Monthly Salaries' },
+//       { categoryId: 'rc-003', businessTypeId: 'bt-001', category: 'Electricity Bill' },
+//       { categoryId: 'rc-004', businessTypeId: 'bt-001', category: 'Water Bill' },
+//       { categoryId: 'rc-005', businessTypeId: 'bt-001', category: 'Internet & Phone' },
+//       { categoryId: 'rc-006', businessTypeId: 'bt-001', category: 'Equipment Lease' },
+//       { categoryId: 'rc-007', businessTypeId: 'bt-001', category: 'Insurance Premium' },
+//       { categoryId: 'rc-008', businessTypeId: 'bt-001', category: 'Software Subscription' },
+//       { categoryId: 'rc-009', businessTypeId: 'bt-001', category: 'Waste Management' },
+//       { categoryId: 'rc-010', businessTypeId: 'bt-001', category: 'Security Service' },
+//       { categoryId: 'rc-011', businessTypeId: 'bt-001', category: 'Cleaning Service' },
+
+//       // CLOTHING
+//       { categoryId: 'rc-101', businessTypeId: 'bt-002', category: 'Monthly Rent' },
+//       { categoryId: 'rc-102', businessTypeId: 'bt-002', category: 'Monthly Salaries' },
+//       { categoryId: 'rc-103', businessTypeId: 'bt-002', category: 'Electricity Bill' },
+//       { categoryId: 'rc-104', businessTypeId: 'bt-002', category: 'Water Bill' },
+//       { categoryId: 'rc-105', businessTypeId: 'bt-002', category: 'Internet & Phone' },
+//       { categoryId: 'rc-106', businessTypeId: 'bt-002', category: 'Insurance Premium' },
+//       { categoryId: 'rc-107', businessTypeId: 'bt-002', category: 'Software Subscription' },
+//       { categoryId: 'rc-108', businessTypeId: 'bt-002', category: 'Security Service' },
+//       { categoryId: 'rc-109', businessTypeId: 'bt-002', category: 'Cleaning Service' },
+//       { categoryId: 'rc-110', businessTypeId: 'bt-002', category: 'Waste Management' },
+
+//       // SUPERMARKET
+//       { categoryId: 'rc-201', businessTypeId: 'bt-003', category: 'Monthly Rent' },
+//       { categoryId: 'rc-202', businessTypeId: 'bt-003', category: 'Monthly Salaries' },
+//       { categoryId: 'rc-203', businessTypeId: 'bt-003', category: 'Electricity Bill' },
+//       { categoryId: 'rc-204', businessTypeId: 'bt-003', category: 'Water Bill' },
+//       { categoryId: 'rc-205', businessTypeId: 'bt-003', category: 'Internet & Phone' },
+//       { categoryId: 'rc-206', businessTypeId: 'bt-003', category: 'Cold Storage Lease' },
+//       { categoryId: 'rc-207', businessTypeId: 'bt-003', category: 'Insurance Premium' },
+//       { categoryId: 'rc-208', businessTypeId: 'bt-003', category: 'Software Subscription' },
+//       { categoryId: 'rc-209', businessTypeId: 'bt-003', category: 'Security Service' },
+//       { categoryId: 'rc-210', businessTypeId: 'bt-003', category: 'Cleaning Service' },
+
+//       // PHARMACY
+//       { categoryId: 'rc-301', businessTypeId: 'bt-004', category: 'Monthly Rent' },
+//       { categoryId: 'rc-302', businessTypeId: 'bt-004', category: 'Monthly Salaries' },
+//       { categoryId: 'rc-303', businessTypeId: 'bt-004', category: 'Electricity Bill' },
+//       { categoryId: 'rc-304', businessTypeId: 'bt-004', category: 'Cold Storage Maintenance' },
+//       { categoryId: 'rc-305', businessTypeId: 'bt-004', category: 'Insurance Premium' },
+//       { categoryId: 'rc-306', businessTypeId: 'bt-004', category: 'Software Subscription' },
+//       { categoryId: 'rc-307', businessTypeId: 'bt-004', category: 'Security Service' },
+//       { categoryId: 'rc-308', businessTypeId: 'bt-004', category: 'Cleaning Service' },
+//       { categoryId: 'rc-309', businessTypeId: 'bt-004', category: 'Waste Management' },
+
+//       // HARDWARE
+//       { categoryId: 'rc-401', businessTypeId: 'bt-005', category: 'Monthly Rent' },
+//       { categoryId: 'rc-402', businessTypeId: 'bt-005', category: 'Monthly Salaries' },
+//       { categoryId: 'rc-403', businessTypeId: 'bt-005', category: 'Electricity Bill' },
+//       { categoryId: 'rc-404', businessTypeId: 'bt-005', category: 'Transportation Contracts' },
+//       { categoryId: 'rc-405', businessTypeId: 'bt-005', category: 'Insurance Premium' },
+//       { categoryId: 'rc-406', businessTypeId: 'bt-005', category: 'Security Service' },
+//       { categoryId: 'rc-407', businessTypeId: 'bt-005', category: 'Cleaning Service' },
+
+//       // BOOKSHOP
+//       { categoryId: 'rc-501', businessTypeId: 'bt-006', category: 'Monthly Rent' },
+//       { categoryId: 'rc-502', businessTypeId: 'bt-006', category: 'Monthly Salaries' },
+//       { categoryId: 'rc-503', businessTypeId: 'bt-006', category: 'Electricity Bill' },
+//       { categoryId: 'rc-504', businessTypeId: 'bt-006', category: 'Internet & Phone' },
+//       { categoryId: 'rc-505', businessTypeId: 'bt-006', category: 'Insurance Premium' },
+//       { categoryId: 'rc-506', businessTypeId: 'bt-006', category: 'Software Subscription' },
+//       { categoryId: 'rc-507', businessTypeId: 'bt-006', category: 'Cleaning Service' }
+//     ],
+//     skipDuplicates: true
+//   })
