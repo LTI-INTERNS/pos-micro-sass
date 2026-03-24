@@ -8,9 +8,10 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(async (config) => {
     const session = await getSession();
 
-    // Token expired — force sign-out so the user is redirected to /login
+    // Token expired — redirect to the correct login page based on role
     if (session?.error === 'TokenExpired') {
-        await signOut({ callbackUrl: '/login' });
+        const role = session?.user?.role?.toUpperCase();
+        await signOut({ callbackUrl: role === 'OWNER' ? '/saaslogin' : '/login' });
         return Promise.reject(new Error('Session expired'));
     }
 
