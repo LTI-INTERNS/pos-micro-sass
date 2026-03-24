@@ -2,8 +2,7 @@
 
 import Clock from '@/components/Landing/clock';
 import { Menu, LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import NotificationBell from '@/components/Admin/notifications/NotificationBell';
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import Image from 'next/image';
@@ -13,18 +12,20 @@ interface NavbarProps {
 }
 
 const Navbar = ({ toggleSidebar }: NavbarProps) => {
-  const router = useRouter();
+  const { data: session } = useSession();
   const { storeInfo } = useStoreInfo();
 
   const handleLogout = async () => {
-    await signOut({ redirect: false }); // clear next-auth session/cookie
-    router.push('/login');
+    const role = session?.user?.role?.toUpperCase();
+    // OWNER logs in via /saaslogin — send them back there on sign-out
+    const callbackUrl = role === 'OWNER' ? '/saaslogin' : '/login';
+    await signOut({ callbackUrl });
   };
 
   return (
     <nav className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
       <div className="flex items-center gap-5">
-        <button className="sm:hidden p-2 rounded hover:bg-orange-100 text-gray-400" onClick={toggleSidebar}>
+        <button className="sm:hidden p-2 rounded hover:bg-orange-100 text-gray-400" onClick={toggleSidebar} aria-label="Toggle sidebar">
           <Menu size={24} />
         </button>
 
