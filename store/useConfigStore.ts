@@ -1,3 +1,4 @@
+/*
 import { create } from 'zustand';
 
 interface ConfigState {
@@ -9,3 +10,4 @@ export const useConfigStore = create<ConfigState>((set) => ({
     tenantId: null,
     setTenantId: (tenantId) => set({ tenantId }),
 }));
+*/

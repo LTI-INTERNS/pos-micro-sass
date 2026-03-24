@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Clock from '@/components/Landing/clock';
 import { Menu, History, Lock } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
@@ -13,7 +12,6 @@ interface NavbarProps {
 }
 
 const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
-  const router = useRouter();
   const { storeInfo } = useStoreInfo();
 
   /**
@@ -45,6 +43,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
         <button
           className="sm:hidden p-2 rounded hover:bg-orange-100 text-gray-400"
           onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
         >
           <Menu size={24} />
         </button>
@@ -92,6 +91,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
           onClick={onOpenOrders}
           className="p-2 rounded-full hover:bg-orange-100 text-orange-500 cursor-pointer"
           title="Previous Orders"
+          aria-label="Previous Orders"
         >
           <History size={20} />
         </button>
