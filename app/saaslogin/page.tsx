@@ -2,15 +2,14 @@
 
 import React, { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { signIn } from "next-auth/react";
 
-import CommonLayout from "@/components/saas/common/CommonLayout";
-import Navigation from "@/components/saas/landing/Navigation";
+import CommonLayout    from "@/components/saas/common/CommonLayout";
+import Navigation      from "@/components/saas/landing/Navigation";
 import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
-import Card from "@/components/saas/common/formCard";
+import Card            from "@/components/saas/common/formCard";
 import GlassBackground from "@/components/saas/common/GlassBackground";
-
 import {
   InputField,
   PasswordField,
@@ -18,22 +17,13 @@ import {
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
-import { loginAction } from "@/app/saaslogin/auth";
-
-export default function LoginPage() {
-  const router = useRouter();
-
+export default function SaasLoginPage() {
   const [isPending, startTransition] = useTransition();
-
-  const [submitted, setSubmitted] = useState(false);
-  const [touched, setTouched] = useState({ email: false, pw: false });
-
-  const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-
-  const [formError, setFormError] = useState("");
-  const [success, setSuccess] = useState("");
-
+  const [submitted, setSubmitted]    = useState(false);
+  const [touched, setTouched]        = useState({ email: false, pw: false });
+  const [email, setEmail]            = useState("");
+  const [pw, setPw]                  = useState("");
+  const [formError, setFormError]    = useState("");
   const [serverFieldError, setServerFieldError] = useState<{
     email?: string;
     pw?: string;
@@ -41,13 +31,10 @@ export default function LoginPage() {
 
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
-
-    if (!email.trim()) e.email = "Email is required";
+    if (!email.trim())                    e.email = "Email is required";
     else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Enter a valid email";
-
-    if (!pw) e.pw = "Password is required";
-    else if (pw.length < 6) e.pw = "Password must be at least 6 characters";
-
+    if (!pw)                              e.pw = "Password is required";
+    else if (pw.length < 6)              e.pw = "Password must be at least 6 characters";
     return e;
   }, [email, pw]);
 
@@ -57,8 +44,6 @@ export default function LoginPage() {
     e.preventDefault();
     setSubmitted(true);
     setFormError("");
-    setSuccess("");
-
     setServerFieldError({});
 
     if (!canSubmit) {
@@ -66,24 +51,36 @@ export default function LoginPage() {
       return;
     }
 
-    const fd = new FormData();
-    fd.set("email", email);
-    fd.set("password", pw);
-
     startTransition(async () => {
-      const res = await loginAction(fd);
+      // Use NextAuth credentials provider — same as POS login
+      const result = await signIn("credentials", {
+        email,
+        password: pw,
+        redirect: false,
+      });
 
-      if (!res.ok) {
-        setFormError(res.message);
-
-        if (res.field === "email") setServerFieldError({ email: res.message });
-        if (res.field === "password") setServerFieldError({ pw: res.message });
-
+      if (!result?.ok || result.error) {
+        setFormError("Invalid email or password");
         setTouched({ email: true, pw: true });
         return;
       }
-      setSuccess(res.message);
-      router.push("/companyregistration");
+
+      // Read session to get role
+      const sessionRes = await fetch("/api/auth/session");
+      const session    = await sessionRes.json();
+      const role       = session?.user?.role?.toUpperCase();
+
+      if (role === "OWNER" || role === "ADMIN") {
+        // Hard navigation so the browser sends the fresh session cookie with
+        // the request. A client-side router.push() would navigate before
+        // NextAuth finishes writing the cookie, causing companySelection to
+        // see status="unauthenticated" briefly and redirect back here.
+        window.location.href = "/companySelection";
+        return;
+      }
+
+      // Any other role that somehow reaches saaslogin → send to overview
+      window.location.href = "/overview";
     });
   }
 
@@ -91,123 +88,101 @@ export default function LoginPage() {
     <CommonLayout navbar={<Navigation />}>
       <div className="pt-5 pb-20 px-4">
         <GlassBackground>
-          <div>
-            <SplitPanelLayout
-              showDivider
-              left={
-                <div className="flex items-center justify-center w-full">
-                  <Card
-                    variant="solid"
-                    padding="lg"
-                    className="w-[420px] h-[460px] rounded-3xl bg-gradient-to-b from-orange-500 to-orange-600 flex items-center justify-center shadow-xl"
-                  >
-                    <Image
-                      src="/saas/logIn.png"
-                      alt="Login Illustration"
-                      width={300}
-                      height={300}
-                      className="object-contain"
+          <SplitPanelLayout
+            showDivider
+            left={
+              <div className="flex items-center justify-center w-full">
+                <Card
+                  variant="solid"
+                  padding="lg"
+                  className="w-[420px] h-[460px] rounded-3xl bg-gradient-to-b from-orange-500 to-orange-600 flex items-center justify-center shadow-xl"
+                >
+                  <Image
+                    src="/saas/logIn.png"
+                    alt="Login Illustration"
+                    width={300}
+                    height={300}
+                    className="object-contain"
+                  />
+                </Card>
+              </div>
+            }
+            right={
+              <div className="w-full max-w-md mx-auto">
+                <h2 className="text-center text-3xl font-bold text-white mb-8">
+                  Sign In
+                </h2>
+
+                <form onSubmit={onSubmit} className="space-y-5">
+                  {formError && <FormErrorMessage message={formError} />}
+
+                  <div className="space-y-4">
+                    <InputField
+                      id="login-email"
+                      label="Email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="ABC123@gmail.com"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (serverFieldError.email)
+                          setServerFieldError((prev) => ({ ...prev, email: undefined }));
+                      }}
+                      onBlur={() => setTouched((t) => ({ ...t, email: true }))}
+                      error={submitted || touched.email ? serverFieldError.email || errors.email : ""}
                     />
-                  </Card>
-                </div>
-              }
-              right={
-                <div className="w-full max-w-md mx-auto">
-                  <h2 className="text-center text-3xl font-bold text-white mb-8">
-                    Sign In
-                  </h2>
 
-                  <form onSubmit={onSubmit} className="space-y-5">
-                    {formError && <FormErrorMessage message={formError} />}
-                    {success && (
-                      <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white">
-                        {success}
-                      </div>
-                    )}
+                    <PasswordField
+                      id="login-password"
+                      label="Password"
+                      name="password"
+                      autoComplete="current-password"
+                      placeholder="******"
+                      value={pw}
+                      onChange={(e) => {
+                        setPw(e.target.value);
+                        if (serverFieldError.pw)
+                          setServerFieldError((prev) => ({ ...prev, pw: undefined }));
+                      }}
+                      onBlur={() => setTouched((t) => ({ ...t, pw: true }))}
+                      error={submitted || touched.pw ? serverFieldError.pw || errors.pw : ""}
+                    />
+                  </div>
 
-                    <div className="space-y-4">
-                      <InputField
-                        id="login-email"
-                        label="Email"
-                        name="email"
-                        type="email"
-                        autoComplete="email"
-                        placeholder="ABC123@gmail.com"
-                        value={email}
-                        onChange={(e) => {
-                          setEmail(e.target.value);
-                          if (serverFieldError.email) {
-                            setServerFieldError((prev) => ({ ...prev, email: undefined }));
-                          }
-                        }}
-                        onBlur={() => setTouched((t) => ({ ...t, email: true }))}
-                        error={
-                          submitted || touched.email
-                            ? serverFieldError.email || errors.email
-                            : ""
-                        }
-                      />
+                  <ActionButton type="submit" disabled={!canSubmit || isPending}>
+                    {isPending ? "Signing In..." : "Sign In"}
+                  </ActionButton>
 
-                      <PasswordField
-                        id="login-password"
-                        label="Password"
-                        name="password"
-                        autoComplete="current-password"
-                        placeholder="******"
-                        value={pw}
-                        onChange={(e) => {
-                          setPw(e.target.value);
-                          if (serverFieldError.pw) {
-                            setServerFieldError((prev) => ({ ...prev, pw: undefined }));
-                          }
-                        }}
-                        onBlur={() => setTouched((t) => ({ ...t, pw: true }))}
-                        error={
-                          submitted || touched.pw
-                            ? serverFieldError.pw || errors.pw
-                            : ""
-                        }
-                      />
-                    </div>
-
-                    <ActionButton type="submit" disabled={!canSubmit || isPending}>
-                      {isPending ? "Signing In..." : "Sign In"}
-                    </ActionButton>
-
-                    <div className="pt-3 text-center text-sm text-white/60 space-y-2">
-                      <p>
-                        Don&apos;t have an account?{" "}
-                        <Link
-                          href="/saasregistration"
-                          className="text-white font-semibold hover:text-orange-300 transition"
-                        >
-                          Sign Up
-                        </Link>
-                      </p>
-
-                      <p>
-                        <Link
-                          href="/forgotpassword"
-                          className="hover:text-white underline underline-offset-4"
-                        >
-                          Forget Password?
-                        </Link>
-                      </p>
-                    </div>
-
-                    <div className="pt-3 flex items-center justify-center gap-8 text-xs text-white/45">
-                      <Link href="/terms" className="hover:text-white transition">
-                        Terms
+                  <div className="pt-3 text-center text-sm text-white/60 space-y-2">
+                    <p>
+                      Don&apos;t have an account?{" "}
+                      <Link
+                        href="/saasregistration"
+                        className="text-white font-semibold hover:text-orange-300 transition"
+                      >
+                        Sign Up
                       </Link>
-                      <Link href="/privacy" className="hover:text-white transition">
-                        Privacy
+                    </p>
+                    <p>
+                      <Link
+                        href="/forgotpassword"
+                        className="hover:text-white underline underline-offset-4"
+                      >
+                        Forget Password?
                       </Link>
-                    </div>
-                  </form>
-                </div>
-              }
-            />
-          </div>
+                    </p>
+                  </div>
+
+                  <div className="pt-3 flex items-center justify-center gap-8 text-xs text-white/45">
+                    <Link href="/terms"   className="hover:text-white transition">Terms</Link>
+                    <Link href="/privacy" className="hover:text-white transition">Privacy</Link>
+                  </div>
+                </form>
+              </div>
+            }
+          />
         </GlassBackground>
       </div>
     </CommonLayout>

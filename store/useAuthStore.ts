@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+/*import { create } from 'zustand';
 import { AuthState, User } from '@/types/user.types';
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -9,3 +9,4 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null });
     },
 }));
+*/
