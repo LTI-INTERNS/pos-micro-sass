@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { RegistrationData } from "@/app/companyregistration/page";
+import { createCompany } from "@/lib/services/saas-service";
 
 import ActionButton from "@/components/Admin/common/ActionButton";
 import {
@@ -124,11 +126,12 @@ function LineText({ children }: { children: React.ReactNode }) {
 
 type Props = {
   data: RegistrationData;
-  onComplete: (data: Partial<RegistrationData>) => void;
+  onComplete: () => void;
   onBack: () => void;
 };
 
 export default function PaymentProcessStep({ data, onComplete, onBack }: Props) {
+  const { data: session } = useSession();
   const [nameOnCard, setNameOnCard] = useState(data.nameOnCard);
   const [cardNumber, setCardNumber] = useState(data.cardNumber);
   const [expDate,    setExpDate]    = useState(data.expDate);
@@ -185,17 +188,42 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       return;
     }
 
-    // TODO: Replace with real API calls
-    // Example:
-    //   const paymentResult = await processPayment({ nameOnCard, cardNumber, expDate, cvv });
-    //   setPaymentSuccess(paymentResult.success);
-    //   if (paymentResult.success) {
-    //     const regResult = await registerCompany(data);
-    //     setRegistrationSuccess(regResult.success);
-    //   }
+    // ── Step 1: Create company on the backend ────────────────────────────────
+    const result = await createCompany({
+      companyName:    data.companyName,
+      address:        data.address,
+      contactNumber:  data.contact,
+      email:          data.email,
+      logoUrl:        "",             // upload not yet implemented
+      businessTypeId: data.businessTypeId,
+      subId:          data.subId,
+    });
+
+    if (!result.ok) {
+      setFormError(result.message);
+      setPaymentSuccess(false);
+      setRegistrationSuccess(false);
+      setShowSuccess(true);
+      return;
+    }
+
+    // ── Step 2: Stamp the new companyId into the NextAuth session ────────────
+    // Use select-company provider so the middleware companyId guard passes
+    // when the owner navigates to /overview after closing the success popup.
+    await signIn("select-company", {
+      redirect:    false,
+      companyId:   result.companyId,
+      companyName: result.name,
+      role:        session?.user?.role         ?? "",
+      email:       session?.user?.email        ?? "",
+      name:        session?.user?.name         ?? "",
+      branchId:    session?.user?.branchId     ?? "",
+      branchName:  session?.user?.branchName   ?? "",
+      token:       session?.user?.backendToken ?? "",
+    });
+
     setPaymentSuccess(true);
     setRegistrationSuccess(true);
-
     setShowSuccess(true);
   }
 
@@ -209,11 +237,10 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
   //         const customer = await fetchCustomerById(session.userId);
   //         // Then use: customer.fullName, customer.address, customer.email, etc.
   //
-  const planKey   = data.subscriptionPlan?.toLowerCase() ?? "";
+  const planKey   = data.subId?.toLowerCase().replace("sub_", "") ?? "";
   const planPrice = PLAN_PRICES[planKey] ?? 0;
-  const planLabel = data.subscriptionPlan
-    ? data.subscriptionPlan.charAt(0).toUpperCase() +
-      data.subscriptionPlan.slice(1).toLowerCase()
+  const planLabel = planKey
+    ? planKey.charAt(0).toUpperCase() + planKey.slice(1).toLowerCase()
     : "—";
 
   const summary = {
@@ -224,7 +251,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
     email:       data.email       || "—",
 
     //  Order details 
-    businessType: data.businessType || "—",
+    businessType: data.businessTypeId || "—",
     plan:         planLabel,
 
     branchesRemaining: 3,
@@ -317,7 +344,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
                 </div>
               }
               right={
-                <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
+                <div className="rounded-2xl bg-linear-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
                   <h2 className="text-[28px] font-bold mb-6">Order Summary</h2>
 
                   <section className="space-y-1">
@@ -363,7 +390,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
         registrationSuccess={registrationSuccess}
         onClose={() => {
           setShowSuccess(false);
-          onComplete({ nameOnCard, cardNumber, expDate, cvv });
+          onComplete();
         }}
         onTryAgain={() => setShowSuccess(false)}
       />
