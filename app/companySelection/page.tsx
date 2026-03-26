@@ -55,6 +55,13 @@ export default function CompanySelectPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, role]);
 
+  // ADMIN with exactly one company — auto-select and go straight to /overview
+  useEffect(() => {
+    if (role !== "ADMIN" || loading || companies.length !== 1) return;
+    onSelectCompany(companies[0].companyId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, loading, companies]);
+
   async function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
 
