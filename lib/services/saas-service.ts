@@ -1,7 +1,6 @@
 "use server";
 
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
@@ -23,7 +22,7 @@ export type CreateCompanyResult =
 export async function createCompany(
     input: CreateCompanyInput,
 ): Promise<CreateCompanyResult> {
-    const session = await getServerSession(authOptions);
+    const session = await getServerSession();
 
     if (!session?.user?.backendToken) {
         return { ok: false, message: "Not authenticated. Please sign in again." };
