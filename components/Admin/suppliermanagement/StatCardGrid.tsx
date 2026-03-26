@@ -1,12 +1,17 @@
-import StatCard from '@/components/Admin/common/StatCard';
-import type { Supplier } from '@/components/Admin/suppliermanagement/SupplierTable';
+import StatCard from "@/components/Admin/common/StatCard";
+import type { Supplier } from "@/components/Admin/suppliermanagement/SupplierTable";
 
 type Props = {
   suppliers?: Supplier[];
-  isSuperAdmin?: boolean;
+  userRole?: "owner" | "admin" | "manager";
 };
 
-export default function StatCardGrid({ suppliers = [], isSuperAdmin = false }: Props) {
+export default function StatCardGrid({
+  suppliers = [],
+  userRole = "manager",
+}: Props) {
+  const canViewExtraStats = userRole === "owner" || userRole === "admin";
+
   const allCount = suppliers.length;
 
   const thisMonthCount = suppliers.filter((s) => s.id > 2).length;
@@ -14,7 +19,9 @@ export default function StatCardGrid({ suppliers = [], isSuperAdmin = false }: P
 
   const calcTrend = (current: number, previous: number) => {
     if (previous === 0) return { label: "+0.0%", trend: "up" as const };
+
     const diff = ((current - previous) / previous) * 100;
+
     return {
       label: `${diff >= 0 ? "+" : ""}${diff.toFixed(1)}%`,
       trend: (diff >= 0 ? "up" : "down") as "up" | "down",
@@ -25,7 +32,6 @@ export default function StatCardGrid({ suppliers = [], isSuperAdmin = false }: P
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-      {/* All roles see this card */}
       <StatCard
         title="All Suppliers"
         value={String(allCount)}
@@ -35,8 +41,7 @@ export default function StatCardGrid({ suppliers = [], isSuperAdmin = false }: P
         showDetailButton={false}
       />
 
-      {/* Superadmin only */}
-      {isSuperAdmin && (
+      {canViewExtraStats && (
         <StatCard
           title="New Suppliers"
           value={String(thisMonthCount)}
