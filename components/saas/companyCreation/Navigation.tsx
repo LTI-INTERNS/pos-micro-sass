@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/saas/common/Navbar";
 import ActionButton from "@/components/Admin/common/ActionButton";
+import { signOut } from "next-auth/react";
 
 type NavigationProps = {
   title?: string;
@@ -34,7 +35,7 @@ export default function Navigation({
         <div className="flex items-center gap-3">
           <ActionButton
             label="Log Out"
-            onClick={() => router.push("/saaslogin")}
+            onClick={() => signOut({ callbackUrl: "/login" })}
             variant="primary"
             fullWidth={false}
             className="px-5"
