@@ -75,7 +75,7 @@ export default function SaasLoginPage() {
         // the request. A client-side router.push() would navigate before
         // NextAuth finishes writing the cookie, causing companySelection to
         // see status="unauthenticated" briefly and redirect back here.
-        window.location.href = "/companySelection";
+        window.location.href = "/companyselection";
         return;
       }
 
