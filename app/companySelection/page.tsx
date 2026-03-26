@@ -154,14 +154,14 @@ export default function CompanySelectPage() {
               {EmptyState}
               {CompanyList}
 
-              <div className="mt-6 text-center">
+           {/*    <div className="mt-6 text-center">
                 <button
                   onClick={() => signOut({ callbackUrl: "/login" })}
                   className="text-xs text-white/40 hover:text-white/70 underline transition"
                 >
                   Sign out
                 </button>
-              </div>
+              </div> */}
             </div>
           )}
 
@@ -184,14 +184,14 @@ export default function CompanySelectPage() {
                   {EmptyState}
                   {CompanyList}
 
-                  <div className="mt-6 text-center">
+               {/*    <div className="mt-6 text-center">
                     <button
                       onClick={() => signOut({ callbackUrl: "/saaslogin" })}
                       className="text-xs text-white/40 hover:text-white/70 underline transition"
                     >
                       Sign out
                     </button>
-                  </div>
+                  </div>   */}
                 </div>
               }
               right={
