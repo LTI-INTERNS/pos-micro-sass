@@ -132,16 +132,21 @@ type Props = {
 
 export default function PaymentProcessStep({ data, onComplete, onBack }: Props) {
   const { data: session } = useSession();
+
+  const isFree = data.subId === "SUB_FREE";
+
+  // Card-form state (only used for paid plans)
   const [nameOnCard, setNameOnCard] = useState(data.nameOnCard);
   const [cardNumber, setCardNumber] = useState(data.cardNumber);
   const [expDate,    setExpDate]    = useState(data.expDate);
   const [cvv,        setCvv]        = useState(data.cvv);
 
-  const [errors,      setErrors]    = useState<Errors>({});
-  const [touched,     setTouched]   = useState<Touched>({});
-  const [formError,   setFormError] = useState("");
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [errors,    setErrors]  = useState<Errors>({});
+  const [touched,   setTouched] = useState<Touched>({});
+  const [formError, setFormError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
+  const [showSuccess,         setShowSuccess]         = useState(false);
   const [paymentSuccess,      setPaymentSuccess]      = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
@@ -179,16 +184,11 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
     !getFieldError("expDate",    values) &&
     !getFieldError("cvv",        values);
 
-  async function handleSubmit() {
+  // ── Shared company-creation + session-stamp ───────────────────────────────
+  async function createAndStamp(): Promise<boolean> {
     setFormError("");
-    setTouched({ nameOnCard: true, cardNumber: true, expDate: true, cvv: true });
+    setSubmitting(true);
 
-    if (!validateAll()) {
-      setFormError("Please fix the highlighted fields.");
-      return;
-    }
-
-    // ── Step 1: Create company on the backend ────────────────────────────────
     const result = await createCompany({
       companyName:    data.companyName,
       address:        data.address,
@@ -201,15 +201,10 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
 
     if (!result.ok) {
       setFormError(result.message);
-      setPaymentSuccess(false);
-      setRegistrationSuccess(false);
-      setShowSuccess(true);
-      return;
+      setSubmitting(false);
+      return false;
     }
 
-    // ── Step 2: Stamp the new companyId into the NextAuth session ────────────
-    // Use select-company provider so the middleware companyId guard passes
-    // when the owner navigates to /overview after closing the success popup.
     await signIn("select-company", {
       redirect:    false,
       companyId:   result.companyId,
@@ -222,21 +217,34 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       token:       session?.user?.backendToken ?? "",
     });
 
-    setPaymentSuccess(true);
-    setRegistrationSuccess(true);
+    setSubmitting(false);
+    return true;
+  }
+
+  // ── Free plan — "Create Company" button handler ───────────────────────────
+  async function handleCreateCompany() {
+    const ok = await createAndStamp();
+    setRegistrationSuccess(ok);
+    setPaymentSuccess(true);   // no payment involved; treat as passed
     setShowSuccess(true);
   }
 
-  // Company fields (companyName, address, contact, email) come from the
-  // registration form cached in localStorage via useRegistrationPersistence.
-  //
-  // TODO: Once the customer record exists in the database (e.g. after the
-  //       company is created on the backend), replace these fields with data
-  //       fetched from the DB. Example:
-  //
-  //         const customer = await fetchCustomerById(session.userId);
-  //         // Then use: customer.fullName, customer.address, customer.email, etc.
-  //
+  // ── Paid plan — "Pay Now" button handler ──────────────────────────────────
+  async function handlePayNow() {
+    setTouched({ nameOnCard: true, cardNumber: true, expDate: true, cvv: true });
+    if (!validateAll()) {
+      setFormError("Please fix the highlighted fields.");
+      return;
+    }
+
+    const ok = await createAndStamp();
+    setPaymentSuccess(ok);
+    setRegistrationSuccess(ok);
+    if (!ok) setPaymentSuccess(false);
+    setShowSuccess(true);
+  }
+
+  // ── Derived summary values ────────────────────────────────────────────────
   const planKey   = data.subId?.toLowerCase().replace("sub_", "") ?? "";
   const planPrice = PLAN_PRICES[planKey] ?? 0;
   const planLabel = planKey
@@ -244,25 +252,159 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
     : "—";
 
   const summary = {
-    //  Company info 
-    companyName: data.companyName || "—",
-    address:     data.address     || "—",
-    contact:     data.contact     || "—",
-    email:       data.email       || "—",
-
-    //  Order details 
-    businessType: data.businessTypeId || "—",
-    plan:         planLabel,
-
+    companyName:       data.companyName    || "—",
+    address:           data.address        || "—",
+    contact:           data.contact        || "—",
+    email:             data.email          || "—",
+    businessType:      data.businessTypeId || "—",
+    plan:              planLabel,
     branchesRemaining: 3,
-
-    // TODO: Replace with the authenticated customer's email fetched from the DB.
-    orderEmail: data.email || "—",
-
-    // Pricing 
-    currency: "USD $",
-    total:    planPrice.toFixed(2),
+    orderEmail:        data.email          || "—",
+    currency:          "USD $",
+    total:             planPrice.toFixed(2),
   };
+
+  // ── Order Summary panel (shared for both free and paid) ───────────────────
+  const orderSummaryPanel = (
+    <div className="rounded-2xl bg-linear-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
+      <h2 className="text-[28px] font-bold mb-6">Order Summary</h2>
+
+      <section className="space-y-1">
+        <h3 className="text-lg font-semibold">Company Information</h3>
+        <LineText>{summary.companyName}</LineText>
+        <LineText>{summary.address}</LineText>
+        <LineText>{summary.contact}</LineText>
+        <LineText>{summary.email}</LineText>
+      </section>
+
+      <section className="mt-6 space-y-1">
+        <h3 className="text-lg font-semibold">Order Details</h3>
+        <LineText>Business Type: {summary.businessType}</LineText>
+        <LineText>Plan: {summary.plan}</LineText>
+        <LineText>Branches Remaining: {summary.branchesRemaining}</LineText>
+        <LineText>Order Email: {summary.orderEmail}</LineText>
+      </section>
+
+      <div className="mt-8 flex justify-between font-bold text-lg">
+        <span>Total</span>
+        <span>{summary.currency} {summary.total}</span>
+      </div>
+    </div>
+  );
+
+  // ── Free plan left panel ──────────────────────────────────────────────────
+  const freePlanPanel = (
+    <div className="w-full max-w-md mx-auto flex flex-col justify-center h-full gap-6">
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-2">
+          You&apos;re on the Free Plan
+        </h2>
+        <p className="text-white/60 text-sm leading-relaxed">
+          No payment required. Click below to create your company and get
+          started right away.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-white/5 p-5 space-y-2 text-sm text-white/70">
+        <div className="flex justify-between">
+          <span>Plan</span>
+          <span className="text-white font-medium">{summary.plan}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Company</span>
+          <span className="text-white font-medium">{summary.companyName}</span>
+        </div>
+        <div className="border-t border-white/10 pt-2 flex justify-between font-semibold text-white">
+          <span>Total Due Today</span>
+          <span>USD $ 0.00</span>
+        </div>
+      </div>
+
+      {formError && <FormErrorMessage message={formError} />}
+
+      <ActionButton
+        className="w-full py-4 text-base"
+        onClick={handleCreateCompany}
+        disabled={submitting}
+      >
+        {submitting ? "Creating…" : "Create Company"}
+      </ActionButton>
+    </div>
+  );
+
+  // ── Paid plan left panel ──────────────────────────────────────────────────
+  const paidPlanPanel = (
+    <div className="w-full max-w-md mx-auto">
+      <h2 className="text-2xl font-bold text-white mb-8">
+        Payment Details
+      </h2>
+
+      <div className="space-y-6">
+        <InputField
+          id="nameOnCard"
+          name="nameOnCard"
+          label="Name on Card"
+          required
+          value={nameOnCard}
+          onChange={(e) => setNameOnCard(e.target.value)}
+          onBlur={() => { markTouched("nameOnCard"); validateField("nameOnCard"); }}
+          error={touched.nameOnCard ? errors.nameOnCard : ""}
+        />
+
+        <InputField
+          id="cardNumber"
+          name="cardNumber"
+          label="Card Number"
+          required
+          inputMode="numeric"
+          placeholder="0000-0000-0000-0000"
+          value={cardNumber}
+          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+          onBlur={() => { markTouched("cardNumber"); validateField("cardNumber"); }}
+          error={touched.cardNumber ? errors.cardNumber : ""}
+        />
+
+        <div className="grid grid-cols-2 gap-5">
+          <InputField
+            id="expDate"
+            name="expDate"
+            label="Valid Through"
+            required
+            inputMode="numeric"
+            placeholder="MM/YY"
+            value={expDate}
+            onChange={(e) => setExpDate(formatExpDate(e.target.value))}
+            onBlur={() => { markTouched("expDate"); validateField("expDate"); }}
+            error={touched.expDate ? errors.expDate : ""}
+          />
+
+          <InputField
+            id="cvv"
+            name="cvv"
+            label="CVV Code"
+            required
+            type="password"
+            inputMode="numeric"
+            placeholder="***"
+            value={cvv}
+            onChange={(e) => setCvv(formatCvc(e.target.value))}
+            onBlur={() => { markTouched("cvv"); validateField("cvv"); }}
+            error={touched.cvv ? errors.cvv : ""}
+          />
+        </div>
+
+        {formError && <FormErrorMessage message={formError} />}
+
+        <ActionButton
+          className="w-full py-4 text-base"
+          onClick={handlePayNow}
+          disabled={!isFormValid || submitting}
+        >
+          {submitting ? "Processing…" : "Pay Now"}
+        </ActionButton>
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -271,105 +413,8 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
           <div className="mx-auto max-w-6xl rounded-3xl">
             <SplitPanelLayout
               showDivider
-              left={
-                <div className="w-full max-w-md mx-auto">
-                  <h2 className="text-2xl font-bold text-white mb-8">
-                    Payment Details
-                  </h2>
-
-                  <div className="space-y-6">
-                    <InputField
-                      id="nameOnCard"
-                      name="nameOnCard"
-                      label="Name on Card"
-                      required
-                      value={nameOnCard}
-                      onChange={(e) => setNameOnCard(e.target.value)}
-                      onBlur={() => { markTouched("nameOnCard"); validateField("nameOnCard"); }}
-                      error={touched.nameOnCard ? errors.nameOnCard : ""}
-                    />
-
-                    <InputField
-                      id="cardNumber"
-                      name="cardNumber"
-                      label="Card Number"
-                      required
-                      inputMode="numeric"
-                      placeholder="0000-0000-0000-0000"
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                      onBlur={() => { markTouched("cardNumber"); validateField("cardNumber"); }}
-                      error={touched.cardNumber ? errors.cardNumber : ""}
-                    />
-
-                    <div className="grid grid-cols-2 gap-5">
-                      <InputField
-                        id="expDate"
-                        name="expDate"
-                        label="Valid Through"
-                        required
-                        inputMode="numeric"
-                        placeholder="MM/YY"
-                        value={expDate}
-                        onChange={(e) => setExpDate(formatExpDate(e.target.value))}
-                        onBlur={() => { markTouched("expDate"); validateField("expDate"); }}
-                        error={touched.expDate ? errors.expDate : ""}
-                      />
-
-                      <InputField
-                        id="cvv"
-                        name="cvv"
-                        label="CVV Code"
-                        required
-                        type="password"
-                        inputMode="numeric"
-                        placeholder="***"
-                        value={cvv}
-                        onChange={(e) => setCvv(formatCvc(e.target.value))}
-                        onBlur={() => { markTouched("cvv"); validateField("cvv"); }}
-                        error={touched.cvv ? errors.cvv : ""}
-                      />
-                    </div>
-
-                    {formError && <FormErrorMessage message={formError} />}
-
-                    <ActionButton
-                      className="w-full py-4 text-base"
-                      onClick={handleSubmit}
-                      disabled={!isFormValid}
-                    >
-                      Pay Now
-                    </ActionButton>
-                  </div>
-                </div>
-              }
-              right={
-                <div className="rounded-2xl bg-linear-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
-                  <h2 className="text-[28px] font-bold mb-6">Order Summary</h2>
-
-                  <section className="space-y-1">
-                    <h3 className="text-lg font-semibold">Company Information</h3>
-                    {/* TODO: Replace with customer record fetched from DB */}
-                    <LineText>{summary.companyName}</LineText>
-                    <LineText>{summary.address}</LineText>
-                    <LineText>{summary.contact}</LineText>
-                    <LineText>{summary.email}</LineText>
-                  </section>
-
-                  <section className="mt-6 space-y-1">
-                    <h3 className="text-lg font-semibold">Order Details</h3>
-                    <LineText>Business Type: {summary.businessType}</LineText>
-                    <LineText>Plan: {summary.plan}</LineText>
-                    <LineText>Branches Remaining: {summary.branchesRemaining}</LineText>
-                    <LineText>Order Email: {summary.orderEmail}</LineText>
-                  </section>
-
-                  <div className="mt-8 flex justify-between font-bold text-lg">
-                    <span>Total</span>
-                    <span>{summary.currency} {summary.total}</span>
-                  </div>
-                </div>
-              }
+              left={isFree ? freePlanPanel : paidPlanPanel}
+              right={orderSummaryPanel}
             />
           </div>
         </div>
