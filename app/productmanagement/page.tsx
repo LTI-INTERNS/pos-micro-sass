@@ -12,7 +12,7 @@ import FilterChips from "@/components/Admin/common/FilterChips";
 import ProductsTable from "@/components/Admin/productmanagement/product-table";
 import AddProductPopup from "@/components/Admin/productmanagement/AddProductPopup";
 import AddStockPopup from "@/components/Admin/productmanagement/addStockPopup";
-import DeletePopup from "@/components/Admin/common/Deletepopup";
+import DeleteProductPopup from "@/components/Admin/productmanagement/DeleteProductPopup";
 import ViewProductPopup from "@/components/Admin/productmanagement/ViewProductPopup";
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
@@ -67,7 +67,7 @@ export default function DashboardPage() {
   const filteredProducts = useTableFilters({
     data: products,
     search,
-    searchKeys: ["id", "name", "category", "supplier"],
+    searchKeys: ["id", "name", "category"],
     filters,
   });
 
@@ -155,7 +155,7 @@ export default function DashboardPage() {
                 name: selectedProduct.name,
                 categoryId: selectedProduct.category,
                 brand: "",
-                supplierId: selectedProduct.supplier,
+                
                 description: selectedProduct.description || "",
                 options: (selectedProduct.options ?? []).map((opt) => ({
                   id: Math.random(),
@@ -190,35 +190,40 @@ export default function DashboardPage() {
           product={selectedProduct}
           isOpen={addStockOpen}
           onClose={() => setAddStockOpen(false)}
-          onSave={(qty) => {
-            setProducts((prev) =>
-              prev.map((p) =>
-                p.id === selectedProduct.id
-                  ? { ...p, stock: p.stock + qty }
-                  : p
-              )
-            );
+          onSave={(data) => {
+            console.log("FULL STOCK DATA:", data);
             setAddStockOpen(false);
           }}
         />
       )}
 
       {selectedProduct && (
-        <DeletePopup
+        <DeleteProductPopup
           isOpen={deleteOpen}
           onClose={() => setDeleteOpen(false)}
-          item={selectedProduct}
-          itemName="Product"
-          getDisplayText={(p) => (
-            <>
-              ID - {p.id}<br />
-              Name - {p.name}<br />
-              Category - {p.category}
-            </>
-          )}
-          onConfirm={() => {
-            setProducts((prev) => prev.filter((p) => p.id !== selectedProduct.id));
-            setSelectedProduct(null);
+          product={selectedProduct}
+          onConfirm={({ deleteAll, selectedVariants }) => {
+            if (deleteAll) {
+              // delete full product
+              setProducts((prev) =>
+                prev.filter((p) => p.id !== selectedProduct.id)
+              );
+            } else {
+              // delete selected variants only
+              setProducts((prev) =>
+                prev.map((p) => {
+                  if (p.id !== selectedProduct.id) return p;
+
+                  return {
+                    ...p,
+                    variants: p.variants.filter(
+                      (v) => !selectedVariants.includes(v.sku)
+                    ),
+                  };
+                })
+              );
+            }
+
             setDeleteOpen(false);
           }}
         />
