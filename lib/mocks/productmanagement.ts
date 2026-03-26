@@ -3,11 +3,18 @@ export type Product = {
   name: string;
   category: string;
   supplier: string;
-  price: number;
-  discount: number;
-  tax: number;
-  stock: number;
-  lowstock: number;
+  description?: string;
+
+  variants: {
+    sku: string;
+    price: number;
+    imageUrl?: string;
+  }[];
+
+  options: {
+    name: string;
+    values: string[];
+  }[];
 };
 
 export const productsData: Product[] = [
@@ -16,54 +23,78 @@ export const productsData: Product[] = [
     name: "Coca Cola",
     category: "Beverages",
     supplier: "Coca Cola Company",
-    price: 100,
-    discount: 5,
-    tax: 10,
-    stock: 0,
-    lowstock: 10,
+    description: "Refreshing soft drink",
+
+    options: [
+      { name: "Size", values: ["500ml", "1L", "2L"] }
+    ],
+
+    variants: [
+      { sku: "COKE-500", price: 100 },
+      { sku: "COKE-1L", price: 180 },
+      { sku: "COKE-2L", price: 350 }
+    ],
   },
+
   {
     id: "002",
     name: "Chicken Fried Rice",
     category: "Kitchen Items",
     supplier: "Multiple Suppliers",
-    price: 550,
-    discount: 5,
-    tax: 10,
-    stock: 20,
-    lowstock: 30,
+    description: "Hot and spicy fried rice",
+
+    options: [
+      { name: "Portion", values: ["Regular", "Large"] }
+    ],
+
+    variants: [
+      { sku: "CFR-REG", price: 550 },
+      { sku: "CFR-LRG", price: 750 }
+    ],
   },
+
   {
     id: "003",
     name: "Water Bottle 1L",
     category: "Beverages",
-    supplier: "Elephent House",  
-    price: 80,
-    discount: 5,
-    tax: 10,
-    stock: 20,
-    lowstock: 10,
+    supplier: "Elephant House",
+    description: "Pure drinking water",
+
+    options: [],
+
+    variants: [
+      { sku: "WATER-1L", price: 80 }
+    ],
   },
+
   {
     id: "004",
     name: "Beef Lasagna",
     category: "Kitchen Items",
     supplier: "Multiple Suppliers",
-    price: 750,
-    discount: 5,
-    tax: 10,
-    stock: 50,
-    lowstock: 30,
+    description: "Italian baked pasta",
+
+    options: [],
+
+    variants: [
+      { sku: "LASAGNA-STD", price: 750 }
+    ],
   },
+
   {
     id: "005",
     name: "Classic Cheeseburger",
     category: "Kitchen Items",
     supplier: "Multiple Suppliers",
-    price: 650,
-    discount: 5,
-    tax: 10,
-    stock: 200,
-    lowstock: 50,
-  }, 
+    description: "Grilled burger with cheese",
+
+    options: [
+      { name: "Add-ons", values: ["Extra Cheese", "Bacon"] }
+    ],
+
+    variants: [
+      { sku: "BURGER-BASE", price: 650 },
+      { sku: "BURGER-CHEESE", price: 750 }
+    ],
+  },
 ];
