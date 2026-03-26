@@ -54,7 +54,7 @@ export default function LoginForm() {
           // ADMIN has no companyId at login — must select a company first.
           // Hard navigation ensures the fresh session cookie is sent with the
           // request so companySelection does not see a hydration gap.
-          window.location.href = "/companySelection";
+          window.location.href = "/companyselection";
           break;
         case "MANAGER":
           // Single-branch role — go straight to dashboard
