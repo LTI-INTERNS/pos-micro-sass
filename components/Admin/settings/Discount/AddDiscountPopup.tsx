@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
@@ -26,12 +27,18 @@ const AddDiscountPopup = ({
   onClose,
   onSave,
 }: AddDiscountPopupProps) => {
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+  const branchName = session?.user?.branchName ?? "";
+
+  const canSelectBranch = role === "OWNER" || role === "ADMIN";
+
   const [values, setValues] = React.useState<DiscountValues>({
     title: "",
     percentage: "",
     createdDate: "",
     endDate: "",
-    branch: "All",
+    branch: canSelectBranch ? "All" : branchName,
   });
 
   const [errors, setErrors] = React.useState<FormErrors>({});
@@ -44,10 +51,10 @@ const AddDiscountPopup = ({
       percentage: "",
       createdDate: "",
       endDate: "",
-      branch: "All",
+      branch: canSelectBranch ? "All" : branchName,
     });
     setErrors({});
-  }, [open]);
+  }, [open, canSelectBranch, branchName]);
 
   const setField = (name: keyof DiscountValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -162,16 +169,25 @@ const AddDiscountPopup = ({
           <p className="text-xs text-red-500 px-3">{errors.endDate}</p>
         )}
 
-        <FormField
-          label="Branch"
-          placeholder="Select branch"
-          value={values.branch}
-          onChange={(v) => setField("branch", v)}
-          type="dropdown"
-        />
-        {errors.branch && (
-          <p className="text-xs text-red-500 px-3">{errors.branch}</p>
-        )}
+        {/* Branch: locked to manager's own branch; selectable for OWNER / ADMIN */}
+        <div>
+          <FormField
+            label="Branch"
+            placeholder="Select branch"
+            value={values.branch}
+            onChange={(v) => canSelectBranch && setField("branch", v)}
+            type="dropdown"
+            disabled={!canSelectBranch}
+          />
+          {!canSelectBranch && (
+            <p className="text-xs text-gray-400 px-3 mt-1">
+              Discounts are applied to your branch only.
+            </p>
+          )}
+          {errors.branch && (
+            <p className="text-xs text-red-500 px-3">{errors.branch}</p>
+          )}
+        </div>
 
         <div className="flex items-center justify-center mt-10">
           <div className="w-105">
