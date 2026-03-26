@@ -13,7 +13,7 @@ import ProductsTable from "@/components/Admin/productmanagement/product-table";
 import AddProductPopup from "@/components/Admin/productmanagement/AddProductPopup";
 import AddStockPopup from "@/components/Admin/productmanagement/addStockPopup";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
-import EditEntityModal from "@/components/Admin/common/EditPopup";
+import ViewProductPopup from "@/components/Admin/productmanagement/ViewProductPopup";
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
@@ -24,6 +24,7 @@ import { useUrlFilters } from "@/hooks/useUrlFilters";
 export default function DashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewOpen, setViewOpen] = useState(false);
 
   useEffect(() => {
     productService.getAll()
@@ -129,32 +130,59 @@ export default function DashboardPage() {
             products={filteredProducts}
             selectedProduct={selectedProduct}
             setSelectedProduct={setSelectedProduct}
+            onView={(product) => {
+              setSelectedProduct(product);
+              setViewOpen(true);
+            }}
           />
         )}
       </div>
 
       <AddProductPopup
-        open={addOpen}
-        onClose={() => setAddOpen(false)}
-        onSave={() => { setAddOpen(false); }}
-        userRole="branch_manager"
-        branchName=""
-        branchManager=""
+        open={editOpen || addOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setAddOpen(false);
+        }}
+        onSave={(updatedProduct) => {
+          console.log("UPDATED:", updatedProduct);
+          setEditOpen(false);
+          setAddOpen(false);
+        }}
+        initialData={
+          editOpen && selectedProduct
+            ? {
+                name: selectedProduct.name,
+                categoryId: selectedProduct.category,
+                brand: "",
+                supplierId: selectedProduct.supplier,
+                description: selectedProduct.description || "",
+                options: (selectedProduct.options ?? []).map((opt) => ({
+                  id: Math.random(),
+                  name: opt.name,
+                  values: opt.values,
+                })),
+                variants: (selectedProduct.variants ?? []).map((v, i) => ({
+                  id: i + 1,
+                  sku: v.sku,
+                  barcode: "",
+                  imageUrl: v.imageUrl || "",
+                  basePrice: String(v.price),
+                  sellingPrice: String(v.price),
+                  sellUnit: "Each",
+                  optionValues: v.optionValues ?? [],
+                })),
+              }
+            : null
+        }
+        userRole="manager"
+        businessTypeId="bt-002"
       />
 
-      <EditEntityModal<Product>
-        open={editOpen}
-        title="Edit Product"
-        initialValues={selectedProduct}
-        onClose={() => setEditOpen(false)}
-        onSave={() => { setEditOpen(false); }}
-        fields={[
-          { name: "name", label: "Product Name" },
-          { name: "price", label: "Price", type: "number" },
-          { name: "discount", label: "Discount" },
-          { name: "tax", label: "Tax" },
-          { name: "stock", label: "Stock", type: "number" },
-        ]}
+      <ViewProductPopup
+        open={viewOpen}
+        onClose={() => setViewOpen(false)}
+        product={selectedProduct}
       />
 
       {selectedProduct && (
