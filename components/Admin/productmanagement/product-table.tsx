@@ -9,22 +9,50 @@ type Props = {
   products: Product[];
   selectedProduct: Product | null;
   setSelectedProduct: (p: Product | null) => void;
+  onView: (p: Product) => void;
 }
 
-export default function ProductsTable({ products, selectedProduct, setSelectedProduct }: Props) {
+export default function ProductsTable({ products, selectedProduct, setSelectedProduct, onView, }: Props) {
   const { currency, useCents } = useCurrency();
 
   const productColumns: Column<Product>[] = [
-    { key: "id", label: "ID" },
     { key: "name", label: "Name" },
     { key: "category", label: "Category" },
     { key: "supplier", label: "Supplier" },
-    { key: "price", label: "Price", render: (row) => formatCurrency(row.price, currency, useCents) },
-    { key: "discount", label: "Discount (%)" },
-    { key: "tax", label: "Tax (%)" },
-    { key: "stock", label: "Stock" },
-    { key: "lowstock", label: "Low Stock/ Availability" },
 
+    // ✅ show variant count
+    {
+      key: "variants",
+      label: "Variants",
+      render: (row) => `${row.variants.length} variants`,
+    },
+
+    // ✅ show price range
+    {
+      key: "price",
+      label: "Price",
+      render: (row) => {
+        const prices = row.variants.map((v: { price: number }) => v.price);
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+
+        return min === max
+          ? formatCurrency(min, currency, useCents)
+          : `${formatCurrency(min, currency, useCents)} - ${formatCurrency(max, currency, useCents)}`;
+      },
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (row) => (
+        <button
+          onClick={() => onView(row)}
+          className="text-blue-500 text-xs cursor-pointer hover:underline"
+        >
+          View
+        </button>
+      ),
+    }
   ];
 
   return (
