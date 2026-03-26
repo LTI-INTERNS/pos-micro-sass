@@ -50,12 +50,38 @@ export default function LoginForm() {
       const role       = (session?.user?.role as string | undefined)?.toUpperCase();
 
       switch (role) {
-        case "ADMIN":
-          // ADMIN has no companyId at login — must select a company first.
-          // Hard navigation ensures the fresh session cookie is sent with the
-          // request so companySelection does not see a hydration gap.
+        case "ADMIN": {
+          try {
+            const companiesRes = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
+              { headers: { Authorization: `Bearer ${session?.user?.backendToken}` } }
+            );
+            const companiesData = await companiesRes.json();
+            const companies: { companyId: string; name: string }[] =
+              companiesData?.data ?? [];
+
+            if (companies.length === 1) {
+              const only = companies[0];
+              await signIn("select-company", {
+                redirect:    false,
+                companyId:   only.companyId,
+                companyName: only.name,
+                role:        session?.user?.role         ?? "",
+                email:       session?.user?.email        ?? "",
+                name:        session?.user?.name         ?? "",
+                branchId:    session?.user?.branchId     ?? "",
+                branchName:  session?.user?.branchName   ?? "",
+                token:       session?.user?.backendToken ?? "",
+              });
+              window.location.href = "/overview";
+              return;
+            }
+          } catch {
+
+          }
           window.location.href = "/companyselection";
           break;
+        }
         case "MANAGER":
           // Single-branch role — go straight to dashboard
           window.location.href = "/overview";
