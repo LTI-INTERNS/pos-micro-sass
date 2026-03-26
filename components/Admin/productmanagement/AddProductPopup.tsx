@@ -2,14 +2,11 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import { useNotifications } from "@/lib/context/NotificationsContext";
 import { BusinessTypeId, getCategoriesByBusinessType,} from "@/components/Admin/productmanagement/Productcategorydata"; 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type SoldBy = "each" | "volume_weight";
 
 type ProductOption = {
   id: number;
@@ -34,7 +31,6 @@ type ProductState = {
   name: string;
   categoryId: string;
   brand: string;
-  supplierId: string;
   description: string;
   options: ProductOption[];
   variants: ProductVariant[];
@@ -60,8 +56,6 @@ const OPTION_NAMES = ["Weight", "Size", "Volume", "Colour", "Flavour", "Pack Siz
 const SELL_UNITS = ["Each", "kg", "g", "mg", "l", "ml", "m", "inch", "Cube"];
 
 
-const SUPPLIERS = ["GSK", "Nestlé", "Apple"];
-
 const MAX_IMAGE_SIZE_MB = 5;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
@@ -69,7 +63,6 @@ const emptyState = (): ProductState => ({
   name: "",
   categoryId: "",
   brand: "",
-  supplierId: "",
   description: "",
   options: [],
   variants: [],
@@ -204,15 +197,6 @@ function StepBar({ current, onGo }: { current: number; onGo: (n: number) => void
 // ─── Step 1 — Product info ────────────────────────────────────────────────────
 
 function Step1({ state, onChange, categories }: { state: ProductState; onChange: (patch: Partial<ProductState>) => void; categories: { categoryId: string; categoryName: string }[]; }) {
-  const router = useRouter();
-
-  const handleSupplierChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (e.target.value === "__add_new__") {
-      router.push("/suppliermanagement");  
-      return;
-    }
-    onChange({ supplierId: e.target.value });
-  };
 
   return (
     <>
@@ -221,7 +205,7 @@ function Step1({ state, onChange, categories }: { state: ProductState; onChange:
         <Label required>Product name</Label>
         <Input placeholder="Enter Product Name" value={state.name} onChange={e => onChange({ name: e.target.value })} />
       </FieldWrap>
-      <Grid3>
+      <Grid2>
         <FieldWrap>
           <Label required>Category</Label>
           <Select
@@ -241,21 +225,7 @@ function Step1({ state, onChange, categories }: { state: ProductState; onChange:
           <Label required>Brand</Label>
           <Input placeholder="Enter Brand Name" value={state.brand} onChange={e => onChange({ brand: e.target.value })} />
         </FieldWrap>
-        <FieldWrap>
-          <Label>
-            Supplier
-            <Tooltip text="If your supplier isn't in the list, you must add them in Supplier Management before adding this product." />
-          </Label>
-          <Select value={state.supplierId} onChange={handleSupplierChange}>
-          <option value="">Select…</option>
-          {SUPPLIERS.map(c => <option key={c}>{c}</option>)}
-          {/* ─── sentinel option ─── */}
-          <option value="__add_new__" className="text-orange-500 font-medium">
-            + Add new supplier
-          </option>
-        </Select>
-        </FieldWrap>
-      </Grid3>
+      </Grid2>
       <FieldWrap>
         <Label>Description</Label>
         <Textarea placeholder="What is this product? Include key details…" value={state.description} onChange={e => onChange({ description: e.target.value })} />
