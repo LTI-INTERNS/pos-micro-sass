@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export type StoreInfo = {
   storeName: string;
@@ -11,17 +12,16 @@ export type StoreInfo = {
 };
 
 const defaultStoreInfo: StoreInfo = {
-  storeName: "Coca",
-  branchName: "Main Branch",
-  
-  cashierName: "Cashier",
-  telephone: "+94 11 234 5678",
-  logoUrl: "/logo.svg",
+  storeName:   "",
+  branchName:  "",
+  cashierName: "",
+  telephone:   "",
+  logoUrl:     null,
 };
 
 type StoreInfoContextType = {
-  storeInfo: StoreInfo;
-  setStoreInfo: (info: StoreInfo) => void;
+  storeInfo:    StoreInfo;
+  setStoreInfo: (info: Partial<StoreInfo>) => void;
 };
 
 const StoreInfoContext = createContext<StoreInfoContextType>({
@@ -30,28 +30,26 @@ const StoreInfoContext = createContext<StoreInfoContextType>({
 });
 
 export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
-  const [storeInfo, setStoreInfoState] = useState<StoreInfo>(() => {
-    //Load from localStorage as fallback on mount
-    if (typeof window === "undefined") return defaultStoreInfo;
-    const saved = localStorage.getItem("storeInfo");
-    return saved ? { ...defaultStoreInfo, ...JSON.parse(saved) } : defaultStoreInfo;
-  });
+  const { data: session, status } = useSession();
+  const [storeInfo, setStoreInfoState] = useState<StoreInfo>(defaultStoreInfo);
 
   useEffect(() => {
-    // Try to fetch from backend
-    // When backend is ready, replace this with your real API call:
-    // const res = await fetch("/api/store-info");
-    // const data = await res.json();
-    // setStoreInfoState(data);
-    // localStorage.setItem("storeInfo", JSON.stringify(data));
+    if (status !== "authenticated" || !session?.user) return;
 
-    // 🔧 PLACEHOLDER: remove this block when backend is ready
-    console.log("StoreInfo: using localStorage/default until backend is ready");
-  }, []);
+    setStoreInfoState((prev) => ({
+      ...prev,
+      storeName:   session.user.companyName || prev.storeName,
+      branchName:  session.user.branchName  || prev.branchName,
+      cashierName: session.user.name        || prev.cashierName,
+      // telephone and logoUrl are not in the session — they come from the
+      // backend (company/branch record). Set them via setStoreInfo() once
+      // the relevant API call is made in the consuming page.
+    }));
+  }, [status, session]);
 
-  const setStoreInfo = (info: StoreInfo) => {
-    setStoreInfoState(info);
-    localStorage.setItem("storeInfo", JSON.stringify(info));
+  // ── Allow individual fields to be overridden (e.g. logoUrl from API) ─────
+  const setStoreInfo = (info: Partial<StoreInfo>) => {
+    setStoreInfoState((prev) => ({ ...prev, ...info }));
   };
 
   return (
