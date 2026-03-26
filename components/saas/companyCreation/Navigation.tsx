@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/saas/common/Navbar";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import { signOut } from "next-auth/react";
@@ -22,8 +21,6 @@ export default function Navigation({
   logoSrc,
   logoAlt,
 }: NavigationProps) {
-  const router = useRouter();
-
   return (
     <Navbar
       logoSrc={logoSrc}

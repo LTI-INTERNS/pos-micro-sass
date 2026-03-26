@@ -79,10 +79,6 @@ const BusinessCardGrid = ({ selected, onSelect }: Props) => {
     setShowRetailModal(false);
   };
 
-  const handleRetailCancel = () => {
-    setShowRetailModal(false);
-    setPendingRetailId("");
-  };
 
   const selectedRetailLabel = isRetailSelected
     ? RETAIL_SUBTYPES.find((s) => s.id === selected)?.label ?? "Retail"
