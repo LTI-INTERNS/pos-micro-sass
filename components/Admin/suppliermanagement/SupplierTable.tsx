@@ -27,7 +27,7 @@ export default function SupplierTable({
   isSuperAdmin = false,
 }: Props) {
   const columns: Column<Supplier>[] = [
-    { key: "id", label: "ID" },
+    
     { key: "type", label: "Type" },
     { key: "name", label: "Name" },
     { key: "phone", label: "Phone" },

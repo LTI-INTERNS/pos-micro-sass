@@ -225,7 +225,7 @@ export default function CashierManagementPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangeBar />
+        
 
         <div className="relative w-full">
           <SearchBar

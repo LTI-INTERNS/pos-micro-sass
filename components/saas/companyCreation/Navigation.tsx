@@ -14,32 +14,34 @@ type NavigationProps = {
   onSignUp?: () => void;
   logoSrc?: string;
   logoAlt?: string;
+  showLogout?: boolean;
 };
 
 export default function Navigation({
   title = "Micro-Saas Registration Dashboard",
   logoSrc,
   logoAlt,
+  showLogout = true,
 }: NavigationProps) {
   const router = useRouter();
 
   return (
-    <Navbar
+     <Navbar
       logoSrc={logoSrc}
       logoAlt={logoAlt}
-      middleContent={
-        <h2>{title}</h2>
-      }
+      middleContent={<h2>{title}</h2>}
       rightContent={
-        <div className="flex items-center gap-3">
-          <ActionButton
-            label="Log Out"
-            onClick={() => router.push("/saaslogin")}
-            variant="primary"
-            fullWidth={false}
-            className="px-5"
-          />
-        </div>
+        showLogout ? ( // 👈 condition here
+          <div className="flex items-center gap-3">
+            <ActionButton
+              label="Log Out"
+              onClick={() => router.push("/saaslogin")}
+              variant="primary"
+              fullWidth={false}
+              className="px-5"
+            />
+          </div>
+        ) : null
       }
     />
   );

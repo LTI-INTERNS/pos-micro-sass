@@ -8,7 +8,7 @@ import LoginForm from "@/components/Landing/Auth/LoginForm";
 
 export default function LoginPage() {
   return (
-    <CommonLayout navbar={<Navigation title='Welcome to POS System' />}>
+    <CommonLayout navbar={<Navigation title="Welcome to POS System" showLogout={false} />} >
       <div className="pt-12 pb-20 px-4">
         <GlassBackground className="max-w-md mx-auto px-6 md:px-10 py-12">
           

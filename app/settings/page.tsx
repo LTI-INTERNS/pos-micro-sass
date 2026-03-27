@@ -9,6 +9,7 @@ import SubscriptionPlanCards from "@/components/Admin/settings/subscriptionplan/
 import CompanyDetailsForm from "@/components/Admin/settings/Details/CompanyDetailsContent";
 import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetailsContent";
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type UserRole = "superadmin" | "admin" | "manager";
 
@@ -47,7 +48,7 @@ const getTabs = (userRole: UserRole): Tab[] => {
 };
 
 export default function SettingPage() {
-  const userRole: UserRole = "superadmin" as UserRole;
+  const userRole: UserRole = "manager" as UserRole;
   const TABS = getTabs(userRole);
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
@@ -73,8 +74,8 @@ export default function SettingPage() {
                 regNo: "PV12345",
                 email: "abc@gmail.com",
                 phone: "+94 77 123 4567",
-                addressLine1: "No 10, Main Street",
-                addressLine2: "Colombo",
+                address: "No 10, Main Street, Colombo",
+                
               }}
               logoUrl={companyLogoUrl}
               onLogoChange={(url, file) => {
@@ -86,22 +87,76 @@ export default function SettingPage() {
               }}
             />
           ) : (
+            <div className="flex-1 grid grid-rows-2 gap-4 min-h-0">
             <BranchDetailsForm
               initial={{
                 name: "Colombo Branch",
                 email: "branch@gmail.com",
                 phone: "+94 77 987 6543",
-                addressLine1: "No 15, High Street",
-                addressLine2: "Colombo",
+                address: "No 15, High Street, Colombo",
+                
               }}
               onSave={(data) => {
                 console.log("SAVE BRANCH", data);
               }}
             />
+            <section className="bg-white rounded-xl border border-gray-100 flex flex-col min-h-0">
+                      <div className="px-6 py-3">
+                        <h2 className="text-md font-semibold text-gray-900">
+                          Change Password
+                        </h2>
+                      </div>
+            
+                      <div className="px-6 flex-1 overflow-auto min-h-0">
+                        <PasswordRow label="Current Password" placeholder="Enter Current Password" />
+                        <PasswordRow label="New Password" placeholder="Enter New Password" />
+                        <PasswordRow label="Confirm Password" placeholder="Enter Confirm Password" />
+                      </div>
+            
+                      <div className="px-6 py-2">
+                        <div className="flex justify-left">
+                          <ActionButton
+                            label="Change Password"
+                            variant="outline"
+                            fullWidth={false}
+                            className="w-55"
+                            onClick={() => alert("Change Password")}
+                          />
+                        </div>
+                      </div>
+                    </section>
+           </div>        
           ))}
 
         {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>
     </DashboardLayout>
+  );
+}
+
+
+function PasswordRow({
+  label,
+  placeholder,
+}: {
+  label: string;
+  placeholder: string;
+}) {
+  return (
+    <div className="grid grid-cols-12 items-center py-4 border-b border-gray-100">
+      <div className="col-span-12 sm:col-span-4 text-sm font-semibold text-gray-900 mb-3 sm:mb-0">
+        {label}
+      </div>
+
+      <div className="col-span-12 sm:col-span-8">
+        <input
+          type="password"
+          placeholder={placeholder}
+          className="w-full rounded-full border border-gray-200 px-6 py-2.5
+                     text-sm text-gray-700 placeholder:text-gray-400
+                     outline-none focus:ring-2 focus:ring-orange-200"
+        />
+      </div>
+    </div>
   );
 }

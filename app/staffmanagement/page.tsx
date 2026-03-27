@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
-import DateRangeBar from "@/components/Admin/common/DateRangeBar";
+
 import SearchBar from "@/components/Admin/common/Search-bar";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import AddStaffPopup from "@/components/Admin/staffmanagement/AddStaffPopup";
@@ -49,15 +49,14 @@ export default function StaffManagementPage() {
   const exportCSV = useCSVExport();
 
   const columns: Column<Staff>[] = [
-    { key: "id", label: "ID" },
+    
     { key: "name", label: "Name" },
     { key: "staffNo", label: "Staff No" },
     { key: "branch", label: "Branch Name" },
     { key: "position", label: "Position" },
     { key: "email", label: "Email" },
     { key: "phone", label: "Phone" },
-    { key: "password", label: "Password" },
-    { key: "pin", label: "Pin" },
+    
   ];
 
   const filteredStaff = useTableFilters<Staff>({
@@ -99,7 +98,7 @@ export default function StaffManagementPage() {
 
   const editFields: EditField[] = [
     { name: "name", label: "Name", type: "text" },
-    { name: "staffNo", label: "Staff No", type: "text" },
+    
     { name: "branch", label: "Branch", type: "text" },
     { name: "position", label: "Position", type: "text" },
     { name: "email", label: "Email", type: "text" },
@@ -109,7 +108,7 @@ export default function StaffManagementPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <DateRangeBar />
+        
 
         <div className="relative">
           <SearchBar

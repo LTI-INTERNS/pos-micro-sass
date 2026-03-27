@@ -133,13 +133,7 @@ export default function AddStaffPopup({ onClose }: Props) {
           handleSave();
         }}
       >
-        <FormField
-          label="ID"
-          value={values.id}
-          onChange={(v) => setField("id", v)}
-          type="text"
-          disabled
-        />
+        
 
         <FormField
           label="Name"

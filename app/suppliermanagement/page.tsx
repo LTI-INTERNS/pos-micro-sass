@@ -114,7 +114,7 @@ export default function SupplierPage() {
     <DashboardLayout>
       
       <div className="w-full space-y-6 relative">
-        <DateRangeBar />
+        
 
         <StatCardGrid suppliers={filteredSuppliers} isSuperAdmin={isSuperAdmin} />
         
