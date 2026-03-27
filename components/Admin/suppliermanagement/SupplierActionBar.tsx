@@ -19,8 +19,17 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
   const editFields: EditField[] = [
-  { name: "type", label: "Supplier Type" },
+  {
+  name: "type",
+  label: "Supplier Type",
+  type: "select",
+  options: [
+    { label: "Individual", value: "Individual" },
+    { label: "Company", value: "Company" },
+  ],
+},
   { name: "name", label: "Supplier Name" },
+  { name: "address", label: "Address" },
   { name: "phone", label: "Phone", type: "number" },
   { name: "email", label: "Email" },
   { name: "coverarea", label: "Cover Area" },
