@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const allMenuItems = useMemo(() => [
     { label: 'Dashboard',            path: '/overview',          roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
-    { label: 'Staff Management',     path: '/staffmanagement',   roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    { label: 'Staff Management',     path: '/staffmanagement',   roles: ['OWNER', 'ADMIN'] as UserRole[] },
     { label: 'Customers Management', path: '/customermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Products Management',  path: '/productmanagement', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Order Management',     path: '/ordermanagement',   roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
