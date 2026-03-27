@@ -17,16 +17,14 @@ export type RegistrationData = {
   contact: string;
   email: string;
   logo: File | null;
-  businessType: string;
-  subCategory?: string;
-  subscriptionPlan: string;
+  businessTypeId: string;
+  subId: string;
   paymentMethod: "mastercard" | "visa";
   nameOnCard: string;
   cardNumber: string;
   expDate: string;
   cvv: string;
 };
-
 
 const STEPS = [
   { id: "1", label: "Account"      },
@@ -37,25 +35,23 @@ const STEPS = [
 
 const DEFAULT_DATA: RegistrationData = {
   companyName: "", address: "", contact: "", email: "", logo: null,
-  businessType: "", subscriptionPlan: "",
+  businessTypeId: "", subId: "",
   paymentMethod: "mastercard", nameOnCard: "", cardNumber: "", expDate: "", cvv: "",
 };
 
 export default function RegistrationPage() {
   const { save, load, clear } = useRegistrationPersistence();
 
-  const [currentStep,    setCurrentStep]    = useState(1);
-  const [completedSteps, setCompletedSteps] = useState(0);
+  const [currentStep,      setCurrentStep]      = useState(1);
+  const [completedSteps,   setCompletedSteps]   = useState(0);
   const [registrationData, setRegistrationData] = useState<RegistrationData>(DEFAULT_DATA);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydrated,         setHydrated]         = useState(false);
 
   // Restore from localStorage on first mount
   useEffect(() => {
     const { data, step } = load();
     if (data) {
       setRegistrationData((prev) => ({ ...prev, ...data }));
-      // The saved step is the NEXT step the user should be on,
-      // so completedSteps = savedStep - 1
       setCompletedSteps(step - 1);
       setCurrentStep(step);
     }
@@ -65,44 +61,37 @@ export default function RegistrationPage() {
 
   // Persist whenever data or step changes
   useEffect(() => {
-    if (hydrated) {
-      save(registrationData, currentStep);
-    }
+    if (hydrated) save(registrationData, currentStep);
   }, [registrationData, currentStep, hydrated, save]);
 
-  // Scroll to top whenever current step changes
+  // Scroll to top on step change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentStep]);
 
-  // Navigation handlers 
+
   const handleNext = (stepData: Partial<RegistrationData>) => {
     const merged = { ...registrationData, ...stepData };
     setRegistrationData(merged);
-    const nextStep = Math.min(currentStep + 1, STEPS.length);
-    // Mark current step as completed
     setCompletedSteps((prev) => Math.max(prev, currentStep));
-    setCurrentStep(nextStep);
+    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
   };
 
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
-   const handleStepClick = (step: number) => {
-    if (step <= completedSteps + 1) {
-      setCurrentStep(step);
-    }
+  const handleStepClick = (step: number) => {
+    if (step <= completedSteps + 1) setCurrentStep(step);
   };
 
-  const handleComplete = (paymentData: Partial<RegistrationData>) => {
-    const finalData = { ...registrationData, ...paymentData };
-    console.log("Registration complete:", finalData);
-    clear(); 
-    alert("Registration Successful!");
+
+  const handleComplete = () => {
+    clear();
+    window.location.href = "/companyselection";
   };
 
-  if (!hydrated) return null; 
+  if (!hydrated) return null;
 
   return (
     <CommonLayout navbar={<Navigation />}>
