@@ -82,7 +82,8 @@ export default function PaymentSuccessPopup({
 
   function handleButtonClick() {
     if (allSuccess) {
-      router.push("/saaslogin");
+       onClose();
+      router.push("/companyselection");
     } else if (allFailed) {
       onTryAgain();
     } else {

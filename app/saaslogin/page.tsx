@@ -70,12 +70,41 @@ export default function SaasLoginPage() {
       const session    = await sessionRes.json();
       const role       = session?.user?.role?.toUpperCase();
 
-      if (role === "OWNER" || role === "ADMIN") {
-        // Hard navigation so the browser sends the fresh session cookie with
-        // the request. A client-side router.push() would navigate before
-        // NextAuth finishes writing the cookie, causing companySelection to
-        // see status="unauthenticated" briefly and redirect back here.
-        window.location.href = "/companySelection";
+      if (role === "OWNER") {
+        window.location.href = "/companyselection";
+        return;
+      }
+
+      if (role === "ADMIN") {
+        try {
+          const companiesRes = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
+            { headers: { Authorization: `Bearer ${session.user.backendToken}` } }
+          );
+          const companiesData = await companiesRes.json();
+          const companies: { companyId: string; name: string }[] =
+            companiesData?.data ?? [];
+
+          if (companies.length === 1) {
+            const only = companies[0];
+            await signIn("select-company", {
+              redirect:    false,
+              companyId:   only.companyId,
+              companyName: only.name,
+              role:        session.user.role        ?? "",
+              email:       session.user.email       ?? "",
+              name:        session.user.name        ?? "",
+              branchId:    session.user.branchId    ?? "",
+              branchName:  session.user.branchName  ?? "",
+              token:       session.user.backendToken ?? "",
+            });
+            window.location.href = "/overview";
+            return;
+          }
+        } catch {
+        
+        }
+        window.location.href = "/companyselection";
         return;
       }
 
