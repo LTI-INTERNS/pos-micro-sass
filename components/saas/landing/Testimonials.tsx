@@ -13,6 +13,7 @@ type Testimonial = {
   name: string;
   role: string;
   message: string;
+  avatar?: string; // Optional, as we use a placeholder icon
 };
 
 const testimonials: Testimonial[] = [
@@ -21,29 +22,35 @@ const testimonials: Testimonial[] = [
     role: "Manager - ABC Company",
     message:
       "This POS made our daily sales and inventory tracking incredibly simple. We save hours every week.",
+    avatar: "https://i.pravatar.cc/150?img=32",  
   },
   {
     name: "Sarah Smith",
     role: "Owner - Retail Store",
     message:
       "The dashboard is clean and easy to use. My staff learned it in one day.",
+    avatar: "https://i.pravatar.cc/150?img=12",  
   },
   {
     name: "Michael Brown",
     role: "CEO - Cafe Group",
     message:
       "Inventory management has never been easier. Highly recommended system.",
+    avatar: "https://i.pravatar.cc/150?img=5",  
   },
   {
     name: "Emily Johnson",
     role: "Operations Head - Supermarket",
     message: "Reports and analytics help us make smarter decisions daily.",
+    avatar: "https://i.pravatar.cc/150?img=42",
+
   },
   {
     name: "David Lee",
     role: "Founder - Grocery Hub",
     message:
       "The automation features saved us time and reduced manual errors significantly.",
+    avatar: "https://i.pravatar.cc/150?img=8",  
   },
 ];
 
@@ -165,7 +172,7 @@ export default function TestimonialSection() {
 
                     <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                       <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center [@media(min-width:2560px)]:w-16 [@media(min-width:2560px)]:h-16">
-                        <User className="text-white" size={24} />
+                        <img src={item.avatar} alt={item.name} className="w-full h-full object-cover rounded-full" />
                       </div>
                       <div>
                         <h3 className="text-white font-semibold text-base sm:text-lg [@media(min-width:2560px)]:text-2xl">

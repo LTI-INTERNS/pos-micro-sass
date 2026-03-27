@@ -6,8 +6,8 @@ type CompanyDetailsProps = {
     regNo?: string;
     email: string;
     phone: string;
-    addressLine1: string;
-    addressLine2: string;
+    address: string;
+    
   };
   logoUrl?: string | null;
   onLogoChange?: (url: string | null, file?: File | null) => void;
@@ -16,8 +16,7 @@ type CompanyDetailsProps = {
     regNo?: string;
     email: string;
     phone: string;
-    addressLine1: string;
-    addressLine2: string;
+    address: string;
   }) => Promise<void> | void;
   readOnly?: boolean;
   onEditClick?: () => void;

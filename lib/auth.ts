@@ -1,3 +1,4 @@
+/*
 export const authOptions = {
     providers: [],
     callbacks: {
@@ -9,3 +10,4 @@ export const authOptions = {
         },
     },
 };
+*/

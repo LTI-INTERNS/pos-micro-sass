@@ -6,6 +6,7 @@ export type Supplier = {
   id: number;
   type: "Individual" | "Company";
   name: string;
+  address: string;
   phone: number;
   email: string;
   coverarea: string;
@@ -17,23 +18,28 @@ type Props = {
   suppliers: Supplier[];
   selectedSupplier: Supplier | null;
   setSelectedSupplier: (s: Supplier | null) => void;
-  isSuperAdmin?: boolean;
+  userRole?: "owner" | "admin" | "manager";
 };
 
 export default function SupplierTable({
   suppliers,
   selectedSupplier,
   setSelectedSupplier,
-  isSuperAdmin = false,
+  userRole = "manager",
 }: Props) {
+  
+  const canViewBranches = userRole === "owner" || userRole === "admin";
+  const canManageSuppliers = userRole === "owner" || userRole === "admin";
+
   const columns: Column<Supplier>[] = [
-    { key: "id", label: "ID" },
+    
     { key: "type", label: "Type" },
     { key: "name", label: "Name" },
+    { key: "address", label: "Address" },
     { key: "phone", label: "Phone" },
     { key: "email", label: "Email" },
     { key: "coverarea", label: "Cover Area" },
-    ...(isSuperAdmin
+    ...(canViewBranches
       ? [
           {
             key: "branches" as keyof Supplier,
@@ -51,8 +57,8 @@ export default function SupplierTable({
       data={suppliers}
       columns={columns}
       emptyMessage="No suppliers found"
-      selectedRowId={isSuperAdmin ? selectedSupplier?.id : undefined}
-      onSelectRow={isSuperAdmin ? (row) => setSelectedSupplier(row) : undefined}
+      selectedRowId={canManageSuppliers ? selectedSupplier?.id : undefined}
+      onSelectRow={canManageSuppliers ? (row) => setSelectedSupplier(row) : undefined}
     />
   );
 }

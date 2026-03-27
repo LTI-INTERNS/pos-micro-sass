@@ -17,13 +17,7 @@ type SupplierPopUpProps = {
 };
 
 const baseFields: FieldConfig[] = [
-  {
-    name: "id",
-    label: "ID",
-    placeholder: "Auto generated",
-    type: "text",
-    disabled: true,
-  },
+  
 ];
 
 const cooperateTopFields: FieldConfig[] = [
@@ -164,7 +158,7 @@ export default function SupplierPopUp({
             />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <FormField
-                label="Contact person Name"
+                label="Name"
                 placeholder="Enter name"
                 value={values.contactPersonName ?? ""}
                 onChange={(next) => setField("contactPersonName", next)}

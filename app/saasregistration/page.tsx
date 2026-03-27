@@ -107,8 +107,8 @@ export default function RegisterPage() {
 
       setSuccess(res.message);
 
-      // optional redirect after success
-      // window.location.href = "/saaslogin";
+      // Redirect to login after a short pause so the user can read the success message
+      setTimeout(() => { window.location.href = "/saaslogin"; }, 1500);
     });
   }
 

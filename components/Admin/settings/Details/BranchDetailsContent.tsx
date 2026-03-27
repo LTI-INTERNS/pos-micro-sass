@@ -5,15 +5,15 @@ type BranchDetailsProps = {
     name: string;
     email: string;
     phone: string;
-    addressLine1: string;
-    addressLine2: string;
+    address: string;
+    
   };
   onSave?: (data: {
     name: string;
     email: string;
     phone: string;
-    addressLine1: string;
-    addressLine2: string;
+    address: string;
+    
   }) => Promise<void> | void;
   readOnly?: boolean;
   onEditClick?: () => void;

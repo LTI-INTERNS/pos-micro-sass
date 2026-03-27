@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -11,7 +11,6 @@ import StatCardGrid from "@/components/Admin/customermanagement/customerStarGrid
 import { customerService, Customer } from "@/lib/services";
 import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
-import { useEffect } from "react";
 
 export default function CustomersPage() {
   const [start, setStart] = useState<Date | undefined>();
@@ -26,7 +25,7 @@ export default function CustomersPage() {
   }, []);
 
   const [filters, setFilters] = useState<{
-    outstandingRange?: string;
+    points?: string;
   }>({});
 
   const handleDeleteCustomer = () => {
@@ -49,37 +48,40 @@ export default function CustomersPage() {
 
   const filterFields: SelectField[] = [
     {
-      name: "outstandingRange",
-      placeholder: "Select Outstanding Range",
+      name: "points",
+      placeholder: "Select Points Range",
       options: [
-        { label: "Below 50,000", value: "lt50k" },
-        { label: "50,000 - 100,000", value: "50k-100k" },
-        { label: "Above 100,000", value: "gt100k" },
+        { label: "Below 50", value: "lt50" },
+        { label: "50 - 100", value: "50-100" },
+        { label: "Above 100", value: "gt100" },
       ],
     },
   ];
 
-  const filteredCustomers = useTableFilters<Customer>({
-    data: customers,          // ← was customersData; now tracks mutations
+  // Use generic filter hook only for search + date
+  const baseFilteredCustomers = useTableFilters<Customer>({
+    data: customers,
     search,
     start,
     end,
     searchKeys: ["id", "name", "email", "promoCard"],
-    filters,
-  }).filter((c) => {
-    if (!filters.outstandingRange) return true;
+    filters: {}, // ✅ do not pass points filter here
+  });
 
-    if (filters.outstandingRange === "lt50k" && c.outstanding >= 50000)
-      return false;
-    if (
-      filters.outstandingRange === "50k-100k" &&
-      (c.outstanding < 50000 || c.outstanding > 100000)
-    )
-      return false;
-    if (filters.outstandingRange === "gt100k" && c.outstanding <= 100000)
-      return false;
+  // Apply points filter manually
+  const filteredCustomers = baseFilteredCustomers.filter((c) => {
+    if (!filters.points) return true;
 
-    return true;
+    switch (filters.points) {
+      case "lt50":
+        return c.points < 50;
+      case "50-100":
+        return c.points >= 50 && c.points <= 100;
+      case "gt100":
+        return c.points > 100;
+      default:
+        return true;
+    }
   });
 
   return (
@@ -107,15 +109,17 @@ export default function CustomersPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={clearAllFilters}
           />
+
           <FilterChips
             filters={filters}
             onRemove={handleRemoveFilter}
           />
+
           <FilterPopup
             open={showFilter}
             onClose={() => setShowFilter(false)}
             onApply={(values) => {
-              setFilters(values);
+              setFilters(values as { points?: string });
               setShowFilter(false);
             }}
             fields={filterFields}

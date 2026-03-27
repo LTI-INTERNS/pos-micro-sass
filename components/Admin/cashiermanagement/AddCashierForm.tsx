@@ -1,17 +1,17 @@
 "use client";
 
 import * as React from "react";
+import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import ImageUploader from "@/components/Admin/common/ImageUploader";
 
 type FormValues = {
   name: string;
   number: string;
-  displayName: string;
   branchName: string;
   email: string;
-  password: string;
   pin: string;
 };
 
@@ -23,17 +23,38 @@ type AddCashierFormProps = {
 };
 
 export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
+  const { data: session } = useSession();
+  const role = session?.user?.role ?? "";
+  const branchName = session?.user?.branchName ?? "";
+
+  // Only OWNER and ADMIN can select a branch; MANAGER is locked to their own branch
+  const canSelectBranch = role === "OWNER" || role === "ADMIN";
+
+  const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(null);
+
   const [formValues, setFormValues] = React.useState<FormValues>({
     name: "",
     number: "",
-    displayName: "",
-    branchName: "",
+    branchName: canSelectBranch ? "" : branchName,
     email: "",
-    password: "",
     pin: "",
   });
 
   const [errors, setErrors] = React.useState<FormErrors>({});
+
+  // Reset form when popup opens
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setFormValues({
+      name: "",
+      number: "",
+      branchName: canSelectBranch ? "" : branchName,
+      email: "",
+      pin: "",
+    });
+    setProfileImageUrl(null);
+    setErrors({});
+  }, [isOpen, canSelectBranch, branchName]);
 
   const setField = (name: keyof FormValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [name]: value }));
@@ -69,10 +90,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
       newErrors.number = "Number is required";
     }
 
-    if (!formValues.displayName.trim()) {
-      newErrors.displayName = "Display name is required";
-    }
-
     if (!formValues.branchName) {
       newErrors.branchName = "Please select a branch";
     }
@@ -81,12 +98,6 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
       newErrors.email = "Please enter a valid email address";
-    }
-
-    if (!formValues.password) {
-      newErrors.password = "Password is required";
-    } else if (formValues.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
     }
 
     if (!formValues.pin) {
@@ -103,18 +114,17 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     setFormValues({
       name: "",
       number: "",
-      displayName: "",
-      branchName: "",
+      branchName: canSelectBranch ? "" : branchName,
       email: "",
-      password: "",
       pin: "",
     });
+    setProfileImageUrl(null);
     setErrors({});
   };
 
   const handleSave = () => {
     if (validateForm()) {
-      console.log("Form submitted:", formValues);
+      console.log("Form submitted:", { ...formValues, profileImageUrl });
       resetForm();
       onClose();
     }
@@ -128,6 +138,16 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
   return (
     <ModalShell open={isOpen} title="Add New Cashier" onClose={handleCancel}>
       <div className="space-y-2 mt-[-4px]">
+
+        {/* Profile Image */}
+        <ImageUploader
+          shape="circle"
+          label="Avatar"
+          hint="Cashier profile image"
+          value={profileImageUrl}
+          onChange={(url) => setProfileImageUrl(url)}
+        />
+
         <FormField
           label="Name"
           placeholder="Enter name"
@@ -139,7 +159,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
         )}
 
         <FormField
-          label="Number"
+          label="Cashier No"
           placeholder="Enter Number"
           value={formValues.number}
           onChange={(val) => setNumericField("number", val)}
@@ -148,31 +168,30 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           <p className="text-xs text-red-500 px-3">{errors.number}</p>
         )}
 
-        <FormField
-          label="Display Name"
-          placeholder="Enter display name"
-          value={formValues.displayName}
-          onChange={(val) => setField("displayName", val)}
-        />
-        {errors.displayName && (
-          <p className="text-xs text-red-500 px-3">{errors.displayName}</p>
-        )}
-
-        <FormField
-          label="Branch Name"
-          placeholder="Select Branch"
-          value={formValues.branchName}
-          onChange={(val) => setField("branchName", val)}
-          type="dropdown"
-          options={[
-            { value: "branch-a", label: "Branch A" },
-            { value: "branch-b", label: "Branch B" },
-            { value: "branch-c", label: "Branch C" },
-          ]}
-        />
-        {errors.branchName && (
-          <p className="text-xs text-red-500 px-3">{errors.branchName}</p>
-        )}
+        {/* Branch: selectable for OWNER / ADMIN; locked for MANAGER */}
+        <div>
+          <FormField
+            label="Branch Name"
+            placeholder={canSelectBranch ? "Select Branch" : branchName}
+            value={formValues.branchName}
+            onChange={(val) => canSelectBranch && setField("branchName", val)}
+            type="dropdown"
+            disabled={!canSelectBranch}
+            options={[
+              { value: "branch-a", label: "Branch A" },
+              { value: "branch-b", label: "Branch B" },
+              { value: "branch-c", label: "Branch C" },
+            ]}
+          />
+          {!canSelectBranch && (
+            <p className="text-xs text-gray-400 px-3 mt-1">
+              Cashiers are added to your branch only.
+            </p>
+          )}
+          {errors.branchName && (
+            <p className="text-xs text-red-500 px-3">{errors.branchName}</p>
+          )}
+        </div>
 
         <FormField
           label="Email"
@@ -184,17 +203,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           <p className="text-xs text-red-500 px-3">{errors.email}</p>
         )}
 
-        <FormField
-          label="Password"
-          placeholder="Enter Password"
-          value={formValues.password}
-          onChange={(val) => setField("password", val)}
-          type="password"
-        />
-        {errors.password && (
-          <p className="text-xs text-red-500 px-3">{errors.password}</p>
-        )}
-        
+
         <FormField
           label="PIN"
           placeholder="Enter PIN"
