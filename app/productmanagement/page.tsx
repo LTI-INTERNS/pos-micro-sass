@@ -49,15 +49,18 @@ function toPopupProduct(p: Product) {
 
 // ── Helper: extract the base Product from a (possibly variant-tagged) product ─
 
+type TaggedProduct = Product & { _selectedVariantSku?: string };
+
 function getBaseProduct(p: Product): Product {
-  const { _selectedVariantSku, ...rest } = p as any;
-  return rest as Product;
+  const copy = { ...p } as TaggedProduct;
+  delete copy._selectedVariantSku;
+  return copy as Product;
 }
 
 type UserRole = "owner" | "admin" | "manager";
 
 export default function DashboardPage() {
-  const userRole: UserRole = "owner"; // TODO: replace with session-derived role
+  const userRole: UserRole = "manager"; // TODO: replace with session-derived role
 
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
