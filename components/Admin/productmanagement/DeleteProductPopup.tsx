@@ -53,7 +53,14 @@ function Tooltip({ text, position = "top" }: { text: string; position?: "top" | 
   );
 }
 
-function RadioOption({ checked, onChange, label, description, tooltip }: any) {
+type RadioOptionProps = {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  description?: string;
+  tooltip?: string;
+};
+function RadioOption({ checked, onChange, label, description, tooltip }: RadioOptionProps) {
   return (
     <label className="flex items-start gap-3 cursor-pointer group">
       <input
@@ -77,7 +84,13 @@ function RadioOption({ checked, onChange, label, description, tooltip }: any) {
   );
 }
 
-function CheckboxOption({ checked, onChange, label, price }: any) {
+type CheckboxOptionProps = {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+  price?: number;
+};
+function CheckboxOption({ checked, onChange, label, price }: CheckboxOptionProps) {
   return (
     <label className="flex items-center gap-3 cursor-pointer group p-2 hover:bg-gray-50 rounded-lg transition">
       <input
@@ -219,7 +232,7 @@ export default function DeleteProductPopup({
           </div>
 
           <div className="max-h-[220px] overflow-y-auto border border-gray-200 rounded-xl bg-white">
-            {variants.map((v: any) => (
+            {variants.map((v) => (
               <CheckboxOption
                 key={v.sku}
                 checked={selectedVariants.includes(v.sku)}
