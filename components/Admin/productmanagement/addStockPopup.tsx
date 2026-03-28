@@ -29,6 +29,9 @@ type Props = {
   product: Product;
   isOpen: boolean;
   onClose: () => void;
+  userRole?: "owner" | "admin" | "manager";
+  // TODO: replace with session-derived branch name once auth is set up
+  branchName?: string;
   onSave?: (data: {
     branch: string;
     supplier: string | null;
@@ -36,6 +39,7 @@ type Props = {
   }) => void;
 };
 
+// ─── Small reusable UI pieces ─────────────────────────────────────────────────
 
 function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
   return (
@@ -113,32 +117,44 @@ const defaultBS = (): BranchVariantData => ({
   available: true,
 });
 
-// Sentinel values
 const NO_SUPPLIER = "__none__";
-const ADD_NEW_SUPPLIER = "__add_new__";
 
-export default function AddStockPopup({ product, isOpen, onClose }: Props) {
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function AddStockPopup({
+  product,
+  isOpen,
+  onClose,
+  userRole = "admin",
+  branchName: managerBranchName = "",
+  onSave,
+}: Props) {
   const router = useRouter();
+  const isManager = userRole === "manager";
 
-  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+  // Managers skip branch selection — branch comes from props for now.
+  // TODO: derive managerBranchName from session/auth context instead of props.
+  // Owners/admins start with null and must pick a branch first.
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(
+    isManager ? managerBranchName : null
+  );
+
   const [branchSuppliers, setBranchSuppliers] = useState<Record<string, string>>({});
-
-  // Fetched suppliers — replace [] with your API call
   const [suppliers, setSuppliers] = useState<string[]>([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
 
-  // Fetch suppliers from backend when the popup opens
+  // Reset branch state when popup opens/role changes
   useEffect(() => {
     if (!isOpen) return;
+    setSelectedBranch(isManager ? managerBranchName : null);
     setSuppliersLoading(true);
 
     // TODO: replace with real API call e.g. fetch("/api/suppliers")
-    // Simulating async fetch for now
     Promise.resolve(["Unilever Lanka", "MAS Holdings", "Ceylon Biscuits Ltd"]).then((data) => {
       setSuppliers(data);
       setSuppliersLoading(false);
     });
-  }, [isOpen]);
+  }, [isOpen, isManager, managerBranchName]);
 
   const variants: VariantState[] = product.variants.map((v, i) => ({
     id: i + 1,
@@ -157,33 +173,35 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
     }));
   };
 
-  // Handle supplier dropdown change
   const handleSupplierChange = (branch: string, value: string) => {
-    if (value === ADD_NEW_SUPPLIER) {
-      // Navigate to supplier management and signal to open Add New Supplier modal
-      router.push("/suppliermanagement?action=add");
-      return;
-    }
     setBranchSuppliers((prev) => ({ ...prev, [branch]: value }));
   };
 
   if (!isOpen) return null;
 
+  // ── Branch selection step (owner / admin only) ────────────────────────────
+  const showBranchSelection = !isManager && !selectedBranch;
+
   return (
     <ModalShell open={isOpen} onClose={onClose} title="Add Stock" widthClassName="w-[700px] max-w-[95vw]">
-      {!selectedBranch ? (
-        // STEP 1: SELECT BRANCH
+      {showBranchSelection ? (
+        // STEP 1: SELECT BRANCH (owner / admin only)
         <div>
           <SectionTitle
             title="Select Branch"
-            tooltip={<Tooltip text="Choose the branch where you want to add stock for this product" position="bottom" />}
+            tooltip={
+              <Tooltip
+                text="Choose the branch where you want to add stock for this product"
+                position="bottom"
+              />
+            }
           />
           <div className="space-y-2">
             {BRANCHES.map((b) => (
               <button
                 key={b}
                 onClick={() => setSelectedBranch(b)}
-                className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-800 hover:bg-gray-50 hover:border-orange-200 transition-all duration-150 cursor-pointer"
+                className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl bg-white text-gray-800 hover:bg-orange-50 hover:border-orange-200 transition-all duration-150 cursor-pointer"
               >
                 <span className="text-sm font-medium">{b}</span>
               </button>
@@ -193,38 +211,44 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
       ) : (
         // STEP 2: VARIANT STOCK CONFIG
         <div>
-          {/* Branch header */}
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Branch:</span>
-              <span className="text-sm font-medium text-gray-800 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
-                {selectedBranch}
-              </span>
+          {/* Branch header — shown only for owner / admin */}
+          {!isManager && (
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Branch:</span>
+                <span className="text-sm font-medium text-gray-800 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
+                  {selectedBranch}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedBranch(null)}
+                className="text-[12px] text-gray-500 hover:text-orange-500 transition px-3 py-1 rounded-lg hover:bg-orange-50"
+              >
+                ← Change branch
+              </button>
             </div>
-            <button
-              onClick={() => setSelectedBranch(null)}
-              className="text-[12px] text-gray-500 hover:text-orange-500 transition px-3 py-1 rounded-lg hover:bg-orange-50"
-            >
-              ← Change branch
-            </button>
-          </div>
+          )}
 
           {/* Supplier selector */}
-          <div className="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+          <div className="mb-5 p-3 bg-orange-50 border border-orange-300 rounded-xl">
             <div className="flex items-center justify-between mb-1">
               <Label>
                 Supplier
-                <Tooltip text="Applies to all variants for this branch. Select 'No Supplier' for self-products." position="bottom" />
+                <Tooltip
+                  text="Applies to all variants for this branch. Select 'No Supplier' for self-products."
+                  position="bottom"
+                />
               </Label>
-
               <button
                 onClick={() => router.push("/suppliermanagement?action=add")}
                 className="text-[12px] px-3 py-1 rounded-full text-orange-500 hover:font-medium transition cursor-pointer"
               >
                 + Add New Supplier
-                <Tooltip text="Navigate to supplier management to add a new supplier" position="bottom" />
+                <Tooltip
+                  text="Navigate to supplier management to add a new supplier"
+                  position="bottom"
+                />
               </button>
-            
             </div>
 
             {suppliersLoading ? (
@@ -233,25 +257,19 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
               </div>
             ) : (
               <Select
-                value={branchSuppliers[selectedBranch] ?? ""}
-                onChange={(e) => handleSupplierChange(selectedBranch, e.target.value)}
+                value={branchSuppliers[selectedBranch!] ?? ""}
+                onChange={(e) => handleSupplierChange(selectedBranch!, e.target.value)}
               >
-                {/* Default prompt */}
                 <option value="" disabled>Select a supplier…</option>
-
-                {/* Self-product option */}
-                <option value={NO_SUPPLIER}>No Supplier (Self Product) </option>
-
-                {/* Fetched suppliers */}
+                <option value={NO_SUPPLIER}>No Supplier (Self Product)</option>
                 {suppliers.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
               </Select>
             )}
 
-            {/* Visual confirmation of selection */}
-            {branchSuppliers[selectedBranch] === NO_SUPPLIER && (
-              <p className="mt-2 text-[11px] text-gray-400 flex items-center gap-1">
+            {branchSuppliers[selectedBranch!] === NO_SUPPLIER && (
+              <p className="mt-2 text-[11px] text-gray-400">
                 This product will be recorded without a supplier.
               </p>
             )}
@@ -264,8 +282,8 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
               const bs = getBS(key);
 
               return (
-                <div key={v.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <div key={v.id} className="bg-orange-50 border border-orange-300 rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-4 pb-2 border-b border-orange-300">
                     <div>
                       <p className="text-[13px] font-medium text-gray-700">SKU: {v.sku}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5">Base price: {v.price.toFixed(2)}</p>
@@ -285,10 +303,18 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
                     <Label>Stock Information</Label>
                     <Grid2>
                       <FieldWrap>
-                        <Input type="number" placeholder="Stock quantity" value={bs.stockQty} onChange={(e) => updateBS(key, "stockQty", e.target.value)} />
+                        <Input
+                          type="number"
+                          placeholder="Stock quantity"
+                          value={bs.stockQty}
+                          onChange={(e) => updateBS(key, "stockQty", e.target.value)}
+                        />
                       </FieldWrap>
                       <FieldWrap>
-                        <Select value={bs.stockUnit} onChange={(e) => updateBS(key, "stockUnit", e.target.value)}>
+                        <Select
+                          value={bs.stockUnit}
+                          onChange={(e) => updateBS(key, "stockUnit", e.target.value)}
+                        >
                           {UNITS.map((u) => <option key={u}>{u}</option>)}
                         </Select>
                       </FieldWrap>
@@ -299,10 +325,20 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
                     <Label>Price Overrides</Label>
                     <Grid2>
                       <FieldWrap>
-                        <Input type="number" placeholder="Base price override" value={bs.basePriceOverride} onChange={(e) => updateBS(key, "basePriceOverride", e.target.value)} />
+                        <Input
+                          type="number"
+                          placeholder="Base price override"
+                          value={bs.basePriceOverride}
+                          onChange={(e) => updateBS(key, "basePriceOverride", e.target.value)}
+                        />
                       </FieldWrap>
                       <FieldWrap>
-                        <Input type="number" placeholder="Selling price override" value={bs.sellingPriceOverride} onChange={(e) => updateBS(key, "sellingPriceOverride", e.target.value)} />
+                        <Input
+                          type="number"
+                          placeholder="Selling price override"
+                          value={bs.sellingPriceOverride}
+                          onChange={(e) => updateBS(key, "sellingPriceOverride", e.target.value)}
+                        />
                       </FieldWrap>
                     </Grid2>
                   </div>
@@ -311,13 +347,28 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
                     <Label>Additional Settings</Label>
                     <Grid3>
                       <FieldWrap>
-                        <Input type="number" placeholder="Discount %" value={bs.discount} onChange={(e) => updateBS(key, "discount", e.target.value)} />
+                        <Input
+                          type="number"
+                          placeholder="Discount %"
+                          value={bs.discount}
+                          onChange={(e) => updateBS(key, "discount", e.target.value)}
+                        />
                       </FieldWrap>
                       <FieldWrap>
-                        <Input type="number" placeholder="Tax %" value={bs.taxRate} onChange={(e) => updateBS(key, "taxRate", e.target.value)} />
+                        <Input
+                          type="number"
+                          placeholder="Tax %"
+                          value={bs.taxRate}
+                          onChange={(e) => updateBS(key, "taxRate", e.target.value)}
+                        />
                       </FieldWrap>
                       <FieldWrap>
-                        <Input type="number" placeholder="Low stock alert" value={bs.lowStock} onChange={(e) => updateBS(key, "lowStock", e.target.value)} />
+                        <Input
+                          type="number"
+                          placeholder="Low stock alert"
+                          value={bs.lowStock}
+                          onChange={(e) => updateBS(key, "lowStock", e.target.value)}
+                        />
                       </FieldWrap>
                     </Grid3>
                   </div>
@@ -328,17 +379,20 @@ export default function AddStockPopup({ product, isOpen, onClose }: Props) {
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-gray-100">
-            <button
-              onClick={() => setSelectedBranch(null)}
-              className="px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer"
-            >
-              Back
-            </button>
+            {/* Back goes to branch selection for owner/admin; managers have nothing to go back to */}
+            {!isManager && (
+              <button
+                onClick={() => setSelectedBranch(null)}
+                className="px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer"
+              >
+                Back
+              </button>
+            )}
             <button
               onClick={() => {
                 console.log("SAVE STOCK:", {
                   branch: selectedBranch,
-                  supplier: branchSuppliers[selectedBranch] ?? null,
+                  supplier: branchSuppliers[selectedBranch!] ?? null,
                   variants: branchVariants,
                 });
                 onClose();
