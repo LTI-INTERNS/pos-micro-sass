@@ -190,21 +190,6 @@ function ManagerEditInfoBanner({ step }: { step: "options" | "variants" }) {
   );
 }
 
-/** Banner shown in Steps 2 & 3 when manager selected multiple products */
-function MultiSelectInfoBanner({ step, count }: { step: "options" | "variants"; count: number }) {
-  return (
-    <div className="flex items-start gap-3 mb-5 px-4 py-3 rounded-xl bg-blue-50 border border-blue-200">
-      <span className="mt-0.5 flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-400 text-white text-[10px] font-bold">i</span>
-      <p className="text-[12px] text-blue-700 leading-relaxed">
-        You have selected <strong>{count} products</strong>.{" "}
-        {step === "options"
-          ? "All options from each selected product will be automatically added to your branch — no individual selection needed."
-          : "All variants from each selected product will be automatically added to your branch — no individual selection needed."}
-      </p>
-    </div>
-  );
-}
-
 function CheckIcon() {
   return (
     <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10">
@@ -246,35 +231,6 @@ function StepBar({ current, onGo }: { current: number; onGo: (n: number) => void
   );
 }
 
-// ─── Indeterminate checkbox ───────────────────────────────────────────────────
-
-function SelectAllCheckbox({
-  checked,
-  indeterminate,
-  onChange,
-}: {
-  checked: boolean;
-  indeterminate: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}) {
-  const ref = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    if (ref.current) ref.current.indeterminate = indeterminate;
-  }, [indeterminate]);
-
-  return (
-    <input
-      ref={ref}
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      onClick={(e) => e.stopPropagation()}
-      className="w-4 h-4 rounded accent-orange-500 cursor-pointer"
-    />
-  );
-}
-
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
 function Step1VariantSelect({
@@ -304,8 +260,14 @@ function Step1VariantSelect({
     return matchesSearch && matchesCategory;
   });
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
-  const someFilteredSelected = filtered.some((p) => selectedIds.has(p.id)) && !allFilteredSelected;
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
+  const someFilteredSelected =
+    filtered.some((p) => selectedIds.has(p.id)) && !allFilteredSelected;
+
+  const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSelectAll(filtered, e.target.checked);
+  };
 
   return (
     <>
@@ -344,22 +306,28 @@ function Step1VariantSelect({
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+
+                {/* ── Select-all checkbox ── */}
                 <th className="px-4 py-2.5 w-10">
                   <div className="relative group inline-flex items-center gap-1.5">
+                    {/* Native checkbox — indeterminate set via ref */}
                     <SelectAllCheckbox
                       checked={allFilteredSelected}
                       indeterminate={someFilteredSelected}
-                      onChange={(e) => onSelectAll(filtered, e.target.checked)}
+                      onChange={handleSelectAllChange}
                     />
+                    {/* Info icon */}
                     <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-gray-500 text-[9px] font-bold cursor-default select-none">
                       i
                     </span>
+                    {/* Tooltip */}
                     <span className="pointer-events-none absolute z-50 left-0 top-full mt-2 w-64 rounded-lg bg-gray-800 text-white text-[11px] px-3 py-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 whitespace-normal leading-relaxed">
                       You can add products, variants and options of company by checking this checkbox.
                       <span className="absolute left-4 bottom-full border-4 border-transparent border-b-gray-800" />
                     </span>
                   </div>
                 </th>
+
                 <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Product name</th>
                 <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Category</th>
                 <th className="text-left px-4 py-2.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Brand</th>
@@ -376,7 +344,10 @@ function Step1VariantSelect({
                     className={`border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${isSel ? "bg-orange-50" : "hover:bg-gray-50"}`}
                   >
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0 ${isSel ? "border-orange-500 bg-orange-500" : "border-gray-300 bg-white"}`}>
+                      <span
+                        className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0
+                          ${isSel ? "border-orange-500 bg-orange-500" : "border-gray-300 bg-white"}`}
+                      >
                         {isSel && <CheckIcon />}
                       </span>
                     </td>
@@ -399,11 +370,44 @@ function Step1VariantSelect({
       {selectedIds.size > 0 && (
         <p className="mt-3 text-[12px] text-orange-500 font-medium flex items-center gap-1">
           <span>✓</span>{" "}
-          {selectedIds.size === 1 ? "1 product selected" : `${selectedIds.size} products selected`}{" "}
+          {selectedIds.size === 1
+            ? "1 product selected"
+            : `${selectedIds.size} products selected`}{" "}
           — click <strong>Continue</strong> to choose options and variants.
         </p>
       )}
     </>
+  );
+}
+
+// ─── Indeterminate checkbox helper ────────────────────────────────────────────
+
+function SelectAllCheckbox({
+  checked,
+  indeterminate,
+  onChange,
+}: {
+  checked: boolean;
+  indeterminate: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  const ref = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (ref.current) {
+      ref.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      onClick={(e) => e.stopPropagation()}
+      className="w-4 h-4 rounded accent-orange-500 cursor-pointer"
+    />
   );
 }
 
@@ -478,7 +482,6 @@ function Step2({
   isManagerEditMode,
   selectedOptionIds,
   onToggleOption,
-  selectedProductCount,
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
@@ -486,10 +489,7 @@ function Step2({
   isManagerEditMode: boolean;
   selectedOptionIds: Set<number>;
   onToggleOption: (id: number) => void;
-  selectedProductCount: number;
 }) {
-  const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
-
   const addOption = () => onChange({ options: [...state.options, { id: Date.now(), name: "", values: [] }] });
   const removeOption = (id: number) => onChange({ options: state.options.filter((o) => o.id !== id) });
   const updateName = (id: number, name: string) => onChange({ options: state.options.map((o) => (o.id === id ? { ...o, name } : o)) });
@@ -502,17 +502,6 @@ function Step2({
     onChange({ options: [...state.options, { id: NEW_ID_PREFIX + Date.now(), name: "", values: [] }] });
   const removeManagerOption = (id: number) => onChange({ options: state.options.filter((o) => o.id !== id) });
 
-  // ── Multi-product selected: show info banner only, no option list ───────────
-  if (isMultiSelect) {
-    return (
-      <>
-        <SectionTitle title="Product options" />
-        <MultiSelectInfoBanner step="options" count={selectedProductCount} />
-      </>
-    );
-  }
-
-  // ── Single product — manager variant mode ───────────────────────────────────
   if (isManagerVariantMode) {
     return (
       <>
@@ -554,7 +543,6 @@ function Step2({
     );
   }
 
-  // ── Manager edit mode ───────────────────────────────────────────────────────
   if (isManagerEditMode) {
     const companyOptions = state.options.filter((o) => !isNewId(o.id));
     const newOptions = state.options.filter((o) => isNewId(o.id));
@@ -659,7 +647,6 @@ function Step2({
     );
   }
 
-  // ── Standard admin/owner editable view ─────────────────────────────────────
   return (
     <>
       <SectionTitle title="Product options" tooltip={<Tooltip text="Options are dimensions like Size or Colour. Each option gets values (e.g. Small, Medium, Large)." position="bottom" />} />
@@ -715,7 +702,6 @@ function Step3({
   isManagerEditMode,
   selectedVariantIds,
   onToggleVariant,
-  selectedProductCount,
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
@@ -724,10 +710,8 @@ function Step3({
   isManagerEditMode: boolean;
   selectedVariantIds: Set<number>;
   onToggleVariant: (id: number) => void;
-  selectedProductCount: number;
 }) {
   const isCafe = businessTypeId === "bt-001";
-  const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
 
   const addManual = () =>
     onChange({ variants: [...state.variants, { id: Date.now(), sku: "", barcode: "", imageUrl: "", basePrice: "", sellingPrice: "", sellUnit: "Each", optionValues: [] }] });
@@ -799,17 +783,6 @@ function Step3({
     </>
   );
 
-  // ── Multi-product selected: show info banner only, no variant list ──────────
-  if (isMultiSelect) {
-    return (
-      <>
-        <SectionTitle title="Product variants" />
-        <MultiSelectInfoBanner step="variants" count={selectedProductCount} />
-      </>
-    );
-  }
-
-  // ── Single product — manager variant mode ───────────────────────────────────
   if (isManagerVariantMode) {
     return (
       <>
@@ -851,7 +824,6 @@ function Step3({
     );
   }
 
-  // ── Manager edit mode ───────────────────────────────────────────────────────
   if (isManagerEditMode) {
     const companyVariants = state.variants.filter((v) => !isNewId(v.id));
     const newVariants = state.variants.filter((v) => isNewId(v.id));
@@ -928,7 +900,6 @@ function Step3({
     );
   }
 
-  // ── Standard admin/owner editable view ─────────────────────────────────────
   return (
     <>
       <SectionTitle title="Product variants" tooltip={<Tooltip text="Each variant is a unique sellable combination (e.g. 500mg · Red). SKU and pricing are required." position="bottom" />} />
@@ -972,7 +943,11 @@ export default function AddProductPopup({
   const [state, setState] = React.useState<ProductState>(emptyState());
   const categories = getCategoriesByBusinessType(businessTypeId);
 
+  // ── Multi-select for variant mode (replaces single selectedExistingId) ──
   const [selectedProductIds, setSelectedProductIds] = React.useState<Set<number | string>>(new Set());
+  // Last-clicked product drives the options/variants shown in steps 2 & 3
+  const [activeProduct, setActiveProduct] = React.useState<ExistingProduct | null>(null);
+
   const [selectedOptionIds, setSelectedOptionIds] = React.useState<Set<number>>(new Set());
   const [selectedVariantIds, setSelectedVariantIds] = React.useState<Set<number>>(new Set());
 
@@ -985,6 +960,7 @@ export default function AddProductPopup({
     if (!open) return;
     setStep(0);
     setSelectedProductIds(new Set());
+    setActiveProduct(null);
     setSelectedOptionIds(new Set());
     setSelectedVariantIds(new Set());
 
@@ -1007,24 +983,35 @@ export default function AddProductPopup({
 
   const patch = (p: Partial<ProductState>) => setState((prev) => ({ ...prev, ...p }));
 
+  // Toggle a single product in/out of the selected set
   const handleToggleProduct = (p: ExistingProduct) => {
     setSelectedProductIds((prev) => {
       const next = new Set(prev);
-      if (next.has(p.id)) { next.delete(p.id); } else { next.add(p.id); }
+      if (next.has(p.id)) {
+        next.delete(p.id);
+      } else {
+        next.add(p.id);
+      }
       return next;
     });
   };
 
+  // Select-all / deselect-all for the currently filtered list
   const handleSelectAll = (filtered: ExistingProduct[], checked: boolean) => {
     setSelectedProductIds((prev) => {
       const next = new Set(prev);
-      if (checked) { filtered.forEach((p) => next.add(p.id)); }
-      else { filtered.forEach((p) => next.delete(p.id)); }
+      if (checked) {
+        filtered.forEach((p) => next.add(p.id));
+      } else {
+        filtered.forEach((p) => next.delete(p.id));
+      }
       return next;
     });
   };
 
+  // When a row is clicked, also load that product's options/variants for steps 2 & 3
   const handleLoadProduct = (p: ExistingProduct) => {
+    setActiveProduct(p);
     const opts = (p.options ?? []).map((o) => ({ ...o, id: o.id ?? Math.floor(Date.now() * Math.random()) }));
     const vars = (p.variants ?? []).map((v, i) => ({ ...v, id: v.id ?? i + 1 }));
     setState({ name: p.name, categoryId: p.category, brand: p.brand ?? "", description: p.description ?? "", options: opts, variants: vars });
@@ -1051,11 +1038,10 @@ export default function AddProductPopup({
         if (!state.categoryId) return "Category is required.";
       }
     }
-    // Skip options/variants validation when multiple products selected
-    if (step === 1 && isManagerVariantMode && selectedProductIds.size === 1 && selectedOptionIds.size === 0)
+    if (step === 1 && isManagerVariantMode && selectedOptionIds.size === 0)
       return "Please select at least one option.";
     if (step === 2) {
-      if (isManagerVariantMode && selectedProductIds.size === 1 && selectedVariantIds.size === 0)
+      if (isManagerVariantMode && selectedVariantIds.size === 0)
         return "Please select at least one variant.";
       if (!isManagerVariantMode && !isManagerEditMode) {
         for (const v of state.variants) {
@@ -1159,7 +1145,6 @@ export default function AddProductPopup({
               isManagerEditMode={isManagerEditMode}
               selectedOptionIds={selectedOptionIds}
               onToggleOption={toggleOption}
-              selectedProductCount={selectedProductIds.size}
             />
           ) : (
             <Step3
@@ -1170,7 +1155,6 @@ export default function AddProductPopup({
               isManagerEditMode={isManagerEditMode}
               selectedVariantIds={selectedVariantIds}
               onToggleVariant={toggleVariant}
-              selectedProductCount={selectedProductIds.size}
             />
           )}
         </div>
