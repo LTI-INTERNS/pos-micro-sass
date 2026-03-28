@@ -99,7 +99,7 @@ export function ManagerInfoBanner({ step }: { step: "options" | "variants" }) {
       <span className="mt-0.5 flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-400 text-white text-[10px] font-bold">i</span>
       <p className="text-[12px] text-orange-700 leading-relaxed">
         The {step === "options" ? "options" : "variants"} below are commonly used across your company.{" "}
-        <strong>Click to select the {step === "options" ? "options" : "variants"} you'd like to add to your branch</strong> — anything left unselected will be excluded from your request.
+        <strong>Click to select the {step === "options" ? "options" : "variants"} you&apos;d like to add to your branch</strong> — anything left unselected will be excluded from your request.
       </p>
     </div>
   );
