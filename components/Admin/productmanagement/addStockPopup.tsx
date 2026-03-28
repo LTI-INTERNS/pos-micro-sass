@@ -390,8 +390,8 @@ export default function AddStockPopup({
             )}
             <button
               onClick={() => {
-                console.log("SAVE STOCK:", {
-                  branch: selectedBranch,
+                onSave?.({
+                  branch: selectedBranch!,
                   supplier: branchSuppliers[selectedBranch!] ?? null,
                   variants: branchVariants,
                 });
