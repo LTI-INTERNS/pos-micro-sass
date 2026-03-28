@@ -85,7 +85,7 @@ function CommonTableInner<T extends { id?: string | number }>({
                         ALIGN_CLASS[col.align ?? "left"]
                       } text-gray-700`}
                     >
-                      {col.render ? col.render(row) : String((row as any)[col.key])}
+                      {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key as string] ?? "")}
                     </td>
                   ))}
                 </tr>
