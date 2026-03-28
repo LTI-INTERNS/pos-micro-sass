@@ -18,7 +18,7 @@ export const posService = {
         apiClient
             .get<ApiResponse<PosProduct[]>>('/products', { params })
             .then(res => res.data?.data ?? [])
-            .catch(() => productsData.map(p => ({ id: p.id, name: p.name, price: p.price }))),
+            .catch(() => productsData.map(p => ({ id: p.id, name: p.name, price: p.variants?.[0]?.price ?? 0 }))),
 
     createOrder: (data: unknown) =>
         apiClient.post<ApiResponse<unknown>>('/orders', data).then(res => res.data.data),
