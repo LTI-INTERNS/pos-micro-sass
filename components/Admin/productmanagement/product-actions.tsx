@@ -27,7 +27,7 @@ export default function ProductActionsBar({
       alert("Please select a product first!");
       return;
     }
-    action && action();
+    action?.();
   };
 
   const isManager = userRole === "manager";
