@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import SupplierActionsBar from "@/components/Admin/suppliermanagement/SupplierActionBar";
@@ -164,16 +164,18 @@ export default function SupplierPage() {
         </div>
 
           {isSuperAdmin && (
-            <SupplierActionsBar
-              selectedSupplier={selectedSupplier}
-              onDelete={handleDeleteSupplier}
-              onEdit={(updatedSupplier: Supplier) => {
-                setSuppliersList((prev) =>
-                  prev.map((s) => (s.id === updatedSupplier.id ? updatedSupplier : s))
-                );
-                setSelectedSupplier(updatedSupplier);
-              }}
-            />
+            <Suspense fallback={null}>
+              <SupplierActionsBar
+                selectedSupplier={selectedSupplier}
+                onDelete={handleDeleteSupplier}
+                onEdit={(updatedSupplier: Supplier) => {
+                  setSuppliersList((prev) =>
+                    prev.map((s) => (s.id === updatedSupplier.id ? updatedSupplier : s))
+                  );
+                  setSelectedSupplier(updatedSupplier);
+                }}
+              />
+            </Suspense>
           )}
           
           <SupplierTable
