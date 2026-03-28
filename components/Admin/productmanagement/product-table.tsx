@@ -47,7 +47,7 @@ function buildVariantRows(products: Product[]): VariantRow[] {
         category: product.category ?? "",
         supplier: product.supplier ?? "",
         price: variant.price,
-        stockQty: (variant as any).stockQty ?? 0,
+        stockQty: (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
       });
     }
   }
@@ -80,8 +80,9 @@ export default function ProductsTable({
   if (isManager) {
     const variantRows = buildVariantRows(products);
 
+    type TaggedProduct = Product & { _selectedVariantSku?: string };
     const selectedRowId = selectedProduct
-      ? `${selectedProduct.id}__${(selectedProduct as any)._selectedVariantSku ?? ""}`
+      ? `${selectedProduct.id}__${(selectedProduct as TaggedProduct)._selectedVariantSku ?? ""}`
       : undefined;
 
     const managerColumns: Column<VariantRow>[] = [
