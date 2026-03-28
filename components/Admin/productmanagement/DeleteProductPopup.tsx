@@ -179,7 +179,7 @@ export default function DeleteProductPopup({
     </WarningMessage>
 
       {/* Product Info */}
-      <div className="mb-5 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+      <div className="mb-5 p-3 bg-orange-50 border border-orange-300 rounded-xl">
         <p className="text-sm font-medium text-gray-800">{product.name}</p>
         <p className="text-[11px] text-gray-400 mt-0.5">
           Category: {product.category} • {totalVariants} variant
