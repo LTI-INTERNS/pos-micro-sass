@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import SupplierPopUp from "@/components/Admin/suppliermanagement/SupplierPopUp";
@@ -20,7 +20,6 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   // 🔹 Auto-open Add New Supplier popup when redirected from AddStockPopup
   useEffect(() => {
