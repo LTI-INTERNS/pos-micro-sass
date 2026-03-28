@@ -3,6 +3,7 @@
 import Image from "next/image";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import { Product } from "@/lib/services";
+import { ProductVariant } from "@/types/product.types";  // ← correct source
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 
@@ -11,6 +12,14 @@ type Props = {
   onClose: () => void;
   product: Product | null;
   userRole?: "owner" | "admin" | "manager";
+};
+
+type TaggedProduct = Product & { _selectedVariantSku?: string };
+
+type ExtendedVariant = ProductVariant & {
+  stockQty?: number;
+  basePriceOverride?: number;
+  sellingPriceOverride?: number;
 };
 
 // ─── Reusable styled components ───────────────────────────────────────────────
@@ -71,6 +80,15 @@ function StatTile({
   );
 }
 
+function BarcodeTile({ barcode }: { barcode: string }) {
+  return (
+    <div className="col-span-2 mt-1 bg-white border border-gray-200 rounded-lg px-3 py-2">
+      <p className="text-[10px] text-gray-400 mb-0.5">Barcode</p>
+      <p className="text-[13px] font-mono font-semibold text-gray-800">{barcode}</p>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ViewProductPopup({
@@ -84,20 +102,19 @@ export default function ViewProductPopup({
 
   if (!product) return null;
 
-  const selectedVariantSku: string | undefined = (product as any)._selectedVariantSku;
+  const selectedVariantSku: string | undefined = (product as TaggedProduct)._selectedVariantSku;
 
   const focusedVariant =
     isManager && selectedVariantSku
-      ? product.variants?.find((v) => v.sku === selectedVariantSku)
+      ? (product.variants?.find((v) => v.sku === selectedVariantSku) as ExtendedVariant | undefined)
       : null;
 
-  const stockQty: number = (focusedVariant as any)?.stockQty ?? 0;
-  const basePriceOverride: number | undefined = (focusedVariant as any)?.basePriceOverride;
-  const sellingPriceOverride: number | undefined = (focusedVariant as any)?.sellingPriceOverride;
-  const barcode: string | undefined = (focusedVariant as any)?.barcode;
+  const stockQty: number = focusedVariant?.stockQty ?? 0;
+  const basePriceOverride: number | undefined = focusedVariant?.basePriceOverride;
+  const sellingPriceOverride: number | undefined = focusedVariant?.sellingPriceOverride;
 
   const variantLabel = focusedVariant?.optionValues?.length
-    ? focusedVariant.optionValues.map((o: { value: string }) => o.value).join(" · ")
+    ? focusedVariant.optionValues.map((o) => o.value).join(" · ")
     : focusedVariant?.sku ?? "";
 
   return (
@@ -116,7 +133,7 @@ export default function ViewProductPopup({
           )}
         </div>
 
-        {/* Category + Supplier — always visible above scroll */}
+        {/* Category + Supplier */}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label>Category</Label>
@@ -140,10 +157,10 @@ export default function ViewProductPopup({
           </div>
         </div>
 
-        {/* ── Scrollable area — fixed h-[52vh] for both roles ── */}
+        {/* ── Scrollable area ── */}
         <div className="overflow-y-auto h-[52vh] pr-1 space-y-5">
 
-          {/* Manager-only: Branch Info (stock, pricing, barcode) — inside scroll */}
+          {/* Manager-only: Branch Info */}
           {isManager && focusedVariant && (
             <div className="rounded-xl bg-orange-50 border border-orange-200 p-4 space-y-4">
               <p className="text-[13px] font-semibold text-orange-700">Branch Info</p>
@@ -191,15 +208,17 @@ export default function ViewProductPopup({
                 )}
               </div>
 
-              {/* Barcode */}
-              {barcode && (
+              {/* Barcode in Branch Info */}
+              {focusedVariant.barcode && (
                 <div>
                   <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
                     Barcode
                   </p>
                   <div className="bg-white border border-gray-200 rounded-xl px-3 py-2.5">
                     <p className="text-[10px] text-gray-400 mb-0.5">Barcode</p>
-                    <p className="text-[13px] font-mono font-semibold text-gray-800">{barcode}</p>
+                    <p className="text-[13px] font-mono font-semibold text-gray-800">
+                      {focusedVariant.barcode}
+                    </p>
                   </div>
                 </div>
               )}
@@ -235,8 +254,9 @@ export default function ViewProductPopup({
             </div>
           )}
 
-          {/* Variants — manager sees only the focused variant; owner/admin see all */}
+          {/* Variants */}
           {isManager && focusedVariant ? (
+            /* Manager — focused variant only */
             <div>
               <SectionTitle title="Variant details" />
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
@@ -253,6 +273,9 @@ export default function ViewProductPopup({
                           {formatCurrency(focusedVariant.price, currency, useCents)}
                         </p>
                       </div>
+                      {focusedVariant.barcode && (
+                        <BarcodeTile barcode={focusedVariant.barcode} />
+                      )}
                     </div>
                   </div>
                   {focusedVariant.imageUrl && (
@@ -270,60 +293,52 @@ export default function ViewProductPopup({
               </div>
             </div>
           ) : (
+            /* Owner / Admin — all variants typed via ProductVariant so barcode is included */
             product.variants?.length > 0 && (
               <div>
                 <SectionTitle title="Product variants" />
                 <div className="space-y-3 pb-2">
-                  {product.variants.map(
-                    (
-                      v: {
-                        sku: string;
-                        price: number;
-                        imageUrl?: string;
-                        optionValues?: { optionName: string; value: string }[];
-                      },
-                      idx: number
-                    ) => {
-                      const label = v.optionValues?.length
-                        ? v.optionValues.map((o) => o.value).join(" · ")
-                        : v.sku || `Variant ${idx + 1}`;
-                      return (
-                        <div
-                          key={v.sku || idx}
-                          className="bg-gray-50 border border-gray-200 rounded-xl p-4"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <p className="text-[13px] font-medium text-gray-700 mb-2">{label}</p>
-                              <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                  <p className="text-[11px] text-gray-400">SKU</p>
-                                  <p className="text-sm text-gray-800">{v.sku}</p>
-                                </div>
-                                <div>
-                                  <p className="text-[11px] text-gray-400">Price</p>
-                                  <p className="text-sm font-medium text-orange-600">
-                                    {formatCurrency(v.price, currency, useCents)}
-                                  </p>
-                                </div>
+                  {product.variants.map((v: ProductVariant, idx: number) => {
+                    const label = v.optionValues?.length
+                      ? v.optionValues.map((o) => o.value).join(" · ")
+                      : v.sku || `Variant ${idx + 1}`;
+                    return (
+                      <div
+                        key={v.sku || idx}
+                        className="bg-gray-50 border border-gray-200 rounded-xl p-4"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="text-[13px] font-medium text-gray-700 mb-2">{label}</p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <p className="text-[11px] text-gray-400">SKU</p>
+                                <p className="text-sm text-gray-800">{v.sku}</p>
                               </div>
+                              <div>
+                                <p className="text-[11px] text-gray-400">Price</p>
+                                <p className="text-sm font-medium text-orange-600">
+                                  {formatCurrency(v.price, currency, useCents)}
+                                </p>
+                              </div>
+                              {v.barcode && <BarcodeTile barcode={v.barcode} />}
                             </div>
-                            {v.imageUrl && (
-                              <div className="relative w-16 h-16 ml-3 flex-shrink-0">
-                                <Image
-                                  src={v.imageUrl}
-                                  alt={v.sku}
-                                  fill
-                                  className="object-cover rounded-lg border border-gray-200"
-                                  sizes="64px"
-                                />
-                              </div>
-                            )}
                           </div>
+                          {v.imageUrl && (
+                            <div className="relative w-16 h-16 ml-3 flex-shrink-0">
+                              <Image
+                                src={v.imageUrl}
+                                alt={v.sku}
+                                fill
+                                className="object-cover rounded-lg border border-gray-200"
+                                sizes="64px"
+                              />
+                            </div>
+                          )}
                         </div>
-                      );
-                    }
-                  )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )
