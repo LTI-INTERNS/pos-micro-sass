@@ -7,6 +7,7 @@ export interface ProductVariant {
     sku: string;
     price: number;
     imageUrl?: string;
+    barcode?: string;
     optionValues?: ProductOptionValue[];
 }
 
