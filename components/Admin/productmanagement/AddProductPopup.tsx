@@ -105,10 +105,18 @@ export default function AddProductPopup({
   };
 
   const toggleOption = (id: number) =>
-    setSelectedOptionIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelectedOptionIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) { n.delete(id); } else { n.add(id); }
+      return n;
+    });
 
   const toggleVariant = (id: number) =>
-    setSelectedVariantIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+    setSelectedVariantIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) { n.delete(id); } else { n.add(id); }
+      return n;
+    });
 
   const hasNewOptions = state.options.some((o) => isNewId(o.id));
   const hasNewVariants = state.variants.some((v) => isNewId(v.id));
@@ -208,7 +216,7 @@ export default function AddProductPopup({
 
   return (
     <ModalShell open={open} title={modalTitle} onClose={onClose} widthClassName="w-[860px] max-w-[95vw]">
-      <form onSubmit={(e) => { e.preventDefault(); step === STEPS.length - 1 ? handleSave() : handleNext(); }}>
+      <form onSubmit={(e) => { e.preventDefault(); if (step === STEPS.length - 1) { handleSave(); } else { handleNext(); } }}>
         <StepBar current={step} onGo={goStep} />
 
         <div className="overflow-y-auto h-[52vh] pr-1">
