@@ -1,111 +1,100 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
-import DateRangeBar from "@/components/Admin/common/DateRangeBar";
 import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
 import CashierActionsBar from "@/components/Admin/cashiermanagement/CashierActionsBar";
-import CashiersTable, { type Cashier } from "@/components/Admin/cashiermanagement/CashiersTable";
+import CashiersTable, { type Cashier as TableCashier } from "@/components/Admin/cashiermanagement/CashiersTable";
 import { AddCashierForm } from "@/components/Admin/cashiermanagement/AddCashierForm";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import DeactivateCashierPopup from "@/components/Admin/cashiermanagement/DeactivateCashierPopup";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
+import { cashierService } from "@/lib/services/cashier-service";
+import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.types";
 
-const mockCashiers: Cashier[] = [
-  {
-    id: "001",
-    name: "ABC",
-    cashierNo: "1",
-    totalRevenue: 85000,
-    email: "abc@email.com",
+// ── Adapter: backend ApiCashier → CashiersTable's local TableCashier ──────────
+// CashiersTable defines its own Cashier type with passwordMasked, pinMasked,
+// and status as "Active" | "Deactive". We adapt the backend shape here so the
+// rest of the page can work with the clean ApiCashier type.
+function toTableCashier(c: ApiCashier): TableCashier {
+  return {
+    id:             c.id,
+    name:           c.name,
+    cashierNo:      c.cashierNo,
+    email:          c.email,
+    imgUrl:         c.imgUrl,
+    totalRevenue:   c.totalRevenue ?? 0,
     passwordMasked: "*****",
-    pinMasked: "****",
-    status: "Active",
-    // ✅ add a branch field in your real data model
-    branch: "Negombo",
-  } as Cashier & { branch?: string },
-  {
-    id: "002",
-    name: "John",
-    cashierNo: "2",
-    totalRevenue: 125000,
-    email: "john@email.com",
-    passwordMasked: "*****",
-    pinMasked: "****",
-    status: "Deactive",
-    branch: "Colombo",
-  } as Cashier & { branch?: string },
-  {
-    id: "003",
-    name: "XYZ",
-    cashierNo: "3",
-    totalRevenue: 95000,
-    email: "xyz@email.com",
-    passwordMasked: "*****",
-    pinMasked: "****",
-    status: "Active",
-    // ✅ add a branch field in your real data model
-    branch: "Nugegoda",
-  } as Cashier & { branch?: string },
-];
+    pinMasked:      "****",
+    status:         c.activeStatus ? "Active" : "Deactive",
+  };
+}
 
 export default function CashierManagementPage() {
   const { data: session } = useSession();
-  const role = session?.user?.role ?? "";
-  const branchName = session?.user?.branchName ?? "";
+  const role     = session?.user?.role   ?? "";
+  const branchId = session?.user?.branchId ?? "";
 
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
-  const [query, setQuery] = useState("");
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null);
+  // ── Server state (backend shape) ──────────────────────────────────────────
+  const [cashiers, setCashiers]       = useState<ApiCashier[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [fetchError, setFetchError]   = useState("");
+
+  // ── UI state ──────────────────────────────────────────────────────────────
+  const [query, setQuery]             = useState("");
+  const [filterOpen, setFilterOpen]   = useState(false);
+  const [addOpen, setAddOpen]         = useState(false);
+
+  // selectedCashier is the full ApiCashier — actions always work on this
+  const [selectedCashier, setSelectedCashier] = useState<ApiCashier | null>(null);
+
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
-  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
-  const [editPopupOpen, setEditPopupOpen] = useState(false);
+  const [deletePopupOpen, setDeletePopupOpen]         = useState(false);
+  const [editPopupOpen, setEditPopupOpen]             = useState(false);
+  const [actionLoading, setActionLoading]             = useState(false);
+  const [actionError, setActionError]                 = useState("");
 
   const [filters, setFilters] = useState<Record<string, string>>({
     revenueRange: "",
-    status: "",
-    branch: "",
+    status:       "",
+    branch:       "",
   });
 
-  const baseData = useMemo(() => {
-    const all = mockCashiers as (Cashier & { branch?: string })[];
-    return canSeeAllBranches
-      ? all
-      : all.filter((c) => (c.branch ?? "") === branchName);
-  }, [canSeeAllBranches, branchName]);
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+  const fetchCashiers = useCallback(async () => {
+    try {
+      setLoadingData(true);
+      setFetchError("");
+      const data = await cashierService.getAll();
+      setCashiers(data);
+    } catch {
+      setFetchError("Failed to load cashiers. Please try again.");
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchCashiers(); }, [fetchCashiers]);
 
   useEffect(() => {
-    if (!canSeeAllBranches) {
-      setFilters((prev) => ({ ...prev, branch: "" }));
-    }
+    if (!canSeeAllBranches) setFilters((prev) => ({ ...prev, branch: "" }));
   }, [canSeeAllBranches]);
 
+  // ── Filter fields ─────────────────────────────────────────────────────────
   const filterFields: SelectField[] = useMemo(() => {
     const branchOptions = canSeeAllBranches
-      ? Array.from(
-          new Set(
-            (mockCashiers as (Cashier & { branch?: string })[]).map((c) => c.branch ?? "")
-          )
-        )
-          .filter(Boolean)
+      ? Array.from(new Set(cashiers.map((c) => c.branchName ?? "").filter(Boolean)))
           .map((b) => ({ label: b, value: b }))
       : [];
 
     return [
       ...(canSeeAllBranches
-        ? [
-            {
-              name: "branch",
-              placeholder: "Select Branch",
-              options: branchOptions,
-            } as SelectField,
-          ]
+        ? [{ name: "branch", placeholder: "Select Branch", options: branchOptions } as SelectField]
         : []),
       {
         name: "revenueRange",
@@ -124,12 +113,17 @@ export default function CashierManagementPage() {
         ],
       },
     ];
-  }, [canSeeAllBranches]);
+  }, [canSeeAllBranches, cashiers]);
 
-  const filteredCashiers = useMemo(() => {
+  // ── Filter → adapt to TableCashier for the table ──────────────────────────
+  const filteredTableCashiers: TableCashier[] = useMemo(() => {
     const q = query.trim().toLowerCase();
 
-    return baseData
+    const base = canSeeAllBranches
+      ? cashiers
+      : cashiers.filter((c) => c.branchId === branchId);
+
+    return base
       .filter((c) => {
         if (!q) return true;
         return (
@@ -140,28 +134,93 @@ export default function CashierManagementPage() {
         );
       })
       .filter((c) => {
-        if (filters.revenueRange === "lt100k" && c.totalRevenue >= 100000) return false;
-        if (filters.revenueRange === "gte100k" && c.totalRevenue < 100000) return false;
-
-        if (filters.status && c.status !== filters.status) return false;
-
-        // Branch filter only applies for OWNER and ADMIN
-        if (canSeeAllBranches) {
-          const branch = (c as Cashier & { branch?: string }).branch ?? "";
-          if (filters.branch && branch !== filters.branch) return false;
-        }
-
+        const statusStr = c.activeStatus ? "Active" : "Deactive";
+        if (filters.revenueRange === "lt100k"  && (c.totalRevenue ?? 0) >= 100000) return false;
+        if (filters.revenueRange === "gte100k" && (c.totalRevenue ?? 0) <  100000) return false;
+        if (filters.status && statusStr !== filters.status)                          return false;
+        if (canSeeAllBranches && filters.branch && c.branchName !== filters.branch)  return false;
         return true;
-      });
-  }, [query, filters, baseData, canSeeAllBranches]);
+      })
+      .map(toTableCashier);
+  }, [query, filters, cashiers, canSeeAllBranches, branchId]);
 
-  function exportCsv(rows: Cashier[]) {
+  // ── Row selection bridge ───────────────────────────────────────────────────
+  // Table gives us a TableCashier row; we look up the full ApiCashier by id.
+  function handleSelectRow(row: TableCashier | null) {
+    if (!row) { setSelectedCashier(null); return; }
+    setSelectedCashier(cashiers.find((c) => c.id === row.id) ?? null);
+  }
+
+  // Derived table row for popups that expect TableCashier
+  const selectedTableCashier: TableCashier | null = selectedCashier
+    ? toTableCashier(selectedCashier)
+    : null;
+
+  // ── Actions ───────────────────────────────────────────────────────────────
+  async function handleToggleStatus() {
+    if (!selectedCashier) return;
+    setActionLoading(true);
+    setActionError("");
+    try {
+      const updated = await cashierService.toggleStatus(selectedCashier.id, !selectedCashier.activeStatus);
+      setCashiers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      setSelectedCashier(updated);
+      setDeactivatePopupOpen(false);
+    } catch {
+      setActionError("Failed to update cashier status. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!selectedCashier) return;
+    setActionLoading(true);
+    setActionError("");
+    try {
+      await cashierService.remove(selectedCashier.id);
+      setCashiers((prev) => prev.filter((c) => c.id !== selectedCashier.id));
+      setSelectedCashier(null);
+      setDeletePopupOpen(false);
+    } catch {
+      setActionError("Failed to delete cashier. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  // EditEntityModal.onSave is typed as (values: T) => void (not async).
+  // We kick off the async call inside and surface errors via actionError.
+  function handleEdit(updatedFields: TableCashier) {
+    if (!selectedCashier) return;
+    setActionLoading(true);
+    setActionError("");
+
+    const payload: UpdateCashierInput = {
+      cashierNo: updatedFields.cashierNo,
+      name:      updatedFields.name,
+      email:     updatedFields.email,
+    };
+
+    cashierService
+      .update(selectedCashier.id, payload)
+      .then((updated) => {
+        setCashiers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        setSelectedCashier(updated);
+        setEditPopupOpen(false);
+      })
+      .catch(() => setActionError("Failed to update cashier. Please try again."))
+      .finally(() => setActionLoading(false));
+  }
+
+  // ── CSV export ────────────────────────────────────────────────────────────
+  function exportCsv(rows: TableCashier[]) {
     const header = ["Name", "Cashier No", "Total Revenue", "Email", "Status"];
 
     const csvRows = [
       header.join(","),
       ...rows.map((r) =>
-        [r.name, r.cashierNo, r.totalRevenue, r.email, r.status]
+        [r.name, r.cashierNo, r.totalRevenue, r.email, r.status ?? "Active"]
           .map((v) => `"${String(v).replaceAll('"', '""')}"`)
           .join(",")
       ),
@@ -179,14 +238,8 @@ export default function CashierManagementPage() {
     URL.revokeObjectURL(url);
   }
 
-  const isFilterApplied = Object.values(filters).some((v) => v && v.trim() !== "");
-
-  const removeFilter = (key: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: "",
-    }));
-  };
+  const isFilterApplied = Object.values(filters).some((v) => v.trim() !== "");
+  const removeFilter    = (key: string) => setFilters((prev) => ({ ...prev, [key]: "" }));
 
   const editFields: EditField[] = [
     { name: "imgUrl", label: "Profile Photo", type: "image" },
@@ -198,7 +251,18 @@ export default function CashierManagementPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        
+
+        {actionError && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-300">
+            {actionError}
+            <button
+              className="ml-3 underline text-red-400 hover:text-red-300"
+              onClick={() => setActionError("")}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         <div className="relative w-full">
           <SearchBar
@@ -245,41 +309,47 @@ export default function CashierManagementPage() {
             setEditPopupOpen(true);
           }}
           onAdd={() => setAddOpen(true)}
-          onExport={() => exportCsv(filteredCashiers)}
+          onExport={() => exportCsv(filteredTableCashiers)}
         />
 
-        <CashiersTable
-          cashiers={filteredCashiers}
-          selectedRowId={selectedCashier?.id}
-          onSelectRow={(row) => setSelectedCashier(row)}
+        {loadingData ? (
+          <div className="py-16 text-center text-white/40 text-sm animate-pulse">
+            Loading cashiers…
+          </div>
+        ) : fetchError ? (
+          <div className="py-10 text-center text-red-400 text-sm">
+            {fetchError}
+            <button className="ml-3 underline hover:text-red-300" onClick={fetchCashiers}>
+              Retry
+            </button>
+          </div>
+        ) : (
+          <CashiersTable
+            cashiers={filteredTableCashiers}
+            selectedRowId={selectedTableCashier?.id}
+            onSelectRow={handleSelectRow}
+          />
+        )}
+
+        {/* AddCashierForm — refetch after close to pick up the new record */}
+        <AddCashierForm
+          isOpen={addOpen}
+          onClose={() => { setAddOpen(false); fetchCashiers(); }}
         />
 
-        <AddCashierForm isOpen={addOpen} onClose={() => setAddOpen(false)} />
-
+        {/* DeactivateCashierPopup — expects TableCashier, no loading prop */}
         <DeactivateCashierPopup
           isOpen={deactivatePopupOpen}
-          onClose={() => setDeactivatePopupOpen(false)}
-          cashier={selectedCashier ?? undefined}
-          onConfirm={() => {
-            if (!selectedCashier) return;
-
-            const updatedStatus =
-              selectedCashier.status === "Active" ? "Deactive" : "Active";
-
-            mockCashiers.forEach((c) => {
-              if (c.id === selectedCashier.id) c.status = updatedStatus;
-            });
-
-            setSelectedCashier({ ...selectedCashier, status: updatedStatus });
-            setDeactivatePopupOpen(false);
-          }}
+          onClose={() => { setDeactivatePopupOpen(false); setActionError(""); }}
+          cashier={selectedTableCashier ?? undefined}
+          onConfirm={handleToggleStatus}
         />
 
         {selectedCashier && (
           <DeletePopup
             isOpen={deletePopupOpen}
-            onClose={() => setDeletePopupOpen(false)}
-            item={selectedCashier}
+            onClose={() => { setDeletePopupOpen(false); setActionError(""); }}
+            item={selectedTableCashier!}
             itemName="Cashier"
             getDisplayText={(c) => (
               <>
@@ -290,31 +360,18 @@ export default function CashierManagementPage() {
                 Cashier Name- {c.name}
               </>
             )}
-            onConfirm={() => {
-              const index = mockCashiers.findIndex((c) => c.id === selectedCashier.id);
-              if (index >= 0) mockCashiers.splice(index, 1);
-              setSelectedCashier(null);
-              setDeletePopupOpen(false);
-            }}
+            onConfirm={handleDelete}
           />
         )}
 
         {selectedCashier && editPopupOpen && (
-          <EditEntityModal<Cashier>
+          <EditEntityModal<TableCashier>
             open={editPopupOpen}
             title="Edit Cashier"
-            initialValues={selectedCashier}
+            initialValues={selectedTableCashier!}
             fields={editFields}
-            onClose={() => setEditPopupOpen(false)}
-            onSave={(updatedCashier) => {
-              const index = mockCashiers.findIndex((c) => c.id === selectedCashier.id);
-              if (index >= 0) {
-                mockCashiers[index] = updatedCashier;
-              }
-
-              setSelectedCashier(updatedCashier);
-              setEditPopupOpen(false);
-            }}
+            onClose={() => { setEditPopupOpen(false); setActionError(""); }}
+            onSave={handleEdit}
           />
         )}
       </div>
