@@ -10,8 +10,8 @@ type BranchDetailsProps = {
     name: string;
     email: string;
     phone: string;
-    addressLine1: string;
-    addressLine2: string;
+    address: string;
+    
   };
   onSave?: (data: any) => Promise<void> | void;
 };

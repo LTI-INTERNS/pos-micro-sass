@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 
 export type Discount = {
@@ -30,6 +31,17 @@ export default function DiscountTable({
   selectedRowId,
   onSelectRow,
 }: Props) {
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+  const branchName = session?.user?.branchName ?? "";
+
+  const isManager = role === "MANAGER";
+  const visibleDiscounts = isManager
+    ? discounts.filter(
+        (d) => !d.branch || d.branch === branchName
+      )
+    : discounts;
+
   const columns: Column<Discount>[] = [
     // { key: "id", label: "ID" },
     { key: "title", label: "Title" },
@@ -46,7 +58,7 @@ export default function DiscountTable({
       render: (d) => d.branch || "All",
     },
     {
-      key: "status", 
+      key: "status",
       label: "Status",
       align: "center",
       render: (d) => {
@@ -70,7 +82,7 @@ export default function DiscountTable({
   return (
     <CommonTable
       title="Discounts"
-      data={discounts}
+      data={visibleDiscounts}
       columns={columns}
       emptyMessage="No discounts found"
       selectedRowId={selectedRowId}

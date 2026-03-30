@@ -7,8 +7,9 @@ import PopupActions from "@/components/Admin/common/PopupActions";
 export type EditField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "textarea";
+  type?: "text" | "number" | "textarea" | "select";
   readOnly?: boolean;
+  options?: { label: string; value: string }[];
 };
 
 type Props<T extends object> = {
@@ -66,6 +67,20 @@ export default function EditEntityModal<T extends object>({
                   className="w-full min-h-[100px] rounded-xl border px-4 py-3 text-sm 
                   disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed border-gray-200"
                 />
+              ) : field.type === "select" ? (
+                <select
+                  value={String(values[field.name as keyof T] ?? "")}
+                  disabled={field.readOnly}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                  className="w-full rounded-full border px-4 py-2 outline-none text-gray-600 border-gray-200 bg-white"
+                >
+                  <option value="">Select {field.label}</option>
+                  {field.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               ) : (
                 <input
                   type={field.type || "text"}

@@ -130,6 +130,7 @@ export default function UserRow() {
           scrollbar-hide
           bg-transparent
           cursor-pointer
+          items-center justify-center
         "
       >
         {cashiers.map((cashier) => (

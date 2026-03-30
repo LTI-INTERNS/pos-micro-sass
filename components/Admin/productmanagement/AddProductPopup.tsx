@@ -1,158 +1,195 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image"; // next/image for optimized images
 import ModalShell from "@/components/Admin/common/ModalShell";
-import FormField from "@/components/Admin/common/FormField";
-import PopupActions from "@/components/Admin/common/PopupActions";
 import { useNotifications } from "@/lib/context/NotificationsContext";
-import { productSchema } from "@/lib/validation";
+import { getCategoriesByBusinessType } from "@/components/Admin/productmanagement/Productcategorydata";
+import {
+  ProductState,
+  AddProductPopupProps,
+  ExistingProduct,
+  STEPS,
+  isNewId,
+  emptyState,
+} from "./types";
+import { StepBar } from "./ui-components";
+import { Step1, Step1VariantSelect, Step2, Step3 } from "./step-components";
 
-type SoldBy = "each" | "volume_weight";
+export type { ExistingProduct } from "./types";
 
-type ProductValues = {
-  name: string;
-  price: string;
-  discount: string;
-  tax: string;
-  stock: string;
-  soldBy: SoldBy;
-  unit: string;
-  imageUrl?: string;
-};
-
-type FormErrors = Partial<Record<keyof ProductValues, string>> & {
-  image?: string;
-};
-
-type AddProductPopupProps = {
-  open: boolean;
-  onClose: () => void;
-  onSave: (values: ProductValues) => void;
-  userRole?: "owner" | "cashier" | "administrator" | "branch_manager";
-  branchId?: number;
-  branchName?: string;
-  branchManager?: string;
-};
-
-const MAX_IMAGE_SIZE_MB = 5;
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
-
-const VOLUME_WEIGHT_UNITS = [
-  "kg", "g", "lb", "oz",
-  "L", "mL", "fl oz", "gal",
-  "m", "cm", "ft", "in",
-];
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function AddProductPopup({
   open,
   onClose,
   onSave,
+  initialData,
   userRole,
-  branchName = "",
+  businessTypeId,
   branchId = 0,
+  branchName = "",
   branchManager = "",
+  isAddVariantMode = false,
+  existingProducts = [],
+  companyProduct = null,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
+  const [step, setStep] = React.useState(0);
+  const [state, setState] = React.useState<ProductState>(emptyState());
+  const categories = getCategoriesByBusinessType(businessTypeId);
 
-  const [values, setValues] = React.useState<ProductValues>({
-    name: "",
-    price: "",
-    discount: "",
-    tax: "",
-    stock: "",
-    soldBy: "each",
-    unit: "",
-    imageUrl: "",
-  });
+  const [selectedProductIds, setSelectedProductIds] = React.useState<Set<number | string>>(new Set());
+  const [selectedOptionIds, setSelectedOptionIds] = React.useState<Set<number>>(new Set());
+  const [selectedVariantIds, setSelectedVariantIds] = React.useState<Set<number>>(new Set());
 
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-  const [imageError, setImageError] = React.useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const isManagerVariantMode = userRole === "manager" && isAddVariantMode;
+  const isManagerEditMode = userRole === "manager" && !!initialData && !isAddVariantMode;
+
+  const modalTitle = isManagerVariantMode ? "Add Product from Company Catalog" : initialData ? "Edit Product" : "Add New Product";
 
   React.useEffect(() => {
     if (!open) return;
-    setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
-    setErrors({});
-    setImagePreview(null);
-    setImageError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [open]);
+    setStep(0);
+    setSelectedProductIds(new Set());
+    setSelectedOptionIds(new Set());
+    setSelectedVariantIds(new Set());
 
-  const handleCancel = () => {
-    setValues({ name: "", price: "", discount: "", tax: "", stock: "", soldBy: "each", unit: "", imageUrl: "" });
-    setErrors({});
-    setImagePreview(null);
-    setImageError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    onClose();
-  };
-
-  const setField = (name: keyof ProductValues, value: string) => {
-    setValues((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-  };
-
-  const setSoldBy = (soldBy: SoldBy) => {
-    setValues((prev) => ({ ...prev, soldBy, unit: "" }));
-    setErrors((prev) => ({ ...prev, unit: "" }));
-  };
-
-
-  const validateForm = () => {
-    const result = productSchema.safeParse(values);
-    if (!result.success) {
-      const newErrors: FormErrors = {};
-      result.error.issues.forEach((issue) => {
-        newErrors[issue.path[0] as keyof ProductValues] = issue.message;
-      });
-      setErrors(newErrors);
-      return false;
+    if (initialData) {
+      if (isManagerEditMode && companyProduct) {
+        // companyProduct supplied: diff against initialData to show only items not yet in branch
+        const branchOptionNames = new Set(initialData.options.map((o) => o.name));
+        const branchVariantSkus = new Set(initialData.variants.map((v) => v.sku));
+        const availableOptions = (companyProduct.options ?? []).filter((o) => !branchOptionNames.has(o.name));
+        const availableVariants = (companyProduct.variants ?? []).filter((v) => !branchVariantSkus.has(v.sku));
+        setState({ ...initialData, options: availableOptions, variants: availableVariants });
+        setSelectedOptionIds(new Set(availableOptions.map((o) => o.id)));
+        setSelectedVariantIds(new Set(availableVariants.map((v) => v.id)));
+      } else if (isManagerEditMode && !companyProduct) {
+        // No companyProduct: load all options/variants from initialData and pre-select all
+        setState(initialData);
+        setSelectedOptionIds(new Set(initialData.options.map((o) => o.id)));
+        setSelectedVariantIds(new Set(initialData.variants.map((v) => v.id)));
+      } else {
+        setState(initialData);
+      }
+    } else {
+      setState(emptyState());
     }
-    setErrors({});
-    return true;
+  }, [open, initialData, isManagerEditMode, companyProduct]);
+
+  const patch = (p: Partial<ProductState>) => setState((prev) => ({ ...prev, ...p }));
+
+  const handleToggleProduct = (p: ExistingProduct) => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(p.id)) { next.delete(p.id); } else { next.add(p.id); }
+      return next;
+    });
   };
 
-  const handleImageChange = (file: File | null) => {
-    setImageError(null);
-    if (!file) { setImagePreview(null); return; }
+  const handleSelectAll = (filtered: ExistingProduct[], checked: boolean) => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (checked) { filtered.forEach((p) => next.add(p.id)); }
+      else { filtered.forEach((p) => next.delete(p.id)); }
+      return next;
+    });
+  };
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setImageError("Only JPG, JPEG, or PNG images are allowed");
-      return;
+  const handleLoadProduct = (p: ExistingProduct) => {
+    const opts = (p.options ?? []).map((o) => ({ ...o, id: o.id ?? Math.floor(Date.now() * Math.random()) }));
+    const vars = (p.variants ?? []).map((v, i) => ({ ...v, id: v.id ?? i + 1 }));
+    setState({ name: p.name, categoryId: p.category, brand: p.brand ?? "", description: p.description ?? "", options: opts, variants: vars });
+    setSelectedOptionIds(new Set(opts.map((o) => o.id)));
+    setSelectedVariantIds(new Set(vars.map((v) => v.id)));
+  };
+
+  const toggleOption = (id: number) =>
+    setSelectedOptionIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) { n.delete(id); } else { n.add(id); }
+      return n;
+    });
+
+  const toggleVariant = (id: number) =>
+    setSelectedVariantIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) { n.delete(id); } else { n.add(id); }
+      return n;
+    });
+
+  const hasNewOptions = state.options.some((o) => isNewId(o.id));
+  const hasNewVariants = state.variants.some((v) => isNewId(v.id));
+  const managerAddedNewItems = isManagerEditMode && (hasNewOptions || hasNewVariants);
+
+  const validateStep = (): string | null => {
+    if (step === 0) {
+      if (isManagerVariantMode) {
+        if (selectedProductIds.size === 0) return "Please select at least one product to add a variant to.";
+      } else if (!isManagerEditMode) {
+        if (!state.name.trim()) return "Product name is required.";
+        if (!state.categoryId) return "Category is required.";
+      }
     }
-    const sizeInMB = file.size / (1024 * 1024);
-    if (sizeInMB > MAX_IMAGE_SIZE_MB) {
-      setImageError(`Image size must be less than ${MAX_IMAGE_SIZE_MB}MB`);
-      return;
+    if (step === 1 && isManagerVariantMode && selectedProductIds.size === 1 && selectedOptionIds.size === 0)
+      return "Please select at least one option.";
+    if (step === 2) {
+      if (isManagerVariantMode && selectedProductIds.size === 1 && selectedVariantIds.size === 0)
+        return "Please select at least one variant.";
+      if (!isManagerVariantMode && !isManagerEditMode) {
+        for (const v of state.variants) {
+          if (!v.sku.trim()) return "All variants must have a SKU.";
+          if (!v.basePrice) return "All variants must have a base price.";
+          if (!v.sellingPrice) return "All variants must have a selling price.";
+        }
+      }
+      if (isManagerEditMode) {
+        for (const v of state.variants.filter((v) => isNewId(v.id))) {
+          if (!v.sku.trim()) return "New variants must have a SKU.";
+          if (!v.basePrice) return "New variants must have a base price.";
+          if (!v.sellingPrice) return "New variants must have a selling price.";
+        }
+      }
     }
-    setImagePreview(URL.createObjectURL(file));
+    return null;
   };
 
-  const removeImage = () => {
-    setImagePreview(null);
-    setImageError(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  const goStep = (n: number) => setStep(n);
+  const handleNext = () => { const err = validateStep(); if (err) { alert(err); return; } if (step < STEPS.length - 1) setStep((s) => s + 1); };
+  const handleBack = () => { if (step > 0) setStep((s) => s - 1); };
 
   const handleSave = () => {
-    if (!validateForm()) return;
-    const payload: ProductValues = { ...values, imageUrl: imagePreview || "" };
+    let finalState: ProductState;
 
-    if (userRole === "branch_manager") {
+    if (isManagerVariantMode) {
+      finalState = {
+        ...state,
+        options: state.options.filter((o) => selectedOptionIds.has(o.id)),
+        variants: state.variants.filter((v) => selectedVariantIds.has(v.id)),
+      };
+    } else if (isManagerEditMode) {
+      finalState = {
+        ...state,
+        options: state.options.filter((o) => isNewId(o.id) || selectedOptionIds.has(o.id)),
+        variants: state.variants.filter((v) => isNewId(v.id) || selectedVariantIds.has(v.id)),
+      };
+    } else {
+      finalState = state;
+    }
+
+    if (userRole === "manager" && (isManagerVariantMode || managerAddedNewItems)) {
       addNotification({
         type: "approval_pending",
-        message: `New product request from ${branchName} — "${values.name.trim()}" awaiting approval`,
+        message: `${isManagerVariantMode ? "New variant" : "New items"} request from ${branchName} — "${finalState.name.trim()}" awaiting approval`,
         productApproval: {
           id: Date.now(),
-          productName: values.name.trim(),
-          price: Number(values.price),
-          discount: Number(values.discount),
-          tax: Number(values.tax),
-          stock: Number(values.stock),
-          unit: values.soldBy === "volume_weight" ? values.unit : "each",
-          imageUrl: imagePreview || "",
+          productName: finalState.name.trim(),
+          price: Number(finalState.variants[0]?.sellingPrice ?? 0),
+          discount: 0,
+          tax: 0,
+          stock: 0,
+          unit: finalState.variants[0]?.sellUnit ?? "each",
+          imageUrl: finalState.variants[0]?.imageUrl ?? "",
           branchId,
           branchName,
           branchManager,
@@ -163,193 +200,75 @@ export default function AddProductPopup({
       });
     }
 
-    onSave(payload);
+    onSave(finalState);
     onClose();
   };
 
+  const saveLabel = isManagerVariantMode
+    ? "Add Products to Branch"
+    : isManagerEditMode
+      ? managerAddedNewItems ? "Submit for Approval" : "Update Product"
+      : initialData
+        ? "Update Product"
+        : userRole === "manager"
+          ? "Submit for Approval"
+          : "Add Product";
+
   return (
-    <ModalShell
-      open={open}
-      title="Add New Product"
-      onClose={handleCancel}
-      widthClassName="w-[980px] max-w-[92vw]"
-    >
-      <form
-        className="space-y-3"
-        onSubmit={(e) => { e.preventDefault(); handleSave(); }}
-      >
-        <FormField
-          label="Name"
-          placeholder="Enter name"
-          value={values.name}
-          onChange={(v) => setField("name", v)}
-          type="text"
-        />
-        {errors.name && (
-          <p className="text-xs text-red-500 px-3">{errors.name}</p>
-        )}
+    <ModalShell open={open} title={modalTitle} onClose={onClose} widthClassName="w-[860px] max-w-[95vw]">
+      <form onSubmit={(e) => { e.preventDefault(); if (step === STEPS.length - 1) { handleSave(); } else { handleNext(); } }}>
+        <StepBar current={step} onGo={goStep} />
 
-        <FormField
-          label="Price"
-          placeholder="Enter price"
-          value={values.price}
-          onChange={(v) => setField("price", v)}
-          type="number"
-        />
-        {errors.price && (
-          <p className="text-xs text-red-500 px-3">{errors.price}</p>
-        )}
-
-        <div className="flex gap-4">
-          <div className="flex-1 space-y-1">
-            <FormField
-              label="Discount"
-              placeholder="Enter discount %"
-              value={values.discount}
-              onChange={(v) => setField("discount", v)}
-              type="number"
+        <div className="overflow-y-auto h-[52vh] pr-1">
+          {step === 0 && isManagerVariantMode ? (
+            <Step1VariantSelect
+              products={existingProducts}
+              selectedIds={selectedProductIds}
+              onToggle={handleToggleProduct}
+              onSelectAll={handleSelectAll}
+              onLoadProduct={handleLoadProduct}
             />
-            {errors.discount && (
-              <p className="text-xs text-red-500 px-3">{errors.discount}</p>
-            )}
-          </div>
-
-          <div className="flex-1 space-y-1">
-            <FormField
-              label="Tax"
-              placeholder="Enter tax %"
-              value={values.tax}
-              onChange={(v) => setField("tax", v)}
-              type="number"
+          ) : step === 0 ? (
+            <Step1 state={state} onChange={patch} categories={categories} isManagerEditMode={isManagerEditMode} />
+          ) : step === 1 ? (
+            <Step2
+              state={state}
+              onChange={patch}
+              isManagerVariantMode={isManagerVariantMode}
+              isManagerEditMode={isManagerEditMode}
+              selectedOptionIds={selectedOptionIds}
+              onToggleOption={toggleOption}
+              selectedProductCount={selectedProductIds.size}
             />
-            {errors.tax && (
-              <p className="text-xs text-red-500 px-3">{errors.tax}</p>
-            )}
-          </div>
-        </div>
-
-        <FormField
-          label="Stock"
-          placeholder="Enter stock"
-          value={values.stock}
-          onChange={(v) => setField("stock", v)}
-          type="number"
-        />
-        {errors.stock && (
-          <p className="text-xs text-red-500 px-3">{errors.stock}</p>
-        )}
-
-        <div className="flex gap-4 items-start pt-1">
-          <div className="space-y-2">
-            <label className="text-[12px] text-gray-500">Sold By</label>
-            <div className="flex gap-3">
-              {(
-                [
-                  { value: "each", label: "Each" },
-                  { value: "volume_weight", label: "Volume / Weight" },
-                ] as { value: SoldBy; label: string }[]
-              ).map(({ value, label }) => {
-                const active = values.soldBy === value;
-                return (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setSoldBy(value)}
-                    className={`
-                      rounded-full border px-4 py-2 text-sm font-normal transition-all outline-none
-                      ${active
-                        ? "border-orange-500 text-orange-600 ring-2 ring-orange-200 bg-white"
-                        : "border-gray-200 text-gray-800 hover:border-orange-300"
-                      }
-                    `}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {values.soldBy === "volume_weight" && (
-            <div className="flex-1">
-              <FormField
-                label="Unit"
-                type="dropdown"
-                placeholder="Select a unit…"
-                value={values.unit}
-                onChange={(v) => setField("unit", v)}
-                options={VOLUME_WEIGHT_UNITS.map((u) => ({ value: u, label: u }))}
-              />
-              {errors.unit && (
-                <p className="mt-1 text-xs text-red-500 px-3">{errors.unit}</p>
-              )}
-            </div>
+          ) : (
+            <Step3
+              state={state}
+              onChange={patch}
+              businessTypeId={businessTypeId}
+              isManagerVariantMode={isManagerVariantMode}
+              isManagerEditMode={isManagerEditMode}
+              selectedVariantIds={selectedVariantIds}
+              onToggleVariant={toggleVariant}
+              selectedProductCount={selectedProductIds.size}
+            />
           )}
         </div>
 
-        <div className="space-y-2 pt-2">
-          <label className="text-[12px] text-gray-500">Product Image</label>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png"
-            onChange={(e) => handleImageChange(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500
-              file:mr-4 file:rounded-full file:border-0
-              file:bg-orange-50 file:px-4 file:py-2
-              file:text-sm file:font-medium file:text-orange-600
-              hover:file:bg-orange-100 hover:file:cursor-pointer"
-          />
-
-          {imageError && <p className="text-xs text-red-500">{imageError}</p>}
-          {errors.image && <p className="text-xs text-red-500">{errors.image}</p>}
-
-          {imagePreview && (
-            <div className="relative mt-2 h-28 w-28">
-              <Image
-                src={imagePreview}
-                alt="Preview"
-                className="rounded-lg border object-cover"
-                fill
-                sizes="112px"
-                style={{ objectFit: "cover" }}
-              />
-              <button
-                type="button"
-                onClick={removeImage}
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full
-                  bg-black/70 text-white flex items-center justify-center
-                  text-xs hover:bg-black cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-        </div>
-
-        {userRole === "branch_manager" && (
-          <div className="flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-200 px-4 py-3">
-            <span className="text-orange-400 text-base">📋</span>
-            <p className="text-xs text-orange-600 font-medium">
-              This product will be sent to admin for approval before it goes live.
-            </p>
-          </div>
-        )}
-
-        <div className="flex items-center justify-center pt-4">
-          <div className="w-[420px]">
-            <PopupActions
-              actions={[
-                { label: "Cancel", onClick: handleCancel, variant: "secondary" },
-                {
-                  label: userRole === "branch_manager" ? "Submit for Approval" : "Save",
-                  onClick: handleSave,
-                  variant: "primary",
-                },
-              ]}
-            />
-          </div>
+        <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={handleBack}
+            className={`px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer ${step === 0 ? "invisible" : ""}`}
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={step === STEPS.length - 1 ? handleSave : handleNext}
+            className="px-6 py-2 text-sm rounded-4xl transition font-medium cursor-pointer bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            {step === STEPS.length - 1 ? saveLabel : "Continue"}
+          </button>
         </div>
       </form>
     </ModalShell>

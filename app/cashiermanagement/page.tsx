@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import DateRangeBar from "@/components/Admin/common/DateRangeBar";
@@ -12,8 +13,6 @@ import FilterChips from "@/components/Admin/common/FilterChips";
 import DeactivateCashierPopup from "@/components/Admin/cashiermanagement/DeactivateCashierPopup";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
-
-type UserRole = "superadmin" | "admin" | "manager";
 
 const mockCashiers: Cashier[] = [
   {
@@ -39,7 +38,7 @@ const mockCashiers: Cashier[] = [
     status: "Deactive",
     branch: "Colombo",
   } as Cashier & { branch?: string },
-    {
+  {
     id: "003",
     name: "XYZ",
     cashierNo: "3",
@@ -54,6 +53,13 @@ const mockCashiers: Cashier[] = [
 ];
 
 export default function CashierManagementPage() {
+  const { data: session } = useSession();
+  const role = session?.user?.role ?? "";
+  const branchName = session?.user?.branchName ?? "";
+
+  // OWNER and ADMIN see all branches; MANAGER sees only their own branch
+  const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
+
   const [query, setQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -62,45 +68,41 @@ export default function CashierManagementPage() {
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
-  // ✅ TODO: Replace with actual auth session/role + branch
-  const userRole: UserRole = "admin" as UserRole;
-  const userBranch = "Negombo" as const; // Get from auth context/session
-
   const [filters, setFilters] = useState<Record<string, string>>({
-    cashierNo: "",
     revenueRange: "",
     status: "",
     branch: "",
   });
 
-  // ✅ Base data: superadmin sees all; admin/manager only their branch
+  // OWNER / ADMIN see all cashiers; MANAGER sees only their branch
   const baseData = useMemo(() => {
     const all = mockCashiers as (Cashier & { branch?: string })[];
-    return userRole === "superadmin"
+    return canSeeAllBranches
       ? all
-      : all.filter((c) => (c.branch ?? "") === userBranch);
-  }, [userRole, userBranch]);
+      : all.filter((c) => (c.branch ?? "") === branchName);
+  }, [canSeeAllBranches, branchName]);
 
-  // ✅ Clear any leftover branch filter if user isn't allowed to use it
+  // Clear branch filter when role is MANAGER
   useEffect(() => {
-    if (userRole !== "superadmin") {
+    if (!canSeeAllBranches) {
       setFilters((prev) => ({ ...prev, branch: "" }));
     }
-  }, [userRole]);
+  }, [canSeeAllBranches]);
 
   const filterFields: SelectField[] = useMemo(() => {
-    const uniqueCashierNos = Array.from(new Set(baseData.map((c) => c.cashierNo)));
-
-    const branchOptions =
-      userRole === "superadmin"
-        ? Array.from(new Set((mockCashiers as (Cashier & { branch?: string })[]).map((c) => c.branch ?? "")))
-            .filter(Boolean)
-            .map((b) => ({ label: b, value: b }))
-        : [];
+    const branchOptions = canSeeAllBranches
+      ? Array.from(
+          new Set(
+            (mockCashiers as (Cashier & { branch?: string })[]).map((c) => c.branch ?? "")
+          )
+        )
+          .filter(Boolean)
+          .map((b) => ({ label: b, value: b }))
+      : [];
 
     return [
-      // ✅ Branch filter only for superadmin
-      ...(userRole === "superadmin"
+      // Branch filter only for OWNER and ADMIN
+      ...(canSeeAllBranches
         ? [
             {
               name: "branch",
@@ -109,12 +111,6 @@ export default function CashierManagementPage() {
             } as SelectField,
           ]
         : []),
-
-      {
-        name: "cashierNo",
-        placeholder: "Select Cashier No",
-        options: uniqueCashierNos.map((no) => ({ label: no, value: no })),
-      },
       {
         name: "revenueRange",
         placeholder: "Select Revenue Range",
@@ -132,7 +128,7 @@ export default function CashierManagementPage() {
         ],
       },
     ];
-  }, [baseData, userRole]);
+  }, [canSeeAllBranches]);
 
   const filteredCashiers = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -148,48 +144,28 @@ export default function CashierManagementPage() {
         );
       })
       .filter((c) => {
-        if (filters.cashierNo && c.cashierNo !== filters.cashierNo) return false;
-
         if (filters.revenueRange === "lt100k" && c.totalRevenue >= 100000) return false;
         if (filters.revenueRange === "gte100k" && c.totalRevenue < 100000) return false;
 
         if (filters.status && c.status !== filters.status) return false;
 
-        // ✅ Branch filter only matters for superadmin
-        if (userRole === "superadmin") {
+        // Branch filter only applies for OWNER and ADMIN
+        if (canSeeAllBranches) {
           const branch = (c as Cashier & { branch?: string }).branch ?? "";
           if (filters.branch && branch !== filters.branch) return false;
         }
 
         return true;
       });
-  }, [query, filters, baseData, userRole]);
+  }, [query, filters, baseData, canSeeAllBranches]);
 
   function exportCsv(rows: Cashier[]) {
-    const header = [
-      "ID",
-      "Name",
-      "Cashier No",
-      "Total Revenue",
-      "Email",
-      "Password",
-      "Pin",
-      "status",
-    ];
+    const header = ["Name", "Cashier No", "Total Revenue", "Email", "Status"];
 
     const csvRows = [
       header.join(","),
       ...rows.map((r) =>
-        [
-          r.id,
-          r.name,
-          r.cashierNo,
-          r.totalRevenue,
-          r.email,
-          r.passwordMasked,
-          r.pinMasked,
-          r.status,
-        ]
+        [r.name, r.cashierNo, r.totalRevenue, r.email, r.status]
           .map((v) => `"${String(v).replaceAll('"', '""')}"`)
           .join(",")
       ),
@@ -225,7 +201,7 @@ export default function CashierManagementPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangeBar />
+        
 
         <div className="relative w-full">
           <SearchBar
@@ -236,7 +212,7 @@ export default function CashierManagementPage() {
             filterLabel="Filter"
             onFilter={() => setFilterOpen(true)}
             isFilterApplied={isFilterApplied}
-            onClearFilters={() => setFilters({ cashierNo: "", revenueRange: "", status: "", branch: "" })}
+            onClearFilters={() => setFilters({ revenueRange: "", status: "", branch: "" })}
           />
 
           <FilterChips filters={filters} onRemove={removeFilter} />

@@ -10,6 +10,7 @@ import SubscriptionPlanCards from "@/components/Admin/settings/subscriptionplan/
 import CompanyDetailsForm from "@/components/Admin/settings/Details/CompanyDetailsContent";
 import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetailsContent";
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
+import ActionButton from "@/components/Admin/common/ActionButton";
 
 type UserRole = "OWNER" | "ADMIN" | "MANAGER";
 
@@ -76,8 +77,8 @@ export default function SettingPage() {
                 regNo: "PV12345",
                 email: "abc@gmail.com",
                 phone: "+94 77 123 4567",
-                addressLine1: "No 10, Main Street",
-                addressLine2: "Colombo",
+                address: "No 10, Main Street, Colombo",
+                
               }}
               logoUrl={companyLogoUrl}
               onLogoChange={(url) => setCompanyLogoUrl(url)}
@@ -90,8 +91,8 @@ export default function SettingPage() {
                 name: "Colombo Branch",
                 email: "branch@gmail.com",
                 phone: "+94 77 987 6543",
-                addressLine1: "No 15, High Street",
-                addressLine2: "Colombo",
+                address: "No 15, High Street, Colombo",
+                
               }}
               onSave={(data) => console.log("SAVE BRANCH", data)}
             />
@@ -100,5 +101,32 @@ export default function SettingPage() {
         {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>
     </DashboardLayout>
+  );
+}
+
+
+function PasswordRow({
+  label,
+  placeholder,
+}: {
+  label: string;
+  placeholder: string;
+}) {
+  return (
+    <div className="grid grid-cols-12 items-center py-4 border-b border-gray-100">
+      <div className="col-span-12 sm:col-span-4 text-sm font-semibold text-gray-900 mb-3 sm:mb-0">
+        {label}
+      </div>
+
+      <div className="col-span-12 sm:col-span-8">
+        <input
+          type="password"
+          placeholder={placeholder}
+          className="w-full rounded-full border border-gray-200 px-6 py-2.5
+                     text-sm text-gray-700 placeholder:text-gray-400
+                     outline-none focus:ring-2 focus:ring-orange-200"
+        />
+      </div>
+    </div>
   );
 }

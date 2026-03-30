@@ -9,8 +9,8 @@ type Details = {
   regNo?: string;
   email: string;
   phone: string;
-  addressLine1: string;
-  addressLine2: string;
+  address: string;
+  
 };
 
 type DetailsFormProps = {
@@ -65,8 +65,7 @@ export default function DetailsForm({
       regNo: initial?.regNo ?? "",
       email: initial?.email ?? "",
       phone: initial?.phone ?? "",
-      addressLine1: initial?.addressLine1 ?? "",
-      addressLine2: initial?.addressLine2 ?? "",
+      address: initial?.address ?? "",
     }),
     [initial]
   );
@@ -151,26 +150,17 @@ export default function DetailsForm({
         />
 
         <FieldRow
-          label="Address Line 1"
+          label="Address "
           input={
             <TextInput
               disabled={isLocked || saving}
-              value={form.addressLine1}
-              onChange={(e) => set("addressLine1", e.target.value)}
+              value={form.address}
+              onChange={(e) => set("address", e.target.value)}
             />
           }
         />
 
-        <FieldRow
-          label="Address Line 2"
-          input={
-            <TextInput
-              disabled={isLocked || saving}
-              value={form.addressLine2}
-              onChange={(e) => set("addressLine2", e.target.value)}
-            />
-          }
-        />
+        
       </div>
 
       {includeLogo && onLogoChange && (
