@@ -236,16 +236,8 @@ export default function EditEntityModal<T extends object>({
           <div className="w-[420px]">
             <PopupActions
               actions={[
-                {
-                  label: "Cancel",
-                  variant: "secondary",
-                  onClick: onClose,
-                },
-                {
-                  label: "Save Changes",
-                  variant: "primary",
-                  onClick: () => onSave(values),
-                },
+                { label: "Cancel", variant: "secondary", onClick: onClose },
+                { label: "Save Changes", variant: "primary", onClick: () => onSave(values) },
               ]}
             />
           </div>
