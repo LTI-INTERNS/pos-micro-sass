@@ -5,10 +5,10 @@ import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import FormField from "@/components/Admin/common/FormField";
 
-
 type FormValues = {
   branchId: string;
   name: string;
+  city: string; // Added City
   phoneNumber: string;
   address: string;
   registrationNumber: string;
@@ -32,10 +32,10 @@ export default function AddBranchForm({
   branchId,
   onSubmit,
 }: AddBranchFormProps) {
-
   const [values, setValues] = React.useState<Record<string, string>>({
     branchId: branchId,
     name: "",
+    city: "", // Added City
     phoneNumber: "",
     address: "",
     registrationNumber: "",
@@ -61,6 +61,11 @@ export default function AddBranchForm({
       newErrors.name = "Name is required";
     } else if (values.name.length > 15) {
       newErrors.name = "Name must be less than or equal to 15 characters";
+    }
+
+    // City validation
+    if (!values.city.trim()) {
+      newErrors.city = "City is required";
     }
 
     // Phone number validation - exactly 10 digits
@@ -116,6 +121,7 @@ export default function AddBranchForm({
     setValues({
       branchId: branchId,
       name: "",
+      city: "", // Added City
       phoneNumber: "",
       address: "",
       registrationNumber: "",
@@ -126,15 +132,15 @@ export default function AddBranchForm({
     setErrors({});
   };
 
-
   return (
     <ModalShell
       open={open}
       title="New Branch"
       onClose={handleCancel}
-      widthClassName="w-[700px] max-w-[92vw]">
+      widthClassName="w-[700px] max-w-[92vw]"
+    >
       <form className="space-y-0.5 mt-[-10px]">
-        <div className="space-y-1">
+        {/* <div className="space-y-1">
           <label className="text-[12px] text-gray-500">ID</label>
           <input
             type="text"
@@ -146,7 +152,7 @@ export default function AddBranchForm({
                         placeholder:text-gray-300
                     "
           />
-        </div>
+        </div> */}
 
         <div>
           <FormField
@@ -160,6 +166,19 @@ export default function AddBranchForm({
           )}
         </div>
 
+        {/* --- New City Field --- */}
+        <div>
+          <FormField
+            label="City"
+            placeholder="Enter city"
+            value={values.city}
+            onChange={(next) => setField("city", next)}
+          />
+          {errors.city && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.city}</p>
+          )}
+        </div>
+
         <div>
           <FormField
             label="Phone number"
@@ -169,7 +188,9 @@ export default function AddBranchForm({
             type="tel"
           />
           {errors.phoneNumber && (
-            <p className="text-xs text-red-500 mt-1 px-3">{errors.phoneNumber}</p>
+            <p className="text-xs text-red-500 mt-1 px-3">
+              {errors.phoneNumber}
+            </p>
           )}
         </div>
 
@@ -193,7 +214,9 @@ export default function AddBranchForm({
             onChange={(next) => setField("registrationNumber", next)}
           />
           {errors.registrationNumber && (
-            <p className="text-xs text-red-500 mt-1 px-3">{errors.registrationNumber}</p>
+            <p className="text-xs text-red-500 mt-1 px-3">
+              {errors.registrationNumber}
+            </p>
           )}
         </div>
 
@@ -233,7 +256,9 @@ export default function AddBranchForm({
               type="password"
             />
             {errors.confirmPassword && (
-              <p className="text-xs text-red-500 mt-1 px-3">{errors.confirmPassword}</p>
+              <p className="text-xs text-red-500 mt-1 px-3">
+                {errors.confirmPassword}
+              </p>
             )}
           </div>
         </div>
