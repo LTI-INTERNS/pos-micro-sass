@@ -31,7 +31,7 @@ export default function DiscountTable({
   onSelectRow,
 }: Props) {
   const columns: Column<Discount>[] = [
-    { key: "id", label: "ID" },
+    // { key: "id", label: "ID" },
     { key: "title", label: "Title" },
     {
       key: "percentage",

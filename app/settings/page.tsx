@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import DiscountContent from "@/components/Admin/settings/Discount/DiscountContent";
@@ -10,63 +11,65 @@ import CompanyDetailsForm from "@/components/Admin/settings/Details/CompanyDetai
 import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetailsContent";
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 
-type UserRole = "superadmin" | "admin" | "manager";
+type UserRole = "OWNER" | "ADMIN" | "MANAGER";
 
 type Tab = {
   id: string;
   label: string;
   shortLabel: string;
-  roles?: UserRole[]; // Optional roles property
-};
-
-const getTabs = (userRole: UserRole): Tab[] => {
-  const allTabs: Tab[] = [
-    { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
-    { id: "discountManagement", label: "Discount Management", shortLabel: "Discount" },
-    {
-      id: "companyDetails",
-      label: userRole === "superadmin" ? "Company Details" : "Branch Details",
-      shortLabel: userRole === "superadmin" ? "Company" : "Branch",
-    },
-    { 
-      id: "subscriptionPlan", 
-      label: "Subscription Plan", 
-      shortLabel: "Sub. Plan",
-      roles: ["superadmin"] // Only visible to superadmin
-    },
-    { id: "settings", label: "System Settings", shortLabel: "System" },
-  ];
-
-  // Filter tabs based on user role
-  return allTabs.filter(tab => {
-    // If no roles specified, show to everyone
-    if (!tab.roles) return true;
-    // Otherwise check if user role is in allowed roles
-    return tab.roles.includes(userRole);
-  });
 };
 
 export default function SettingPage() {
-  const userRole: UserRole = "superadmin" as UserRole;
-  const TABS = getTabs(userRole);
+  const { data: session, status } = useSession();
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
+
+  // Normalize role from session
+  const userRole = session?.user?.role?.toUpperCase() as UserRole;
+
+  const TABS = useMemo(() => {
+    if (!userRole) return [];
+
+    const tabs: Tab[] = [
+      { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
+      { id: "discountManagement", label: "Discount Management", shortLabel: "Discount" },
+    ];
+
+    // Role-based logic for Company/Branch Details tab
+    if (userRole === "OWNER") {
+      tabs.push({ id: "companyDetails", label: "Company Details", shortLabel: "Company" });
+    } else if (userRole === "MANAGER") {
+      tabs.push({ id: "companyDetails", label: "Branch Details", shortLabel: "Branch" });
+    }
+    // ADMIN sees neither Company nor Branch details
+
+    // Role-based logic for Subscription
+    if (userRole === "OWNER") {
+      tabs.push({ id: "subscriptionPlan", label: "Subscription Plan", shortLabel: "Sub. Plan" });
+    }
+
+    tabs.push({ id: "settings", label: "System Settings", shortLabel: "System" });
+
+    return tabs;
+  }, [userRole]);
+
+  if (status === "loading") return <DashboardLayout><div>Loading...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
         <TabSelector tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "personalDetails" && <PersonalContent />}
+        {activeTab === "personalDetails" && <PersonalContent userRole={userRole} />}
+        
         {activeTab === "discountManagement" && <DiscountContent />}
         
-        {/* Only render subscription plan for superadmin */}
-        {activeTab === "subscriptionPlan" && userRole === "superadmin" && (
+        {activeTab === "subscriptionPlan" && userRole === "OWNER" && (
           <SubscriptionPlanCards defaultPlanId="basic" />
         )}
 
         {activeTab === "companyDetails" &&
-          (userRole === "superadmin" ? (
+          (userRole === "OWNER" ? (
             <CompanyDetailsForm
               initial={{
                 name: "ABC Pvt Ltd",
@@ -77,16 +80,12 @@ export default function SettingPage() {
                 addressLine2: "Colombo",
               }}
               logoUrl={companyLogoUrl}
-              onLogoChange={(url, file) => {
-                console.log("Logo changed:", url, file);
-                setCompanyLogoUrl(url);
-              }}
-              onSave={(data) => {
-                console.log("SAVE COMPANY", data);
-              }}
+              onLogoChange={(url) => setCompanyLogoUrl(url)}
+              onSave={(data) => console.log("SAVE COMPANY", data)}
             />
-          ) : (
+          ) : userRole === "MANAGER" ? (
             <BranchDetailsForm
+              userRole={userRole}
               initial={{
                 name: "Colombo Branch",
                 email: "branch@gmail.com",
@@ -94,11 +93,9 @@ export default function SettingPage() {
                 addressLine1: "No 15, High Street",
                 addressLine2: "Colombo",
               }}
-              onSave={(data) => {
-                console.log("SAVE BRANCH", data);
-              }}
+              onSave={(data) => console.log("SAVE BRANCH", data)}
             />
-          ))}
+          ) : null)}
 
         {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>

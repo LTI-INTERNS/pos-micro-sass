@@ -1,5 +1,6 @@
 export type Branch = {
   id: string;
+  city: string;
   name: string;
   phone: string;
   address: string;
@@ -11,6 +12,7 @@ export type Branch = {
 export const branchesData: Branch[] = [
   {
     id: "A001",
+    city: "Colombo",
     name: "colombo",
     phone: "0771234567",
     address: "colombo 01",
@@ -20,6 +22,7 @@ export const branchesData: Branch[] = [
   },
   {
     id: "A002",
+    city: "Kandy",
     name: "kandy",
     phone: "0719999999",
     address: "kandy",

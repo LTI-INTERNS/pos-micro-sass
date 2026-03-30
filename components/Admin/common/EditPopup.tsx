@@ -61,21 +61,21 @@ export default function EditEntityModal<T extends object>({
                 <textarea
                   value={String(values[field.name as keyof T] ?? "")}
                   readOnly={field.readOnly}
-                  onChange={(e) =>
-                    handleChange(field.name, e.target.value)
-                  }
-                  className="w-full min-h-[100px] rounded-xl border px-4 py-3 text-sm"
+                  disabled={field.readOnly}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
+                  className="w-full min-h-[100px] rounded-xl border px-4 py-3 text-sm 
+                  disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed border-gray-200"
                 />
               ) : (
                 <input
                   type={field.type || "text"}
                   value={String(values[field.name as keyof T] ?? "")}
                   readOnly={field.readOnly}
-                  onChange={(e) =>
-                    handleChange(field.name, e.target.value)
-                  }
+                  disabled={field.readOnly}
+                  onChange={(e) => handleChange(field.name, e.target.value)}
                   className="w-full rounded-full border px-4 py-2 outline-none
-            placeholder:text-gray-300 text-gray-600 border-gray-200"
+                  placeholder:text-gray-300 text-gray-600 border-gray-200
+                  disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
                 />
               )}
             </div>
@@ -86,16 +86,8 @@ export default function EditEntityModal<T extends object>({
           <div className="w-[420px]">
             <PopupActions
               actions={[
-                {
-                  label: "Cancel",
-                  variant: "secondary",
-                  onClick: onClose,
-                },
-                {
-                  label: "Save Changes",
-                  variant: "primary",
-                  onClick: () => onSave(values),
-                },
+                { label: "Cancel", variant: "secondary", onClick: onClose },
+                { label: "Save Changes", variant: "primary", onClick: () => onSave(values) },
               ]}
             />
           </div>
