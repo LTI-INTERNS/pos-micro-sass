@@ -81,7 +81,7 @@ export default function LogoUploadSection({
           )}
         </button>
 
-        <input
+        <input aria-label={title}
           ref={fileInputRef}
           type="file"
           accept="image/*"

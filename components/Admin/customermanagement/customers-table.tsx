@@ -20,12 +20,7 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
     { key: "promoCard", label: "Promo Card", },
     { key: "points", label: "Points", },
     { key: "email", label: "Email", },
-    {
-      key: "outstanding",
-      label: "Outstanding",
-      align: "right",
-      render: (row) => formatCurrency(row.outstanding, currency, useCents),
-    },
+    
   ];
 
   return (

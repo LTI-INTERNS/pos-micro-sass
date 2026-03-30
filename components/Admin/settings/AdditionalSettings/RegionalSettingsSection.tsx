@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useSession } from "next-auth/react";
 import FormField from "@/components/Admin/common/FormField";
 import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
 
@@ -76,8 +77,13 @@ export default function RegionalSettingsSection({
   onCurrencyChange,
   onTimezoneChange,
 }: RegionalSettingsProps) {
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+
+  const canEdit = role === "OWNER" || role === "ADMIN";
 
   const handleCountryChange = (newCountry: string) => {
+    if (!canEdit) return;
     onCountryChange(newCountry);
 
     // Auto-update currency based on country
@@ -99,7 +105,7 @@ export default function RegionalSettingsSection({
         Regional Settings
       </h2>
 
-      <div className="space-y-5">
+      <fieldset disabled={!canEdit} className="space-y-5">
         <FormField
           label="Country"
           type="dropdown"
@@ -131,7 +137,7 @@ export default function RegionalSettingsSection({
 
           <ToggleSwitch
             enabled={useCents}
-            onChange={onUseCentsChange}
+            onChange={canEdit ? onUseCentsChange : () => {}}
           />
         </div>
 
@@ -142,7 +148,7 @@ export default function RegionalSettingsSection({
           onChange={onTimezoneChange}
           options={TIMEZONES}
         />
-      </div>
+      </fieldset>
     </div>
   );
 }

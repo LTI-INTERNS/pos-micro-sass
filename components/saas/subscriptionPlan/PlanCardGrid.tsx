@@ -2,30 +2,64 @@
 
 import React from "react";
 import BaseCard from "@/components/saas/common/BaseCard";
-import { planCardsData } from "@/components/Admin/settings/subscriptionplan/planCardsData"; // ✅ adjust path
 
 type Props = {
   selected: string;
   onSelect: (plan: string) => void;
 };
 
+const PLANS = [
+  {
+    id: "SUB_FREE",
+    title: "FREE",
+    price: "$0.00/mo",
+    features: [
+      { label: "Branches 5"      , available: true },
+      { label: "Staff accounts Up to 5" , available: true },
+      { label: "Products Up to 200" , available: true },
+      { label: "Customers Up to 500" , available: true },
+      { label: "Orders / month 1,000" , available: true },
+      { label: "Reports Basic" , available: true },
+      { label: "Support Email" , available: true },
+      { label: "AI Prediction Not included" , available: true },
+    ],
+  },
+  {
+    id: "SUB_PRO",
+    title: "PRO",
+    price: "$29.99/mo",
+    features: [
+      { label: "Branches Up to 15"  , available: true },
+      { label: "Staff accounts Up to 25" , available: true },
+      { label: "Products Unlimited" , available: true },
+      { label: "Customers Unlimited" , available: true },
+      { label: "Orders / month 10,000" , available: true },
+      { label: "Reports Advanced" , available: true },
+      { label: "Support Priority" , available: true },
+      { label: "AI Prediction Included" , available: true },
+    ],
+  },
+  {
+    id: "SUB_ENTERPRISE",
+    title: "ENTERPRISE",
+    price: "$99.99/mo",
+    features: [
+      { label: "Branches Unlimited"  , available: true },
+      { label: "Staff accounts Unlimited" , available: true },
+      { label: "Products Unlimited" , available: true },
+      { label: "Customers Unlimited" , available: true },
+      { label: "Orders / month Unlimited" , available: true },
+      { label: "Reports Custom" , available: true },
+      { label: "Support 24/7 Dedicated" , available: true },
+      { label: "AI Prediction Full suite" , available: true },
+    ],
+  },
+];
+
 const PlanCardGrid = ({ selected, onSelect }: Props) => {
-
-  const plans = planCardsData.map((plan) => ({
-    id: plan.id,
-    title: plan.name.toUpperCase(),
-    price: `${plan.price}/${plan.billingCycle}`,
-
-    features: plan.features.map((f) => ({
-      label: `${f.label}: ${f.value}`,
-      
-      available: f.value.toLowerCase() !== "not included",
-    })),
-  }));
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start px-15">
-      {plans.map((plan) => (
+      {PLANS.map((plan) => (
         <div
           key={plan.id}
           className={`

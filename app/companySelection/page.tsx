@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signIn} from "next-auth/react";
 import { AlertCircle } from "lucide-react";
 
 import CommonLayout from "@/components/saas/common/CommonLayout";
@@ -54,6 +54,13 @@ export default function CompanySelectPage() {
   // branch during the session hydration window.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, role]);
+
+  // ADMIN with exactly one company — auto-select and go straight to /overview
+  useEffect(() => {
+    if (role !== "ADMIN" || loading || companies.length !== 1) return;
+    onSelectCompany(companies[0].companyId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role, loading, companies]);
 
   async function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
@@ -147,14 +154,6 @@ export default function CompanySelectPage() {
               {EmptyState}
               {CompanyList}
 
-              <div className="mt-6 text-center">
-                <button
-                  onClick={() => signOut({ callbackUrl: "/login" })}
-                  className="text-xs text-white/40 hover:text-white/70 underline transition"
-                >
-                  Sign out
-                </button>
-              </div>
             </div>
           )}
 
@@ -177,14 +176,6 @@ export default function CompanySelectPage() {
                   {EmptyState}
                   {CompanyList}
 
-                  <div className="mt-6 text-center">
-                    <button
-                      onClick={() => signOut({ callbackUrl: "/saaslogin" })}
-                      className="text-xs text-white/40 hover:text-white/70 underline transition"
-                    >
-                      Sign out
-                    </button>
-                  </div>
                 </div>
               }
               right={

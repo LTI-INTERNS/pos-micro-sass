@@ -34,14 +34,23 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
   }, [searchParams]);
 
   const editFields: EditField[] = [
-    { name: "type", label: "Supplier Type" },
-    { name: "name", label: "Supplier Name" },
-    { name: "phone", label: "Phone", type: "number" },
-    { name: "email", label: "Email" },
-    { name: "coverarea", label: "Cover Area" },
-    { name: "regNo", label: "Registration No" },
-    { name: "branches", label: "Branches" },
-  ];
+  {
+  name: "type",
+  label: "Supplier Type",
+  type: "select",
+  options: [
+    { label: "Individual", value: "Individual" },
+    { label: "Company", value: "Company" },
+  ],
+},
+  { name: "name", label: "Supplier Name" },
+  { name: "address", label: "Address" },
+  { name: "phone", label: "Phone", type: "number" },
+  { name: "email", label: "Email" },
+  { name: "coverarea", label: "Cover Area" },
+  { name: "regNo", label: "Registration No" },
+  { name: "branches", label: "Branches" }, 
+];
 
   return (
     <>

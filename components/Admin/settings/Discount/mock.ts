@@ -19,6 +19,6 @@ export const mockDiscounts = [
     title: "Fly Dubayi(on total)",
     percentage: 50,
     createdDate: "2026-01-01",
-    endDate: "2026-01-15",
+    endDate: "2026-05-15",
   },
 ];

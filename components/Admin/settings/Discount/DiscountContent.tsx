@@ -22,19 +22,33 @@ export default function DiscountContent() {
   const [selectedDiscount, setSelectedDiscount] =
     useState<Discount | null>(null);
 
-  const [filters, setFilters] = useState<{ branch?: string }>({});
+  const [filters, setFilters] = useState<{ status?: string }>({});
+  const filterLabels: Record<string, string> = {
+    active: "Active",
+    expired: "Expired",
+  };
+  
 
-  const branchOptions = getFilterOptions(mockDiscounts, "branch");
+  const baseFilteredDiscounts = useTableFilters<Discount>({
+  data: mockDiscounts,
+  search,
+  start,
+  end,
+  dateKey: "createdDate",
+  searchKeys: ["id", "title"],
+  filters: {}, // ❗ don't pass status here
+});
 
-  const filteredDiscounts = useTableFilters<Discount>({
-    data: mockDiscounts,
-    search,
-    start,
-    end,
-    dateKey: "createdDate",
-    searchKeys: ["id", "title", "branch"],
-    filters,
-  });
+const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
+  if (!filters.status) return true;
+
+  const expired = new Date(d.endDate) < new Date();
+
+  if (filters.status === "active") return !expired;
+  if (filters.status === "expired") return expired;
+
+  return true;
+});
 
   const isFilterApplied = Object.values(filters).some(
     (v) => v && v.trim() !== ""
@@ -68,7 +82,13 @@ export default function DiscountContent() {
           onClearFilters={() => setFilters({})}
         />
 
-        <FilterChips filters={filters} onRemove={removeFilter} />
+       <FilterChips
+          filters={{
+            ...filters,
+            status: filters.status ? filterLabels[filters.status] : "",
+          }}
+          onRemove={removeFilter}
+        />
 
         <FilterPopup
           open={showFilter}
@@ -78,12 +98,15 @@ export default function DiscountContent() {
             setShowFilter(false);
           }}
           fields={[
-            {
-              name: "branch",
-              placeholder: "Branch",
-              options: branchOptions,
-            },
-          ]}
+  {
+    name: "status",
+    placeholder: "Status",
+    options: [
+      { label: "Active", value: "active" },
+      { label: "Expired", value: "expired" },
+    ],
+  },
+]}
         />
       </div>
 

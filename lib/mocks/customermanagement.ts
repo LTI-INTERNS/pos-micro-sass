@@ -27,4 +27,22 @@ export const customersData: Customer[] = [
     email: "kamal@coca.lk",
     outstanding: 0,
   },
+   {
+    id: 3,
+    name: "Kamal",
+    phone: "0719999999",
+    promoCard: "P02",
+    points: 70,
+    email: "kamal@coca.lk",
+    outstanding: 0,
+  },
+   {
+    id: 4,
+    name: "Kamal",
+    phone: "0719999999",
+    promoCard: "P02",
+    points: 120,
+    email: "kamal@coca.lk",
+    outstanding: 0,
+  },
 ];
