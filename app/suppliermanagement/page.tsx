@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import SupplierActionsBar from "@/components/Admin/suppliermanagement/SupplierActionBar";

@@ -1,7 +1,6 @@
 "use client";
 
 import ActionButton from "@/components/Admin/common/ActionButton";
-
 import { Product } from "@/lib/services";
 
 type Props = {
@@ -10,6 +9,8 @@ type Props = {
   onDelete: () => void;
   onEdit: () => void;
   onAddNew: () => void;
+  onAddVariant?: () => void; //  new
+  userRole?: "owner" | "admin" | "manager";
 };
 
 export default function ProductActionsBar({
@@ -18,14 +19,18 @@ export default function ProductActionsBar({
   onDelete,
   onEdit,
   onAddNew,
+  onAddVariant,
+  userRole = "admin",
 }: Props) {
-  const requireSelection = (action: () => void) => {
+  const requireSelection = (action?: () => void) => {
     if (!selectedProduct) {
       alert("Please select a product first!");
       return;
     }
-    action();
+    action?.();
   };
+
+  const isManager = userRole === "manager";
 
   return (
     <div className="flex items-center gap-5">
@@ -34,21 +39,34 @@ export default function ProductActionsBar({
         onClick={() => requireSelection(onAddStock)}
       />
 
-      <ActionButton
-        label="Delete Product"
-        onClick={() => requireSelection(onDelete)}
-      />
+      {/*  Hide delete for manager */}
+      {!isManager && (
+        <ActionButton
+          label="Delete Product"
+          onClick={() => requireSelection(onDelete)}
+        />
+      )}
 
       <ActionButton
         label="Edit Product"
         onClick={() => requireSelection(onEdit)}
       />
 
+      {/*  Always visible */}
       <ActionButton
-        label="Add New Product"
+        label={isManager ? "Request New Product" : "Add New Product"}
         variant="primary"
         onClick={onAddNew}
       />
+
+      {/*  Only for manager */}
+      {isManager && (
+        <ActionButton
+          label="Add from Company Catalog"
+          variant="primary"
+          onClick={onAddVariant}
+        />
+      )}
     </div>
   );
 }

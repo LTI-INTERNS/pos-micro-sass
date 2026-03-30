@@ -3,7 +3,7 @@
 import React from "react";
 
 export type Column<T> = {
-  key: keyof T;
+  key: keyof T | string;
   label: string;
   align?: "left" | "right" | "center";
   render?: (row: T) => React.ReactNode;
@@ -85,7 +85,7 @@ function CommonTableInner<T extends { id?: string | number }>({
                         ALIGN_CLASS[col.align ?? "left"]
                       } text-gray-700`}
                     >
-                      {col.render ? col.render(row) : String(row[col.key])}
+                      {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key as string] ?? "")}
                     </td>
                   ))}
                 </tr>
