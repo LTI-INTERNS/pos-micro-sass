@@ -15,7 +15,7 @@ import { companyService, Company } from "@/lib/services/company-service";
 
 export default function CompanySelectPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
 
   const [companies, setCompanies]   = useState<Company[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -39,7 +39,6 @@ export default function CompanySelectPage() {
   }, []);
 
   useEffect(() => {
-    // Never act while NextAuth is still resolving the session.
     if (status === "loading") return;
     // Only redirect once the session is definitively gone — not during hydration.
     if (status === "unauthenticated") { router.replace("/saaslogin"); return; }
@@ -55,35 +54,75 @@ export default function CompanySelectPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, role]);
 
-  // ADMIN with exactly one company — auto-select and go straight to /overview
   useEffect(() => {
     if (role !== "ADMIN" || loading || companies.length !== 1) return;
     onSelectCompany(companies[0].companyId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, loading, companies]);
 
   async function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
+    setError("");
 
-    const chosen = companies.find(c => c.companyId === companyId);
+    const chosen = companies.find((c: Company) => c.companyId === companyId);
 
-    // Re-sign-in with the selected company so the NextAuth JWT is rewritten
-    // with the chosen companyId. Without this the middleware's companyId guard
-    // would reject the navigation to /overview (companyId is '' for OWNER/ADMIN
-    // until a company is explicitly selected).
-    await signIn('select-company', {
+    // Exchange the old token (companyId='') for a NEW backend JWT that has
+    // the selected companyId stamped in. The backend verifies ownership /
+    // assignment before issuing the fresh token.
+    let freshToken       = session?.user?.backendToken ?? "";
+    let freshCompanyName = chosen?.name ?? "";
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'}/api/v1/auth/select-company`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.user?.backendToken}`,
+          },
+          body: JSON.stringify({ companyId }),
+        }
+      );
+      const json = await res.json();
+      if (res.ok && json.success && json.data?.token) {
+        freshToken       = json.data.token;
+        freshCompanyName = json.data.companyName ?? freshCompanyName;
+      } else {
+        setError("Failed to select company. Please try again.");
+        setSelectedId("");
+        return;
+      }
+    } catch {
+      setError("Network error while selecting company. Please try again.");
+      setSelectedId("");
+      return;
+    }
+
+    // Re-sign-in with the brand-new token so NextAuth rewrites the session
+    // JWT with the companyId now present.
+    const result = await signIn("select-company", {
       redirect:    false,
       companyId,
-      companyName: chosen?.name        ?? '',
-      role:        session?.user?.role         ?? '',
-      email:       session?.user?.email        ?? '',
-      name:        session?.user?.name         ?? '',
-      branchId:    session?.user?.branchId     ?? '',
-      branchName:  session?.user?.branchName   ?? '',
-      token:       session?.user?.backendToken ?? '',
+      companyName: freshCompanyName,
+      role:        session?.user?.role       ?? "",
+      email:       session?.user?.email      ?? "",
+      name:        session?.user?.name       ?? "",
+      branchId:    session?.user?.branchId   ?? "",
+      branchName:  session?.user?.branchName ?? "",
+      token:       freshToken,
     });
 
-    router.push('/overview');
+    if (result?.error) {
+      setError("Failed to establish company session. Please try again.");
+      setSelectedId("");
+      return;
+    }
+
+    // Force NextAuth to propagate the new session before navigating so
+    // apiClient's getSession() carries the new token on the first /overview request.
+    await update();
+
+    router.push("/overview");
   }
 
   // ── Loading ──────────────────────────────────────────────────────────────────
@@ -123,7 +162,7 @@ export default function CompanySelectPage() {
 
   const CompanyList = companies.length > 0 ? (
     <div className="space-y-4">
-      {companies.map((c) => (
+      {companies.map((c: Company) => (
         <CompanySelectItem
           key={c.companyId}
           name={c.name}

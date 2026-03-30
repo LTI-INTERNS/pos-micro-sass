@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
@@ -7,6 +8,7 @@ import { formatCurrency } from "@/lib/context/formatCurrency";
 export type Cashier = {
   id: string;
   name: string;
+  imgUrl?: string | null;
   cashierNo: string;
   totalRevenue: number;
   email: string;
@@ -21,11 +23,43 @@ type Props = {
   onSelectRow?: (row: Cashier | null) => void;
 };
 
+function AvatarCell({ name, imgUrl }: { name: string; imgUrl?: string | null }) {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  return (
+    <div className="flex items-center gap-3">
+      {imgUrl ? (
+        <Image
+          src={imgUrl}
+          alt={name}
+          width={32}
+          height={32}
+          className="w-8 h-8 rounded-full object-cover shrink-0"
+        />
+      ) : (
+        <div className="w-8 h-8 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold shrink-0">
+          {initials}
+        </div>
+      )}
+      <span>{name}</span>
+    </div>
+  );
+}
+
 export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Cashier>[] = [
-    { key: "name", label: "Name" },
+    {
+      key: "name",
+      label: "Name",
+      render: (c) => <AvatarCell name={c.name} imgUrl={c.imgUrl} />,
+    },
     { key: "cashierNo", label: "Cashier No" },
     {
       key: "totalRevenue",
