@@ -15,8 +15,10 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
   const { data: session } = useSession();
   const { storeInfo } = useStoreInfo();
 
+  const role = session?.user?.role?.toUpperCase();
+  const isCompanyLevel = role === 'OWNER' || role === 'ADMIN';
+
   const handleLogout = async () => {
-    const role = session?.user?.role?.toUpperCase();
     // OWNER logs in via /saaslogin — send them back there on sign-out
     const callbackUrl = role === 'OWNER' ? '/saaslogin' : '/login';
     await signOut({ callbackUrl });
@@ -50,6 +52,11 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
       </div>
 
       <div className="flex items-center gap-4">
+        {!isCompanyLevel && storeInfo?.branchName && (
+          <span className="text-xs text-gray-400 font-medium">
+            {storeInfo.branchName}
+          </span>
+        )}
         <Clock variant="navbar" />
         <NotificationBell />
         <button

@@ -11,13 +11,14 @@ type Props = {
 
 export default function BranchesTable({ branches, selectedBranch, setSelectedBranch, }: Props) {
   const columns: Column<Branch>[] = [
-    { key: "id", label: "ID" },
+    // { key: "id", label: "ID" },
     { key: "name", label: "Name" },
+    { key: "city", label: "City" },
     { key: "phone", label: "Phone" },
     { key: "address", label: "Address" },
     { key: "regno", label: "Registration Number" },
     { key: "email", label: "Email" },
-    { key: "password", label: "Password", render: () => "••••••••" },
+    // { key: "password", label: "Password", render: () => "••••••••" },
   ];
 
   return (
