@@ -39,7 +39,6 @@ export default function CompanySelectPage() {
   }, []);
 
   useEffect(() => {
-    // Never act while NextAuth is still resolving the session.
     if (status === "loading") return;
     // Only redirect once the session is definitively gone — not during hydration.
     if (status === "unauthenticated") { router.replace("/saaslogin"); return; }
@@ -49,38 +48,59 @@ export default function CompanySelectPage() {
     if (role !== "OWNER" && role !== "ADMIN") { router.replace("/overview"); return; }
 
     fetchCompanies();
-  // router excluded from deps intentionally — new reference every render in
-  // App Router would cause this effect to re-fire and hit the unauthenticated
-  // branch during the session hydration window.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, role]);
 
-  // ADMIN with exactly one company — auto-select and go straight to /overview
   useEffect(() => {
     if (role !== "ADMIN" || loading || companies.length !== 1) return;
     onSelectCompany(companies[0].companyId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [role, loading, companies]);
 
   async function onSelectCompany(companyId: string) {
     setSelectedId(companyId);
+    setError("");
 
     const chosen = companies.find(c => c.companyId === companyId);
 
-    // Re-sign-in with the selected company so the NextAuth JWT is rewritten
-    // with the chosen companyId. Without this the middleware's companyId guard
-    // would reject the navigation to /overview (companyId is '' for OWNER/ADMIN
-    // until a company is explicitly selected).
+    let freshToken = session?.user?.backendToken ?? '';
+    let freshCompanyName = chosen?.name ?? '';
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'}/api/v1/auth/select-company`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session?.user?.backendToken}`,
+          },
+          body: JSON.stringify({ companyId }),
+        }
+      );
+      const json = await res.json();
+      if (res.ok && json.success && json.data?.token) {
+        freshToken       = json.data.token;
+        freshCompanyName = json.data.companyName ?? freshCompanyName;
+      } else {
+        setError("Failed to select company. Please try again.");
+        setSelectedId("");
+        return;
+      }
+    } catch {
+      setError("Network error while selecting company. Please try again.");
+      setSelectedId("");
+      return;
+    }
+
     await signIn('select-company', {
       redirect:    false,
       companyId,
-      companyName: chosen?.name        ?? '',
+      companyName: freshCompanyName,
       role:        session?.user?.role         ?? '',
       email:       session?.user?.email        ?? '',
       name:        session?.user?.name         ?? '',
       branchId:    session?.user?.branchId     ?? '',
       branchName:  session?.user?.branchName   ?? '',
-      token:       session?.user?.backendToken ?? '',
+      token:       freshToken,
     });
 
     router.push('/overview');
