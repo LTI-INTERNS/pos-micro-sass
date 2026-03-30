@@ -26,3 +26,25 @@ apiClient.interceptors.request.use(async (config) => {
 
     return config;
 });
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const code = error?.response?.data?.code;
+        const status = error?.response?.status;
+
+
+        if (status === 403 && code === 'NO_COMPANY_CONTEXT') {
+            const session = await getSession();
+            const role = session?.user?.role?.toUpperCase();
+            if (role === 'OWNER' || role === 'ADMIN') {
+                window.location.replace('/companyselection');
+            } else {
+                await signOut({ callbackUrl: '/login' });
+            }
+            return Promise.reject(error);
+        }
+
+        return Promise.reject(error);
+    },
+);
