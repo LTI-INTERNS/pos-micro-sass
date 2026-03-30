@@ -17,13 +17,7 @@ type SupplierPopUpProps = {
 };
 
 const baseFields: FieldConfig[] = [
-  {
-    name: "id",
-    label: "ID",
-    placeholder: "Auto generated",
-    type: "text",
-    disabled: true,
-  },
+  
 ];
 
 const cooperateTopFields: FieldConfig[] = [

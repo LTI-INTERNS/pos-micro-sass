@@ -32,7 +32,7 @@ export default function SupplierTable({
   const canManageSuppliers = userRole === "owner" || userRole === "admin";
 
   const columns: Column<Supplier>[] = [
-    { key: "id", label: "ID" },
+    
     { key: "type", label: "Type" },
     { key: "name", label: "Name" },
     { key: "address", label: "Address" },
