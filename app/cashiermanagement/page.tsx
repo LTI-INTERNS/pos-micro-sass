@@ -15,10 +15,6 @@ import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup"
 import { cashierService } from "@/lib/services/cashier-service";
 import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.types";
 
-// ── Adapter: backend ApiCashier → CashiersTable's local TableCashier ──────────
-// CashiersTable defines its own Cashier type with passwordMasked, pinMasked,
-// and status as "Active" | "Deactive". We adapt the backend shape here so the
-// rest of the page can work with the clean ApiCashier type.
 function toTableCashier(c: ApiCashier): TableCashier {
   return {
     id:             c.id,
@@ -40,17 +36,14 @@ export default function CashierManagementPage() {
 
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
-  // ── Server state (backend shape) ──────────────────────────────────────────
   const [cashiers, setCashiers]       = useState<ApiCashier[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [fetchError, setFetchError]   = useState("");
 
-  // ── UI state ──────────────────────────────────────────────────────────────
   const [query, setQuery]             = useState("");
   const [filterOpen, setFilterOpen]   = useState(false);
   const [addOpen, setAddOpen]         = useState(false);
 
-  // selectedCashier is the full ApiCashier — actions always work on this
   const [selectedCashier, setSelectedCashier] = useState<ApiCashier | null>(null);
 
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
@@ -65,7 +58,6 @@ export default function CashierManagementPage() {
     branch:       "",
   });
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchCashiers = useCallback(async () => {
     try {
       setLoadingData(true);
@@ -85,7 +77,6 @@ export default function CashierManagementPage() {
     if (!canSeeAllBranches) setFilters((prev) => ({ ...prev, branch: "" }));
   }, [canSeeAllBranches]);
 
-  // ── Filter fields ─────────────────────────────────────────────────────────
   const filterFields: SelectField[] = useMemo(() => {
     const branchOptions = canSeeAllBranches
       ? Array.from(new Set(cashiers.map((c) => c.branchName ?? "").filter(Boolean)))
@@ -115,7 +106,6 @@ export default function CashierManagementPage() {
     ];
   }, [canSeeAllBranches, cashiers]);
 
-  // ── Filter → adapt to TableCashier for the table ──────────────────────────
   const filteredTableCashiers: TableCashier[] = useMemo(() => {
     const q = query.trim().toLowerCase();
 
@@ -144,19 +134,16 @@ export default function CashierManagementPage() {
       .map(toTableCashier);
   }, [query, filters, cashiers, canSeeAllBranches, branchId]);
 
-  // ── Row selection bridge ───────────────────────────────────────────────────
-  // Table gives us a TableCashier row; we look up the full ApiCashier by id.
+
   function handleSelectRow(row: TableCashier | null) {
     if (!row) { setSelectedCashier(null); return; }
     setSelectedCashier(cashiers.find((c) => c.id === row.id) ?? null);
   }
 
-  // Derived table row for popups that expect TableCashier
   const selectedTableCashier: TableCashier | null = selectedCashier
     ? toTableCashier(selectedCashier)
     : null;
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   async function handleToggleStatus() {
     if (!selectedCashier) return;
     setActionLoading(true);
@@ -189,8 +176,6 @@ export default function CashierManagementPage() {
     }
   }
 
-  // EditEntityModal.onSave is typed as (values: T) => void (not async).
-  // We kick off the async call inside and surface errors via actionError.
   function handleEdit(updatedFields: TableCashier) {
     if (!selectedCashier) return;
     setActionLoading(true);
@@ -213,7 +198,6 @@ export default function CashierManagementPage() {
       .finally(() => setActionLoading(false));
   }
 
-  // ── CSV export ────────────────────────────────────────────────────────────
   function exportCsv(rows: TableCashier[]) {
     const header = ["Name", "Cashier No", "Total Revenue", "Email", "Status"];
 
@@ -287,6 +271,7 @@ export default function CashierManagementPage() {
         </div>
 
         <CashierActionsBar
+          role={role}
           onDeactivate={() => {
             if (!selectedCashier) {
               alert("Please select a cashier first!");
