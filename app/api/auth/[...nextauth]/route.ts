@@ -16,18 +16,7 @@ interface BackendJwt {
 
 export const authOptions: NextAuthOptions = {
     providers: [
-        /**
-         * Unified credentials provider — used by /login and /saaslogin.
-         *
-         * Flow:
-         *  1. Try staff login  (OWNER / ADMIN / MANAGER personal email + password)
-         *  2. If that fails, try branch login (branch email + password)
-         *  3. Encode the result type in `role` so the login form can route:
-         *       BRANCH_SESSION      → /switchuser        (cashier picks their avatar)
-         *       OWNER               → /companySelection  (via saaslogin)
-         *       ADMIN               → /companySelection or /overview
-         *       MANAGER             → /overview
-         */
+
         CredentialsProvider({
             id:   'credentials',
             name: 'Credentials',
@@ -83,10 +72,6 @@ export const authOptions: NextAuthOptions = {
             },
         }),
 
-        /**
-         * Cashier PIN provider — called after verify-pin confirms the PIN server-side.
-         * Creates the full CASHIER session that unlocks /posdashboard.
-         */
         CredentialsProvider({
             id:   'cashier-pin',
             name: 'Cashier PIN',
@@ -116,13 +101,6 @@ export const authOptions: NextAuthOptions = {
             },
         }),
 
-        /**
-         * Company selection provider — called when OWNER or ADMIN picks a company
-         * from the company selection page. Rewrites the JWT with the chosen companyId
-         * so the middleware's companyId guard is satisfied on the next navigation.
-         * All other session fields (role, backendToken, tokenExpiry, etc.) are
-         * preserved by passing them through as credentials.
-         */
         CredentialsProvider({
             id:   'select-company',
             name: 'Select Company',
@@ -165,15 +143,16 @@ export const authOptions: NextAuthOptions = {
                 token.companyName  = user.companyName;
                 token.backendToken = user.token;
 
-                // select-company re-sign-in: the backend JWT hasn't changed, so
-                // preserve the tokenExpiry already stored in the existing token
-                // rather than re-decoding (which would reset the clock to now).
                 if (account?.provider === 'select-company') {
-                    // tokenExpiry is already on the incoming token — keep it.
+                    try {
+                        const decoded     = jwtDecode<BackendJwt>(user.token);
+                        token.tokenExpiry = decoded.exp;
+                    } catch {
+                        // keep existing tokenExpiry as fallback
+                    }
                     return token;
                 }
 
-                // Decode expiry from the backend JWT immediately on first sign-in
                 try {
                     const decoded     = jwtDecode<BackendJwt>(user.token);
                     token.tokenExpiry = decoded.exp;
@@ -182,13 +161,12 @@ export const authOptions: NextAuthOptions = {
                     if (decoded.companyId) token.companyId = decoded.companyId;
                     if (decoded.branchId)  token.branchId  = decoded.branchId;
                 } catch {
-                    // jwtDecode failed — keep values from authorize()
+                   
                 }
 
                 return token;
             }
 
-            // Subsequent requests — check if backend token has expired
             if (token.tokenExpiry && Date.now() / 1000 > token.tokenExpiry) {
                 return { ...token, error: 'TokenExpired' as const };
             }
@@ -204,7 +182,6 @@ export const authOptions: NextAuthOptions = {
             session.user.companyName  = token.companyName;
             session.user.backendToken = token.backendToken;
 
-            // Surface token expiry error to the client
             if (token.error) session.error = token.error;
 
             return session;
@@ -212,10 +189,7 @@ export const authOptions: NextAuthOptions = {
     },
 
     pages: {
-        // OWNER logs in via /saaslogin, staff via /login.
-        // NextAuth uses this as the redirect target when auth fails.
-        // We use /saaslogin as the default since OWNER is the one who
-        // hits unauthenticated protected routes (/companySelection).
+  
         signIn: '/saaslogin',
     },
 
