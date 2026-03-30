@@ -1,3 +1,21 @@
+export interface ProductOptionValue {
+    optionName: string;
+    value: string;
+}
+
+export interface ProductVariant {
+    sku: string;
+    price: number;
+    imageUrl?: string;
+    barcode?: string;
+    optionValues?: ProductOptionValue[];
+}
+
+export interface ProductOption {
+    name: string;
+    values: string[];
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -11,6 +29,8 @@ export interface Product {
     status?: string;
     image?: string;
     description?: string;
+    options: ProductOption[];
+    variants: ProductVariant[];
 }
 
 export type CreateProductInput = Omit<Product, 'id'>;
