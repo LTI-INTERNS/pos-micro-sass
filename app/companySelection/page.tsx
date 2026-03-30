@@ -15,7 +15,7 @@ import { companyService, Company } from "@/lib/services/company-service";
 
 export default function CompanySelectPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
 
   const [companies, setCompanies]   = useState<Company[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -48,6 +48,10 @@ export default function CompanySelectPage() {
     if (role !== "OWNER" && role !== "ADMIN") { router.replace("/overview"); return; }
 
     fetchCompanies();
+  // router excluded from deps intentionally — new reference every render in
+  // App Router would cause this effect to re-fire and hit the unauthenticated
+  // branch during the session hydration window.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, role]);
 
   useEffect(() => {
@@ -59,10 +63,13 @@ export default function CompanySelectPage() {
     setSelectedId(companyId);
     setError("");
 
-    const chosen = companies.find(c => c.companyId === companyId);
+    const chosen = companies.find((c: Company) => c.companyId === companyId);
 
-    let freshToken = session?.user?.backendToken ?? '';
-    let freshCompanyName = chosen?.name ?? '';
+    // Exchange the old token (companyId='') for a NEW backend JWT that has
+    // the selected companyId stamped in. The backend verifies ownership /
+    // assignment before issuing the fresh token.
+    let freshToken       = session?.user?.backendToken ?? "";
+    let freshCompanyName = chosen?.name ?? "";
 
     try {
       const res = await fetch(
@@ -91,19 +98,31 @@ export default function CompanySelectPage() {
       return;
     }
 
-    await signIn('select-company', {
+    // Re-sign-in with the brand-new token so NextAuth rewrites the session
+    // JWT with the companyId now present.
+    const result = await signIn("select-company", {
       redirect:    false,
       companyId,
       companyName: freshCompanyName,
-      role:        session?.user?.role         ?? '',
-      email:       session?.user?.email        ?? '',
-      name:        session?.user?.name         ?? '',
-      branchId:    session?.user?.branchId     ?? '',
-      branchName:  session?.user?.branchName   ?? '',
+      role:        session?.user?.role       ?? "",
+      email:       session?.user?.email      ?? "",
+      name:        session?.user?.name       ?? "",
+      branchId:    session?.user?.branchId   ?? "",
+      branchName:  session?.user?.branchName ?? "",
       token:       freshToken,
     });
 
-    router.push('/overview');
+    if (result?.error) {
+      setError("Failed to establish company session. Please try again.");
+      setSelectedId("");
+      return;
+    }
+
+    // Force NextAuth to propagate the new session before navigating so
+    // apiClient's getSession() carries the new token on the first /overview request.
+    await update();
+
+    router.push("/overview");
   }
 
   // ── Loading ──────────────────────────────────────────────────────────────────
@@ -143,7 +162,7 @@ export default function CompanySelectPage() {
 
   const CompanyList = companies.length > 0 ? (
     <div className="space-y-4">
-      {companies.map((c) => (
+      {companies.map((c: Company) => (
         <CompanySelectItem
           key={c.companyId}
           name={c.name}
