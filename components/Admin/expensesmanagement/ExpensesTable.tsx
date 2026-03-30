@@ -24,7 +24,7 @@ export default function ExpensesTable({ Expenses, showBranch = false }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Expenses>[] = [
-    { key: "id", label: "ID" },
+    
     { key: "date", label: "Date" },
     { key: "category", label: "Category" },
     { key: "description", label: "Description" },

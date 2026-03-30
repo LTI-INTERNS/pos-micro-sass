@@ -24,10 +24,7 @@ export default function RecurringExpensesTable({ RecurringExpenses, showBranch =
   const { currency, useCents } = useCurrency();
   
   const columns: Column<RecurringExpenses>[] = [
-    {
-      key: "id",
-      label: "ID",
-    },
+    
     {
       key: "date",
       label: "Date",
