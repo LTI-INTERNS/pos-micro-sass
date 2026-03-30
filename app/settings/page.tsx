@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useSession } from "next-auth/react";
+import { useState } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import DiscountContent from "@/components/Admin/settings/Discount/DiscountContent";
@@ -12,65 +11,63 @@ import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetails
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
-type UserRole = "OWNER" | "ADMIN" | "MANAGER";
+type UserRole = "superadmin" | "admin" | "manager";
 
 type Tab = {
   id: string;
   label: string;
   shortLabel: string;
+  roles?: UserRole[]; // Optional roles property
+};
+
+const getTabs = (userRole: UserRole): Tab[] => {
+  const allTabs: Tab[] = [
+    { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
+    { id: "discountManagement", label: "Discount Management", shortLabel: "Discount" },
+    {
+      id: "companyDetails",
+      label: userRole === "superadmin" ? "Company Details" : "Branch Details",
+      shortLabel: userRole === "superadmin" ? "Company" : "Branch",
+    },
+    { 
+      id: "subscriptionPlan", 
+      label: "Subscription Plan", 
+      shortLabel: "Sub. Plan",
+      roles: ["superadmin"] // Only visible to superadmin
+    },
+    { id: "settings", label: "System Settings", shortLabel: "System" },
+  ];
+
+  // Filter tabs based on user role
+  return allTabs.filter(tab => {
+    // If no roles specified, show to everyone
+    if (!tab.roles) return true;
+    // Otherwise check if user role is in allowed roles
+    return tab.roles.includes(userRole);
+  });
 };
 
 export default function SettingPage() {
-  const { data: session, status } = useSession();
+  const userRole: UserRole = "manager" as UserRole;
+  const TABS = getTabs(userRole);
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
-
-  // Normalize role from session
-  const userRole = session?.user?.role?.toUpperCase() as UserRole;
-
-  const TABS = useMemo(() => {
-    if (!userRole) return [];
-
-    const tabs: Tab[] = [
-      { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
-      { id: "discountManagement", label: "Discount Management", shortLabel: "Discount" },
-    ];
-
-    // Role-based logic for Company/Branch Details tab
-    if (userRole === "OWNER") {
-      tabs.push({ id: "companyDetails", label: "Company Details", shortLabel: "Company" });
-    } else if (userRole === "MANAGER") {
-      tabs.push({ id: "companyDetails", label: "Branch Details", shortLabel: "Branch" });
-    }
-    // ADMIN sees neither Company nor Branch details
-
-    // Role-based logic for Subscription
-    if (userRole === "OWNER") {
-      tabs.push({ id: "subscriptionPlan", label: "Subscription Plan", shortLabel: "Sub. Plan" });
-    }
-
-    tabs.push({ id: "settings", label: "System Settings", shortLabel: "System" });
-
-    return tabs;
-  }, [userRole]);
-
-  if (status === "loading") return <DashboardLayout><div>Loading...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
         <TabSelector tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
 
-        {activeTab === "personalDetails" && <PersonalContent userRole={userRole} />}
-        
+        {activeTab === "personalDetails" && <PersonalContent />}
         {activeTab === "discountManagement" && <DiscountContent />}
         
-        {activeTab === "subscriptionPlan" && userRole === "OWNER" && (
+        {/* Only render subscription plan for superadmin */}
+        {activeTab === "subscriptionPlan" && userRole === "superadmin" && (
           <SubscriptionPlanCards defaultPlanId="basic" />
         )}
 
         {activeTab === "companyDetails" &&
-          (userRole === "OWNER" ? (
+          (userRole === "superadmin" ? (
             <CompanyDetailsForm
               initial={{
                 name: "ABC Pvt Ltd",
@@ -81,12 +78,17 @@ export default function SettingPage() {
                 
               }}
               logoUrl={companyLogoUrl}
-              onLogoChange={(url) => setCompanyLogoUrl(url)}
-              onSave={(data) => console.log("SAVE COMPANY", data)}
+              onLogoChange={(url, file) => {
+                console.log("Logo changed:", url, file);
+                setCompanyLogoUrl(url);
+              }}
+              onSave={(data) => {
+                console.log("SAVE COMPANY", data);
+              }}
             />
-          ) : userRole === "MANAGER" ? (
+          ) : (
+            <div className="flex-1 grid grid-rows-2 gap-4 min-h-0">
             <BranchDetailsForm
-              userRole={userRole}
               initial={{
                 name: "Colombo Branch",
                 email: "branch@gmail.com",
@@ -94,9 +96,37 @@ export default function SettingPage() {
                 address: "No 15, High Street, Colombo",
                 
               }}
-              onSave={(data) => console.log("SAVE BRANCH", data)}
+              onSave={(data) => {
+                console.log("SAVE BRANCH", data);
+              }}
             />
-          ) : null)}
+            <section className="bg-white rounded-xl border border-gray-100 flex flex-col min-h-0">
+                      <div className="px-6 py-3">
+                        <h2 className="text-md font-semibold text-gray-900">
+                          Change Password
+                        </h2>
+                      </div>
+            
+                      <div className="px-6 flex-1 overflow-auto min-h-0">
+                        <PasswordRow label="Current Password" placeholder="Enter Current Password" />
+                        <PasswordRow label="New Password" placeholder="Enter New Password" />
+                        <PasswordRow label="Confirm Password" placeholder="Enter Confirm Password" />
+                      </div>
+            
+                      <div className="px-6 py-2">
+                        <div className="flex justify-left">
+                          <ActionButton
+                            label="Change Password"
+                            variant="outline"
+                            fullWidth={false}
+                            className="w-55"
+                            onClick={() => alert("Change Password")}
+                          />
+                        </div>
+                      </div>
+                    </section>
+           </div>        
+          ))}
 
         {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>
