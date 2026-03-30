@@ -5,14 +5,7 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
 /**
  * POST /api/auth/verify-pin
  * Body: { cashierId, pin }
- *
- * Proxies the PIN check to the backend and returns the cashier's
- * session data on success. The frontend then calls signIn('cashier-pin')
- * with this data to establish the NextAuth session.
- *
- * Keeping verification server-side means the PIN never touches the browser
- * beyond the initial keystroke — the raw PIN is only sent over HTTPS to
- * this Next.js handler, which immediately forwards it to the backend.
+
  */
 export async function POST(req: NextRequest) {
     try {
@@ -35,7 +28,6 @@ export async function POST(req: NextRequest) {
         const result = await res.json();
 
         if (!res.ok || !result.success) {
-            // Surface the backend error code so the frontend can show the right message
             return NextResponse.json(
                 {
                     success: false,
@@ -46,7 +38,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Return cashier data — frontend will use this to call signIn('cashier-pin')
         return NextResponse.json({ success: true, data: result.data });
 
     } catch {
