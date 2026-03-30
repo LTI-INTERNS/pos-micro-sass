@@ -16,7 +16,7 @@ export default withAuth(
         // ── Company selection — OWNER and ADMIN only ─────────────────────────
         // Checked BEFORE the companyId guard — OWNER legitimately has no
         // companyId yet (they haven't selected one). Let them through.
-        if (pathname.startsWith('/companySelection')) {
+        if (pathname.startsWith('/companyselection')) {
             if (role !== 'OWNER' && role !== 'ADMIN') {
                 return NextResponse.redirect(new URL('/overview', req.url));
             }
@@ -68,7 +68,7 @@ export default withAuth(
 
 export const config = {
     matcher: [
-        '/companySelection/:path*',
+        '/companyselection/:path*',
         '/overview/:path*',
         '/posdashboard/:path*',
         '/switchuser/:path*',
