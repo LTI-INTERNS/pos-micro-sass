@@ -1,5 +1,6 @@
 export interface Branch {
     id: string;
+    city: string;
     name: string;
     phone: string;
     address: string;

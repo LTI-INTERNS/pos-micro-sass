@@ -57,7 +57,6 @@ export default function CashierManagementPage() {
   const role = session?.user?.role ?? "";
   const branchName = session?.user?.branchName ?? "";
 
-  // OWNER and ADMIN see all branches; MANAGER sees only their own branch
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
   const [query, setQuery] = useState("");
@@ -74,7 +73,6 @@ export default function CashierManagementPage() {
     branch: "",
   });
 
-  // OWNER / ADMIN see all cashiers; MANAGER sees only their branch
   const baseData = useMemo(() => {
     const all = mockCashiers as (Cashier & { branch?: string })[];
     return canSeeAllBranches
@@ -82,7 +80,6 @@ export default function CashierManagementPage() {
       : all.filter((c) => (c.branch ?? "") === branchName);
   }, [canSeeAllBranches, branchName]);
 
-  // Clear branch filter when role is MANAGER
   useEffect(() => {
     if (!canSeeAllBranches) {
       setFilters((prev) => ({ ...prev, branch: "" }));
@@ -101,7 +98,6 @@ export default function CashierManagementPage() {
       : [];
 
     return [
-      // Branch filter only for OWNER and ADMIN
       ...(canSeeAllBranches
         ? [
             {
@@ -193,6 +189,7 @@ export default function CashierManagementPage() {
   };
 
   const editFields: EditField[] = [
+    { name: "imgUrl", label: "Profile Photo", type: "image" },
     { name: "name", label: "Name" },
     { name: "cashierNo", label: "Cashier No" },
     { name: "email", label: "Email" },

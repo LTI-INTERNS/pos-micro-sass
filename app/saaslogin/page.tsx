@@ -52,7 +52,6 @@ export default function SaasLoginPage() {
     }
 
     startTransition(async () => {
-      // Use NextAuth credentials provider — same as POS login
       const result = await signIn("credentials", {
         email,
         password: pw,
@@ -65,51 +64,28 @@ export default function SaasLoginPage() {
         return;
       }
 
-      // Read session to get role
       const sessionRes = await fetch("/api/auth/session");
       const session    = await sessionRes.json();
       const role       = session?.user?.role?.toUpperCase();
 
-      if (role === "OWNER") {
-        window.location.href = "/companyselection";
+      if (role !== "OWNER") {
+        setFormError("This login is for owners only. Please use the staff login page.");
         return;
       }
 
-      if (role === "ADMIN") {
-        try {
-          const companiesRes = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
-            { headers: { Authorization: `Bearer ${session.user.backendToken}` } }
-          );
-          const companiesData = await companiesRes.json();
-          const companies: { companyId: string; name: string }[] =
-            companiesData?.data ?? [];
-
-          if (companies.length === 1) {
-            const only = companies[0];
-            await signIn("select-company", {
-              redirect:    false,
-              companyId:   only.companyId,
-              companyName: only.name,
-              role:        session.user.role        ?? "",
-              email:       session.user.email       ?? "",
-              name:        session.user.name        ?? "",
-              branchId:    session.user.branchId    ?? "",
-              branchName:  session.user.branchName  ?? "",
-              token:       session.user.backendToken ?? "",
-            });
-            window.location.href = "/overview";
-            return;
-          }
-        } catch {
-        
-        }
+      // Check if the owner has any companies — if not, send them to create one first
+      try {
+        const companiesRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
+          { headers: { Authorization: `Bearer ${session.user.backendToken}` } }
+        );
+        const companiesData = await companiesRes.json();
+        const hasCompanies  = (companiesData?.data?.length ?? 0) > 0;
+        window.location.href = hasCompanies ? "/companyselection" : "/companyregistration";
+      } catch {
+        // Fallback to company selection on network error
         window.location.href = "/companyselection";
-        return;
       }
-
-      // Any other role that somehow reaches saaslogin → send to overview
-      window.location.href = "/overview";
     });
   }
 
