@@ -1,12 +1,31 @@
 import { apiClient } from '@/lib/api-client';
-import { branchesData } from '@/lib/mocks/branchmanagement';
 import { Branch, CreateBranchInput, UpdateBranchInput } from '@/types/branch.types';
 
 export type { Branch, CreateBranchInput, UpdateBranchInput };
 
+interface BackendBranch {
+    branchId: string;
+    name:     string;
+    city?:    string;
+    phone:    string;
+    email:    string;
+    address:  string;
+}
+
 export const branchService = {
     getAll: (): Promise<Branch[]> =>
-        apiClient.get<Branch[]>('/branches').then(res => res.data).catch(() => branchesData),
+        apiClient
+            .get<{ success: boolean; data: BackendBranch[] }>('/branches')
+            .then(res =>
+                res.data.data.map((b): Branch => ({
+                    id:      b.branchId,
+                    name:    b.name,
+                    phone:   b.phone,
+                    email:   b.email,
+                    address: b.address,
+                    regno:   0,
+                }))
+            ),
 
     getById: (id: string): Promise<Branch> =>
         apiClient.get<Branch>(`branches/${id}`).then(res => res.data),
