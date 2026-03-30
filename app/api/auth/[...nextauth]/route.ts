@@ -1,5 +1,8 @@
-import NextAuth from 'next-auth';
+import NextAuth, { NextAuthOptions, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import type { JWT } from 'next-auth/jwt';
+import type { Session, Account } from 'next-auth';
+import type { AdapterUser } from 'next-auth/adapters';
 import { jwtDecode } from 'jwt-decode';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000';
@@ -11,7 +14,7 @@ interface BackendJwt {
     exp:       number;
 }
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
     providers: [
         /**
          * Unified credentials provider — used by /login and /saaslogin.
@@ -152,7 +155,7 @@ const handler = NextAuth({
     ],
 
     callbacks: {
-        async jwt({ token, user, account }) {
+        async jwt({ token, user, account }: { token: JWT; user: AdapterUser | User; account: Account | null }) {
             // First sign-in — map from authorize() return value
             if (user) {
                 token.role         = user.role;
@@ -193,7 +196,7 @@ const handler = NextAuth({
             return token;
         },
 
-        async session({ session, token }) {
+        async session({ session, token }: { session: Session; token: JWT }) {
             session.user.role         = token.role;
             session.user.branchId     = token.branchId;
             session.user.branchName   = token.branchName;
@@ -222,6 +225,8 @@ const handler = NextAuth({
     },
 
     secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

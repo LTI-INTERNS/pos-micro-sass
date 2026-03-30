@@ -8,16 +8,17 @@ type Props = {
   onNext: (data: Partial<RegistrationData>) => void;
   onBack: () => void;
   completedSteps: number;
+  submitting?: boolean;
 };
 
-export default function SubscriptionPlanStep({ data, onNext, onBack }: Props) {
-  const [selectedPlan, setSelectedPlan] = useState<string>(data.subscriptionPlan);
+export default function SubscriptionPlanStep({ data, onNext, onBack, submitting = false }: Props) {
+  const [selectedPlan, setSelectedPlan] = useState<string>(data.subId);
 
   const canProceed = selectedPlan.length > 0;
 
   const handleNext = () => {
-    if (!canProceed) return;
-    onNext({ subscriptionPlan: selectedPlan });
+    if (!canProceed || submitting) return;
+    onNext({ subId: selectedPlan });
   };
 
   return (
@@ -46,14 +47,14 @@ export default function SubscriptionPlanStep({ data, onNext, onBack }: Props) {
 
           <button
             onClick={handleNext}
-            disabled={!canProceed}
+            disabled={!canProceed || submitting}
             className={`font-semibold transition-opacity ${
-              canProceed
+              canProceed && !submitting
                 ? "hover:opacity-80 cursor-pointer"
                 : "opacity-40 cursor-not-allowed"
             }`}
           >
-            {"Next >"}
+            {submitting ? "Creating..." : "Next >"}
           </button>
         </div>
       </div>
