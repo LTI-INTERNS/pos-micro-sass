@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession, signIn} from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import { AlertCircle } from "lucide-react";
 
 import CommonLayout from "@/components/saas/common/CommonLayout";
@@ -22,6 +22,10 @@ export default function CompanySelectPage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
 
+  // Prevents the "unauthenticated → redirect to /saaslogin" guard from
+  // firing during the signOut → signIn window inside onSelectCompany.
+  const isSelectingCompany = useRef(false);
+
   const role = session?.user?.role?.toUpperCase();
 
   // ── Fetch companies from the real API ────────────────────────────────────────
@@ -40,8 +44,12 @@ export default function CompanySelectPage() {
 
   useEffect(() => {
     if (status === "loading") return;
-    // Only redirect once the session is definitively gone — not during hydration.
-    if (status === "unauthenticated") { router.replace("/saaslogin"); return; }
+    // Only redirect once the session is definitively gone — not during hydration
+    // and not while we're in the middle of the signOut → signIn swap.
+    if (status === "unauthenticated") {
+      if (!isSelectingCompany.current) router.replace("/saaslogin");
+      return;
+    }
     // Wait until role is hydrated — can be undefined briefly after navigation.
     if (!role) return;
     // Only OWNER and ADMIN reach this page.
@@ -65,10 +73,18 @@ export default function CompanySelectPage() {
 
     const chosen = companies.find((c: Company) => c.companyId === companyId);
 
-    // Exchange the old token (companyId='') for a NEW backend JWT that has
-    // the selected companyId stamped in. The backend verifies ownership /
-    // assignment before issuing the fresh token.
-    let freshToken       = session?.user?.backendToken ?? "";
+    // ── Snapshot session fields NOW — they become null after signOut ───────
+    const snapRole       = session?.user?.role       ?? "";
+    const snapEmail      = session?.user?.email      ?? "";
+    const snapName       = session?.user?.name       ?? "";
+    const snapBranchId   = session?.user?.branchId   ?? "";
+    const snapBranchName = session?.user?.branchName ?? "";
+    const oldBackendToken = session?.user?.backendToken ?? "";
+
+    // ── Step 1: Exchange old token for a fresh backend JWT ─────────────────
+    // The backend will blacklist the old token immediately after issuing the
+    // new one, so it can never be reused — even if it hasn't expired yet.
+    let freshToken       = oldBackendToken;
     let freshCompanyName = chosen?.name ?? "";
 
     try {
@@ -78,7 +94,7 @@ export default function CompanySelectPage() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.user?.backendToken}`,
+            Authorization: `Bearer ${oldBackendToken}`,
           },
           body: JSON.stringify({ companyId }),
         }
@@ -98,19 +114,29 @@ export default function CompanySelectPage() {
       return;
     }
 
-    // Re-sign-in with the brand-new token so NextAuth rewrites the session
-    // JWT with the companyId now present.
+    // ── Step 2: Clear the old NextAuth session (removes stale JWT cookie) ──
+    // Set the guard BEFORE signOut so the unauthenticated useEffect doesn't
+    // redirect to /saaslogin during the brief window between signOut and signIn.
+    isSelectingCompany.current = true;
+    await signOut({ redirect: false });
+
+    // ── Step 3: Create a brand-new session with the fresh backend token ────
+    // signOut above wiped the cookie, so signIn now writes a clean session
+    // that carries the new companyId and the newly issued backend token.
+    // Use the snapshotted values — session is null at this point.
     const result = await signIn("select-company", {
       redirect:    false,
       companyId,
       companyName: freshCompanyName,
-      role:        session?.user?.role       ?? "",
-      email:       session?.user?.email      ?? "",
-      name:        session?.user?.name       ?? "",
-      branchId:    session?.user?.branchId   ?? "",
-      branchName:  session?.user?.branchName ?? "",
+      role:        snapRole,
+      email:       snapEmail,
+      name:        snapName,
+      branchId:    snapBranchId,
+      branchName:  snapBranchName,
       token:       freshToken,
     });
+
+    isSelectingCompany.current = false;
 
     if (result?.error) {
       setError("Failed to establish company session. Please try again.");
@@ -118,8 +144,9 @@ export default function CompanySelectPage() {
       return;
     }
 
-    // Force NextAuth to propagate the new session before navigating so
-    // apiClient's getSession() carries the new token on the first /overview request.
+    // ── Step 4: Force NextAuth to propagate the new session ────────────────
+    // Ensures apiClient's getSession() carries the new token on the very
+    // first request after navigation.
     await update();
 
     router.push("/overview");
