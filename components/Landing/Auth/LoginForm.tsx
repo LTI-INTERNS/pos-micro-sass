@@ -9,6 +9,8 @@ import {
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+
 export default function LoginForm() {
   const [isLocked, setIsLocked]           = useState(false);
   const [form, setForm]                   = useState({ email: "", password: "" });
@@ -44,7 +46,6 @@ export default function LoginForm() {
 
       localStorage.removeItem("isLocked");
 
-      // Fetch the session to read the role returned by NextAuth authorize()
       const sessionRes = await fetch("/api/auth/session");
       const session    = await sessionRes.json();
       const role       = (session?.user?.role as string | undefined)?.toUpperCase();
@@ -53,7 +54,7 @@ export default function LoginForm() {
         case "ADMIN": {
           try {
             const companiesRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
+              `${API}/api/v1/auth/companies`,
               { headers: { Authorization: `Bearer ${session?.user?.backendToken}` } }
             );
             const companiesData = await companiesRes.json();
@@ -62,6 +63,23 @@ export default function LoginForm() {
 
             if (companies.length === 1) {
               const only = companies[0];
+
+              const exchangeRes = await fetch(`${API}/api/v1/auth/select-company`, {
+                method:  "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization:  `Bearer ${session?.user?.backendToken}`,
+                },
+                body: JSON.stringify({ companyId: only.companyId }),
+              });
+              const exchangeData = await exchangeRes.json();
+
+              if (!exchangeRes.ok || !exchangeData?.data?.token) {
+                throw new Error("Failed to select company. Please try again.");
+              }
+
+              const freshToken = exchangeData.data.token as string;
+
               await signIn("select-company", {
                 redirect:    false,
                 companyId:   only.companyId,
@@ -71,29 +89,32 @@ export default function LoginForm() {
                 name:        session?.user?.name         ?? "",
                 branchId:    session?.user?.branchId     ?? "",
                 branchName:  session?.user?.branchName   ?? "",
-                token:       session?.user?.backendToken ?? "",
+                token:       freshToken,
               });
+
               window.location.href = "/overview";
               return;
             }
-          } catch {
-
+          } catch (err) {
+            if (err instanceof Error) throw err;
           }
+          
           window.location.href = "/companyselection";
           break;
         }
+
         case "MANAGER":
-          // Single-branch role — go straight to dashboard
           window.location.href = "/overview";
           break;
+
         case "BRANCH_SESSION":
-          // Branch credentials matched — cashier must pick their avatar
           window.location.href = "/switchuser";
           break;
+
         case "CASHIER":
-          // Direct cashier login — go straight to POS
           window.location.href = "/posdashboard";
           break;
+
         default:
           throw new Error("Unrecognised account role. Please contact support.");
       }
