@@ -189,7 +189,7 @@ const Page = () => {
                 summary.customer
                   ? {
                     name: summary.customer.name ?? "",
-                    phoneNumber: summary.customer.phoneNumber ?? "",
+                    phoneNumber: summary.customer.phoneNumber1 ?? "",
                     email: summary.customer.email ?? "",
                   }
                   : null
