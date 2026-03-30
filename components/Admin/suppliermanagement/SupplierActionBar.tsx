@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import SupplierPopUp from "@/components/Admin/suppliermanagement/SupplierPopUp";
 import type { Supplier } from "@/components/Admin/suppliermanagement/SupplierTable";
-import EditEntityModal, {EditField} from "@/components/Admin/common/EditPopup";
+import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 
 type Props = {
   selectedSupplier: Supplier | null;
@@ -17,6 +18,20 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
   const [showPopup, setShowPopup] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+
+  // 🔹 Auto-open Add New Supplier popup when redirected from AddStockPopup
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setShowPopup(true);
+
+      // Clean up ?action=add from the URL without a re-render loop
+      const url = new URL(window.location.href);
+      url.searchParams.delete("action");
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, [searchParams]);
 
   const editFields: EditField[] = [
   {
@@ -58,7 +73,7 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
               alert("Please select a supplier first!");
               return;
             }
-            setEditPopupOpen(true); 
+            setEditPopupOpen(true);
           }}
         />
 
@@ -102,6 +117,7 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
           }}
         />
       )}
+
       {selectedSupplier && editPopupOpen && (
         <EditEntityModal<Supplier>
           open={editPopupOpen}
@@ -110,12 +126,11 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
           fields={editFields}
           onClose={() => setEditPopupOpen(false)}
           onSave={(updatedSupplier) => {
-            onEdit?.(updatedSupplier); // call parent handler
+            onEdit?.(updatedSupplier);
             setEditPopupOpen(false);
           }}
         />
       )}
-
     </>
   );
 }

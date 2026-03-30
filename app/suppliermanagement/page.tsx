@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import SupplierActionsBar from "@/components/Admin/suppliermanagement/SupplierActionBar";
@@ -90,13 +90,13 @@ export default function SupplierPage() {
   const canViewAllSuppliers = isOwner || isAdmin;
   const canManageSuppliers = isOwner || isAdmin;
 
-  useEffect(() => {
-    console.log("Session status:", status);
-    console.log("Full session:", session);
-    console.log("Raw session role:", session?.user?.role);
-    console.log("Normalized role:", role);
-    console.log("Branch name:", branchName);
-  }, [status, session, role, branchName]);
+  // useEffect(() => {
+  //   console.log("Session status:", status);
+  //   console.log("Full session:", session);
+  //   console.log("Raw session role:", session?.user?.role);
+  //   console.log("Normalized role:", role);
+  //   console.log("Branch name:", branchName);
+  // }, [status, session, role, branchName]);
 
   const branchFilteredSuppliers = canViewAllSuppliers
     ? suppliersList
@@ -210,11 +210,12 @@ export default function SupplierPage() {
         </div>
 
         {canManageSuppliers && (
-          <SupplierActionsBar
-            selectedSupplier={selectedSupplier}
-            onDelete={handleDeleteSupplier}
-            onEdit={(updatedSupplier: Supplier) => {
-              setSuppliersList((prev) =>
+          <Suspense fallback={null}>
+            <SupplierActionsBar
+              selectedSupplier={selectedSupplier}
+              onDelete={handleDeleteSupplier}
+              onEdit={(updatedSupplier: Supplier) => {
+                setSuppliersList((prev) =>
                 prev.map((s) =>
                   s.id === updatedSupplier.id ? updatedSupplier : s
                 )
@@ -222,6 +223,7 @@ export default function SupplierPage() {
               setSelectedSupplier(updatedSupplier);
             }}
           />
+          </Suspense>
         )}
 
         <SupplierTable
