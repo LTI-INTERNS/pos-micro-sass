@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import StatCardGrid from "@/components/Admin/productmanagement/productStarCardGrid";
@@ -60,7 +61,18 @@ function getBaseProduct(p: Product): Product {
 type UserRole = "owner" | "admin" | "manager";
 
 export default function DashboardPage() {
-  const userRole: UserRole = "manager"; // TODO: replace with session-derived role
+ const { data: session, status } = useSession();
+
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
+  const role = session?.user?.role?.toLowerCase();
+
+  const userRole: UserRole =
+    role === "owner" || role === "admin" || role === "manager"
+      ? (role as UserRole)
+      : "manager";
 
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
