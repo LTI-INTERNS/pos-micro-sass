@@ -73,8 +73,19 @@ export default function SaasLoginPage() {
         return;
       }
 
-      // Hard navigate so the fresh session cookie is sent with the request
-      window.location.href = "/companyselection";
+      // Check if the owner has any companies — if not, send them to create one first
+      try {
+        const companiesRes = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
+          { headers: { Authorization: `Bearer ${session.user.backendToken}` } }
+        );
+        const companiesData = await companiesRes.json();
+        const hasCompanies  = (companiesData?.data?.length ?? 0) > 0;
+        window.location.href = hasCompanies ? "/companyselection" : "/companyregistration";
+      } catch {
+        // Fallback to company selection on network error
+        window.location.href = "/companyselection";
+      }
     });
   }
 
