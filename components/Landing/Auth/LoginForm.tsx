@@ -10,10 +10,10 @@ import {
 import ActionButton from "@/components/Admin/common/ActionButton";
 
 export default function LoginForm() {
-  const [isLocked, setIsLocked]           = useState(false);
-  const [form, setForm]                   = useState({ email: "", password: "" });
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState("");
+  const [isLocked, setIsLocked] = useState(false);
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
   useEffect(() => {
@@ -26,6 +26,53 @@ export default function LoginForm() {
     setError("");
   };
 
+  const clearBranchSession = async () => {
+    try {
+      await fetch("/api/branch-session", { method: "DELETE" });
+    } catch {
+      // ignore
+    }
+  };
+
+const saveBranchSession = async (session: {
+  user?: {
+    branchId?: string;
+    branchName?: string;
+    companyId?: string;
+    companyName?: string;
+    backendToken?: string;
+  };
+}) => {
+  console.log("SENDING TO BRANCH SESSION API:", {
+    branchId: session?.user?.branchId,
+    branchName: session?.user?.branchName,
+    companyId: session?.user?.companyId,
+    companyName: session?.user?.companyName,
+    backendToken: session?.user?.backendToken ? "[present]" : "[missing]",
+  });
+
+  const res = await fetch("/api/branch-session", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      branchId: session?.user?.branchId ?? "",
+      branchName: session?.user?.branchName ?? "",
+      companyId: session?.user?.companyId ?? "",
+      companyName: session?.user?.companyName ?? "",
+      backendToken: session?.user?.backendToken ?? "",
+    }),
+  });
+
+  const data = await res.json();
+  console.log("BRANCH SESSION RESPONSE:", data);
+
+  if (!res.ok) {
+    throw new Error(data?.error || "Failed to create branch session");
+  }
+};
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
@@ -33,7 +80,7 @@ export default function LoginForm() {
 
     try {
       const result = await signIn("credentials", {
-        email:    form.email,
+        email: form.email,
         password: form.password,
         redirect: false,
       });
@@ -44,57 +91,67 @@ export default function LoginForm() {
 
       localStorage.removeItem("isLocked");
 
-      // Fetch the session to read the role returned by NextAuth authorize()
       const sessionRes = await fetch("/api/auth/session");
-      const session    = await sessionRes.json();
-      const role       = (session?.user?.role as string | undefined)?.toUpperCase();
+      const session = await sessionRes.json();
+      console.log("SESSION DEBUG:", session);
+      const role = (session?.user?.role as string | undefined)?.toUpperCase();
 
       switch (role) {
         case "ADMIN": {
+          await clearBranchSession();
+
           try {
             const companiesRes = await fetch(
               `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
               { headers: { Authorization: `Bearer ${session?.user?.backendToken}` } }
             );
+
             const companiesData = await companiesRes.json();
-            const companies: { companyId: string; name: string }[] =
-              companiesData?.data ?? [];
+            const companies: { companyId: string; name: string }[] = companiesData?.data ?? [];
 
             if (companies.length === 1) {
               const only = companies[0];
+
               await signIn("select-company", {
-                redirect:    false,
-                companyId:   only.companyId,
+                redirect: false,
+                companyId: only.companyId,
                 companyName: only.name,
-                role:        session?.user?.role         ?? "",
-                email:       session?.user?.email        ?? "",
-                name:        session?.user?.name         ?? "",
-                branchId:    session?.user?.branchId     ?? "",
-                branchName:  session?.user?.branchName   ?? "",
-                token:       session?.user?.backendToken ?? "",
+                role: session?.user?.role ?? "",
+                email: session?.user?.email ?? "",
+                name: session?.user?.name ?? "",
+                branchId: session?.user?.branchId ?? "",
+                branchName: session?.user?.branchName ?? "",
+                token: session?.user?.backendToken ?? "",
               });
+
               window.location.href = "/overview";
               return;
             }
           } catch {
-
+            // ignore and continue
           }
+
           window.location.href = "/companyselection";
           break;
         }
+
         case "MANAGER":
-          // Single-branch role — go straight to dashboard
+          await clearBranchSession();
           window.location.href = "/overview";
           break;
+
         case "BRANCH_SESSION":
-          // Branch credentials matched — cashier must pick their avatar
+          await saveBranchSession(session);
           window.location.href = "/switchuser";
           break;
+
         case "CASHIER":
-          // Direct cashier login — go straight to POS
+          await clearBranchSession();
           window.location.href = "/posdashboard";
           break;
+
         default:
+          await clearBranchSession();
           throw new Error("Unrecognised account role. Please contact support.");
       }
     } catch (err: unknown) {
