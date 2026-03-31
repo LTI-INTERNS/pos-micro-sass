@@ -13,6 +13,8 @@ import OrderConfirmation, { ConfirmItem } from "@/components/Pos/OrderConfirmati
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
 import { Check, X } from "lucide-react";
+import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
+import { usePosStore } from "@/store/usePosStore";
 
 function OrderCompletePopup({
   open,
@@ -25,13 +27,15 @@ function OrderCompletePopup({
 }) {
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
+      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
+        open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      }`}
       aria-hidden={!open}
     >
       <div
-        className={`relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden transform transition-all duration-300 ${open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
-          }`}
+        className={`relative w-full max-w-lg rounded-2xl bg-white shadow-xl overflow-hidden transform transition-all duration-300 ${
+          open ? "scale-100 translate-y-0" : "scale-95 translate-y-2"
+        }`}
       >
         <button
           onClick={onClose}
@@ -95,8 +99,6 @@ type SelectedCustomer = {
   email: string;
 } | null;
 
-import { usePosStore } from "@/store/usePosStore";
-
 const Page = () => {
   const { currency } = useCurrency();
   const { posSettings } = usePosSettings();
@@ -156,10 +158,17 @@ const Page = () => {
 
   return (
     <DashboardLayout>
+      <SessionExpiryGuard variant="pos" />
+
       <div className="flex gap-6 h-[calc(100vh-96px)]">
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="pt-2 shrink-0">
-            <SearchBar value={search} onChange={setSearch} placeholder="Search Name or ID" className="py-2" />
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Search Name or ID"
+              className="py-2"
+            />
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
@@ -188,10 +197,10 @@ const Page = () => {
               setSelectedCustomer(
                 summary.customer
                   ? {
-                    name: summary.customer.name ?? "",
-                    phoneNumber: summary.customer.phoneNumber1 ?? "",
-                    email: summary.customer.email ?? "",
-                  }
+                      name: summary.customer.name ?? "",
+                      phoneNumber: summary.customer.phoneNumber1 ?? "",
+                      email: summary.customer.email ?? "",
+                    }
                   : null
               );
 
@@ -213,7 +222,6 @@ const Page = () => {
         currencyCode={currency}
         forceEditable={paymentForceEditable}
         onDone={(summary) => {
-
           const summaryWithCustomer: PaymentSummary = {
             ...summary,
             customer: selectedCustomer,
@@ -234,7 +242,6 @@ const Page = () => {
           onClose={() => setConfirmOpen(false)}
           items={confirmItems}
           payment={paymentSummary}
-
           customerEmail={selectedCustomer?.email ?? null}
           onCancelEdit={() => {
             setConfirmOpen(false);
