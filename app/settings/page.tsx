@@ -1,23 +1,36 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+
+// Contents
 import DiscountContent from "@/components/Admin/settings/Discount/DiscountContent";
 import PersonalContent from "@/components/Admin/settings/PersonalDetails/PersonalContent";
 import SubscriptionPlanCards from "@/components/Admin/settings/subscriptionplan/SubscriptionPlanCards";
-import CompanyDetailsForm from "@/components/Admin/settings/Details/CompanyDetailsContent";
+import CompanyDetailsContent from "@/components/Admin/settings/Details/CompanyDetailsContent";
 import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetailsContent";
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 
 export default function SettingPage() {
   const { data: session, status } = useSession();
+  const { storeInfo } = useStoreInfo(); // Get data from your database context
+  
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   const userRole = session?.user?.role?.toLowerCase() || "";
 
+  // Sync the logo from the database context to the local state
+  useEffect(() => {
+    if (storeInfo?.logoUrl) {
+      setCompanyLogoUrl(storeInfo.logoUrl);
+    }
+  }, [storeInfo]);
+
+  // Define TABS (This was the missing part causing your error)
   const TABS = useMemo(() => {
     const tabs = [
       { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
@@ -52,16 +65,15 @@ export default function SettingPage() {
 
         {activeTab === "companyDetails" && (
           (userRole === "owner" || userRole === "superadmin") ? (
-            <CompanyDetailsForm
+            <CompanyDetailsContent
               initial={{
-                name: "ABC Pvt Ltd",
+                name: storeInfo?.storeName || "ABC Pvt Ltd",
                 regNo: "PV12345",
                 email: "abc@gmail.com",
                 phone: "+94 77 123 4567",
                 address: "No 10, Main Street, Colombo",
               }}
               logoUrl={companyLogoUrl}
-              onLogoChange={(url) => setCompanyLogoUrl(url)}
               onSave={(data) => console.log("SAVE COMPANY", data)}
             />
           ) : userRole === "manager" ? (
