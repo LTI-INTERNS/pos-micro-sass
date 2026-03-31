@@ -76,8 +76,9 @@ export default function Clock({ variant = "landing" }: ClockProps) {
   });
 
   return (
-    <span className="hidden sm:inline bg-gray-100 px-4 py-1 rounded-full text-[13px] font-bold text-gray-600">
-      {`${time} ${date}`}
+    <span className="hidden sm:inline-flex items-center justify-center gap-3 bg-gray-100 px-4 py-1 rounded-full text-[13px] font-bold text-gray-600 w-[170px]">
+      <span>{time}</span>
+      <span>{date}</span>
     </span>
   );
 }
