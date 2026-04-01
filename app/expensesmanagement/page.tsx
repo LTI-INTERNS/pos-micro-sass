@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
@@ -16,7 +17,6 @@ export default function ExpensesManagementPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
-    
         <TabSelector
           tabs={TABS}
           activeTab={activeTab}
