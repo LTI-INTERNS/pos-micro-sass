@@ -20,6 +20,7 @@ export const branchService = {
                 res.data.data.map((b): Branch => ({
                     id:      b.branchId,
                     name:    b.name,
+                    city:    b.city ?? '',
                     phone:   b.phone,
                     email:   b.email,
                     address: b.address,
