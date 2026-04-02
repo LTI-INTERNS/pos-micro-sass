@@ -36,6 +36,9 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user) return;
+    // Do not call the backend until a company has been selected —
+    // /auth/store-info requires requireCompany and will 403 otherwise.
+    if (!session.user.companyId) return;
 
     // ── Step 1: populate from session immediately (no network needed) ───────
     setStoreInfoState((prev) => ({

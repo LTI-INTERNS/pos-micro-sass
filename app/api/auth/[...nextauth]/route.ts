@@ -1,7 +1,7 @@
 import NextAuth, { NextAuthOptions, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import type { JWT } from 'next-auth/jwt';
-import type { Session, Account } from 'next-auth';
+import type { Session } from 'next-auth';
 import type { AdapterUser } from 'next-auth/adapters';
 import { jwtDecode } from 'jwt-decode';
 
@@ -133,8 +133,23 @@ export const authOptions: NextAuthOptions = {
     ],
 
     callbacks: {
-        async jwt({ token, user, account }: { token: JWT; user: AdapterUser | User; account: Account | null }) {
-            // First sign-in — map from authorize() return value
+        async jwt({ token, user, trigger, session: sessionUpdate }: { token: JWT; user: AdapterUser | User; trigger?: string; session?: { companyId?: string; companyName?: string; backendToken?: string } }) {
+
+            if (trigger === 'update' && sessionUpdate?.companyId) {
+                token.companyId    = sessionUpdate.companyId;
+                token.companyName  = sessionUpdate.companyName ?? token.companyName;
+                token.backendToken = sessionUpdate.backendToken ?? token.backendToken;
+                // Re-decode the new backend token to refresh tokenExpiry
+                if (sessionUpdate.backendToken) {
+                    try {
+                        const decoded     = jwtDecode<BackendJwt>(sessionUpdate.backendToken);
+                        token.tokenExpiry = decoded.exp;
+                    } catch { /* keep existing expiry */ }
+                }
+                return token;
+            }
+
+            // ── First sign-in — map from authorize() return value ─────────
             if (user) {
                 token.role         = user.role;
                 token.branchId     = user.branchId;
@@ -143,26 +158,14 @@ export const authOptions: NextAuthOptions = {
                 token.companyName  = user.companyName;
                 token.backendToken = user.token;
 
-                if (account?.provider === 'select-company') {
-                    try {
-                        const decoded     = jwtDecode<BackendJwt>(user.token);
-                        token.tokenExpiry = decoded.exp;
-                    } catch {
-                        // keep existing tokenExpiry as fallback
-                    }
-                    return token;
-                }
-
                 try {
                     const decoded     = jwtDecode<BackendJwt>(user.token);
                     token.tokenExpiry = decoded.exp;
-                    // Only override companyId/branchId from JWT if they are non-empty
-                    // OWNER has companyId '' until they select one — keep it as-is
+                    // Only override companyId/branchId from JWT if they are non-empty.
+                    // OWNER/ADMIN have companyId '' until they select one — keep it as-is.
                     if (decoded.companyId) token.companyId = decoded.companyId;
                     if (decoded.branchId)  token.branchId  = decoded.branchId;
-                } catch {
-                   
-                }
+                } catch { /* keep values from authorize() */ }
 
                 return token;
             }

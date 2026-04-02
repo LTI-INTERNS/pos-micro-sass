@@ -3,6 +3,7 @@
 import ActionButton from "@/components/Admin/common/ActionButton";
 
 type Props = {
+  role?: string;
   onDeactivate?: () => void;
   onDelete?: () => void;
   onEdit?: () => void;
@@ -11,25 +12,30 @@ type Props = {
 };
 
 export default function CashierActionsBar({
+  role,
   onDeactivate,
   onDelete,
   onEdit,
   onAdd,
   onExport,
 }: Props) {
+  const canDelete = role === "OWNER" || role === "ADMIN";
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+    <div className={`grid grid-cols-1 gap-3 ${canDelete ? "sm:grid-cols-5" : "sm:grid-cols-4"}`}>
       <ActionButton
         label="Activate / Deactivate Cashier"
         onClick={onDeactivate}
         variant="outline"
       />
 
-      <ActionButton
-        label="Delete Cashier"
-        onClick={onDelete}
-        variant="outline"
-      />
+      {canDelete && (
+        <ActionButton
+          label="Delete Cashier"
+          onClick={onDelete}
+          variant="outline"
+        />
+      )}
 
       <ActionButton
         label="Edit Cashier"
