@@ -1,89 +1,158 @@
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default withAuth(
-    function middleware(req) {
-        const token    = req.nextauth.token;
-        const pathname = req.nextUrl.pathname;
-        const role     = token?.role?.toUpperCase();
+function hasBranchSession(req: NextRequest) {
+  return Boolean(
+    req.cookies.get("branch_session_token")?.value &&
+    req.cookies.get("branch_session_ctx")?.value
+  );
+}
 
-        // Expired backend token — force back to appropriate login
-        if (token?.error === 'TokenExpired') {
-            const dest = role === 'OWNER' ? '/saaslogin' : '/login';
-            return NextResponse.redirect(new URL(dest, req.url));
-        }
+function isBranchOnlyPath(pathname: string) {
+  return pathname.startsWith("/switchuser") || pathname.startsWith("/pinentry");
+}
 
-        // ── Company selection — OWNER and ADMIN only ─────────────────────────
-        // Checked BEFORE the companyId guard — OWNER legitimately has no
-        // companyId yet (they haven't selected one). Let them through.
-        if (pathname.startsWith('/companyselection')) {
-            if (role !== 'OWNER' && role !== 'ADMIN') {
-                return NextResponse.redirect(new URL('/overview', req.url));
-            }
-            return NextResponse.next();
-        }
+function isCashierOnlyPath(pathname: string) {
+  return (
+    pathname.startsWith("/posdashboard") ||
+    pathname.startsWith("/customer-display")
+  );
+}
 
-        // Tenant identity must be present on all other protected routes.
-        // OWNER lands here when they try to access a page without having
-        // selected a company yet — send them back to saaslogin, not /login.
-        if (!token?.companyId) {
-            const dest = role === 'OWNER' ? '/saaslogin' : '/login';
-            return NextResponse.redirect(new URL(dest, req.url));
-        }
+function isPublicAuthPath(pathname: string) {
+  return (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/saaslogin") ||
+    pathname.startsWith("/forgotpassword") ||
+    pathname.startsWith("/resetpassword")
+  );
+}
 
-        // ── BRANCH_SESSION ───────────────────────────────────────────────────
-        // Only valid to visit /switchuser or /pinentry — must upgrade via PIN first
-        if (role === 'BRANCH_SESSION') {
-            if (!pathname.startsWith('/switchuser') && !pathname.startsWith('/pinentry')) {
-                return NextResponse.redirect(new URL('/switchuser', req.url));
-            }
-            return NextResponse.next();
-        }
+export async function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname;
 
-        // ── CASHIER — POS only ───────────────────────────────────────────────
-        if (role === 'CASHIER' && !pathname.startsWith('/posdashboard')) {
-            return NextResponse.redirect(new URL('/posdashboard', req.url));
-        }
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-        // ── STAFF (OWNER / ADMIN / MANAGER) — cannot access POS ─────────────
-        if (role !== 'CASHIER' && role !== 'BRANCH_SESSION' && pathname.startsWith('/posdashboard')) {
-            return NextResponse.redirect(new URL('/overview', req.url));
-        }
+  const role = typeof token?.role === "string" ? token.role.toUpperCase() : "";
+  const branchSessionExists = hasBranchSession(req);
 
-        // ── MANAGER — no branch management access ────────────────────────────
-        if (role === 'MANAGER' && pathname.startsWith('/branchmanagement')) {
-            return NextResponse.redirect(new URL('/overview', req.url));
-        }
-
-        return NextResponse.next();
-    },
-    {
-        callbacks: {
-            // Allow through if token exists and is not expired.
-            // OWNER with empty companyId is valid — they're heading to /companySelection.
-            authorized: ({ token }) => !!token && token.error !== 'TokenExpired',
-        },
+  // Expired NextAuth token
+  if (token?.error === "TokenExpired") {
+    if (branchSessionExists) {
+      return NextResponse.redirect(new URL("/switchuser", req.url));
     }
-);
+
+    const dest = role === "OWNER" ? "/saaslogin" : "/login";
+    return NextResponse.redirect(new URL(dest, req.url));
+  }
+
+  // No current NextAuth token, but branch session is still active
+  if (!token && branchSessionExists) {
+    if (isBranchOnlyPath(pathname)) {
+      return NextResponse.next();
+    }
+
+    if (!isPublicAuthPath(pathname)) {
+      return NextResponse.redirect(new URL("/switchuser", req.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // No auth at all
+  if (!token) {
+    const dest = pathname.startsWith("/companyselection") ? "/saaslogin" : "/login";
+    return NextResponse.redirect(new URL(dest, req.url));
+  }
+
+  // companyselection — OWNER and ADMIN only
+  if (pathname.startsWith("/companyselection")) {
+    if (role !== "OWNER" && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/overview", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  // All protected routes except companyselection need a company
+  if (!token.companyId) {
+    const dest = role === "OWNER" ? "/saaslogin" : "/login";
+    return NextResponse.redirect(new URL(dest, req.url));
+  }
+
+  // BRANCH_SESSION can only use switchuser/pinentry
+  if (role === "BRANCH_SESSION") {
+    if (!branchSessionExists) {
+      const url = new URL("/login", req.url);
+      url.searchParams.set("expired", "true");
+      return NextResponse.redirect(url);
+    }
+
+    if (!isBranchOnlyPath(pathname)) {
+      return NextResponse.redirect(new URL("/switchuser", req.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // CASHIER can access POS + customer display, and must also have a valid branch session
+  if (role === "CASHIER") {
+    if (!branchSessionExists) {
+      const url = new URL("/login", req.url);
+      url.searchParams.set("expired", "true");
+      return NextResponse.redirect(url);
+    }
+
+    if (isBranchOnlyPath(pathname)) {
+      return NextResponse.redirect(new URL("/posdashboard", req.url));
+    }
+
+    if (!isCashierOnlyPath(pathname)) {
+      return NextResponse.redirect(new URL("/posdashboard", req.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // OWNER / ADMIN / MANAGER should not access switchuser/pinentry
+  if (isBranchOnlyPath(pathname)) {
+    return NextResponse.redirect(new URL("/overview", req.url));
+  }
+
+  // STAFF / admin-side users cannot access cashier-only pages
+  if (isCashierOnlyPath(pathname)) {
+    return NextResponse.redirect(new URL("/overview", req.url));
+  }
+
+  // MANAGER cannot access branch management
+  if (role === "MANAGER" && pathname.startsWith("/branchmanagement")) {
+    return NextResponse.redirect(new URL("/overview", req.url));
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-    matcher: [
-        '/companyselection/:path*',
-        '/overview/:path*',
-        '/posdashboard/:path*',
-        '/switchuser/:path*',
-        '/pinentry/:path*',
-        '/staffmanagement/:path*',
-        '/customermanagement/:path*',
-        '/productmanagement/:path*',
-        '/ordermanagement/:path*',
-        '/cashiermanagement/:path*',
-        '/expensesmanagement/:path*',
-        '/profitcalculation/:path*',
-        '/suppliermanagement/:path*',
-        '/reports/:path*',
-        '/aiprediction/:path*',
-        '/branchmanagement/:path*',
-        '/settings/:path*',
-    ],
+  matcher: [
+    "/companyselection/:path*",
+    "/overview/:path*",
+    "/posdashboard/:path*",
+    "/customer-display/:path*",
+    "/switchuser/:path*",
+    "/pinentry/:path*",
+    "/staffmanagement/:path*",
+    "/customermanagement/:path*",
+    "/productmanagement/:path*",
+    "/ordermanagement/:path*",
+    "/cashiermanagement/:path*",
+    "/expensesmanagement/:path*",
+    "/profitcalculation/:path*",
+    "/suppliermanagement/:path*",
+    "/reports/:path*",
+    "/aiprediction/:path*",
+    "/branchmanagement/:path*",
+    "/settings/:path*",
+  ],
 };

@@ -16,7 +16,6 @@ type Details = {
 type DetailsFormProps = {
   initial?: Partial<Details>;
   readOnly?: boolean;
-  emailDisabled?: boolean; // New Prop
   onEditClick?: () => void;
   onSave?: (data: Details) => Promise<void> | void;
   className?: string;
@@ -26,7 +25,11 @@ type DetailsFormProps = {
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <div className="text-sm text-black/80 font-medium leading-6 lg:leading-10">{children}</div>;
+  return (
+    <div className="text-sm text-black/80 font-medium leading-6 lg:leading-10">
+      {children}
+    </div>
+  );
 }
 
 function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -37,7 +40,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         "w-full h-11 rounded-full bg-white px-5 text-sm",
         "border border-black/10 outline-none",
         "focus:border-black/30 focus:ring-2 focus:ring-black/10 text-black/80",
-        props.disabled ? "opacity-60 cursor-not-allowed bg-gray-50" : "",
+        props.disabled ? "opacity-60 cursor-not-allowed" : "",
         props.className ?? "",
       ].join(" ")}
     />
@@ -47,7 +50,6 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
 export default function DetailsForm({
   initial,
   readOnly = false,
-  emailDisabled = false, // Default to false
   onEditClick,
   onSave,
   className = "",
@@ -72,6 +74,7 @@ export default function DetailsForm({
 
   const [form, setForm] = useState<Details>(defaults);
 
+  // Fully typed set function
   const set = <K extends keyof Details>(key: K, value: Details[K]) =>
     setForm((p) => ({ ...p, [key]: value }));
 
@@ -91,15 +94,29 @@ export default function DetailsForm({
     }
   };
 
-  const FieldRow = ({ label, input }: { label: string; input: React.ReactNode }) => (
+  const FieldRow = ({
+    label,
+    input,
+  }: {
+    label: string;
+    input: React.ReactNode;
+  }) => (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 lg:gap-x-10 items-center">
-      <div className="lg:col-span-3"><FieldLabel>{label}</FieldLabel></div>
+      <div className="lg:col-span-3">
+        <FieldLabel>{label}</FieldLabel>
+      </div>
       <div className="lg:col-span-9">{input}</div>
     </div>
   );
 
   return (
-    <section className={["w-full rounded-md border bg-white shadow-sm p-5 sm:p-8", className].join(" ")}>
+    <section
+      className={[
+        "w-full rounded-md border bg-white shadow-sm",
+        "p-5 sm:p-8",
+        className,
+      ].join(" ")}
+    >
       <div className="space-y-4">
         <FieldRow
           label={includeLogo ? "Company Name" : "Branch Name"}
@@ -129,8 +146,7 @@ export default function DetailsForm({
           label="Email"
           input={
             <TextInput
-              // REQUIREMENT: Combined logic to ensure email is disabled for manager
-              disabled={isLocked || saving || emailDisabled}
+              disabled={isLocked || saving}
               value={form.email}
               onChange={(e) => set("email", e.target.value)}
               type="email"
@@ -163,6 +179,7 @@ export default function DetailsForm({
         
       </div>
 
+      {/* Logo Upload – Company only */}
       {includeLogo && onLogoChange && (
         <div className="pt-10">
           <LogoUploadSection
@@ -183,6 +200,7 @@ export default function DetailsForm({
             fullWidth={false}
             className="w-[220px]"
           />
+
           <ActionButton
             label={saving ? "Saving..." : "Save Changes"}
             variant="primary"

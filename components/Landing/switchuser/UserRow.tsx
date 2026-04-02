@@ -2,55 +2,40 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import UserAvatar from "@/components/Landing/switchuser/UserAvatar";
 
 type Cashier = {
-  cashierId:    string;
-  cashierNo:    string;
-  name:         string;
-  imgUrl:       string | null;
+  cashierId: string;
+  cashierNo: string;
+  name: string;
+  imgUrl: string | null;
   activeStatus: boolean;
 };
-
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 const FALLBACK_IMG = "https://i.pravatar.cc/150?img=";
 
 export default function UserRow() {
   const router = useRouter();
-  const { data: session, status } = useSession();
 
   const [cashiers, setCashiers] = useState<Cashier[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (status === "loading") return;
-
-    // Guard: must have a branch session to fetch cashiers
-    if (!session?.user?.branchId || !session?.user?.backendToken) {
-      router.replace("/login");
-      return;
-    }
-
     const fetchCashiers = async () => {
       setLoading(true);
       setError("");
+
       try {
-        const res = await fetch(
-          `${API}/api/v1/branches/${session.user.branchId}/cashiers`,
-          {
-            headers: {
-              Authorization: `Bearer ${session.user.backendToken}`,
-            },
-          }
-        );
+        const res = await fetch("/api/branch-session/cashiers", {
+          method: "GET",
+          cache: "no-store",
+        });
 
         const result = await res.json();
 
         if (!res.ok || !result.success) {
-          throw new Error(result.message ?? "Failed to load cashiers");
+          throw new Error(result.error ?? "Failed to load cashiers");
         }
 
         setCashiers(result.data as Cashier[]);
@@ -62,18 +47,20 @@ export default function UserRow() {
     };
 
     fetchCashiers();
-  }, [session, status, router]);
+  }, []);
 
   const handleSelectUser = (cashier: Cashier) => {
-    // Store selected cashier in sessionStorage for /pinentry
     sessionStorage.setItem(
       "cashier",
       JSON.stringify({
         cashierId: cashier.cashierId,
-        name:      cashier.name,
-        img:       cashier.imgUrl ?? `${FALLBACK_IMG}${Math.floor(Math.random() * 70) + 1}`,
+        name: cashier.name,
+        img:
+          cashier.imgUrl ??
+          `${FALLBACK_IMG}${Math.floor(Math.random() * 70) + 1}`,
       })
     );
+
     router.push("/pinentry");
   };
 

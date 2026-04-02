@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import TimeDisplay from "@/components/Landing/clock";
 import UserRow from "@/components/Landing/switchuser/UserRow";
 import { useImage } from "@/lib/context/ImageContext";
+import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 
 export default function SwitchUserScreen() {
   const router = useRouter();
@@ -13,13 +14,20 @@ export default function SwitchUserScreen() {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden text-white">
-      <Image
-        src={backgroundImage}
-        alt="Background"
-        fill
-        priority
-        className="object-cover"
-      />
+      <SessionExpiryGuard variant="switchuser" />
+
+      {backgroundImage && backgroundImage.trim() !== "" ? (
+        <Image
+          src={backgroundImage}
+          alt="Background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
+      )}
 
       <div className="absolute inset-0 bg-black/20" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
