@@ -5,7 +5,12 @@ import { Order } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 
-export default function OrdersTable({ orders }: { orders: Order[] }) {
+type OrdersTableProps = {
+  orders: Order[];
+  onView: (order: Order) => void;
+};
+
+export default function OrdersTable({ orders, onView }: OrdersTableProps) {
   const { currency, useCents } = useCurrency();
 
   const orderColumns: Column<Order>[] = [
@@ -14,9 +19,29 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
     { key: "branch", label: "Branch" },
     { key: "cashier", label: "Cashier" },
     { key: "paymenttype", label: "Payment" },
-    { key: "totalamount", label: "Total Amount", align: "right", render: (row) => row.totalamount !== undefined ? formatCurrency(row.totalamount, currency, useCents) : "-" },
+    {
+      key: "totalamount",
+      label: "Total Amount",
+      align: "right",
+      render: (row) =>
+        row.totalamount !== undefined
+          ? formatCurrency(row.totalamount, currency, useCents)
+          : "-",
+    },
     { key: "status", label: "Status" },
-    { key: "action", label: "Action" },
+    {
+      key: "action",
+      label: "Action",
+      render: (row) => (
+        <button
+          type="button"
+          onClick={() => onView(row)}
+          className="rounded-md bg-orange-500 px-3 py-1 text-sm font-medium text-white transition hover:bg-orange-600"
+        >
+          View
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -24,6 +49,7 @@ export default function OrdersTable({ orders }: { orders: Order[] }) {
       title="Orders"
       data={orders}
       columns={orderColumns}
+      emptyMessage="No orders found"
     />
   );
 }
