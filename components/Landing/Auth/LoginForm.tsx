@@ -12,21 +12,57 @@ import ActionButton from "@/components/Admin/common/ActionButton";
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
 export default function LoginForm() {
-  const [isLocked, setIsLocked]           = useState(false);
   const [form, setForm]                   = useState({ email: "", password: "" });
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
-  useEffect(() => {
-    setIsLocked(localStorage.getItem("isLocked") === "true");
-  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
+
+  // ── Branch session helpers ──────────────────────────────────────────────────
+
+  const clearBranchSession = async () => {
+    try {
+      await fetch("/api/branch-session", { method: "DELETE" });
+    } catch {
+      // ignore — best-effort cleanup
+    }
+  };
+
+  const saveBranchSession = async (session: {
+    user?: {
+      branchId?: string;
+      branchName?: string;
+      companyId?: string;
+      companyName?: string;
+      backendToken?: string;
+    };
+  }) => {
+    const res = await fetch("/api/branch-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        branchId:     session?.user?.branchId    ?? "",
+        branchName:   session?.user?.branchName  ?? "",
+        companyId:    session?.user?.companyId   ?? "",
+        companyName:  session?.user?.companyName ?? "",
+        backendToken: session?.user?.backendToken ?? "",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to create branch session");
+    }
+  };
+
+  // ── Form submission ─────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,14 +80,14 @@ export default function LoginForm() {
         throw new Error("Invalid email or password");
       }
 
-      localStorage.removeItem("isLocked");
-
       const sessionRes = await fetch("/api/auth/session");
       const session    = await sessionRes.json();
       const role       = (session?.user?.role as string | undefined)?.toUpperCase();
 
       switch (role) {
         case "ADMIN": {
+          await clearBranchSession();
+
           try {
             const companiesRes = await fetch(
               `${API}/api/v1/auth/companies`,
@@ -98,24 +134,28 @@ export default function LoginForm() {
           } catch (err) {
             if (err instanceof Error) throw err;
           }
-          
+
           window.location.href = "/companyselection";
           break;
         }
 
         case "MANAGER":
+          await clearBranchSession();
           window.location.href = "/overview";
           break;
 
         case "BRANCH_SESSION":
+          await saveBranchSession(session);
           window.location.href = "/switchuser";
           break;
 
         case "CASHIER":
+          await clearBranchSession();
           window.location.href = "/posdashboard";
           break;
 
         default:
+          await clearBranchSession();
           throw new Error("Unrecognised account role. Please contact support.");
       }
     } catch (err: unknown) {
@@ -129,11 +169,6 @@ export default function LoginForm() {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {isLocked && (
-          <div className="text-center text-orange-300 text-sm bg-orange-500/10 border border-orange-400/30 rounded-xl p-3">
-            Screen is locked. Please log in to continue.
-          </div>
-        )}
 
         {error && <FormErrorMessage message={error} />}
 
