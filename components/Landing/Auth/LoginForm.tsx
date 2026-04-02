@@ -9,16 +9,14 @@ import {
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+
 export default function LoginForm() {
-  const [isLocked, setIsLocked] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [form, setForm]                   = useState({ email: "", password: "" });
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState("");
   const [showAgreement, setShowAgreement] = useState(false);
 
-  useEffect(() => {
-    setIsLocked(localStorage.getItem("isLocked") === "true");
-  }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,52 +24,45 @@ export default function LoginForm() {
     setError("");
   };
 
+  // ── Branch session helpers ──────────────────────────────────────────────────
+
   const clearBranchSession = async () => {
     try {
       await fetch("/api/branch-session", { method: "DELETE" });
     } catch {
-      // ignore
+      // ignore — best-effort cleanup
     }
   };
 
-const saveBranchSession = async (session: {
-  user?: {
-    branchId?: string;
-    branchName?: string;
-    companyId?: string;
-    companyName?: string;
-    backendToken?: string;
+  const saveBranchSession = async (session: {
+    user?: {
+      branchId?: string;
+      branchName?: string;
+      companyId?: string;
+      companyName?: string;
+      backendToken?: string;
+    };
+  }) => {
+    const res = await fetch("/api/branch-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        branchId:     session?.user?.branchId    ?? "",
+        branchName:   session?.user?.branchName  ?? "",
+        companyId:    session?.user?.companyId   ?? "",
+        companyName:  session?.user?.companyName ?? "",
+        backendToken: session?.user?.backendToken ?? "",
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to create branch session");
+    }
   };
-}) => {
-  console.log("SENDING TO BRANCH SESSION API:", {
-    branchId: session?.user?.branchId,
-    branchName: session?.user?.branchName,
-    companyId: session?.user?.companyId,
-    companyName: session?.user?.companyName,
-    backendToken: session?.user?.backendToken ? "[present]" : "[missing]",
-  });
 
-  const res = await fetch("/api/branch-session", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      branchId: session?.user?.branchId ?? "",
-      branchName: session?.user?.branchName ?? "",
-      companyId: session?.user?.companyId ?? "",
-      companyName: session?.user?.companyName ?? "",
-      backendToken: session?.user?.backendToken ?? "",
-    }),
-  });
-
-  const data = await res.json();
-  console.log("BRANCH SESSION RESPONSE:", data);
-
-  if (!res.ok) {
-    throw new Error(data?.error || "Failed to create branch session");
-  }
-};
+  // ── Form submission ─────────────────────────────────────────────────────────
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -80,7 +71,7 @@ const saveBranchSession = async (session: {
 
     try {
       const result = await signIn("credentials", {
-        email: form.email,
+        email:    form.email,
         password: form.password,
         redirect: false,
       });
@@ -89,12 +80,9 @@ const saveBranchSession = async (session: {
         throw new Error("Invalid email or password");
       }
 
-      localStorage.removeItem("isLocked");
-
       const sessionRes = await fetch("/api/auth/session");
-      const session = await sessionRes.json();
-      console.log("SESSION DEBUG:", session);
-      const role = (session?.user?.role as string | undefined)?.toUpperCase();
+      const session    = await sessionRes.json();
+      const role       = (session?.user?.role as string | undefined)?.toUpperCase();
 
       switch (role) {
         case "ADMIN": {
@@ -102,33 +90,49 @@ const saveBranchSession = async (session: {
 
           try {
             const companiesRes = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
+              `${API}/api/v1/auth/companies`,
               { headers: { Authorization: `Bearer ${session?.user?.backendToken}` } }
             );
-
             const companiesData = await companiesRes.json();
-            const companies: { companyId: string; name: string }[] = companiesData?.data ?? [];
+            const companies: { companyId: string; name: string }[] =
+              companiesData?.data ?? [];
 
             if (companies.length === 1) {
               const only = companies[0];
 
+              const exchangeRes = await fetch(`${API}/api/v1/auth/select-company`, {
+                method:  "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization:  `Bearer ${session?.user?.backendToken}`,
+                },
+                body: JSON.stringify({ companyId: only.companyId }),
+              });
+              const exchangeData = await exchangeRes.json();
+
+              if (!exchangeRes.ok || !exchangeData?.data?.token) {
+                throw new Error("Failed to select company. Please try again.");
+              }
+
+              const freshToken = exchangeData.data.token as string;
+
               await signIn("select-company", {
-                redirect: false,
-                companyId: only.companyId,
+                redirect:    false,
+                companyId:   only.companyId,
                 companyName: only.name,
-                role: session?.user?.role ?? "",
-                email: session?.user?.email ?? "",
-                name: session?.user?.name ?? "",
-                branchId: session?.user?.branchId ?? "",
-                branchName: session?.user?.branchName ?? "",
-                token: session?.user?.backendToken ?? "",
+                role:        session?.user?.role         ?? "",
+                email:       session?.user?.email        ?? "",
+                name:        session?.user?.name         ?? "",
+                branchId:    session?.user?.branchId     ?? "",
+                branchName:  session?.user?.branchName   ?? "",
+                token:       freshToken,
               });
 
               window.location.href = "/overview";
               return;
             }
-          } catch {
-            // ignore and continue
+          } catch (err) {
+            if (err instanceof Error) throw err;
           }
 
           window.location.href = "/companyselection";
@@ -165,11 +169,6 @@ const saveBranchSession = async (session: {
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-5">
-        {isLocked && (
-          <div className="text-center text-orange-300 text-sm bg-orange-500/10 border border-orange-400/30 rounded-xl p-3">
-            Screen is locked. Please log in to continue.
-          </div>
-        )}
 
         {error && <FormErrorMessage message={error} />}
 
