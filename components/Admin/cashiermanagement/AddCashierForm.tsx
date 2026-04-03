@@ -6,13 +6,17 @@ import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import ImageUploader from "@/components/Admin/common/ImageUploader";
+import { cashierService } from "@/lib/services/cashier-service";
+import { branchService } from "@/lib/services/branch-service";
+import type { Branch } from "@/types/branch.types";
 
 type FormValues = {
-  name: string;
-  number: string;
-  branchName: string;
-  email: string;
-  pin: string;
+  name:     string;
+  number:   string;
+  branchId: string;
+  email:    string;
+  phone:    string;
+  pin:      string;
 };
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
@@ -24,37 +28,62 @@ type AddCashierFormProps = {
 
 export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
   const { data: session } = useSession();
-  const role = session?.user?.role ?? "";
+  const role       = session?.user?.role       ?? "";
+  const branchId   = session?.user?.branchId   ?? "";
   const branchName = session?.user?.branchName ?? "";
 
   // Only OWNER and ADMIN can select a branch; MANAGER is locked to their own branch
   const canSelectBranch = role === "OWNER" || role === "ADMIN";
 
+  // ── Branch options (real data for OWNER / ADMIN) ──────────────────────────
+  const [branches, setBranches]               = React.useState<Branch[]>([]);
+  const [branchesLoading, setBranchesLoading] = React.useState(false);
+  const [branchError, setBranchError]         = React.useState("");
+  const [branchRetry, setBranchRetry]         = React.useState(0);
+
+  React.useEffect(() => {
+    if (!isOpen || !canSelectBranch) return;
+    setBranchesLoading(true);
+    setBranchError("");
+    branchService
+      .getAll()
+      .then((data) => { setBranches(data); setBranchError(""); })
+      .catch(() => {
+        setBranches([]);
+        setBranchError("Failed to load branches.");
+      })
+      .finally(() => setBranchesLoading(false));
+  }, [isOpen, canSelectBranch, branchRetry]);
+
+  const branchOptions = branches.map((b) => ({ value: b.id, label: b.name }));
+
+  // ── Form state ────────────────────────────────────────────────────────────
   const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(null);
 
-  const [formValues, setFormValues] = React.useState<FormValues>({
-    name: "",
-    number: "",
-    branchName: canSelectBranch ? "" : branchName,
-    email: "",
-    pin: "",
+  const emptyForm = (): FormValues => ({
+    name:     "",
+    number:   "",
+    branchId: canSelectBranch ? "" : branchId,
+    email:    "",
+    phone:    "",
+    pin:      "",
   });
 
-  const [errors, setErrors] = React.useState<FormErrors>({});
+  const [formValues, setFormValues] = React.useState<FormValues>(emptyForm);
+  const [errors, setErrors]         = React.useState<FormErrors>({});
+  const [saving, setSaving]         = React.useState(false);
+  const [saveError, setSaveError]   = React.useState("");
 
-  // Reset form when popup opens
+  // Reset form whenever the popup opens
   React.useEffect(() => {
     if (!isOpen) return;
-    setFormValues({
-      name: "",
-      number: "",
-      branchName: canSelectBranch ? "" : branchName,
-      email: "",
-      pin: "",
-    });
+    setFormValues(emptyForm());
     setProfileImageUrl(null);
     setErrors({});
-  }, [isOpen, canSelectBranch, branchName]);
+    setSaveError("");
+    setBranchRetry(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const setField = (name: keyof FormValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [name]: value }));
@@ -87,17 +116,21 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     }
 
     if (!formValues.number.trim()) {
-      newErrors.number = "Number is required";
+      newErrors.number = "Cashier number is required";
     }
 
-    if (!formValues.branchName) {
-      newErrors.branchName = "Please select a branch";
+    if (!formValues.branchId) {
+      newErrors.branchId = "Please select a branch";
     }
 
     if (!formValues.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
       newErrors.email = "Please enter a valid email address";
+    }
+
+    if (!formValues.phone.trim()) {
+      newErrors.phone = "Phone number is required";
     }
 
     if (!formValues.pin) {
@@ -111,22 +144,39 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
   };
 
   const resetForm = () => {
-    setFormValues({
-      name: "",
-      number: "",
-      branchName: canSelectBranch ? "" : branchName,
-      email: "",
-      pin: "",
-    });
+    setFormValues(emptyForm());
     setProfileImageUrl(null);
     setErrors({});
+    setSaveError("");
   };
 
-  const handleSave = () => {
-    if (validateForm()) {
-      console.log("Form submitted:", { ...formValues, profileImageUrl });
+  // ── Save ──────────────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    setSaving(true);
+    setSaveError("");
+
+    try {
+      await cashierService.create({
+        branchId:  formValues.branchId,
+        cashierNo: formValues.number,
+        name:      formValues.name,
+        email:     formValues.email,
+        phone:     formValues.phone,
+        pin:       formValues.pin,
+        ...(profileImageUrl ? { imgUrl: profileImageUrl } : {}),
+      });
       resetForm();
       onClose();
+    } catch (err: unknown) {
+      // Surface specific backend error messages when available
+      const message =
+        (err as { response?: { data?: { error?: { message?: string } } } })
+          ?.response?.data?.error?.message;
+      setSaveError(message ?? "Failed to create cashier. Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -135,9 +185,30 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     onClose();
   };
 
+  const branchPlaceholder = canSelectBranch
+    ? branchError
+      ? "Branch load failed"
+      : branchesLoading
+        ? "Loading branches…"
+        : "Select Branch"
+    : branchName;
+
   return (
     <ModalShell open={isOpen} title="Add New Cashier" onClose={handleCancel}>
       <div className="space-y-2 mt-[-4px]">
+
+        {/* Save error banner */}
+        {saveError && (
+          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-300">
+            {saveError}
+            <button
+              className="ml-3 underline text-red-400 hover:text-red-300"
+              onClick={() => setSaveError("")}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Profile Image */}
         <ImageUploader
@@ -172,24 +243,32 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
         <div>
           <FormField
             label="Branch Name"
-            placeholder={canSelectBranch ? "Select Branch" : branchName}
-            value={formValues.branchName}
-            onChange={(val) => canSelectBranch && setField("branchName", val)}
+            placeholder={branchPlaceholder}
+            value={formValues.branchId}
+            onChange={(val) => canSelectBranch && setField("branchId", val)}
             type="dropdown"
-            disabled={!canSelectBranch}
-            options={[
-              { value: "branch-a", label: "Branch A" },
-              { value: "branch-b", label: "Branch B" },
-              { value: "branch-c", label: "Branch C" },
-            ]}
+            disabled={!canSelectBranch || branchesLoading || !!branchError}
+            options={canSelectBranch ? branchOptions : []}
           />
           {!canSelectBranch && (
             <p className="text-xs text-gray-400 px-3 mt-1">
               Cashiers are added to your branch only.
             </p>
           )}
-          {errors.branchName && (
-            <p className="text-xs text-red-500 px-3">{errors.branchName}</p>
+          {branchError && (
+            <div className="flex items-center gap-2 px-3 mt-1">
+              <p className="text-xs text-red-500">{branchError}</p>
+              <button
+                className="text-xs text-orange-400 hover:text-orange-300 underline shrink-0"
+                onClick={() => setBranchRetry((n) => n + 1)}
+                disabled={branchesLoading}
+              >
+                {branchesLoading ? "Retrying…" : "Retry"}
+              </button>
+            </div>
+          )}
+          {errors.branchId && (
+            <p className="text-xs text-red-500 px-3">{errors.branchId}</p>
           )}
         </div>
 
@@ -203,6 +282,16 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
           <p className="text-xs text-red-500 px-3">{errors.email}</p>
         )}
 
+        {/* Phone — required by the backend */}
+        <FormField
+          label="Phone"
+          placeholder="Enter Phone Number"
+          value={formValues.phone}
+          onChange={(val) => setField("phone", val)}
+        />
+        {errors.phone && (
+          <p className="text-xs text-red-500 px-3">{errors.phone}</p>
+        )}
 
         <FormField
           label="PIN"
@@ -225,9 +314,10 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
                   variant: "secondary",
                 },
                 {
-                  label: "Save",
+                  label: saving ? "Saving…" : "Save",
                   onClick: handleSave,
                   variant: "primary",
+                  disabled: saving,
                 },
               ]}
             />
