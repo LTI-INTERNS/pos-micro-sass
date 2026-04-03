@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import StatCardGrid from "@/components/Admin/productmanagement/productStarCardGrid";
@@ -27,6 +29,7 @@ function toPopupProduct(p: Product) {
     id: p.id,
     name: p.name,
     category: p.category,
+    categoryId: p.categoryId,
     brand: "",
     description: p.description || "",
     options: (p.options ?? []).map((opt, i) => ({
@@ -60,7 +63,21 @@ function getBaseProduct(p: Product): Product {
 type UserRole = "owner" | "admin" | "manager";
 
 export default function DashboardPage() {
-  const userRole: UserRole = "manager"; // TODO: replace with session-derived role
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
+  const role = session?.user?.role?.toLowerCase();
+
+  const userRole: UserRole =
+    role === "owner" || role === "admin" || role === "manager"
+      ? (role as UserRole)
+      : "manager";
 
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,16 +103,51 @@ export default function DashboardPage() {
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const filters = urlFilters;
+  // Exclude UI state from actual data filters
+  const filters = useMemo(() => {
+    const { search, filterOpen, ...rest } = urlFilters;
+    return rest;
+  }, [urlFilters]);
+
   const setFilters = (newFilters: Record<string, string | null>) => {
-    Object.entries(newFilters).forEach(([k, v]) => setFilter(k, v));
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(newFilters).forEach(([k, v]) => {
+      if (v) params.set(k, v);
+      else params.delete(k);
+    });
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   useLowStockNotifications({ products, branchId: 1, branchName: "Colombo Branch", branchManager: "Nimal Perera" });
   useNegativeStockAlerts({ products, branchId: 1, branchName: "Colombo Branch", branchManager: "Nimal Perera" });
 
+  type EnrichedProduct = Product & {
+    numberOfVariants: string;
+    availability: string;
+    lowStockStatus: string;
+    branch: string;
+  };
+
+  const enrichedProducts: EnrichedProduct[] = useMemo(() => {
+    return products.map(p => {
+      const variantsCount = p.variants?.length || 0;
+      // Since backend doesn't send real branch/stock data yet, we infer/mock these for the UI filters:
+      const availabilityStr = "Available"; // Mocked
+      const isLowStock = "No"; // Mocked
+      const branchName = "All Branches"; // Mocked
+
+      return {
+        ...p,
+        numberOfVariants: String(variantsCount),
+        availability: availabilityStr,
+        lowStockStatus: isLowStock,
+        branch: branchName
+      };
+    });
+  }, [products]);
+
   const filteredProducts = useTableFilters({
-    data: products,
+    data: enrichedProducts,
     search,
     searchKeys: ["id", "name", "category"],
     filters,
@@ -128,26 +180,26 @@ export default function DashboardPage() {
   const editInitialData =
     editOpen && baseSelectedProduct
       ? {
-          name: baseSelectedProduct.name,
-          categoryId: baseSelectedProduct.category,
-          brand: "",
-          description: baseSelectedProduct.description || "",
-          options: (baseSelectedProduct.options ?? []).map((opt, i) => ({
-            id: i + 1,
-            name: opt.name,
-            values: opt.values,
-          })),
-          variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
-            id: i + 1,
-            sku: v.sku,
-            barcode: "",
-            imageUrl: v.imageUrl || "",
-            basePrice: String(v.price),
-            sellingPrice: String(v.price),
-            sellUnit: "Each",
-            optionValues: v.optionValues ?? [],
-          })),
-        }
+        name: baseSelectedProduct.name,
+        categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
+        brand: "",
+        description: baseSelectedProduct.description || "",
+        options: (baseSelectedProduct.options ?? []).map((opt, i) => ({
+          id: i + 1,
+          name: opt.name,
+          values: opt.values,
+        })),
+        variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
+          id: i + 1,
+          sku: v.sku,
+          barcode: "",
+          imageUrl: v.imageUrl || "",
+          basePrice: String(v.price),
+          sellingPrice: String(v.price),
+          sellUnit: "Each",
+          optionValues: v.optionValues ?? [],
+        })),
+      }
       : null;
 
   // ── companyProduct ────────────────────────────────────────────────────────────
@@ -188,13 +240,17 @@ export default function DashboardPage() {
             open={filterOpen}
             onClose={() => setFilterOpen(false)}
             onApply={(values) => { setFilters(values); setFilterOpen(false); }}
-            fields={[
-              { name: "category", placeholder: "Category", options: getFilterOptions(products, "category") },
-              { name: "discount", placeholder: "Discount", options: getFilterOptions(products, "discount") },
-              { name: "tax", placeholder: "Tax", options: getFilterOptions(products, "tax") },
-              { name: "stock", placeholder: "Stock", options: getFilterOptions(products, "stock") },
-              { name: "lowstock", placeholder: "Low Stock", options: getFilterOptions(products, "lowstock") },
-            ]}
+            fields={
+              userRole === "admin" || userRole === "owner" ? [
+                { name: "branch", placeholder: "Branch", options: getFilterOptions(enrichedProducts, "branch") },
+                { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
+                { name: "numberOfVariants", placeholder: "Number of Variants", options: getFilterOptions(enrichedProducts, "numberOfVariants") },
+              ] : [
+                { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
+                { name: "availability", placeholder: "Availability", options: getFilterOptions(enrichedProducts, "availability") },
+                { name: "lowStockStatus", placeholder: "Low Stock", options: getFilterOptions(enrichedProducts, "lowStockStatus") },
+              ]
+            }
           />
         </div>
 
@@ -212,7 +268,7 @@ export default function DashboardPage() {
           <div className="p-8 text-center text-slate-500">Loading products...</div>
         ) : (
           <ProductsTable
-            products={filteredProducts}
+            products={filteredProducts as unknown as Product[]}
             selectedProduct={selectedProduct}
             setSelectedProduct={setSelectedProduct}
             onView={(product: Product) => {
@@ -228,8 +284,20 @@ export default function DashboardPage() {
       <AddProductPopup
         open={productPopupOpen}
         onClose={handleProductPopupClose}
-        onSave={(updatedProduct) => {
-          console.log("SAVED:", updatedProduct);
+        onSave={async (updatedProduct) => {
+          try {
+            if (editOpen && baseSelectedProduct) {
+              const updated = await productService.update(baseSelectedProduct.id, updatedProduct as any);
+              setProducts(prev => prev.map(p => p.id === baseSelectedProduct.id ? updated as any : p));
+            } else {
+              const created = await productService.create(updatedProduct as any);
+              setProducts(prev => [...prev, created as any]);
+            }
+          } catch (error: any) {
+            console.error("Failed to save product:", error);
+            const msg = error.response?.data?.error?.message || error.response?.data?.message || error.message || "Failed to save product.";
+            alert(`Error from Server: ${msg}`);
+          }
           handleProductPopupClose();
         }}
         isAddVariantMode={addVariantOpen}
@@ -270,21 +338,29 @@ export default function DashboardPage() {
           isOpen={deleteOpen}
           onClose={() => setDeleteOpen(false)}
           product={baseSelectedProduct}
-          onConfirm={({ deleteAll, selectedVariants }) => {
-            if (deleteAll) {
-              setProducts((prev) => prev.filter((p) => p.id !== baseSelectedProduct.id));
-            } else {
-              setProducts((prev) =>
-                prev.map((p) => {
-                  if (p.id !== baseSelectedProduct.id) return p;
-                  return {
-                    ...p,
-                    variants: p.variants.filter((v) => !selectedVariants.includes(v.sku)),
-                  };
-                })
-              );
+          onConfirm={async ({ deleteAll, selectedVariants }) => {
+            try {
+              if (deleteAll) {
+                await productService.delete(baseSelectedProduct.id);
+                setProducts((prev) => prev.filter((p) => p.id !== baseSelectedProduct.id));
+              } else {
+                // Future enhancement: deleting specific variants via backend
+                setProducts((prev) =>
+                  prev.map((p) => {
+                    if (p.id !== baseSelectedProduct.id) return p;
+                    return {
+                      ...p,
+                      variants: p.variants.filter((v) => !selectedVariants.includes(v.sku)),
+                    };
+                  })
+                );
+              }
+            } catch (error) {
+              console.error("Failed to delete product:", error);
+              alert("Failed to delete product.");
+            } finally {
+              setDeleteOpen(false);
             }
-            setDeleteOpen(false);
           }}
         />
       )}

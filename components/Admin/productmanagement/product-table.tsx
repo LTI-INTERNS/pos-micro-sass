@@ -1,25 +1,53 @@
 "use client";
 
+import { useState } from "react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import { Product } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { BranchStock, ProductWithBranches } from "@/lib/mocks/productmanagement";
+import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
 
 type Props = {
   products: Product[];
   selectedProduct: Product | null;
   setSelectedProduct: (p: Product | null) => void;
   onView: (p: Product) => void;
+  onToggleAvailability?: (productId: string, sku: string, available: boolean) => void;
   userRole?: "owner" | "admin" | "manager";
 };
 
+// ─── Supplier resolution helper ────────────────────────────────────────────────
+// Derives the supplier display string for a product based on branch stock data.
+// - All branches/variants share one supplier → show that supplier name
+// - Branches differ → "Multiple Suppliers"
+// - No branchStock → falls back to product.supplier
+
+function resolveSupplierDisplay(product: Product): string {
+  const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
+
+  if (!branchStock) return product.supplier ?? "—";
+
+  const allSuppliers = new Set<string>();
+  for (const branch of Object.values(branchStock)) {
+    for (const variantDetail of Object.values(branch)) {
+      if (variantDetail.supplier) {
+        allSuppliers.add(variantDetail.supplier);
+      }
+    }
+  }
+
+  if (allSuppliers.size === 0) return product.supplier ?? "—";
+  if (allSuppliers.size === 1) return [...allSuppliers][0];
+  return "Multiple Suppliers";
+}
+
 // ─── Flat variant row shape (manager view) ────────────────────────────────────
-// `id` satisfies CommonTable's  T extends { id?: string | number }  constraint.
 
 export type VariantRow = {
-  id: string;                  // = `${product.id}__${variant.sku}`
-  _product: Product;           // parent product — needed when row is selected
-  _sku: string;                // which variant was clicked
+  id: string;
+  _product: Product;
+  _sku: string;
   productName: string;
   variantLabel: string;
   sku: string;
@@ -27,15 +55,30 @@ export type VariantRow = {
   supplier: string;
   price: number;
   stockQty: number;
+  available: boolean;
 };
 
 function buildVariantRows(products: Product[]): VariantRow[] {
   const rows: VariantRow[] = [];
   for (const product of products) {
+    const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
+
     for (const variant of product.variants ?? []) {
       const variantLabel = variant.optionValues?.length
         ? variant.optionValues.map((o: { value: string }) => o.value).join(" · ")
         : variant.sku;
+
+      // Resolve availability — check any branch that carries this SKU
+      const branchDetail = branchStock
+        ? Object.values(branchStock)
+            .flatMap((b) => Object.entries(b))
+            .find(([sku]) => sku === variant.sku)?.[1]
+        : undefined;
+
+      const available: boolean =
+        (variant as typeof variant & { available?: boolean }).available ??
+        branchDetail?.available ??
+        true;
 
       rows.push({
         id: `${product.id}__${variant.sku}`,
@@ -48,6 +91,7 @@ function buildVariantRows(products: Product[]): VariantRow[] {
         supplier: product.supplier ?? "",
         price: variant.price,
         stockQty: (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
+        available,
       });
     }
   }
@@ -71,10 +115,22 @@ export default function ProductsTable({
   selectedProduct,
   setSelectedProduct,
   onView,
+  onToggleAvailability,
   userRole = "admin",
 }: Props) {
   const { currency, useCents } = useCurrency();
   const isManager = userRole === "manager";
+
+  // Local availability overrides keyed by row id (`productId__sku`).
+  // This makes the toggle respond instantly without waiting for the parent
+  // to propagate a products array update.
+  const [availabilityOverrides, setAvailabilityOverrides] = useState<Record<string, boolean>>({});
+
+  const handleToggle = (productId: string, sku: string, val: boolean) => {
+    const rowId = `${productId}__${sku}`;
+    setAvailabilityOverrides((prev) => ({ ...prev, [rowId]: val }));
+    onToggleAvailability?.(productId, sku, val);
+  };
 
   // ── Manager view — one row per variant ──────────────────────────────────────
   if (isManager) {
@@ -132,6 +188,28 @@ export default function ProductsTable({
         ),
       },
       {
+        key: "available",
+        label: "Availability",
+        render: (row) => {
+          const isAvailable = availabilityOverrides[row.id] ?? row.available;
+          return (
+            <div className="flex items-center gap-2">
+              <ToggleSwitch
+                enabled={isAvailable}
+                onChange={(val) => handleToggle(row._product.id as string, row._sku, val)}
+              />
+              <span
+                className={`text-[11px] font-medium ${
+                  isAvailable ? "text-green-600" : "text-gray-400"
+                }`}
+              >
+                {isAvailable ? "Available" : "Unavailable"}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
         key: "actions",
         label: "Actions",
         render: (row) => (
@@ -169,7 +247,18 @@ export default function ProductsTable({
   const productColumns: Column<Product>[] = [
     { key: "name", label: "Name" },
     { key: "category", label: "Category" },
-    { key: "supplier", label: "Supplier" },
+    {
+      key: "supplier",
+      label: "Supplier",
+      render: (row) => {
+        const display = resolveSupplierDisplay(row);
+        return (
+          <span className={display === "Multiple Suppliers" ? "text-orange-600 font-medium" : ""}>
+            {display}
+          </span>
+        );
+      },
+    },
     {
       key: "variants",
       label: "Variants",
