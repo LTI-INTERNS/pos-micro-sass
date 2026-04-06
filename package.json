@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
+    "@types/react-datepicker": "^6.2.0",
     "axios": "^1.13.5",
     "date-fns": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
