@@ -3,21 +3,18 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
+import type { BusinessTypeEnum, SubscriptionInfo } from "@/types/subscription.types";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type StoreInfo = {
-  storeName:   string;
-  branchName:  string;
-  cashierName: string;
-  telephone:   string;
-  logoUrl:     string | null;
-};
-
-const defaultStoreInfo: StoreInfo = {
-  storeName:   "",
-  branchName:  "",
-  cashierName: "",
-  telephone:   "",
-  logoUrl:     null,
+  storeName:    string;
+  branchName:   string;
+  cashierName:  string;
+  telephone:    string;
+  logoUrl:      string | null;
+  businessType: BusinessTypeEnum | "";   // e.g. "CAFE" | "SUPERMARKET" | ""
+  subscription: SubscriptionInfo | null; // null until the fetch resolves
 };
 
 type StoreInfoContextType = {
@@ -25,10 +22,38 @@ type StoreInfoContextType = {
   setStoreInfo: (info: Partial<StoreInfo>) => void;
 };
 
+// ── Defaults ──────────────────────────────────────────────────────────────────
+
+const defaultStoreInfo: StoreInfo = {
+  storeName:    "",
+  branchName:   "",
+  cashierName:  "",
+  telephone:    "",
+  logoUrl:      null,
+  businessType: "",
+  subscription: null,
+};
+
+// ── Backend response shape ────────────────────────────────────────────────────
+
+interface StoreInfoResponse {
+  success: boolean;
+  data: {
+    logoUrl:      string;
+    telephone:    string;
+    businessType: BusinessTypeEnum;
+    subscription: SubscriptionInfo;
+  };
+}
+
+// ── Context ───────────────────────────────────────────────────────────────────
+
 const StoreInfoContext = createContext<StoreInfoContextType>({
   storeInfo:    defaultStoreInfo,
   setStoreInfo: () => {},
 });
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -36,8 +61,11 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status !== "authenticated" || !session?.user) return;
+    // Do not call the backend until a company has been selected —
+    // /auth/store-info requires requireCompany and will 403 otherwise.
+    if (!session.user.companyId) return;
 
-    // ── Step 1: populate from session immediately (no network needed) ───────
+    // ── Step 1: populate from session immediately (no network needed) ────────
     setStoreInfoState((prev) => ({
       ...prev,
       storeName:   session.user.companyName || prev.storeName,
@@ -45,17 +73,17 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
       cashierName: session.user.name        || prev.cashierName,
     }));
 
-    // ── Step 2: fetch logoUrl and telephone from backend ────────────────────
+    // ── Step 2: fetch logoUrl, telephone, businessType and subscription ──────
     apiClient
-      .get<{ success: boolean; data: { logoUrl: string; telephone: string } }>(
-        "/auth/store-info",
-      )
+      .get<StoreInfoResponse>("/auth/store-info")
       .then(({ data: res }) => {
         if (!res.success) return;
         setStoreInfoState((prev) => ({
           ...prev,
-          logoUrl:   res.data.logoUrl   || prev.logoUrl,
-          telephone: res.data.telephone || prev.telephone,
+          logoUrl:      res.data.logoUrl      || prev.logoUrl,
+          telephone:    res.data.telephone    || prev.telephone,
+          businessType: res.data.businessType || prev.businessType,
+          subscription: res.data.subscription ?? prev.subscription,
         }));
       })
       .catch(() => {
@@ -75,6 +103,8 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
     </StoreInfoContext.Provider>
   );
 }
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useStoreInfo() {
   return useContext(StoreInfoContext);
