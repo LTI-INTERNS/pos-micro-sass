@@ -41,13 +41,18 @@ export type VariantRow = {
   id: string;
   _product: Product;
   _sku: string;
-  _variantId: string;       // needed for the PATCH call
+  _variantId: string;
   productName: string;
   variantLabel: string;
   sku: string;
   category: string;
   supplier: string;
-  price: number;
+  // Base prices from the product variant
+  basePrice: number;
+  sellingPrice: number;
+  // Branch-level overrides (null = not set, use base price)
+  priceOverride: number | null;
+  sellingPriceOverride: number | null;
   stockQty: number;
   available: boolean;
 };
@@ -58,6 +63,7 @@ function buildVariantRows(products: Product[]): VariantRow[] {
     const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
 
     for (const variant of product.variants ?? []) {
+      const vAny = variant as any;
       const variantLabel = variant.optionValues?.length
         ? variant.optionValues.map((o: { value: string }) => o.value).join(" · ")
         : variant.sku;
@@ -69,22 +75,29 @@ function buildVariantRows(products: Product[]): VariantRow[] {
         : undefined;
 
       const available: boolean =
-        (variant as typeof variant & { available?: boolean }).available ??
-        branchDetail?.available ??
-        true;
+        vAny.available ?? branchDetail?.available ?? true;
+
+      // Prices: prefer branch override, fall back to product base price
+      const basePrice    = Number(vAny.basePrice    ?? vAny.price ?? 0);
+      const sellingPrice = Number(vAny.sellingPrice ?? vAny.price ?? 0);
+      const priceOverride        = vAny.priceOverride        != null ? Number(vAny.priceOverride)        : null;
+      const sellingPriceOverride = vAny.sellingPriceOverride != null ? Number(vAny.sellingPriceOverride) : null;
 
       rows.push({
-        id:           `${product.id}__${variant.sku}`,
-        _product:     product,
-        _sku:         variant.sku,
-        _variantId:   (variant as typeof variant & { variantId?: string }).variantId ?? variant.sku,
-        productName:  product.name,
+        id:                   `${product.id}__${variant.sku}`,
+        _product:             product,
+        _sku:                 variant.sku,
+        _variantId:           vAny.variantId ?? variant.sku,
+        productName:          product.name,
         variantLabel,
-        sku:          variant.sku,
-        category:     product.category ?? "",
-        supplier:     product.supplier ?? "",
-        price:        variant.price,
-        stockQty:     (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
+        sku:                  variant.sku,
+        category:             product.category ?? "",
+        supplier:             product.supplier ?? "",
+        basePrice,
+        sellingPrice,
+        priceOverride,
+        sellingPriceOverride,
+        stockQty:             vAny.stockQty ?? 0,
         available,
       });
     }
@@ -200,13 +213,64 @@ export default function ProductsTable({
         render: (row) => <span>{row.supplier || "—"}</span>,
       },
       {
-        key: "price",
-        label: "Price",
-        render: (row) => (
-          <span className="text-orange-600 font-medium">
-            {formatCurrency(row.price, currency, useCents)}
-          </span>
-        ),
+        key: "basePrice",
+        label: "Base Price",
+        render: (row) => {
+          const effective  = row.priceOverride ?? row.basePrice;
+          const isOverride = row.priceOverride != null && row.priceOverride !== row.basePrice;
+          const overrideColor = row.priceOverride != null
+            ? row.priceOverride > row.basePrice
+              ? "text-green-600 font-semibold"    // higher than base → green
+              : row.priceOverride < row.basePrice
+                ? "text-orange-600 font-semibold" // lower than base  → orange
+                : "text-gray-700"                  // same             → default
+            : "text-gray-700";
+          return (
+            <span className="inline-flex items-center gap-1">
+              <span className={overrideColor}>
+                {formatCurrency(effective, currency, useCents)}
+              </span>
+              {isOverride && (
+                <span
+                  title={`Branch override (base: ${formatCurrency(row.basePrice, currency, useCents)})`}
+                  className="text-orange-500 text-[10px] font-bold leading-none select-none"
+                >
+                  ✦
+                </span>
+              )}
+            </span>
+          );
+        },
+      },
+      {
+        key: "sellingPrice",
+        label: "Selling Price",
+        render: (row) => {
+          const effective  = row.sellingPriceOverride ?? row.sellingPrice;
+          const isOverride = row.sellingPriceOverride != null && row.sellingPriceOverride !== row.sellingPrice;
+          const overrideColor = row.sellingPriceOverride != null
+            ? row.sellingPriceOverride > row.sellingPrice
+              ? "text-green-600 font-semibold"    // higher than base → green
+              : row.sellingPriceOverride < row.sellingPrice
+                ? "text-orange-600 font-semibold" // lower than base  → orange
+                : "text-gray-700"                  // same             → default
+            : "text-gray-700";
+          return (
+            <span className="inline-flex items-center gap-1">
+              <span className={overrideColor}>
+                {formatCurrency(effective, currency, useCents)}
+              </span>
+              {isOverride && (
+                <span
+                  title={`Branch override (base: ${formatCurrency(row.sellingPrice, currency, useCents)})`}
+                  className="text-orange-500 text-[10px] font-bold leading-none select-none"
+                >
+                  ✦
+                </span>
+              )}
+            </span>
+          );
+        },
       },
       {
         key: "stockQty",
