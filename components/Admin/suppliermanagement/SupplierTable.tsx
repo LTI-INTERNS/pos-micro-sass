@@ -1,18 +1,7 @@
 "use client";
 
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
-
-export type Supplier = {
-  id: number;
-  type: "Individual" | "Company";
-  name: string;
-  address: string;
-  phone: number;
-  email: string;
-  coverarea: string;
-  regNo: string;
-  branches: string[];
-};
+import type { Supplier } from "@/types/supplier.types";
 
 type Props = {
   suppliers: Supplier[];
@@ -27,19 +16,21 @@ export default function SupplierTable({
   setSelectedSupplier,
   userRole = "manager",
 }: Props) {
-  
   const canViewBranches = userRole === "owner" || userRole === "admin";
   const canManageSuppliers = userRole === "owner" || userRole === "admin";
 
   const columns: Column<Supplier>[] = [
-     {
-    key: "index",
-    label: "#",
-    render: (_, index) => index + 1,
-  },
-    
+    {
+      key: "index",
+      label: "#",
+      render: (_, index) => index + 1,
+    },
     { key: "type", label: "Type" },
-    { key: "name", label: "Name" },
+    {
+      key: "name",
+      label: "Name",
+      render: (row: Supplier) => row.type === "Company" ? (row.companyName || row.name) : row.name,
+    },
     { key: "address", label: "Address" },
     { key: "phone", label: "Phone" },
     { key: "email", label: "Email" },
