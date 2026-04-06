@@ -21,7 +21,15 @@ const customers = [
 function findCustomerByPhone(phone: string): CustomerFormValues | null {
   const found = customers.find((c) => c.phone === phone.trim());
   if (!found) return null;
-  return { name: found.name, phoneNumber: found.phone, email: found.email };
+  
+  // UPDATED: Changed 'phoneNumber' to 'phoneNumber1' and added 'activeState' 
+  // to match the CustomerFormValues type definition exactly.
+  return { 
+    name: found.name, 
+    phoneNumber1: found.phone, 
+    email: found.email,
+    activeState: true 
+  };
 }
 
 function fmt(currency: string, amount: number) {
@@ -257,7 +265,8 @@ function CustomerScreen({ customer }: { customer: CustomerFormValues }) {
         {customer.name?.[0]?.toUpperCase() ?? "?"}
       </div>
       <h2 className="text-2xl font-bold">{customer.name}</h2>
-      <p className="text-white/60 text-sm mt-1">{customer.phoneNumber}</p>
+      {/* UPDATED: Changed .phoneNumber to .phoneNumber1 */}
+      <p className="text-white/60 text-sm mt-1">{customer.phoneNumber1}</p>
       {customer.email && <p className="text-white/60 text-sm">{customer.email}</p>}
       <div className="mt-6 bg-white/10 rounded-2xl px-6 py-4 text-white/80 text-sm">
         Waiting for items to be added...
@@ -283,7 +292,8 @@ function BillingScreen({ customer, items, subtotal, total, formatter }: {
           </div>
           <div>
             <p className="font-semibold">{customer.name}</p>
-            <p className="text-white/60 text-xs">{customer.phoneNumber}</p>
+            {/* UPDATED: Changed .phoneNumber to .phoneNumber1 */}
+            <p className="text-white/60 text-xs">{customer.phoneNumber1}</p>
             <p className="text-white/60 text-xs">{customer.email}</p>
           </div>
         </div>
@@ -346,7 +356,8 @@ function PaymentPreviewScreen({ customer, summary, currency }: {
           </div>
           <div>
             <p className="font-semibold text-sm">{customer.name}</p>
-            <p className="text-white/60 text-xs">{customer.phoneNumber}</p>
+            {/* UPDATED: Changed .phoneNumber to .phoneNumber1 */}
+            <p className="text-white/60 text-xs">{customer.phoneNumber1}</p>
             <p className="text-white/60 text-xs">{customer.email}</p>
           </div>
         </div>
@@ -399,7 +410,8 @@ function PaymentSuccessScreen({ customer, summary, currency }: {
           </div>
           <div>
             <p className="font-semibold text-sm">{customer.name}</p>
-            <p className="text-white/60 text-xs">{customer.phoneNumber}</p>
+            {/* UPDATED: Changed .phoneNumber to .phoneNumber1 */}
+            <p className="text-white/60 text-xs">{customer.phoneNumber1}</p>
             <p className="text-white/60 text-xs">{customer.email}</p>
           </div>
         </div>
