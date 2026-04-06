@@ -86,13 +86,11 @@ export default function RegionalSettingsSection({
     if (!canEdit) return;
     onCountryChange(newCountry);
 
-    // Auto-update currency based on country
     const selectedCountry = COUNTRIES.find((c) => c.code === newCountry);
     if (selectedCountry) {
       onCurrencyChange(selectedCountry.currency);
     }
 
-    // Auto-update timezone based on country
     const tz = COUNTRY_TIMEZONE[newCountry];
     if (tz) {
       onTimezoneChange(tz);
@@ -100,12 +98,21 @@ export default function RegionalSettingsSection({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-xl font-semibold text-gray-900 mb-6">
-        Regional Settings
-      </h2>
+    <div className={`bg-white rounded-lg border border-gray-200 p-6 transition-opacity duration-200 ${
+      !canEdit ? "opacity-60 select-none grayscale-[0.2]" : ""
+    }`}>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Regional Settings
+        </h2>
+        {!canEdit && (
+          <span className="text-xs font-medium bg-gray-100 text-gray-500 px-2 py-1 rounded">
+            View Only
+          </span>
+        )}
+      </div>
 
-      <fieldset disabled={!canEdit} className="space-y-5">
+      <fieldset disabled={!canEdit} className={`space-y-5 ${!canEdit ? "pointer-events-none" : ""}`}>
         <FormField
           label="Country"
           type="dropdown"
@@ -127,9 +134,10 @@ export default function RegionalSettingsSection({
             label: c.name,
           }))}
         />
+
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-900">Use cents</h3>
+            <h3 className={`text-sm font-medium ${!canEdit ? "text-gray-400" : "text-gray-900"}`}>Use cents</h3>
             <p className="text-sm text-gray-500 mt-1">
               Enable decimal values for prices (e.g. 10.50 instead of 10)
             </p>
@@ -138,6 +146,8 @@ export default function RegionalSettingsSection({
           <ToggleSwitch
             enabled={useCents}
             onChange={canEdit ? onUseCentsChange : () => {}}
+            // If your ToggleSwitch supports a disabled prop, pass it here:
+            // disabled={!canEdit} 
           />
         </div>
 

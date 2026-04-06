@@ -14,6 +14,11 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Customer>[] = [
+     {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
     { key: "id", label: "ID", },
     { key: "name", label: "Name", },
     { key: "phone", label: "Phone", },

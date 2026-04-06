@@ -7,6 +7,7 @@ import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 import { BranchStock, ProductWithBranches } from "@/lib/mocks/productmanagement";
 import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
+import { apiClient } from "@/lib/api-client";
 
 type Props = {
   products: Product[];
@@ -17,26 +18,18 @@ type Props = {
   userRole?: "owner" | "admin" | "manager";
 };
 
-// ─── Supplier resolution helper ────────────────────────────────────────────────
-// Derives the supplier display string for a product based on branch stock data.
-// - All branches/variants share one supplier → show that supplier name
-// - Branches differ → "Multiple Suppliers"
-// - No branchStock → falls back to product.supplier
+// ─── Supplier resolution helper ───────────────────────────────────────────────
 
 function resolveSupplierDisplay(product: Product): string {
   const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
-
   if (!branchStock) return product.supplier ?? "—";
 
   const allSuppliers = new Set<string>();
   for (const branch of Object.values(branchStock)) {
     for (const variantDetail of Object.values(branch)) {
-      if (variantDetail.supplier) {
-        allSuppliers.add(variantDetail.supplier);
-      }
+      if (variantDetail.supplier) allSuppliers.add(variantDetail.supplier);
     }
   }
-
   if (allSuppliers.size === 0) return product.supplier ?? "—";
   if (allSuppliers.size === 1) return [...allSuppliers][0];
   return "Multiple Suppliers";
@@ -48,6 +41,7 @@ export type VariantRow = {
   id: string;
   _product: Product;
   _sku: string;
+  _variantId: string;       // needed for the PATCH call
   productName: string;
   variantLabel: string;
   sku: string;
@@ -68,7 +62,6 @@ function buildVariantRows(products: Product[]): VariantRow[] {
         ? variant.optionValues.map((o: { value: string }) => o.value).join(" · ")
         : variant.sku;
 
-      // Resolve availability — check any branch that carries this SKU
       const branchDetail = branchStock
         ? Object.values(branchStock)
             .flatMap((b) => Object.entries(b))
@@ -81,16 +74,17 @@ function buildVariantRows(products: Product[]): VariantRow[] {
         true;
 
       rows.push({
-        id: `${product.id}__${variant.sku}`,
-        _product: product,
-        _sku: variant.sku,
-        productName: product.name,
+        id:           `${product.id}__${variant.sku}`,
+        _product:     product,
+        _sku:         variant.sku,
+        _variantId:   (variant as typeof variant & { variantId?: string }).variantId ?? variant.sku,
+        productName:  product.name,
         variantLabel,
-        sku: variant.sku,
-        category: product.category ?? "",
-        supplier: product.supplier ?? "",
-        price: variant.price,
-        stockQty: (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
+        sku:          variant.sku,
+        category:     product.category ?? "",
+        supplier:     product.supplier ?? "",
+        price:        variant.price,
+        stockQty:     (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
         available,
       });
     }
@@ -98,7 +92,7 @@ function buildVariantRows(products: Product[]): VariantRow[] {
   return rows;
 }
 
-// ─── Typed helpers to work around React.memo generic inference ───────────────
+// ─── Typed helpers ────────────────────────────────────────────────────────────
 
 const VariantTable = CommonTable as <T extends { id?: string | number }>(
   props: React.ComponentProps<typeof CommonTable<T>>
@@ -107,6 +101,14 @@ const VariantTable = CommonTable as <T extends { id?: string | number }>(
 const ProductTable = CommonTable as <T extends { id?: string | number }>(
   props: React.ComponentProps<typeof CommonTable<T>>
 ) => React.ReactElement;
+
+// ─── Availability toggle state shape ─────────────────────────────────────────
+
+type ToggleState = {
+  value: boolean;      // current optimistic value
+  saving: boolean;     // request in-flight
+  error: boolean;      // last request failed
+};
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -121,15 +123,46 @@ export default function ProductsTable({
   const { currency, useCents } = useCurrency();
   const isManager = userRole === "manager";
 
-  // Local availability overrides keyed by row id (`productId__sku`).
-  // This makes the toggle respond instantly without waiting for the parent
-  // to propagate a products array update.
-  const [availabilityOverrides, setAvailabilityOverrides] = useState<Record<string, boolean>>({});
+  // Keyed by `productId__sku`. Tracks optimistic value + request state.
+  const [toggleStates, setToggleStates] = useState<Record<string, ToggleState>>({});
 
-  const handleToggle = (productId: string, sku: string, val: boolean) => {
+  const handleToggle = async (
+    productId: string,
+    sku: string,
+    variantId: string,
+    newValue: boolean
+  ) => {
     const rowId = `${productId}__${sku}`;
-    setAvailabilityOverrides((prev) => ({ ...prev, [rowId]: val }));
-    onToggleAvailability?.(productId, sku, val);
+
+    // 1. Optimistic update — UI responds immediately
+    setToggleStates((prev) => ({
+      ...prev,
+      [rowId]: { value: newValue, saving: true, error: false },
+    }));
+
+    // 2. Notify parent (for any local state sync)
+    onToggleAvailability?.(productId, sku, newValue);
+
+    try {
+      // 3. Persist to backend
+      await apiClient.patch(`/branch-variants/${variantId}/availability`, {
+        availability: newValue,
+      });
+
+      // 4. Mark save complete
+      setToggleStates((prev) => ({
+        ...prev,
+        [rowId]: { value: newValue, saving: false, error: false },
+      }));
+    } catch (err) {
+      console.error("Failed to update availability:", err);
+
+      // 5. Revert on failure
+      setToggleStates((prev) => ({
+        ...prev,
+        [rowId]: { value: !newValue, saving: false, error: true },
+      }));
+    }
   };
 
   // ── Manager view — one row per variant ──────────────────────────────────────
@@ -142,6 +175,11 @@ export default function ProductsTable({
       : undefined;
 
     const managerColumns: Column<VariantRow>[] = [
+       {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
       {
         key: "productName",
         label: "Product · Variant",
@@ -191,19 +229,34 @@ export default function ProductsTable({
         key: "available",
         label: "Availability",
         render: (row) => {
-          const isAvailable = availabilityOverrides[row.id] ?? row.available;
+          const ts = toggleStates[row.id];
+          // Use optimistic value if we've toggled this row, otherwise use data from API
+          const isAvailable = ts ? ts.value : row.available;
+          const isSaving    = ts?.saving ?? false;
+          const isError     = ts?.error  ?? false;
+
           return (
             <div className="flex items-center gap-2">
               <ToggleSwitch
                 enabled={isAvailable}
-                onChange={(val) => handleToggle(row._product.id as string, row._sku, val)}
+                // Disable while request is in-flight to prevent double-clicks
+                disabled={isSaving}
+                onChange={(val) =>
+                  handleToggle(row._product.id as string, row._sku, row._variantId, val)
+                }
               />
               <span
                 className={`text-[11px] font-medium ${
-                  isAvailable ? "text-green-600" : "text-gray-400"
+                  isError
+                    ? "text-red-500"
+                    : isSaving
+                    ? "text-gray-400"
+                    : isAvailable
+                    ? "text-green-600"
+                    : "text-gray-400"
                 }`}
               >
-                {isAvailable ? "Available" : "Unavailable"}
+                {isError ? "Failed — retry" : isSaving ? "Saving…" : isAvailable ? "Available" : "Unavailable"}
               </span>
             </div>
           );

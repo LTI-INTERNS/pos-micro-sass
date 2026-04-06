@@ -67,7 +67,6 @@ function ImageUploadField({
 
   return (
     <div className="grid grid-cols-12 gap-2 items-start">
-      {/* Label is linked to the file input via htmlFor/id — satisfies axe label rule */}
       <label
         htmlFor={inputId}
         className="col-span-4 text-sm text-gray-500 font-medium pt-2"
@@ -167,6 +166,12 @@ export default function EditEntityModal<T extends object>({
       <div className="space-y-4">
         {fields.map((field) => {
           const fieldId = `edit-field-${field.name}`;
+          
+          // Shared styles for disabled vs active state
+          const inputBaseClass = "w-full border px-4 py-2 outline-none transition-all duration-200";
+          const stateClass = field.readOnly 
+            ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed select-none" 
+            : "bg-white text-gray-600 border-gray-200 focus:border-orange-300 focus:ring-1 focus:ring-orange-100";
 
           if (field.type === "image") {
             return (
@@ -197,7 +202,7 @@ export default function EditEntityModal<T extends object>({
                     readOnly={field.readOnly}
                     placeholder={field.label}
                     onChange={(e) => handleChange(field.name, e.target.value)}
-                  className="w-full min-h-[100px] rounded-xl border px-4 py-3 text-sm"
+                    className={`${inputBaseClass} rounded-xl min-h-[100px] py-3 text-sm ${stateClass}`}
                   />
                 ) : field.type === "select" ? (
                   <select
@@ -206,7 +211,7 @@ export default function EditEntityModal<T extends object>({
                     disabled={field.readOnly}
                     title={field.label}
                     onChange={(e) => handleChange(field.name, e.target.value)}
-                    className="w-full rounded-full border px-4 py-2 outline-none text-gray-600 border-gray-200 bg-white"
+                    className={`${inputBaseClass} rounded-full ${stateClass}`}
                   >
                     <option value="">Select {field.label}</option>
                     {field.options?.map((option) => (
@@ -223,8 +228,7 @@ export default function EditEntityModal<T extends object>({
                     readOnly={field.readOnly}
                     placeholder={field.label}
                     onChange={(e) => handleChange(field.name, e.target.value)}
-                    className="w-full rounded-full border px-4 py-2 outline-none
-                      placeholder:text-gray-300 text-gray-600 border-gray-200"
+                    className={`${inputBaseClass} rounded-full placeholder:text-gray-300 ${stateClass}`}
                   />
                 )}
               </div>

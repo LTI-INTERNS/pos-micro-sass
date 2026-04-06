@@ -24,10 +24,12 @@ export default function RecurringExpensesTable({ RecurringExpenses, showBranch =
   const { currency, useCents } = useCurrency();
   
   const columns: Column<RecurringExpenses>[] = [
-    {
-      key: "id",
-      label: "ID",
-    },
+     {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
+    
     {
       key: "date",
       label: "Date",

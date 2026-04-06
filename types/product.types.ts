@@ -6,13 +6,17 @@ export interface ProductOptionValue {
 export interface ProductVariant {
     id: number;
     sku: string;
-    price: number; // Keep for backward compatibility if needed, or replace with base/selling
+    price: number;
     basePrice?: string;
     sellingPrice?: string;
     sellUnit?: string;
     imageUrl?: string;
     barcode?: string;
     optionValues?: ProductOptionValue[];
+    // ── Branch-level fields (populated from BranchVariant by the service) ──
+    stockQty?: number;       // ← ADDED: mapped from branchVariant.stockQty
+    lowStock?: number;       // ← ADDED: mapped from branchVariant.lowStock
+    available?: boolean;     // ← ADDED: mapped from branchVariant.availability
 }
 
 export interface ProductOption {
@@ -31,20 +35,19 @@ export interface Product {
     lowstock: number;
     category: string;
     categoryId?: string;
-    supplier: string;
+    supplier?: string;
     status?: string;
     image?: string;
     description?: string;
     options: ProductOption[];
     variants: ProductVariant[];
-    companyId?: string; // Add companyId
+    companyId?: string;
 }
 
-// Ensure the create payload matches the backend definition exactly
 export type CreateProductInput = {
     name: string;
-    categoryId: string; // The backend expects categoryId
-    companyId?: string; // Optional since the backend injects it from the session token
+    categoryId: string;
+    companyId?: string;
     brand: string;
     description: string;
     options: ProductOption[];
