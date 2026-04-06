@@ -1,13 +1,13 @@
 // ─── Business Type IDs ────────────────────────────────────────────────────────
 
 export type BusinessTypeId =
-  | "bt-001" // Cafe
-  | "bt-002" // Clothing
-  | "bt-003" // Supermarket
-  | "bt-004" // Pharmacy
-  | "bt-005" // Hardware
-  | "bt-006" // Bookshop
-  | "bt-007"; // Other
+  | "BT001" // Cafe
+  | "BT002" // Clothing
+  | "BT003" // Supermarket
+  | "BT004" // Pharmacy
+  | "BT005" // Hardware
+  | "BT006" // Bookshop
+  | "BT007"; // Other
 
 export type ProductCategory = {
   categoryId: string;
@@ -18,89 +18,89 @@ export type ProductCategory = {
 // ─── All categories ───────────────────────────────────────────────────────────
 
 export const ALL_PRODUCT_CATEGORIES: ProductCategory[] = [
-  // CAFE (bt-001)
-  { categoryId: "cat-001", businessTypeId: "bt-001", categoryName: "Beverages" },
-  { categoryId: "cat-002", businessTypeId: "bt-001", categoryName: "Hot Drinks" },
-  { categoryId: "cat-003", businessTypeId: "bt-001", categoryName: "Cold Drinks" },
-  { categoryId: "cat-004", businessTypeId: "bt-001", categoryName: "Breakfast Items" },
-  { categoryId: "cat-005", businessTypeId: "bt-001", categoryName: "Main Meals" },
-  { categoryId: "cat-006", businessTypeId: "bt-001", categoryName: "Snacks" },
-  { categoryId: "cat-007", businessTypeId: "bt-001", categoryName: "Desserts" },
-  { categoryId: "cat-008", businessTypeId: "bt-001", categoryName: "Bakery Items" },
-  { categoryId: "cat-009", businessTypeId: "bt-001", categoryName: "Combo Meals" },
-  { categoryId: "cat-010", businessTypeId: "bt-001", categoryName: "Add-ons & Extras" },
+  // CAFE (BT001)
+  { categoryId: "CAT001", businessTypeId: "BT001", categoryName: "Beverages" },
+  { categoryId: "CAT002", businessTypeId: "BT001", categoryName: "Hot Drinks" },
+  { categoryId: "CAT003", businessTypeId: "BT001", categoryName: "Cold Drinks" },
+  { categoryId: "CAT004", businessTypeId: "BT001", categoryName: "Breakfast Items" },
+  { categoryId: "CAT005", businessTypeId: "BT001", categoryName: "Main Meals" },
+  { categoryId: "CAT006", businessTypeId: "BT001", categoryName: "Snacks" },
+  { categoryId: "CAT007", businessTypeId: "BT001", categoryName: "Desserts" },
+  { categoryId: "CAT008", businessTypeId: "BT001", categoryName: "Bakery Items" },
+  { categoryId: "CAT009", businessTypeId: "BT001", categoryName: "Combo Meals" },
+  { categoryId: "CAT010", businessTypeId: "BT001", categoryName: "Add-ons & Extras" },
 
-  // CLOTHING (bt-002)
-  { categoryId: "cat-301", businessTypeId: "bt-002", categoryName: "Men's Wear" },
-  { categoryId: "cat-302", businessTypeId: "bt-002", categoryName: "Women's Wear" },
-  { categoryId: "cat-303", businessTypeId: "bt-002", categoryName: "Kids Wear" },
-  { categoryId: "cat-304", businessTypeId: "bt-002", categoryName: "Footwear" },
-  { categoryId: "cat-305", businessTypeId: "bt-002", categoryName: "Accessories" },
-  { categoryId: "cat-306", businessTypeId: "bt-002", categoryName: "Formal Wear" },
-  { categoryId: "cat-307", businessTypeId: "bt-002", categoryName: "Casual Wear" },
-  { categoryId: "cat-308", businessTypeId: "bt-002", categoryName: "Sportswear" },
-  { categoryId: "cat-309", businessTypeId: "bt-002", categoryName: "Innerwear" },
-  { categoryId: "cat-310", businessTypeId: "bt-002", categoryName: "Bags & Fashion Items" },
+  // CLOTHING (BT002)
+  { categoryId: "CAT301", businessTypeId: "BT002", categoryName: "Men's Wear" },
+  { categoryId: "CAT302", businessTypeId: "BT002", categoryName: "Women's Wear" },
+  { categoryId: "CAT303", businessTypeId: "BT002", categoryName: "Kids Wear" },
+  { categoryId: "CAT304", businessTypeId: "BT002", categoryName: "Footwear" },
+  { categoryId: "CAT305", businessTypeId: "BT002", categoryName: "Accessories" },
+  { categoryId: "CAT306", businessTypeId: "BT002", categoryName: "Formal Wear" },
+  { categoryId: "CAT307", businessTypeId: "BT002", categoryName: "Casual Wear" },
+  { categoryId: "CAT308", businessTypeId: "BT002", categoryName: "Sportswear" },
+  { categoryId: "CAT309", businessTypeId: "BT002", categoryName: "Innerwear" },
+  { categoryId: "CAT310", businessTypeId: "BT002", categoryName: "Bags & Fashion Items" },
 
-  // SUPERMARKET (bt-003)
-  { categoryId: "cat-101", businessTypeId: "bt-003", categoryName: "Fruits & Vegetables" },
-  { categoryId: "cat-102", businessTypeId: "bt-003", categoryName: "Dairy Products" },
-  { categoryId: "cat-103", businessTypeId: "bt-003", categoryName: "Meat & Seafood" },
-  { categoryId: "cat-104", businessTypeId: "bt-003", categoryName: "Bakery & Bread" },
-  { categoryId: "cat-105", businessTypeId: "bt-003", categoryName: "Beverages" },
-  { categoryId: "cat-106", businessTypeId: "bt-003", categoryName: "Frozen Foods" },
-  { categoryId: "cat-107", businessTypeId: "bt-003", categoryName: "Snacks & Confectionery" },
-  { categoryId: "cat-108", businessTypeId: "bt-003", categoryName: "Household Items" },
-  { categoryId: "cat-109", businessTypeId: "bt-003", categoryName: "Personal Care" },
-  { categoryId: "cat-110", businessTypeId: "bt-003", categoryName: "Baby Products" },
+  // SUPERMARKET (BT003)
+  { categoryId: "CAT101", businessTypeId: "BT003", categoryName: "Fruits & Vegetables" },
+  { categoryId: "CAT102", businessTypeId: "BT003", categoryName: "Dairy Products" },
+  { categoryId: "CAT103", businessTypeId: "BT003", categoryName: "Meat & Seafood" },
+  { categoryId: "CAT104", businessTypeId: "BT003", categoryName: "Bakery & Bread" },
+  { categoryId: "CAT105", businessTypeId: "BT003", categoryName: "Beverages" },
+  { categoryId: "CAT106", businessTypeId: "BT003", categoryName: "Frozen Foods" },
+  { categoryId: "CAT107", businessTypeId: "BT003", categoryName: "Snacks & Confectionery" },
+  { categoryId: "CAT108", businessTypeId: "BT003", categoryName: "Household Items" },
+  { categoryId: "CAT109", businessTypeId: "BT003", categoryName: "Personal Care" },
+  { categoryId: "CAT110", businessTypeId: "BT003", categoryName: "Baby Products" },
 
-  // PHARMACY (bt-004)
-  { categoryId: "cat-201", businessTypeId: "bt-004", categoryName: "Medicines" },
-  { categoryId: "cat-202", businessTypeId: "bt-004", categoryName: "Vitamins & Supplements" },
-  { categoryId: "cat-203", businessTypeId: "bt-004", categoryName: "Personal Care" },
-  { categoryId: "cat-204", businessTypeId: "bt-004", categoryName: "Baby Care" },
-  { categoryId: "cat-205", businessTypeId: "bt-004", categoryName: "Medical Equipment" },
-  { categoryId: "cat-206", businessTypeId: "bt-004", categoryName: "First Aid" },
-  { categoryId: "cat-207", businessTypeId: "bt-004", categoryName: "Health Drinks" },
-  { categoryId: "cat-208", businessTypeId: "bt-004", categoryName: "Skin Care" },
-  { categoryId: "cat-209", businessTypeId: "bt-004", categoryName: "Hair Care" },
-  { categoryId: "cat-210", businessTypeId: "bt-004", categoryName: "Hygiene Products" },
+  // PHARMACY (BT004)
+  { categoryId: "CAT201", businessTypeId: "BT004", categoryName: "Medicines" },
+  { categoryId: "CAT202", businessTypeId: "BT004", categoryName: "Vitamins & Supplements" },
+  { categoryId: "CAT203", businessTypeId: "BT004", categoryName: "Personal Care" },
+  { categoryId: "CAT204", businessTypeId: "BT004", categoryName: "Baby Care" },
+  { categoryId: "CAT205", businessTypeId: "BT004", categoryName: "Medical Equipment" },
+  { categoryId: "CAT206", businessTypeId: "BT004", categoryName: "First Aid" },
+  { categoryId: "CAT207", businessTypeId: "BT004", categoryName: "Health Drinks" },
+  { categoryId: "CAT208", businessTypeId: "BT004", categoryName: "Skin Care" },
+  { categoryId: "CAT209", businessTypeId: "BT004", categoryName: "Hair Care" },
+  { categoryId: "CAT210", businessTypeId: "BT004", categoryName: "Hygiene Products" },
 
-  // HARDWARE (bt-005)
-  { categoryId: "cat-401", businessTypeId: "bt-005", categoryName: "Tools" },
-  { categoryId: "cat-402", businessTypeId: "bt-005", categoryName: "Electrical Items" },
-  { categoryId: "cat-403", businessTypeId: "bt-005", categoryName: "Plumbing Supplies" },
-  { categoryId: "cat-404", businessTypeId: "bt-005", categoryName: "Paint & Accessories" },
-  { categoryId: "cat-405", businessTypeId: "bt-005", categoryName: "Building Materials" },
-  { categoryId: "cat-406", businessTypeId: "bt-005", categoryName: "Fasteners" },
-  { categoryId: "cat-407", businessTypeId: "bt-005", categoryName: "Safety Equipment" },
-  { categoryId: "cat-408", businessTypeId: "bt-005", categoryName: "Gardening Tools" },
-  { categoryId: "cat-409", businessTypeId: "bt-005", categoryName: "Adhesives & Sealants" },
-  { categoryId: "cat-410", businessTypeId: "bt-005", categoryName: "Machinery & Equipment" },
+  // HARDWARE (BT005)
+  { categoryId: "CAT401", businessTypeId: "BT005", categoryName: "Tools" },
+  { categoryId: "CAT402", businessTypeId: "BT005", categoryName: "Electrical Items" },
+  { categoryId: "CAT403", businessTypeId: "BT005", categoryName: "Plumbing Supplies" },
+  { categoryId: "CAT404", businessTypeId: "BT005", categoryName: "Paint & Accessories" },
+  { categoryId: "CAT405", businessTypeId: "BT005", categoryName: "Building Materials" },
+  { categoryId: "CAT406", businessTypeId: "BT005", categoryName: "Fasteners" },
+  { categoryId: "CAT407", businessTypeId: "BT005", categoryName: "Safety Equipment" },
+  { categoryId: "CAT408", businessTypeId: "BT005", categoryName: "Gardening Tools" },
+  { categoryId: "CAT409", businessTypeId: "BT005", categoryName: "Adhesives & Sealants" },
+  { categoryId: "CAT410", businessTypeId: "BT005", categoryName: "Machinery & Equipment" },
 
-  // BOOKSHOP (bt-006)
-  { categoryId: "cat-501", businessTypeId: "bt-006", categoryName: "School Books" },
-  { categoryId: "cat-502", businessTypeId: "bt-006", categoryName: "Novels" },
-  { categoryId: "cat-503", businessTypeId: "bt-006", categoryName: "Educational Books" },
-  { categoryId: "cat-504", businessTypeId: "bt-006", categoryName: "Children's Books" },
-  { categoryId: "cat-505", businessTypeId: "bt-006", categoryName: "Stationery" },
-  { categoryId: "cat-506", businessTypeId: "bt-006", categoryName: "Magazines" },
-  { categoryId: "cat-507", businessTypeId: "bt-006", categoryName: "Religious Books" },
-  { categoryId: "cat-508", businessTypeId: "bt-006", categoryName: "Office Supplies" },
-  { categoryId: "cat-509", businessTypeId: "bt-006", categoryName: "Art & Craft Materials" },
-  { categoryId: "cat-510", businessTypeId: "bt-006", categoryName: "Gifts & Cards" },
+  // BOOKSHOP (BT006)
+  { categoryId: "CAT501", businessTypeId: "BT006", categoryName: "School Books" },
+  { categoryId: "CAT502", businessTypeId: "BT006", categoryName: "Novels" },
+  { categoryId: "CAT503", businessTypeId: "BT006", categoryName: "Educational Books" },
+  { categoryId: "CAT504", businessTypeId: "BT006", categoryName: "Children's Books" },
+  { categoryId: "CAT505", businessTypeId: "BT006", categoryName: "Stationery" },
+  { categoryId: "CAT506", businessTypeId: "BT006", categoryName: "Magazines" },
+  { categoryId: "CAT507", businessTypeId: "BT006", categoryName: "Religious Books" },
+  { categoryId: "CAT508", businessTypeId: "BT006", categoryName: "Office Supplies" },
+  { categoryId: "CAT509", businessTypeId: "BT006", categoryName: "Art & Craft Materials" },
+  { categoryId: "CAT510", businessTypeId: "BT006", categoryName: "Gifts & Cards" },
 
-  // OTHER (bt-007) - Commonly used categories for general businesses
-  { categoryId: "cat-601", businessTypeId: "bt-007", categoryName: "General Merchandise" },
-  { categoryId: "cat-602", businessTypeId: "bt-007", categoryName: "Electronics & Gadgets" },
-  { categoryId: "cat-603", businessTypeId: "bt-007", categoryName: "Home & Living" },
-  { categoryId: "cat-604", businessTypeId: "bt-007", categoryName: "Beauty & Cosmetics" },
-  { categoryId: "cat-605", businessTypeId: "bt-007", categoryName: "Toys & Games" },
-  { categoryId: "cat-606", businessTypeId: "bt-007", categoryName: "Sports & Outdoors" },
-  { categoryId: "cat-607", businessTypeId: "bt-007", categoryName: "Pet Supplies" },
-  { categoryId: "cat-608", businessTypeId: "bt-007", categoryName: "Automotive" },
-  { categoryId: "cat-609", businessTypeId: "bt-007", categoryName: "Gifts & Souvenirs" },
-  { categoryId: "cat-610", businessTypeId: "bt-007", categoryName: "Services" },
+  // OTHER (BT007) - Commonly used categories for general businesses
+  { categoryId: "CAT601", businessTypeId: "BT007", categoryName: "General Merchandise" },
+  { categoryId: "CAT602", businessTypeId: "BT007", categoryName: "Electronics & Gadgets" },
+  { categoryId: "CAT603", businessTypeId: "BT007", categoryName: "Home & Living" },
+  { categoryId: "CAT604", businessTypeId: "BT007", categoryName: "Beauty & Cosmetics" },
+  { categoryId: "CAT605", businessTypeId: "BT007", categoryName: "Toys & Games" },
+  { categoryId: "CAT606", businessTypeId: "BT007", categoryName: "Sports & Outdoors" },
+  { categoryId: "CAT607", businessTypeId: "BT007", categoryName: "Pet Supplies" },
+  { categoryId: "CAT608", businessTypeId: "BT007", categoryName: "Automotive" },
+  { categoryId: "CAT609", businessTypeId: "BT007", categoryName: "Gifts & Souvenirs" },
+  { categoryId: "CAT610", businessTypeId: "BT007", categoryName: "Services" },
 ];
 
 // ─── Helper ───────────────────────────────────────────────────────────────────

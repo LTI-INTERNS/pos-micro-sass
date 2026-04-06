@@ -90,7 +90,6 @@ export default function AdditionalSettingsContent() {
       receipt: receiptSettings,
       systemBackground: { imageId: systemImageId, imageUrl: systemImageUrl },
     };
-    console.log("Saving settings:", settings);
 
     localStorage.setItem("receiptSettings", JSON.stringify(receiptSettings));
 
