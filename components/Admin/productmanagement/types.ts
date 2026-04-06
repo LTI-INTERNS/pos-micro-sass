@@ -37,12 +37,14 @@ export type ExistingProduct = {
   description?: string;
   options?: ProductOption[];
   variants?: ProductVariant[];
+  alreadyAdded?: boolean;   // true = all variants already in this branch
 };
 
 export type AddProductPopupProps = {
   open: boolean;
   onClose: () => void;
   onSave: (payload: ProductState) => void;
+  onAddToBranch?: (products: ExistingProduct[]) => void; // called instead of onSave in catalog mode
   initialData?: ProductState | null;
   userRole?: "owner" | "admin" | "manager";
   businessTypeId?: BusinessTypeId;
