@@ -287,8 +287,14 @@ export default function DashboardPage() {
         onSave={async (updatedProduct) => {
           try {
             if (editOpen && baseSelectedProduct) {
+              // In the onSave handler, log what goes to the service:
+              console.log("SENDING TO SERVICE:", {
+                  id: baseSelectedProduct.id,
+                  payload: updatedProduct
+              });
               const updated = await productService.update(baseSelectedProduct.id, updatedProduct as any);
-              setProducts(prev => prev.map(p => p.id === baseSelectedProduct.id ? updated as any : p));
+              const refreshed = await productService.getAll();
+              setProducts(refreshed);
             } else {
               const created = await productService.create(updatedProduct as any);
               setProducts(prev => [...prev, created as any]);
@@ -305,7 +311,7 @@ export default function DashboardPage() {
         initialData={editInitialData}
         companyProduct={companyProductData}
         userRole={userRole}
-        businessTypeId="bt-002"
+        businessTypeId="BT001"
       />
 
       {/* ViewProductPopup — passes the tagged product so manager sees variant details */}
