@@ -4,39 +4,35 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import { Product } from "@/lib/services";
+import { apiClient } from "@/lib/api-client";
 
 const BRANCHES = ["Colombo", "Kandy", "Galle"];
 const UNITS = ["Each", "kg", "g", "mg", "l", "ml", "m", "inch", "Cube"];
 
 type BranchVariantData = {
-  stockQty: string;
-  stockUnit: string;
-  basePriceOverride: string;
+  stockQty:             string;
+  stockUnit:            string;
+  basePriceOverride:    string;
   sellingPriceOverride: string;
-  discount: string;
-  taxRate: string;
-  lowStock: string;
-  available: boolean;
+  discount:             string;
+  taxRate:              string;
+  lowStock:             string;
 };
 
 type VariantState = {
-  id: number;
-  sku: string;
-  price: number;
+  id:        number;
+  variantId: string;   // real UUID from DB
+  sku:       string;
+  price:     number;
 };
 
 type Props = {
-  product: Product;
-  isOpen: boolean;
-  onClose: () => void;
-  userRole?: "owner" | "admin" | "manager";
-  // TODO: replace with session-derived branch name once auth is set up
+  product:    Product;
+  isOpen:     boolean;
+  onClose:    () => void;
+  userRole?:  "owner" | "admin" | "manager";
   branchName?: string;
-  onSave?: (data: {
-    branch: string;
-    supplier: string | null;
-    variants: Record<string, BranchVariantData>;
-  }) => void;
+  onSave?:    (data: { branch: string; supplierId: string | null; variants: Record<string, BranchVariantData> }) => void;
 };
 
 // ─── Small reusable UI pieces ─────────────────────────────────────────────────
@@ -93,12 +89,8 @@ function Tooltip({ text, position = "top" }: { text: string; position?: "top" | 
   const isTop = position === "top";
   return (
     <span className="relative group inline-flex items-center ml-1 cursor-default">
-      <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-gray-500 text-[9px] font-bold">
-        i
-      </span>
-      <span
-        className={`pointer-events-none absolute z-50 left-1/2 -translate-x-1/2 w-52 rounded-lg bg-gray-800 text-white text-[11px] px-3 py-2 text-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${isTop ? "bottom-full mb-2" : "top-full mt-2"}`}
-      >
+      <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-gray-500 text-[9px] font-bold">i</span>
+      <span className={`pointer-events-none absolute z-50 left-1/2 -translate-x-1/2 w-52 rounded-lg bg-gray-800 text-white text-[11px] px-3 py-2 text-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${isTop ? "bottom-full mb-2" : "top-full mt-2"}`}>
         {text}
         <span className={`absolute left-1/2 -translate-x-1/2 border-4 border-transparent ${isTop ? "top-full border-t-gray-800" : "bottom-full border-b-gray-800"}`} />
       </span>
@@ -107,14 +99,13 @@ function Tooltip({ text, position = "top" }: { text: string; position?: "top" | 
 }
 
 const defaultBS = (): BranchVariantData => ({
-  stockQty: "",
-  stockUnit: "Each",
-  basePriceOverride: "",
+  stockQty:             "",
+  stockUnit:            "Each",
+  basePriceOverride:    "",
   sellingPriceOverride: "",
-  discount: "",
-  taxRate: "",
-  lowStock: "",
-  available: true,
+  discount:             "",
+  taxRate:              "",
+  lowStock:             "",
 });
 
 const NO_SUPPLIER = "__none__";
@@ -129,72 +120,110 @@ export default function AddStockPopup({
   branchName: managerBranchName = "",
   onSave,
 }: Props) {
-  const router = useRouter();
+  const router    = useRouter();
   const isManager = userRole === "manager";
 
-  // Managers skip branch selection — branch comes from props for now.
-  // TODO: derive managerBranchName from session/auth context instead of props.
-  // Owners/admins start with null and must pick a branch first.
   const [selectedBranch, setSelectedBranch] = useState<string | null>(
     isManager ? managerBranchName : null
   );
 
   const [branchSuppliers, setBranchSuppliers] = useState<Record<string, string>>({});
-  const [suppliers, setSuppliers] = useState<string[]>([]);
+  const [suppliers, setSuppliers]             = useState<string[]>([]);
   const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [saving, setSaving]                   = useState(false);
+  const [saveError, setSaveError]             = useState<string | null>(null);
 
-  // Reset branch state when popup opens/role changes
   useEffect(() => {
     if (!isOpen) return;
     setSelectedBranch(isManager ? managerBranchName : null);
+    setSaveError(null);
     setSuppliersLoading(true);
 
-    // TODO: replace with real API call e.g. fetch("/api/suppliers")
+    // TODO: replace with real suppliers API call
     Promise.resolve(["Unilever Lanka", "MAS Holdings", "Ceylon Biscuits Ltd"]).then((data) => {
       setSuppliers(data);
       setSuppliersLoading(false);
     });
   }, [isOpen, isManager, managerBranchName]);
 
+  // Extract real variantIds from the product (set by product-service.ts via ...variant spread)
   const variants: VariantState[] = product.variants.map((v, i) => ({
-    id: i + 1,
-    sku: v.sku,
-    price: v.price,
+    id:        i + 1,
+    variantId: (v as typeof v & { variantId?: string }).variantId ?? v.sku,
+    sku:       v.sku,
+    price:     v.price,
   }));
 
   const [branchVariants, setBranchVariants] = useState<Record<string, BranchVariantData>>({});
 
-  const getBS = (key: string): BranchVariantData => branchVariants[key] ?? defaultBS();
-
-  const updateBS = (key: string, field: keyof BranchVariantData, value: string | boolean) => {
+  const getBS  = (key: string): BranchVariantData => branchVariants[key] ?? defaultBS();
+  const updateBS = (key: string, field: keyof BranchVariantData, value: string) => {
     setBranchVariants((prev) => ({
       ...prev,
       [key]: { ...getBS(key), [field]: value },
     }));
   };
 
-  const handleSupplierChange = (branch: string, value: string) => {
-    setBranchSuppliers((prev) => ({ ...prev, [branch]: value }));
-  };
-
   if (!isOpen) return null;
 
-  // ── Branch selection step (owner / admin only) ────────────────────────────
   const showBranchSelection = !isManager && !selectedBranch;
+
+  const handleSave = async () => {
+    setSaveError(null);
+    setSaving(true);
+
+    try {
+      // Build payload — one entry per variant that has a stockQty entered
+      const variantPayload = variants
+        .map((v) => {
+          const key = `${v.id}_${selectedBranch}`;
+          const bs  = getBS(key);
+          return {
+            variantId:             v.variantId,
+            stockQty:              parseFloat(bs.stockQty)             || 0,
+            stockUnit:             bs.stockUnit,
+            lowStock:              parseFloat(bs.lowStock)              || 0,
+            priceOverride:         bs.basePriceOverride    ? parseFloat(bs.basePriceOverride)    : null,
+            sellingPriceOverride:  bs.sellingPriceOverride ? parseFloat(bs.sellingPriceOverride) : null,
+            discount:              bs.discount             ? parseFloat(bs.discount)             : null,
+            taxRate:               bs.taxRate              ? parseFloat(bs.taxRate)              : null,
+          };
+        })
+        // Only send variants where the user actually typed a stockQty
+        .filter((v) => branchVariants[`${variants.find(vv => vv.variantId === v.variantId)?.id}_${selectedBranch}`]);
+
+      const selectedSupplier = branchSuppliers[selectedBranch!] ?? null;
+      const supplierId       = selectedSupplier === NO_SUPPLIER || !selectedSupplier ? null : selectedSupplier;
+
+      await apiClient.post('/branch-variants/stock', {
+        supplierId,
+        variants: variantPayload,
+      });
+
+      // Notify parent so it can refresh the product list
+      onSave?.({
+        branch:     selectedBranch!,
+        supplierId,
+        variants:   branchVariants,
+      });
+
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to save stock:", err);
+      const msg = err?.response?.data?.message || err?.message || "Failed to save stock.";
+      setSaveError(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <ModalShell open={isOpen} onClose={onClose} title="Add Stock" widthClassName="w-[700px] max-w-[95vw]">
       {showBranchSelection ? (
-        // STEP 1: SELECT BRANCH (owner / admin only)
         <div>
           <SectionTitle
             title="Select Branch"
-            tooltip={
-              <Tooltip
-                text="Choose the branch where you want to add stock for this product"
-                position="bottom"
-              />
-            }
+            tooltip={<Tooltip text="Choose the branch where you want to add stock" position="bottom" />}
           />
           <div className="space-y-2">
             {BRANCHES.map((b) => (
@@ -209,9 +238,8 @@ export default function AddStockPopup({
           </div>
         </div>
       ) : (
-        // STEP 2: VARIANT STOCK CONFIG
         <div>
-          {/* Branch header — shown only for owner / admin */}
+          {/* Branch header */}
           {!isManager && (
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
@@ -229,25 +257,27 @@ export default function AddStockPopup({
             </div>
           )}
 
+          {/* Auto-availability info banner */}
+          <div className="mb-4 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl">
+            <p className="text-[12px] text-blue-700">
+              <strong>Auto availability:</strong> variants with stock qty &gt; 0 will be set to{" "}
+              <span className="text-green-600 font-medium">Available</span>, and qty = 0 will be set to{" "}
+              <span className="text-red-500 font-medium">Unavailable</span> automatically.
+            </p>
+          </div>
+
           {/* Supplier selector */}
           <div className="mb-5 p-3 bg-orange-50 border border-orange-300 rounded-xl">
             <div className="flex items-center justify-between mb-1">
               <Label>
                 Supplier
-                <Tooltip
-                  text="Applies to all variants for this branch. Select 'No Supplier' for self-products."
-                  position="bottom"
-                />
+                <Tooltip text="Applies to all variants for this branch." position="bottom" />
               </Label>
               <button
                 onClick={() => router.push("/suppliermanagement?action=add")}
                 className="text-[12px] px-3 py-1 rounded-full text-orange-500 hover:font-medium transition cursor-pointer"
               >
                 + Add New Supplier
-                <Tooltip
-                  text="Navigate to supplier management to add a new supplier"
-                  position="bottom"
-                />
               </button>
             </div>
 
@@ -258,20 +288,12 @@ export default function AddStockPopup({
             ) : (
               <Select
                 value={branchSuppliers[selectedBranch!] ?? ""}
-                onChange={(e) => handleSupplierChange(selectedBranch!, e.target.value)}
+                onChange={(e) => setBranchSuppliers((prev) => ({ ...prev, [selectedBranch!]: e.target.value }))}
               >
                 <option value="" disabled>Select a supplier…</option>
                 <option value={NO_SUPPLIER}>No Supplier (Self Product)</option>
-                {suppliers.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {suppliers.map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>
-            )}
-
-            {branchSuppliers[selectedBranch!] === NO_SUPPLIER && (
-              <p className="mt-2 text-[11px] text-gray-400">
-                This product will be recorded without a supplier.
-              </p>
             )}
           </div>
 
@@ -279,7 +301,8 @@ export default function AddStockPopup({
           <div className="overflow-y-auto max-h-[44vh] pr-1 space-y-3">
             {variants.map((v) => {
               const key = `${v.id}_${selectedBranch}`;
-              const bs = getBS(key);
+              const bs  = getBS(key);
+              const qty = parseFloat(bs.stockQty) || 0;
 
               return (
                 <div key={v.id} className="bg-orange-50 border border-orange-300 rounded-xl p-4">
@@ -288,15 +311,14 @@ export default function AddStockPopup({
                       <p className="text-[13px] font-medium text-gray-700">SKU: {v.sku}</p>
                       <p className="text-[11px] text-gray-400 mt-0.5">Base price: {v.price.toFixed(2)}</p>
                     </div>
-                    <label className="flex items-center gap-2 text-[12px] text-gray-600 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={bs.available}
-                        onChange={(e) => updateBS(key, "available", e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-200 focus:ring-offset-0 cursor-pointer"
-                      />
-                      Available
-                    </label>
+                    {/* Auto-availability indicator */}
+                    <span className={`text-[11px] font-medium px-2 py-1 rounded-full border ${
+                      qty > 0
+                        ? "bg-green-50 border-green-200 text-green-600"
+                        : "bg-red-50 border-red-200 text-red-500"
+                    }`}>
+                      {qty > 0 ? "Will be Available" : "Will be Unavailable"}
+                    </span>
                   </div>
 
                   <div className="mb-4">
@@ -305,6 +327,7 @@ export default function AddStockPopup({
                       <FieldWrap>
                         <Input
                           type="number"
+                          min="0"
                           placeholder="Stock quantity"
                           value={bs.stockQty}
                           onChange={(e) => updateBS(key, "stockQty", e.target.value)}
@@ -377,29 +400,30 @@ export default function AddStockPopup({
             })}
           </div>
 
+          {/* Error message */}
+          {saveError && (
+            <div className="mt-3 px-4 py-2 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-[12px] text-red-600">{saveError}</p>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-gray-100">
-            {/* Back goes to branch selection for owner/admin; managers have nothing to go back to */}
             {!isManager && (
               <button
                 onClick={() => setSelectedBranch(null)}
-                className="px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer"
+                disabled={saving}
+                className="px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer disabled:opacity-50"
               >
                 Back
               </button>
             )}
             <button
-              onClick={() => {
-                onSave?.({
-                  branch: selectedBranch!,
-                  supplier: branchSuppliers[selectedBranch!] ?? null,
-                  variants: branchVariants,
-                });
-                onClose();
-              }}
-              className="px-6 py-2 text-sm bg-orange-500 text-white rounded-4xl hover:bg-orange-600 transition font-medium cursor-pointer"
+              onClick={handleSave}
+              disabled={saving}
+              className="px-6 py-2 text-sm bg-orange-500 text-white rounded-4xl hover:bg-orange-600 transition font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Add Stock
+              {saving ? "Saving…" : "Add Stock"}
             </button>
           </div>
         </div>

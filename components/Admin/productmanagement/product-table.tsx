@@ -1,25 +1,47 @@
 "use client";
 
+import { useState } from "react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import { Product } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { BranchStock, ProductWithBranches } from "@/lib/mocks/productmanagement";
+import ToggleSwitch from "@/components/Admin/common/ToggleSwitch";
+import { apiClient } from "@/lib/api-client";
 
 type Props = {
   products: Product[];
   selectedProduct: Product | null;
   setSelectedProduct: (p: Product | null) => void;
   onView: (p: Product) => void;
+  onToggleAvailability?: (productId: string, sku: string, available: boolean) => void;
   userRole?: "owner" | "admin" | "manager";
 };
 
+// ─── Supplier resolution helper ───────────────────────────────────────────────
+
+function resolveSupplierDisplay(product: Product): string {
+  const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
+  if (!branchStock) return product.supplier ?? "—";
+
+  const allSuppliers = new Set<string>();
+  for (const branch of Object.values(branchStock)) {
+    for (const variantDetail of Object.values(branch)) {
+      if (variantDetail.supplier) allSuppliers.add(variantDetail.supplier);
+    }
+  }
+  if (allSuppliers.size === 0) return product.supplier ?? "—";
+  if (allSuppliers.size === 1) return [...allSuppliers][0];
+  return "Multiple Suppliers";
+}
+
 // ─── Flat variant row shape (manager view) ────────────────────────────────────
-// `id` satisfies CommonTable's  T extends { id?: string | number }  constraint.
 
 export type VariantRow = {
-  id: string;                  // = `${product.id}__${variant.sku}`
-  _product: Product;           // parent product — needed when row is selected
-  _sku: string;                // which variant was clicked
+  id: string;
+  _product: Product;
+  _sku: string;
+  _variantId: string;       // needed for the PATCH call
   productName: string;
   variantLabel: string;
   sku: string;
@@ -27,34 +49,50 @@ export type VariantRow = {
   supplier: string;
   price: number;
   stockQty: number;
+  available: boolean;
 };
 
 function buildVariantRows(products: Product[]): VariantRow[] {
   const rows: VariantRow[] = [];
   for (const product of products) {
+    const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
+
     for (const variant of product.variants ?? []) {
       const variantLabel = variant.optionValues?.length
         ? variant.optionValues.map((o: { value: string }) => o.value).join(" · ")
         : variant.sku;
 
+      const branchDetail = branchStock
+        ? Object.values(branchStock)
+            .flatMap((b) => Object.entries(b))
+            .find(([sku]) => sku === variant.sku)?.[1]
+        : undefined;
+
+      const available: boolean =
+        (variant as typeof variant & { available?: boolean }).available ??
+        branchDetail?.available ??
+        true;
+
       rows.push({
-        id: `${product.id}__${variant.sku}`,
-        _product: product,
-        _sku: variant.sku,
-        productName: product.name,
+        id:           `${product.id}__${variant.sku}`,
+        _product:     product,
+        _sku:         variant.sku,
+        _variantId:   (variant as typeof variant & { variantId?: string }).variantId ?? variant.sku,
+        productName:  product.name,
         variantLabel,
-        sku: variant.sku,
-        category: product.category ?? "",
-        supplier: product.supplier ?? "",
-        price: variant.price,
-        stockQty: (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
+        sku:          variant.sku,
+        category:     product.category ?? "",
+        supplier:     product.supplier ?? "",
+        price:        variant.price,
+        stockQty:     (variant as typeof variant & { stockQty?: number }).stockQty ?? 0,
+        available,
       });
     }
   }
   return rows;
 }
 
-// ─── Typed helpers to work around React.memo generic inference ───────────────
+// ─── Typed helpers ────────────────────────────────────────────────────────────
 
 const VariantTable = CommonTable as <T extends { id?: string | number }>(
   props: React.ComponentProps<typeof CommonTable<T>>
@@ -64,6 +102,14 @@ const ProductTable = CommonTable as <T extends { id?: string | number }>(
   props: React.ComponentProps<typeof CommonTable<T>>
 ) => React.ReactElement;
 
+// ─── Availability toggle state shape ─────────────────────────────────────────
+
+type ToggleState = {
+  value: boolean;      // current optimistic value
+  saving: boolean;     // request in-flight
+  error: boolean;      // last request failed
+};
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ProductsTable({
@@ -71,10 +117,53 @@ export default function ProductsTable({
   selectedProduct,
   setSelectedProduct,
   onView,
+  onToggleAvailability,
   userRole = "admin",
 }: Props) {
   const { currency, useCents } = useCurrency();
   const isManager = userRole === "manager";
+
+  // Keyed by `productId__sku`. Tracks optimistic value + request state.
+  const [toggleStates, setToggleStates] = useState<Record<string, ToggleState>>({});
+
+  const handleToggle = async (
+    productId: string,
+    sku: string,
+    variantId: string,
+    newValue: boolean
+  ) => {
+    const rowId = `${productId}__${sku}`;
+
+    // 1. Optimistic update — UI responds immediately
+    setToggleStates((prev) => ({
+      ...prev,
+      [rowId]: { value: newValue, saving: true, error: false },
+    }));
+
+    // 2. Notify parent (for any local state sync)
+    onToggleAvailability?.(productId, sku, newValue);
+
+    try {
+      // 3. Persist to backend
+      await apiClient.patch(`/branch-variants/${variantId}/availability`, {
+        availability: newValue,
+      });
+
+      // 4. Mark save complete
+      setToggleStates((prev) => ({
+        ...prev,
+        [rowId]: { value: newValue, saving: false, error: false },
+      }));
+    } catch (err) {
+      console.error("Failed to update availability:", err);
+
+      // 5. Revert on failure
+      setToggleStates((prev) => ({
+        ...prev,
+        [rowId]: { value: !newValue, saving: false, error: true },
+      }));
+    }
+  };
 
   // ── Manager view — one row per variant ──────────────────────────────────────
   if (isManager) {
@@ -137,6 +226,43 @@ export default function ProductsTable({
         ),
       },
       {
+        key: "available",
+        label: "Availability",
+        render: (row) => {
+          const ts = toggleStates[row.id];
+          // Use optimistic value if we've toggled this row, otherwise use data from API
+          const isAvailable = ts ? ts.value : row.available;
+          const isSaving    = ts?.saving ?? false;
+          const isError     = ts?.error  ?? false;
+
+          return (
+            <div className="flex items-center gap-2">
+              <ToggleSwitch
+                enabled={isAvailable}
+                // Disable while request is in-flight to prevent double-clicks
+                disabled={isSaving}
+                onChange={(val) =>
+                  handleToggle(row._product.id as string, row._sku, row._variantId, val)
+                }
+              />
+              <span
+                className={`text-[11px] font-medium ${
+                  isError
+                    ? "text-red-500"
+                    : isSaving
+                    ? "text-gray-400"
+                    : isAvailable
+                    ? "text-green-600"
+                    : "text-gray-400"
+                }`}
+              >
+                {isError ? "Failed — retry" : isSaving ? "Saving…" : isAvailable ? "Available" : "Unavailable"}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
         key: "actions",
         label: "Actions",
         render: (row) => (
@@ -174,7 +300,18 @@ export default function ProductsTable({
   const productColumns: Column<Product>[] = [
     { key: "name", label: "Name" },
     { key: "category", label: "Category" },
-    { key: "supplier", label: "Supplier" },
+    {
+      key: "supplier",
+      label: "Supplier",
+      render: (row) => {
+        const display = resolveSupplierDisplay(row);
+        return (
+          <span className={display === "Multiple Suppliers" ? "text-orange-600 font-medium" : ""}>
+            {display}
+          </span>
+        );
+      },
+    },
     {
       key: "variants",
       label: "Variants",
