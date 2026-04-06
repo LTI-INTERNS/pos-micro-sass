@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
@@ -11,11 +11,14 @@ type RecExpenseValues = {
   category: string;
   description: string;
   amount: string;
+  branch: string;
 };
 
-type PaymentMethod = "card" | "cash" | null;
+type PaymentMethod = "card" | "cash" | "check" | "bankTransfer" | "";
 
-type FormErrors = Partial<Record<keyof RecExpenseValues, string>>;
+type FormErrors = Partial<Record<keyof RecExpenseValues, string>> & {
+  paymentMethod?: string;
+};
 
 type AddRecExpensesPopupProps = {
   open: boolean;
@@ -23,24 +26,74 @@ type AddRecExpensesPopupProps = {
   onSave: (values: RecExpenseValues & { paymentMethod: PaymentMethod }) => void;
 };
 
+type UserRole = "owner" | "admin" | "manager";
+
+const CATEGORY_OPTIONS = [
+  { value: "Monthly Rent", label: "Monthly Rent" },
+  { value: "Monthly Salaries", label: "Monthly Salaries" },
+  { value: "Electricity Bill", label: "Electricity Bill" },
+  { value: "Water Bill", label: "Water Bill" },
+  { value: "Internet & Phone", label: "Internet & Phone" },
+  { value: "Equipment Lease", label: "Equipment Lease" },
+  { value: "Insurance Premium", label: "Insurance Premium" },
+  { value: "Software Subscription", label: "Software Subscription" },
+  { value: "Waste Management", label: "Waste Management" },
+  { value: "Security Service", label: "Security Service" },
+  { value: "Cleaning Service", label: "Cleaning Service" },
+  { value: "Cold Storage Lease", label: "Cold Storage Lease" },
+  { value: "Cold Storage Maintenance", label: "Cold Storage Maintenance" },
+  { value: "Transportation Contracts", label: "Transportation Contracts" },
+];
+
+const BRANCH_OPTIONS = [
+  { value: "Colombo", label: "Colombo" },
+  { value: "Negombo", label: "Negombo" },
+  { value: "Nugegoda", label: "Nugegoda" },
+  { value: "Galle", label: "Galle" },
+  { value: "Matara", label: "Matara" },
+  { value: "Kandy", label: "Kandy" },
+];
+
+const PAYMENT_OPTIONS = [
+  { value: "cash", label: "Cash" },
+  { value: "card", label: "Card" },
+  { value: "check", label: "Check" },
+  { value: "bankTransfer", label: "Bank Transfer" },
+];
+
 const AddRecExpensesPopup = ({
   open,
   onClose,
   onSave,
 }: AddRecExpensesPopupProps) => {
+  const { data: session } = useSession();
+
+  const sessionRole =
+    typeof session?.user?.role === "string"
+      ? session.user.role.toLowerCase()
+      : undefined;
+
+  const role: UserRole | undefined =
+    sessionRole === "owner" ||
+    sessionRole === "admin" ||
+    sessionRole === "manager"
+      ? sessionRole
+      : undefined;
+
+  const canEditBranch = role === "owner" || role === "admin";
+  const sessionBranch = session?.user?.branchName?.trim() ?? "";
+
   const [values, setValues] = React.useState<RecExpenseValues>({
     date: "",
     category: "",
     description: "",
     amount: "",
+    branch: "",
   });
 
-  const [paymentMethod, setPaymentMethod] =
-    React.useState<PaymentMethod>(null);
-
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("");
   const [errors, setErrors] = React.useState<FormErrors>({});
 
-  // Reset form when popup opens
   React.useEffect(() => {
     if (!open) return;
 
@@ -49,11 +102,12 @@ const AddRecExpensesPopup = ({
       category: "",
       description: "",
       amount: "",
+      branch: canEditBranch ? "" : sessionBranch,
     });
 
-    setPaymentMethod(null);
+    setPaymentMethod("");
     setErrors({});
-  }, [open]);
+  }, [open, canEditBranch, sessionBranch]);
 
   const setField = (name: keyof RecExpenseValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -83,6 +137,14 @@ const AddRecExpensesPopup = ({
       newErrors.amount = "Amount must be greater than 0";
     }
 
+    if (!values.branch.trim()) {
+      newErrors.branch = "Branch is required";
+    }
+
+    if (!paymentMethod) {
+      newErrors.paymentMethod = "Payment method is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -99,105 +161,121 @@ const AddRecExpensesPopup = ({
       category: "",
       description: "",
       amount: "",
+      branch: canEditBranch ? "" : sessionBranch,
     });
-    setPaymentMethod(null);
+    setPaymentMethod("");
     setErrors({});
   };
-
-  const cardBase =
-    "flex h-20 w-full cursor-pointer items-center justify-center rounded-md border transition-all";
-
-  const selectedCard =
-    "border-orange-500 ring-2 ring-orange-200 bg-orange-50";
-
-  const unselectedCard =
-    "border-gray-200 hover:border-orange-300";
 
   return (
     <ModalShell
       open={open}
       title="Add Recurring Expense"
       onClose={handleCancel}
-      widthClassName="w-[980px] max-w-[92vw]"
+      widthClassName="w-[760px] max-w-[92vw]"
     >
       <form
-        className="space-y-3"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           handleSave();
         }}
       >
-        <FormField
-          label="Date"
-          placeholder="Enter date"
-          value={values.date}
-          onChange={(v) => setField("date", v)}
-          type="date"
-        />
-        {errors.date && <p className="text-xs text-red-500 px-3">{errors.date}</p>}
-
-        <FormField
-          label="Category"
-          placeholder="Enter category"
-          value={values.category}
-          onChange={(v) => setField("category", v)}
-          type="text"
-        />
-        {errors.category && <p className="text-xs text-red-500 px-3">{errors.category}</p>}
-
-        <FormField
-          label="Description"
-          placeholder="Enter description"
-          value={values.description}
-          onChange={(v) => setField("description", v)}
-          type="text"
-        />
-        {errors.description && <p className="text-xs text-red-500 px-3">{errors.description}</p>}
-
-        <FormField
-          label="Amount"
-          placeholder="Enter amount"
-          value={values.amount}
-          onChange={(v) => setField("amount", v)}
-          type="number"
-        />
-        {errors.amount && <p className="text-xs text-red-500 px-3">{errors.amount}</p>}
-
-        {/* Payment Method Selection */}
-        <div className="mt-10 flex items-center justify-center gap-x-6">
-          <div
-            onClick={() => setPaymentMethod("card")}
-            className={`${cardBase} ${
-              paymentMethod === "card" ? selectedCard : unselectedCard
-            }`}
-          >
-            <Image
-              src="/Popcard.png"
-              alt="Card Payment"
-              width={48}
-              height={48}
-              className="object-contain"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <FormField
+              label="Date"
+              placeholder="Enter date"
+              value={values.date}
+              onChange={(v) => setField("date", v)}
+              type="date"
             />
+            {errors.date && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.date}</p>
+            )}
           </div>
 
-          <div
-            onClick={() => setPaymentMethod("cash")}
-            className={`${cardBase} ${
-              paymentMethod === "cash" ? selectedCard : unselectedCard
-            }`}
-          >
-            <Image
-              src="/Popcash.png"
-              alt="Cash Payment"
-              width={48}
-              height={48}
-              className="object-contain"
+          <div>
+            <FormField
+              label="Category"
+              placeholder="Select category"
+              value={values.category}
+              onChange={(v) => setField("category", v)}
+              type="dropdown"
+              options={CATEGORY_OPTIONS}
             />
+            {errors.category && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.category}</p>
+            )}
+          </div>
+
+          <div>
+            <FormField
+              label="Amount"
+              placeholder="Enter amount"
+              value={values.amount}
+              onChange={(v) => setField("amount", v)}
+              type="number"
+            />
+            {errors.amount && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.amount}</p>
+            )}
+          </div>
+
+          <div>
+            <FormField
+              label="Payment Method"
+              placeholder="Select payment method"
+              value={paymentMethod}
+              onChange={(v) => {
+                setPaymentMethod(v as PaymentMethod);
+                if (errors.paymentMethod) {
+                  setErrors((prev) => ({ ...prev, paymentMethod: "" }));
+                }
+              }}
+              type="dropdown"
+              options={PAYMENT_OPTIONS}
+            />
+            {errors.paymentMethod && (
+              <p className="px-3 pt-1 text-xs text-red-500">
+                {errors.paymentMethod}
+              </p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <FormField
+              label="Branch"
+              placeholder="Select branch"
+              value={values.branch}
+              onChange={(v) => setField("branch", v)}
+              type="dropdown"
+              options={BRANCH_OPTIONS}
+              disabled={!canEditBranch}
+            />
+            {errors.branch && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.branch}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <FormField
+              label="Description"
+              placeholder="Enter description"
+              value={values.description}
+              onChange={(v) => setField("description", v)}
+              type="text"
+            />
+            {errors.description && (
+              <p className="px-3 pt-1 text-xs text-red-500">
+                {errors.description}
+              </p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center justify-center">
-          <div className="w-105">
+        <div className="flex items-center justify-center pt-2">
+          <div className="w-full md:w-[420px]">
             <PopupActions
               actions={[
                 { label: "Cancel", onClick: handleCancel, variant: "secondary" },
@@ -212,79 +290,3 @@ const AddRecExpensesPopup = ({
 };
 
 export default AddRecExpensesPopup;
-
-
-
-// / ============================================
-//   // Seed RecExpenseCategory
-//   // ============================================
-//   await prisma.recExpenseCategory.createMany({
-//     data: [
-//       // CAFE
-//       { categoryId: 'rc-001', businessTypeId: 'bt-001', category: 'Monthly Rent' },
-//       { categoryId: 'rc-002', businessTypeId: 'bt-001', category: 'Monthly Salaries' },
-//       { categoryId: 'rc-003', businessTypeId: 'bt-001', category: 'Electricity Bill' },
-//       { categoryId: 'rc-004', businessTypeId: 'bt-001', category: 'Water Bill' },
-//       { categoryId: 'rc-005', businessTypeId: 'bt-001', category: 'Internet & Phone' },
-//       { categoryId: 'rc-006', businessTypeId: 'bt-001', category: 'Equipment Lease' },
-//       { categoryId: 'rc-007', businessTypeId: 'bt-001', category: 'Insurance Premium' },
-//       { categoryId: 'rc-008', businessTypeId: 'bt-001', category: 'Software Subscription' },
-//       { categoryId: 'rc-009', businessTypeId: 'bt-001', category: 'Waste Management' },
-//       { categoryId: 'rc-010', businessTypeId: 'bt-001', category: 'Security Service' },
-//       { categoryId: 'rc-011', businessTypeId: 'bt-001', category: 'Cleaning Service' },
-
-//       // CLOTHING
-//       { categoryId: 'rc-101', businessTypeId: 'bt-002', category: 'Monthly Rent' },
-//       { categoryId: 'rc-102', businessTypeId: 'bt-002', category: 'Monthly Salaries' },
-//       { categoryId: 'rc-103', businessTypeId: 'bt-002', category: 'Electricity Bill' },
-//       { categoryId: 'rc-104', businessTypeId: 'bt-002', category: 'Water Bill' },
-//       { categoryId: 'rc-105', businessTypeId: 'bt-002', category: 'Internet & Phone' },
-//       { categoryId: 'rc-106', businessTypeId: 'bt-002', category: 'Insurance Premium' },
-//       { categoryId: 'rc-107', businessTypeId: 'bt-002', category: 'Software Subscription' },
-//       { categoryId: 'rc-108', businessTypeId: 'bt-002', category: 'Security Service' },
-//       { categoryId: 'rc-109', businessTypeId: 'bt-002', category: 'Cleaning Service' },
-//       { categoryId: 'rc-110', businessTypeId: 'bt-002', category: 'Waste Management' },
-
-//       // SUPERMARKET
-//       { categoryId: 'rc-201', businessTypeId: 'bt-003', category: 'Monthly Rent' },
-//       { categoryId: 'rc-202', businessTypeId: 'bt-003', category: 'Monthly Salaries' },
-//       { categoryId: 'rc-203', businessTypeId: 'bt-003', category: 'Electricity Bill' },
-//       { categoryId: 'rc-204', businessTypeId: 'bt-003', category: 'Water Bill' },
-//       { categoryId: 'rc-205', businessTypeId: 'bt-003', category: 'Internet & Phone' },
-//       { categoryId: 'rc-206', businessTypeId: 'bt-003', category: 'Cold Storage Lease' },
-//       { categoryId: 'rc-207', businessTypeId: 'bt-003', category: 'Insurance Premium' },
-//       { categoryId: 'rc-208', businessTypeId: 'bt-003', category: 'Software Subscription' },
-//       { categoryId: 'rc-209', businessTypeId: 'bt-003', category: 'Security Service' },
-//       { categoryId: 'rc-210', businessTypeId: 'bt-003', category: 'Cleaning Service' },
-
-//       // PHARMACY
-//       { categoryId: 'rc-301', businessTypeId: 'bt-004', category: 'Monthly Rent' },
-//       { categoryId: 'rc-302', businessTypeId: 'bt-004', category: 'Monthly Salaries' },
-//       { categoryId: 'rc-303', businessTypeId: 'bt-004', category: 'Electricity Bill' },
-//       { categoryId: 'rc-304', businessTypeId: 'bt-004', category: 'Cold Storage Maintenance' },
-//       { categoryId: 'rc-305', businessTypeId: 'bt-004', category: 'Insurance Premium' },
-//       { categoryId: 'rc-306', businessTypeId: 'bt-004', category: 'Software Subscription' },
-//       { categoryId: 'rc-307', businessTypeId: 'bt-004', category: 'Security Service' },
-//       { categoryId: 'rc-308', businessTypeId: 'bt-004', category: 'Cleaning Service' },
-//       { categoryId: 'rc-309', businessTypeId: 'bt-004', category: 'Waste Management' },
-
-//       // HARDWARE
-//       { categoryId: 'rc-401', businessTypeId: 'bt-005', category: 'Monthly Rent' },
-//       { categoryId: 'rc-402', businessTypeId: 'bt-005', category: 'Monthly Salaries' },
-//       { categoryId: 'rc-403', businessTypeId: 'bt-005', category: 'Electricity Bill' },
-//       { categoryId: 'rc-404', businessTypeId: 'bt-005', category: 'Transportation Contracts' },
-//       { categoryId: 'rc-405', businessTypeId: 'bt-005', category: 'Insurance Premium' },
-//       { categoryId: 'rc-406', businessTypeId: 'bt-005', category: 'Security Service' },
-//       { categoryId: 'rc-407', businessTypeId: 'bt-005', category: 'Cleaning Service' },
-
-//       // BOOKSHOP
-//       { categoryId: 'rc-501', businessTypeId: 'bt-006', category: 'Monthly Rent' },
-//       { categoryId: 'rc-502', businessTypeId: 'bt-006', category: 'Monthly Salaries' },
-//       { categoryId: 'rc-503', businessTypeId: 'bt-006', category: 'Electricity Bill' },
-//       { categoryId: 'rc-504', businessTypeId: 'bt-006', category: 'Internet & Phone' },
-//       { categoryId: 'rc-505', businessTypeId: 'bt-006', category: 'Insurance Premium' },
-//       { categoryId: 'rc-506', businessTypeId: 'bt-006', category: 'Software Subscription' },
-//       { categoryId: 'rc-507', businessTypeId: 'bt-006', category: 'Cleaning Service' }
-//     ],
-//     skipDuplicates: true
-//   })

@@ -4,22 +4,28 @@ import { useState } from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import type { SubscriptionType } from "@/types/subscription.types";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export type PaymentPlan = {
-  id: string;
-  name: string;
-  price: string;
+  id:          string;
+  subType:     SubscriptionType;   // ← added so modal can pass it to onSuccess
+  name:        string;
+  price:       string;
   billingCycle: string;
 };
 
 type Props = {
-  open: boolean;
-  plan: PaymentPlan | null;
-  onClose: () => void;
-  onSuccess?: (planId: string) => void;
+  open:      boolean;
+  plan:      PaymentPlan | null;
+  onClose:   () => void;
+  onSuccess?: (newSubType: SubscriptionType) => void;  // passes real type, not string id
 };
 
 type CardType = "visa" | "mastercard" | "amex" | "other";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function detectCardType(number: string): CardType {
   const n = number.replace(/\s/g, "");
@@ -47,6 +53,8 @@ const CARD_LABELS: Record<CardType, string> = {
   other: "",
 };
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function PaymentModal({ open, plan, onClose, onSuccess }: Props) {
   const [cardHolder, setCardHolder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
@@ -58,52 +66,50 @@ export default function PaymentModal({ open, plan, onClose, onSuccess }: Props) 
 
   const cardType = detectCardType(cardNumber);
 
-const validate = () => {
-  const e: Record<string, string> = {};
+  const validate = () => {
+    const e: Record<string, string> = {};
 
-  if (!cardHolder.trim()) e.cardHolder = "Cardholder name is required";
+    if (!cardHolder.trim()) e.cardHolder = "Cardholder name is required";
 
-  const digits = cardNumber.replace(/\s/g, "");
-  if (digits.length < 16) e.cardNumber = "Enter a valid 16-digit card number";
+    const digits = cardNumber.replace(/\s/g, "");
+    if (digits.length < 16) e.cardNumber = "Enter a valid 16-digit card number";
 
-  const [mmStr, yyStr] = expiry.split("/");
-  const mm = Number(mmStr);
-  const yy = Number(yyStr);
+    const [mmStr, yyStr] = expiry.split("/");
+    const mm = Number(mmStr);
+    const yy = Number(yyStr);
 
-  if (!expiry || expiry.length < 5 || mm < 1 || mm > 12) {
-    e.expiry = "Enter a valid expiry (MM/YY)";
-  } else {
+    if (!expiry || expiry.length < 5 || mm < 1 || mm > 12) {
+      e.expiry = "Enter a valid expiry (MM/YY)";
+    } else {
     const now = new Date();
-    const currentYear  = now.getFullYear() % 100;
-    const currentMonth = now.getMonth() + 1;
-
-    const cardYear  = yy;
-    const maxYear   = currentYear + 4;
-
-    const isExpired =
-      cardYear < currentYear ||
-      (cardYear === currentYear && mm < currentMonth);
-
-    const isTooFar = cardYear > maxYear ||
-      (cardYear === maxYear && mm > currentMonth);
-
-    if (isExpired) {
-      e.expiry = "Card is expired";
-    } else if (isTooFar) {
-      e.expiry = "Expiry date cannot be more than 4 years from today";
+      const currentYear  = now.getFullYear() % 100;
+      const currentMonth = now.getMonth() + 1;
+      const isExpired    = yy < currentYear || (yy === currentYear && mm < currentMonth);
+      const isTooFar     = yy > currentYear + 4;
+      if (isExpired) e.expiry = "Card is expired";
+      else if (isTooFar) e.expiry = "Expiry date cannot be more than 4 years from today";
     }
-  }
 
-  if (cvv.length < 3) e.cvv = "Enter a valid CVV";
+    if (cvv.length < 3) e.cvv = "Enter a valid CVV";
 
-  return e;
-};
+    return e;
+  };
   const handlePay = async () => {
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
     setErrors({});
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1800)); // simulate API call
+
+    // ── TODO: replace this with your real payment API call ────────────────
+    // Example:
+    //   await apiClient.post("/subscriptions/upgrade", {
+    //     subType: plan.subType,
+    //     cardNumber: cardNumber.replace(/\s/g, ""),
+    //     cardHolder, expiry, cvv,
+    //   });
+    // ─────────────────────────────────────────────────────────────────────
+    await new Promise((r) => setTimeout(r, 1800));
+
     setLoading(false);
     setPaid(true);
   };
@@ -115,7 +121,7 @@ const validate = () => {
   };
 
   const handleDone = () => {
-    if (plan) onSuccess?.(plan.id);
+    if (plan) onSuccess?.(plan.subType);   // ← passes SubscriptionType, not id
     handleClose();
   };
 

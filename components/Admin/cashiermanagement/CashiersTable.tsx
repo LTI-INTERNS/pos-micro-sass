@@ -55,6 +55,11 @@ export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: 
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Cashier>[] = [
+     {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
     {
       key: "name",
       label: "Name",
