@@ -197,10 +197,10 @@ const Page = () => {
               setSelectedCustomer(
                 summary.customer
                   ? {
-                      name: summary.customer.name ?? "",
-                      phoneNumber: summary.customer.phoneNumber1 ?? "",
-                      email: summary.customer.email ?? "",
-                    }
+                    name: summary.customer.name ?? "",
+                    phoneNumber: summary.customer.phoneNumber1 ?? "",
+                    email: summary.customer.email ?? "",
+                  }
                   : null
               );
 

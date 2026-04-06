@@ -86,6 +86,11 @@ export default function ProductsTable({
       : undefined;
 
     const managerColumns: Column<VariantRow>[] = [
+       {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
       {
         key: "productName",
         label: "Product · Variant",

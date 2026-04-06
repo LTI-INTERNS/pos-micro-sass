@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
@@ -15,21 +16,17 @@ import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Fil
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 
-type UserRole = "superadmin" | "admin" | "manager";
-
-const mockSession = {
-  role: "superadmin" as UserRole,
-  name: "John Doe",
-  branch: "Colombo",             
-};
+type UserRole = "owner" | "admin" | "manager";
 
 export default function RecurringExpensesContent() {
+  const { data: session, status } = useSession();
+
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [showAddRecExpense, setShowAddRecExpense] = useState(false);
-  
+
   const [filters, setFilters] = useState<{
     category?: string;
     payment?: string;
@@ -37,40 +34,85 @@ export default function RecurringExpensesContent() {
     branch?: string;
   }>({});
 
-  const isSuperAdmin = mockSession.role === "superadmin";
+  const sessionRole =
+    typeof session?.user?.role === "string"
+      ? session.user.role.toLowerCase()
+      : undefined;
 
-  // Superadmin sees all branches; admin/manager sees their branch only
-    const branchFilteredRecurringExpenses = isSuperAdmin
-      ? mockRecurringExpenses
-      : mockRecurringExpenses.filter((e) => e.branch === mockSession.branch);
+  const role: UserRole | undefined =
+    sessionRole === "owner" ||
+    sessionRole === "admin" ||
+    sessionRole === "manager"
+      ? sessionRole
+      : undefined;
 
-  const categoryOptions = getFilterOptions(branchFilteredRecurringExpenses, "category");
-  const paymentOptions = getFilterOptions(branchFilteredRecurringExpenses, "payment");
-  const addedByOptions = getFilterOptions(branchFilteredRecurringExpenses, "addedby");
+  const branchName = session?.user?.branchName?.trim() ?? "";
+
+  const isOwner = role === "owner";
+  const isAdmin = role === "admin";
+  const canUseBranchFilter = isOwner || isAdmin;
+  const showBranchColumn = isOwner || isAdmin;
+
+  const branchFilteredRecurringExpenses = useMemo(() => {
+    if (status === "loading") return [];
+
+    if (isOwner) return mockRecurringExpenses;
+
+    if (!branchName) return mockRecurringExpenses;
+
+    return mockRecurringExpenses.filter(
+      (e) => e.branch.trim().toLowerCase() === branchName.toLowerCase()
+    );
+  }, [status, isOwner, branchName]);
+
+  const visibleFilters = canUseBranchFilter
+    ? filters
+    : Object.fromEntries(
+        Object.entries(filters).filter(([key]) => key !== "branch")
+      );
+
+  const categoryOptions = getFilterOptions(
+    branchFilteredRecurringExpenses,
+    "category"
+  );
+  const paymentOptions = getFilterOptions(
+    branchFilteredRecurringExpenses,
+    "payment"
+  );
+  const addedByOptions = getFilterOptions(
+    branchFilteredRecurringExpenses,
+    "addedby"
+  );
   const branchOptions = getFilterOptions(mockRecurringExpenses, "branch");
 
   const filteredRecurringExpenses = useTableFilters<RecurringExpenses>({
-      data: branchFilteredRecurringExpenses,
-      search,
-      start,
-      end,
-      dateKey: "date",
-      searchKeys: ["id", "category", "description"],
-      filters,
-    });
+    data: branchFilteredRecurringExpenses,
+    search,
+    start,
+    end,
+    dateKey: "date",
+    searchKeys: ["id", "category", "description"],
+    filters: canUseBranchFilter ? filters : { ...filters, branch: "" },
+  });
 
-  const isFilterApplied = Object.values(filters).some(
-      (v) => v && v.trim() !== ""
-    );
+  const isFilterApplied = Object.values(visibleFilters).some(
+    (v) => v && v.trim() !== ""
+  );
 
-    const removeFilter = (key: string) => {
-      setFilters((prev) => ({
-        ...prev,
-        [key]: "",
-      }));
-    };
-  
+  const removeFilter = (key: string) => {
+    if (!canUseBranchFilter && key === "branch") return;
+
+    setFilters((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
+  };
+
   const exportToCSV = useCSVExport<RecurringExpenses>();
+
+  if (status === "loading") {
+    return <div className="w-full p-4">Loading recurring expenses...</div>;
+  }
 
   return (
     <div className="w-full space-y-5">
@@ -83,7 +125,7 @@ export default function RecurringExpensesContent() {
         }}
       />
 
-      <StatCardGrid  recurringexpenses={filteredRecurringExpenses}/>
+      <StatCardGrid recurringexpenses={filteredRecurringExpenses} />
 
       <div className="relative">
         <SearchBar
@@ -97,40 +139,42 @@ export default function RecurringExpensesContent() {
           isFilterApplied={isFilterApplied}
           onClearFilters={() => setFilters({})}
         />
-        <FilterChips
-          filters={filters}
-          onRemove={removeFilter}
-        />
-        
+
+        <FilterChips filters={visibleFilters} onRemove={removeFilter} />
+
         <FilterPopup
-            open={showFilter}
-            onClose={() => setShowFilter(false)}
-            onApply={(values) => {
-              setFilters(values);
-              setShowFilter(false);
-            }}
-            fields={[
-              ...(isSuperAdmin
+          open={showFilter}
+          onClose={() => setShowFilter(false)}
+          onApply={(values) => {
+            const nextValues = canUseBranchFilter
+              ? values
+              : { ...values, branch: "" };
+
+            setFilters(nextValues);
+            setShowFilter(false);
+          }}
+          fields={[
+            ...(canUseBranchFilter
               ? [{ name: "branch", placeholder: "Branch", options: branchOptions }]
               : []),
-              {
-                name: "category",
-                placeholder: "Category",
-                options: categoryOptions,
-              },
-              {
-                name: "payment",
-                placeholder: "Payment",
-                options: paymentOptions,
-              },
-              {
-                name: "addedby",
-                placeholder: "Addedby",
-                options: addedByOptions,
-              },
-            ]}
-          />
-        </div>
+            {
+              name: "category",
+              placeholder: "Category",
+              options: categoryOptions,
+            },
+            {
+              name: "payment",
+              placeholder: "Payment",
+              options: paymentOptions,
+            },
+            {
+              name: "addedby",
+              placeholder: "Added By",
+              options: addedByOptions,
+            },
+          ]}
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <ActionButton
@@ -141,20 +185,25 @@ export default function RecurringExpensesContent() {
         <ActionButton
           label="Export CSV"
           variant="primary"
-          onClick={() => exportToCSV(filteredRecurringExpenses, "RecurringExpenses.csv")}
+          onClick={() =>
+            exportToCSV(filteredRecurringExpenses, "RecurringExpenses.csv")
+          }
         />
       </div>
 
-      <RecurringExpensesTable RecurringExpenses={filteredRecurringExpenses} showBranch={isSuperAdmin} />
+      <RecurringExpensesTable
+        RecurringExpenses={filteredRecurringExpenses}
+        showBranch={showBranchColumn}
+      />
 
       <AddRecExpensesPopup
-          open={showAddRecExpense}
-          onClose={() => setShowAddRecExpense(false)}
-          onSave={(values) => {
-            console.log("Saved Rec expense:", values);
-            setShowAddRecExpense(false);
-          }}
-        />
+        open={showAddRecExpense}
+        onClose={() => setShowAddRecExpense(false)}
+        onSave={(values) => {
+          console.log("Saved Rec expense:", values);
+          setShowAddRecExpense(false);
+        }}
+      />
     </div>
   );
 }
