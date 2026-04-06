@@ -12,6 +12,11 @@ type Props = {
 export default function BranchesTable({ branches, selectedBranch, setSelectedBranch, }: Props) {
   const columns: Column<Branch>[] = [
     // { key: "id", label: "ID" },
+     {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
     { key: "name", label: "Name" },
     { key: "city", label: "City" },
     { key: "phone", label: "Phone" },

@@ -14,6 +14,11 @@ export default function OrdersTable({ orders, onView }: OrdersTableProps) {
   const { currency, useCents } = useCurrency();
 
   const orderColumns: Column<Order>[] = [
+    {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
     { key: "id", label: "Order ID" },
     { key: "dateTime", label: "Date & Time" },
     { key: "branch", label: "Branch" },
