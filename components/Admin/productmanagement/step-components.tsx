@@ -62,8 +62,10 @@ export function Step1VariantSelect({
     return matchesSearch && matchesCategory;
   });
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
-  const someFilteredSelected = filtered.some((p) => selectedIds.has(p.id)) && !allFilteredSelected;
+  // Only selectable products can be toggled via select-all
+  const selectableFiltered = filtered.filter((p) => !p.alreadyAdded);
+  const allFilteredSelected = selectableFiltered.length > 0 && selectableFiltered.every((p) => selectedIds.has(p.id));
+  const someFilteredSelected = selectableFiltered.some((p) => selectedIds.has(p.id)) && !allFilteredSelected;
 
   return (
     <>
@@ -107,7 +109,7 @@ export function Step1VariantSelect({
                     <SelectAllCheckbox
                       checked={allFilteredSelected}
                       indeterminate={someFilteredSelected}
-                      onChange={(e) => onSelectAll(filtered, e.target.checked)}
+                      onChange={(e) => onSelectAll(selectableFiltered, e.target.checked)}
                     />
                     <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-gray-500 text-[9px] font-bold cursor-default select-none">
                       i
@@ -126,19 +128,43 @@ export function Step1VariantSelect({
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const isSel = selectedIds.has(p.id);
+                const isSel    = selectedIds.has(p.id);
+                const isAdded  = !!p.alreadyAdded;
                 return (
                   <tr
                     key={p.id}
-                    onClick={() => { onToggle(p); onLoadProduct(p); }}
-                    className={`border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${isSel ? "bg-orange-50" : "hover:bg-gray-50"}`}
+                    onClick={isAdded ? undefined : () => { onToggle(p); onLoadProduct(p); }}
+                    className={[
+                      "border-b border-gray-100 last:border-b-0 transition-colors",
+                      isAdded
+                        ? "bg-gray-50 opacity-50 cursor-not-allowed select-none"
+                        : isSel
+                          ? "bg-orange-50 cursor-pointer"
+                          : "hover:bg-gray-50 cursor-pointer",
+                    ].join(" ")}
                   >
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0 ${isSel ? "border-orange-500 bg-orange-500" : "border-gray-300 bg-white"}`}>
-                        {isSel && <CheckIcon />}
-                      </span>
+                      {isAdded ? (
+                        /* Locked checkbox visual */
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded border-2 border-gray-200 bg-gray-100 flex-shrink-0">
+                          <svg className="w-2.5 h-2.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0 ${isSel ? "border-orange-500 bg-orange-500" : "border-gray-300 bg-white"}`}>
+                          {isSel && <CheckIcon />}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      <span>{p.name}</span>
+                      {isAdded && (
+                        <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500 tracking-wide">
+                          Already added
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{p.category}</td>
                     <td className="px-4 py-3 text-gray-500">{p.brand || "—"}</td>
                     <td className="px-4 py-3 text-gray-500">
@@ -382,14 +408,18 @@ export function Step2({
                   </Select>
                 </FieldWrap>
                 <FieldWrap>
-                  <Label>Values (press Enter to add)</Label>
+                  <Label>Values (press Enter or Tab to add)</Label>
                   <Input
                     placeholder="e.g. 500mg"
                     onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
+                      if (e.key !== "Enter" && e.key !== "Tab") return;
                       e.preventDefault();
                       const val = (e.target as HTMLInputElement).value.trim();
                       if (val) { addValue(opt.id, val); (e.target as HTMLInputElement).value = ""; }
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim();
+                      if (val) { addValue(opt.id, val); e.target.value = ""; }
                     }}
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -435,14 +465,18 @@ export function Step2({
             </Select>
           </FieldWrap>
           <FieldWrap>
-            <Label>Values (press Enter to add)</Label>
+            <Label>Values (press Enter or Tab to add)</Label>
             <Input
               placeholder="e.g. 500mg"
               onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
+                if (e.key !== "Enter" && e.key !== "Tab") return;
                 e.preventDefault();
                 const val = (e.target as HTMLInputElement).value.trim();
                 if (val) { addValue(opt.id, val); (e.target as HTMLInputElement).value = ""; }
+              }}
+              onBlur={(e) => {
+                const val = e.target.value.trim();
+                if (val) { addValue(opt.id, val); e.target.value = ""; }
               }}
             />
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -484,7 +518,7 @@ export function Step3({
   onToggleVariant: (id: number) => void;
   selectedProductCount: number;
 }) {
-  const isCafe = businessTypeId === "bt-001";
+  const isCafe = businessTypeId === "BT001";
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
 
   const addManual = () =>
@@ -534,30 +568,39 @@ export function Step3({
           </Select>
         </FieldWrap>
       </Grid3>
-      {isCafe && (
-        <FieldWrap>
-          <Label required>Variant image</Label>
-          <input
-            type="file"
-            accept="image/jpeg,image/png"
-            onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer"
-          />
-          {variantImages[v.id] && (
-            <div className="relative mt-2 h-20 w-20">
-              <Image src={variantImages[v.id]} alt="Preview" fill className="rounded-lg object-cover border" sizes="80px" />
-              <button
-                type="button"
-                onClick={() => {
-                  setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
-                  update(v.id, "imageUrl", "");
-                }}
-                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black"
-              >✕</button>
-            </div>
-          )}
-        </FieldWrap>
-      )}
+      <FieldWrap>
+        <Label>Variant image</Label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png"
+          onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
+          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer"
+        />
+        {/* Show newly-picked image OR existing DB image */}
+        {(variantImages[v.id] || v.imageUrl) && (
+          <div className="relative mt-2 h-20 w-20 group">
+            <Image
+              src={variantImages[v.id] || v.imageUrl!}
+              alt="Preview"
+              fill
+              className="rounded-lg object-cover border border-gray-200"
+              sizes="80px"
+            />
+            {/* Label: "Current" when showing DB image, "New" when showing local pick */}
+            <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-semibold text-white bg-black/40 rounded-b-lg py-0.5 pointer-events-none">
+              {variantImages[v.id] ? "New" : "Current"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
+                update(v.id, "imageUrl", "");
+              }}
+              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black opacity-0 group-hover:opacity-100 transition"
+            >✕</button>
+          </div>
+        )}
+      </FieldWrap>
     </>
   );
 
