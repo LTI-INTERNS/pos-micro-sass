@@ -1,40 +1,54 @@
 "use client";
 
 import Image from "next/image";
-import Clock from '@/components/Landing/clock';
-import { Menu, History, Lock } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import Clock from "@/components/Landing/clock";
+import { Menu, History, Lock } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
 interface NavbarProps {
   toggleSidebar: () => void;
-  onOpenOrders: () => void; 
+  onOpenOrders: () => void;
 }
 
 const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   const { storeInfo } = useStoreInfo();
 
   /**
-   * Lock — keeps the branch session alive so the switch-user screen
-   * can still show cashier avatars, but clears the cashier's personal
-   * session by signing out and redirecting to /switchuser.
+   * Lock:
+   * - keeps branch-session cookie alive
+   * - clears cashier session only
+   * - redirects to switch user screen
    */
   const handleLock = async () => {
-    localStorage.setItem('isLocked', 'true');
-    sessionStorage.removeItem('cashier');
-    // Sign out clears the NextAuth cookie (cashier JWT).
-    // callbackUrl sends them to /switchuser after the sign-out completes.
-    await signOut({ callbackUrl: '/switchuser' });
+    try {
+      localStorage.setItem("isLocked", "true");
+      sessionStorage.removeItem("cashier");
+
+      await signOut({ callbackUrl: "/switchuser" });
+    } catch (error) {
+      console.error("LOCK ERROR:", error);
+    }
   };
 
   /**
-   * Log Out — full sign-out. Clears NextAuth session, sessionStorage,
-   * and the lock flag, then sends to /login.
+   * Full logout:
+   * - clears lock flag
+   * - clears cashier session
+   * - clears branch-session cookie
+   * - redirects to login
    */
   const handleLogout = async () => {
-    localStorage.removeItem('isLocked');
-    sessionStorage.removeItem('cashier');
-    await signOut({ callbackUrl: '/login' });
+    try {
+      localStorage.removeItem("isLocked");
+      sessionStorage.removeItem("cashier");
+
+      await fetch("/api/branch-session", { method: "DELETE" });
+
+      await signOut({ callbackUrl: "/login" });
+    } catch (error) {
+      console.error("LOGOUT ERROR:", error);
+    }
   };
 
   return (
@@ -96,7 +110,6 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
           <History size={20} />
         </button>
 
-        {/* Lock — clears cashier session, keeps branch session */}
         <button
           onClick={handleLock}
           title="Lock POS"
@@ -107,7 +120,6 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
           Lock
         </button>
 
-        {/* Log Out — full sign-out */}
         <button
           onClick={handleLogout}
           className="bg-orange-100 text-primary px-4 py-1 hover:bg-orange-500 hover:text-white cursor-pointer

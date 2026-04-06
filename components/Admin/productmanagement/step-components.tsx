@@ -505,7 +505,8 @@ export function Step3({
     update(id, "imageUrl", url);
   };
 
-  const EditableVariantFields = ({ v }: { v: ProductVariant }) => (
+  // ── Render pure JSX instead of a Component to prevent input focus loss ─────
+  const renderEditableVariantFields = (v: ProductVariant) => (
     <>
       <Grid2>
         <FieldWrap>
@@ -672,7 +673,7 @@ export function Step3({
                   </div>
                   <button type="button" onClick={() => remove(v.id)} className="text-[11px] text-red-500 border border-red-200 rounded-lg px-3 py-1 hover:bg-red-50 transition cursor-pointer">Remove</button>
                 </div>
-                <EditableVariantFields v={v} />
+                {renderEditableVariantFields(v)}
               </div>
             ))}
           </>
@@ -701,7 +702,7 @@ export function Step3({
               <span className="text-[12px] font-medium text-gray-600">{label}</span>
               <button type="button" onClick={() => remove(v.id)} className="text-[11px] text-red-500 border border-red-200 rounded-lg px-3 py-1 hover:bg-red-50 transition cursor-pointer">Remove</button>
             </div>
-            <EditableVariantFields v={v} />
+            {renderEditableVariantFields(v)}
           </div>
         );
       })}
