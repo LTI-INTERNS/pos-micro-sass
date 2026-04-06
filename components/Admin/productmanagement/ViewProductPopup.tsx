@@ -1,13 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import { Product } from "@/lib/services";
 import { ProductVariant } from "@/types/product.types";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
-import { BranchStock, BranchVariantDetail, ProductWithBranches } from "@/lib/mocks/productmanagement";
+import { BranchVariantDetail } from "@/lib/mocks/productmanagement";
 
 type Props = {
   open: boolean;
@@ -28,6 +28,17 @@ type ExtendedVariant = ProductVariant & {
   lowStock?: number;
   available?: boolean;
 };
+
+// ─── Helper: convert DB enum string to a readable label ───────────────────────
+
+function formatOptionName(name: string): string {
+  if (!name) return "";
+  // e.g. "PACK_SIZE" → "Pack Size", "COLOUR" → "Colour"
+  return name
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
 // ─── Reusable styled components ───────────────────────────────────────────────
 
@@ -322,6 +333,15 @@ export default function ViewProductPopup({
   const isManager = userRole === "manager";
 
   const [activeBranch, setActiveBranch] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+
+  // Close lightbox with Escape key
+  useEffect(() => {
+    if (!imagePreviewUrl) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setImagePreviewUrl(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [imagePreviewUrl]);
 
   if (!product) return null;
 
@@ -332,13 +352,14 @@ export default function ViewProductPopup({
       ? (product.variants?.find((v) => v.sku === selectedVariantSku) as ExtendedVariant | undefined)
       : null;
 
-  const branchStock: BranchStock | undefined = (product as ProductWithBranches).branchStock;
-  const branchNames = branchStock ? Object.keys(branchStock) : [];
+  const branchesStock: Record<string, Record<string, any>> | undefined =
+    (product as any).branchesStock;
+  const branchNames = branchesStock ? Object.keys(branchesStock) : [];
 
-  // Resolve branch detail — prefer fields on focusedVariant, fall back to branchStock lookup
-  const branchVariantDetail: BranchVariantDetail | undefined =
-    isManager && selectedVariantSku && branchStock
-      ? Object.values(branchStock)
+  // Resolve branch detail — prefer fields on focusedVariant, fall back to branchesStock lookup
+  const branchVariantDetail =
+    isManager && selectedVariantSku && branchesStock
+      ? Object.values(branchesStock)
           .flatMap((b) => Object.entries(b))
           .find(([sku]) => sku === selectedVariantSku)?.[1]
       : undefined;
@@ -361,10 +382,12 @@ export default function ViewProductPopup({
 
   const handleClose = () => {
     setActiveBranch(null);
+    setImagePreviewUrl(null);
     onClose();
   };
 
   return (
+    <>
     <ModalShell
       open={open}
       onClose={handleClose}
@@ -374,11 +397,11 @@ export default function ViewProductPopup({
       <div className="space-y-5">
 
         {/* ── Branch detail view (owner/admin) ─────────────────────────────── */}
-        {!isManager && activeBranch && branchStock?.[activeBranch] && (
+        {!isManager && activeBranch && branchesStock?.[activeBranch] && (
           <BranchDetailPanel
             branchName={activeBranch}
             variants={product.variants ?? []}
-            branchVariants={branchStock[activeBranch]}
+            branchVariants={branchesStock[activeBranch]}
             currency={currency}
             useCents={useCents}
             onBack={() => setActiveBranch(null)}
@@ -423,16 +446,16 @@ export default function ViewProductPopup({
             {/* ── Owner/Admin: Branch pills ──────────────────────────────────── */}
             {!isManager && branchNames.length > 0 && (
               <div>
-                <Label>Branches</Label>
+                <Label>Stocked Branches</Label>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {branchNames.map((branch) => {
-                    const bvMap = branchStock![branch];
+                    const bvMap = branchesStock![branch];
                     const totalStock = Object.values(bvMap).reduce(
-                      (sum, bv) => sum + bv.stockQty,
+                      (sum: number, bv: any) => sum + (bv.stockQty ?? 0),
                       0
                     );
-                    const hasOutOfStock = Object.values(bvMap).some((bv) => bv.stockQty === 0);
-                    const allUnavailable = Object.values(bvMap).every((bv) => !bv.available);
+                    const hasOutOfStock = Object.values(bvMap).some((bv: any) => bv.stockQty === 0);
+                    const allUnavailable = Object.values(bvMap).every((bv: any) => !bv.available);
 
                     return (
                       <button
@@ -590,29 +613,47 @@ export default function ViewProductPopup({
                 <InfoRow label="Description" value={product.description} />
               )}
 
-              {/* Options */}
-              {product.options?.length > 0 && (
-                <div>
-                  <SectionTitle title="Product options" />
-                  <div className="space-y-3">
-                    {product.options.map(
-                      (opt: { name: string; values: string[] }, i: number) => (
+              {/* Options — grouped by type so duplicates merge into one card */}
+              {product.options?.length > 0 && (() => {
+                // Merge options with the same name into one entry
+                const grouped = new Map<string, string[]>();
+                for (const opt of product.options as { name: string; values: string[] }[]) {
+                  const existing = grouped.get(opt.name) ?? [];
+                  grouped.set(opt.name, Array.from(new Set([...existing, ...opt.values])));
+                }
+                return (
+                  <div>
+                    <SectionTitle title="Product options" />
+                    <div className="space-y-3">
+                      {Array.from(grouped.entries()).map(([name, values]) => (
                         <div
-                          key={i}
+                          key={name}
                           className="bg-gray-50 border border-gray-200 rounded-xl p-3"
                         >
-                          <p className="text-[13px] font-medium text-gray-700 mb-2">{opt.name}</p>
+                          {/* Option type row */}
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
+                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+                              Option Type
+                            </span>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                              {formatOptionName(name)}
+                            </span>
+                          </div>
+                          {/* Values row */}
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                            Values
+                          </p>
                           <div className="flex flex-wrap gap-1.5">
-                            {opt.values.map((value) => (
+                            {values.map((value) => (
                               <OptionTag key={value}>{value}</OptionTag>
                             ))}
                           </div>
                         </div>
-                      )
-                    )}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Variants */}
               {isManager && focusedVariant ? (
@@ -627,9 +668,25 @@ export default function ViewProductPopup({
                             <p className="text-sm text-gray-800">{focusedVariant.sku}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] text-gray-400">Price</p>
-                            <p className="text-sm font-medium text-orange-600">
-                              {formatCurrency(focusedVariant.price, currency, useCents)}
+                            <p className="text-[11px] text-gray-400">Sell Unit</p>
+                            <p className="text-sm text-gray-700">{(focusedVariant as any).sellUnit ?? "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-gray-400">Base Price</p>
+                            <p className="text-sm text-gray-700">
+                              {formatCurrency(
+                                Number((focusedVariant as any).basePrice ?? focusedVariant.price ?? 0),
+                                currency, useCents
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] text-gray-400">Selling Price</p>
+                            <p className="text-sm font-semibold text-orange-600">
+                              {formatCurrency(
+                                Number((focusedVariant as any).sellingPrice ?? focusedVariant.price ?? 0),
+                                currency, useCents
+                              )}
                             </p>
                           </div>
                           {focusedVariant.barcode && (
@@ -660,39 +717,61 @@ export default function ViewProductPopup({
                         const label = v.optionValues?.length
                           ? v.optionValues.map((o) => o.value).join(" · ")
                           : v.sku || `Variant ${idx + 1}`;
+                        // Resolve prices — prefer raw basePrice/sellingPrice strings, fall back to mapped price
+                        const baseP  = v.basePrice    ? Number(v.basePrice)    : v.price;
+                        const sellP  = v.sellingPrice ? Number(v.sellingPrice) : v.price;
+                        const unit   = v.sellUnit ?? "";
                         return (
                           <div
                             key={v.sku || idx}
                             className="bg-gray-50 border border-gray-200 rounded-xl p-4"
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <p className="text-[13px] font-medium text-gray-700 mb-2">{label}</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                  <div>
-                                    <p className="text-[11px] text-gray-400">SKU</p>
-                                    <p className="text-sm text-gray-800">{v.sku}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-[11px] text-gray-400">Price</p>
-                                    <p className="text-sm font-medium text-orange-600">
-                                      {formatCurrency(v.price, currency, useCents)}
-                                    </p>
-                                  </div>
-                                  {v.barcode && <BarcodeTile barcode={v.barcode} />}
-                                </div>
-                              </div>
+                            {/* Header row: label + thumbnail */}
+                            <div className="flex items-start justify-between mb-3">
+                              <p className="text-[13px] font-semibold text-gray-700">{label}</p>
                               {v.imageUrl && (
-                                <div className="relative w-16 h-16 ml-3 flex-shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setImagePreviewUrl(v.imageUrl!)}
+                                  className="relative w-14 h-14 ml-3 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 hover:ring-2 hover:ring-orange-400 transition cursor-zoom-in"
+                                  title="Click to enlarge"
+                                >
                                   <Image
                                     src={v.imageUrl}
                                     alt={v.sku}
                                     fill
-                                    className="object-cover rounded-lg border border-gray-200"
-                                    sizes="64px"
+                                    className="object-cover"
+                                    sizes="56px"
                                   />
-                                </div>
+                                  {/* Zoom hint overlay */}
+                                  <span className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0zm-6-3v6m-3-3h6" />
+                                    </svg>
+                                  </span>
+                                </button>
                               )}
+                            </div>
+
+                            {/* Fields grid */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">SKU</p>
+                                <p className="text-sm text-gray-800 font-mono">{v.sku}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Sell Unit</p>
+                                <p className="text-sm text-gray-700">{unit || "—"}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Base Price</p>
+                                <p className="text-sm text-gray-700">{formatCurrency(baseP, currency, useCents)}</p>
+                              </div>
+                              <div>
+                                <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-0.5">Selling Price</p>
+                                <p className="text-sm font-semibold text-orange-600">{formatCurrency(sellP, currency, useCents)}</p>
+                              </div>
+                              {v.barcode && <BarcodeTile barcode={v.barcode} />}
                             </div>
                           </div>
                         );
@@ -712,5 +791,31 @@ export default function ViewProductPopup({
         )}
       </div>
     </ModalShell>
+
+    {/* ── Image lightbox overlay ── */}
+    {imagePreviewUrl && (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+        onClick={() => setImagePreviewUrl(null)}
+      >
+        <button
+          type="button"
+          onClick={() => setImagePreviewUrl(null)}
+          className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition text-xl leading-none z-10"
+          aria-label="Close preview"
+        >
+          ×
+        </button>
+        <div onClick={(e) => e.stopPropagation()}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imagePreviewUrl}
+            alt="Variant preview"
+            className="max-w-[90vw] max-h-[85vh] rounded-xl object-contain shadow-2xl border border-white/10"
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }
