@@ -23,6 +23,11 @@ export default function ProfitTable({ profits, showBranch = false }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Profit>[] = [
+     {
+    key: "index",
+    label: "#",
+    render: (_, index) => index + 1,
+  },
     {
       key: "id",
       label: "ID",

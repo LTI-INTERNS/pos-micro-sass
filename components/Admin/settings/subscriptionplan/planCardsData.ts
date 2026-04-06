@@ -1,12 +1,15 @@
+import type { SubscriptionType } from "@/types/subscription.types";
+
 export type PlanFeature = {
   label: string;
   value: string;
 };
 
 export type PlanCardData = {
-  id: string;
-  name: string;
-  price: string;
+  id:          string;
+  subType:     SubscriptionType;   // ← links card to the DB enum value
+  name:        string;
+  price:       string;
   billingCycle: string;
   description: string;
   badge?: string;
@@ -16,9 +19,10 @@ export type PlanCardData = {
 export const planCardsData: PlanCardData[] = [
 
   {
-    id: "basic",
-    name: "Basic",
-    price: "$0.00",
+    id:          "basic",
+    subType:     "FREE",
+    name:        "Basic",
+    price:       "$0.00",
     billingCycle: "month",
     description: "Perfect for small shops just getting started.",
     features: [
@@ -34,9 +38,10 @@ export const planCardsData: PlanCardData[] = [
   },
 
   {
-    id: "pro",
-    name: "Pro",
-    price: "$29",
+    id:          "pro",
+    subType:     "PRO",
+    name:        "Pro",
+    price:       "$29",
     billingCycle: "month",
     description: "For growing businesses that need more power.",
     badge: "Most Popular",
@@ -53,9 +58,10 @@ export const planCardsData: PlanCardData[] = [
   },
 
   {
-    id: "advanced",
-    name: "Advanced",
-    price: "$79",
+    id:          "advanced",
+    subType:     "ENTERPRISE",
+    name:        "Advanced",
+    price:       "$79",
     billingCycle: "month",
     description: "Enterprise-grade features for large operations.",
     badge: "Enterprise",

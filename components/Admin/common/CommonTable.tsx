@@ -6,7 +6,7 @@ export type Column<T> = {
   key: keyof T | string;
   label: string;
   align?: "left" | "right" | "center";
-  render?: (row: T) => React.ReactNode;
+  render?: (row: T, index: number) => React.ReactNode;
 };
 
 type Props<T> = {
@@ -18,7 +18,6 @@ type Props<T> = {
   onSelectRow?: (row: T | null) => void;
 };
 
-// Make ALIGN_CLASS generic-free
 const ALIGN_CLASS: Record<"left" | "right" | "center", string> = {
   left: "text-left",
   right: "text-right",
@@ -34,7 +33,7 @@ function CommonTableInner<T extends { id?: string | number }>({
   onSelectRow,
 }: Props<T>) {
   return (
-    <section className="bg-white rounded-xl border border-gray-100">
+    <section className="rounded-xl border border-gray-100 bg-white">
       {title && (
         <div className="px-6 py-3">
           <h2 className="text-xs font-semibold text-gray-900">{title}</h2>
@@ -74,9 +73,9 @@ function CommonTableInner<T extends { id?: string | number }>({
                       onSelectRow(row);
                     }
                   }}
-                  className={`border-b border-gray-100 cursor-pointer
-                    hover:bg-orange-50
-                    ${isSelected ? "bg-orange-100" : ""}`}
+                  className={`cursor-pointer border-b border-gray-100 hover:bg-orange-50 ${
+                    isSelected ? "bg-orange-100" : ""
+                  }`}
                 >
                   {columns.map((col) => (
                     <td
@@ -85,7 +84,11 @@ function CommonTableInner<T extends { id?: string | number }>({
                         ALIGN_CLASS[col.align ?? "left"]
                       } text-gray-700`}
                     >
-                      {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key as string] ?? "")}
+                      {col.render
+                        ? col.render(row, index)
+                        : String(
+                            (row as Record<string, unknown>)[col.key as string] ?? ""
+                          )}
                     </td>
                   ))}
                 </tr>

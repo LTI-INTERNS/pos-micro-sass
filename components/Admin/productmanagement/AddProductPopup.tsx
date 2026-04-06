@@ -99,7 +99,7 @@ export default function AddProductPopup({
   const handleLoadProduct = (p: ExistingProduct) => {
     const opts = (p.options ?? []).map((o) => ({ ...o, id: o.id ?? Math.floor(Date.now() * Math.random()) }));
     const vars = (p.variants ?? []).map((v, i) => ({ ...v, id: v.id ?? i + 1 }));
-    setState({ name: p.name, categoryId: p.category, brand: p.brand ?? "", description: p.description ?? "", options: opts, variants: vars });
+    setState({ name: p.name, categoryId: p.categoryId || p.category, brand: p.brand ?? "", description: p.description ?? "", options: opts, variants: vars });
     setSelectedOptionIds(new Set(opts.map((o) => o.id)));
     setSelectedVariantIds(new Set(vars.map((v) => v.id)));
   };
@@ -137,6 +137,7 @@ export default function AddProductPopup({
       if (isManagerVariantMode && selectedProductIds.size === 1 && selectedVariantIds.size === 0)
         return "Please select at least one variant.";
       if (!isManagerVariantMode && !isManagerEditMode) {
+        if (state.variants.length === 0) return "Please add at least one product variant.";
         for (const v of state.variants) {
           if (!v.sku.trim()) return "All variants must have a SKU.";
           if (!v.basePrice) return "All variants must have a base price.";

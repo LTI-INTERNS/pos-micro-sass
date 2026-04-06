@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
+import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
@@ -11,11 +11,14 @@ type ExpenseValues = {
   category: string;
   description: string;
   amount: string;
+  branch: string;
 };
 
-type PaymentMethod = "card" | "cash" | null;
+type PaymentMethod = "card" | "cash" | "check" | "bankTransfer" | "";
 
-type FormErrors = Partial<Record<keyof ExpenseValues, string>>;
+type FormErrors = Partial<Record<keyof ExpenseValues, string>> & {
+  paymentMethod?: string;
+};
 
 type AddExpensesPopupProps = {
   open: boolean;
@@ -23,29 +26,87 @@ type AddExpensesPopupProps = {
   onSave: (values: ExpenseValues & { paymentMethod: PaymentMethod }) => void;
 };
 
+type UserRole = "owner" | "admin" | "manager";
+
+const CATEGORY_OPTIONS = [
+  { value: "Ingredients", label: "Ingredients" },
+  { value: "Utilities", label: "Utilities" },
+  { value: "Staff Salaries", label: "Staff Salaries" },
+  { value: "Rent", label: "Rent" },
+  { value: "Equipment Maintenance", label: "Equipment Maintenance" },
+  { value: "Packaging", label: "Packaging" },
+  { value: "Marketing", label: "Marketing" },
+  { value: "Cleaning Supplies", label: "Cleaning Supplies" },
+  { value: "Licenses & Permits", label: "Licenses & Permits" },
+  { value: "Insurance", label: "Insurance" },
+  { value: "Repairs", label: "Repairs" },
+  { value: "Transportation", label: "Transportation" },
+  { value: "Stock Purchase", label: "Stock Purchase" },
+  { value: "Logistics", label: "Logistics" },
+  { value: "Cold Storage", label: "Cold Storage" },
+  { value: "Security", label: "Security" },
+  { value: "Medicine Purchase", label: "Medicine Purchase" },
+  { value: "Book Purchase", label: "Book Purchase" },
+];
+
+const BRANCH_OPTIONS = [
+  { value: "Colombo", label: "Colombo" },
+  { value: "Negombo", label: "Negombo" },
+  { value: "Nugegoda", label: "Nugegoda" },
+  { value: "Galle", label: "Galle" },
+  { value: "Matara", label: "Matara" },
+  { value: "Kandy", label: "Kandy" },
+];
+
+const PAYMENT_OPTIONS = [
+  { value: "cash", label: "Cash" },
+  { value: "card", label: "Card" },
+  { value: "check", label: "Check" },
+  { value: "bankTransfer", label: "Bank Transfer" },
+];
+
 const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
+  const { data: session } = useSession();
+
+  const sessionRole =
+    typeof session?.user?.role === "string"
+      ? session.user.role.toLowerCase()
+      : undefined;
+
+  const role: UserRole | undefined =
+    sessionRole === "owner" ||
+    sessionRole === "admin" ||
+    sessionRole === "manager"
+      ? sessionRole
+      : undefined;
+
+  const canEditBranch = role === "owner" || role === "admin";
+  const sessionBranch = session?.user?.branchName?.trim() ?? "";
+
   const [values, setValues] = React.useState<ExpenseValues>({
     date: "",
     category: "",
     description: "",
     amount: "",
+    branch: "",
   });
 
-  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>(null);
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("");
   const [errors, setErrors] = React.useState<FormErrors>({});
 
-  // Reset form when popup opens
   React.useEffect(() => {
     if (!open) return;
+
     setValues({
       date: "",
       category: "",
       description: "",
       amount: "",
+      branch: canEditBranch ? "" : sessionBranch,
     });
-    setPaymentMethod(null);
+    setPaymentMethod("");
     setErrors({});
-  }, [open]);
+  }, [open, canEditBranch, sessionBranch]);
 
   const setField = (name: keyof ExpenseValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -62,7 +123,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 
     if (!values.description.trim()) {
       newErrors.description = "Description is required";
-    } else if (values.description.length < 3) {
+    } else if (values.description.trim().length < 3) {
       newErrors.description = "Description must be at least 3 characters";
     }
 
@@ -72,6 +133,14 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
       newErrors.amount = "Amount must be a valid number";
     } else if (Number(values.amount) <= 0) {
       newErrors.amount = "Amount must be greater than 0";
+    }
+
+    if (!values.branch.trim()) {
+      newErrors.branch = "Branch is required";
+    }
+
+    if (!paymentMethod) {
+      newErrors.paymentMethod = "Payment method is required";
     }
 
     setErrors(newErrors);
@@ -90,105 +159,111 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
       category: "",
       description: "",
       amount: "",
+      branch: canEditBranch ? "" : sessionBranch,
     });
-    setPaymentMethod(null);
+    setPaymentMethod("");
     setErrors({});
   };
-
-  const cardBase =
-    "flex h-20 w-full cursor-pointer items-center justify-center rounded-md border transition-all";
-
-  const selectedCard =
-    "border-orange-500 ring-2 ring-orange-200 bg-orange-50";
-
-  const unselectedCard =
-    "border-gray-200 hover:border-orange-300";
 
   return (
     <ModalShell
       open={open}
       title="Add New Expense"
       onClose={handleCancel}
-      widthClassName="w-[980px] max-w-[92vw]"
+      widthClassName="w-[760px] max-w-[92vw]"
     >
       <form
-        className="space-y-3"
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
           handleSave();
         }}
       >
-        <FormField
-          label="Date"
-          placeholder="Enter date"
-          value={values.date}
-          onChange={(v) => setField("date", v)}
-          type="date"
-        />
-        {errors.date && <p className="text-xs text-red-500 px-3">{errors.date}</p>}
-
-        <FormField
-          label="Category"
-          placeholder="Enter category"
-          value={values.category}
-          onChange={(v) => setField("category", v)}
-          type="dropdown"
-        />
-        {errors.category && <p className="text-xs text-red-500 px-3">{errors.category}</p>}
-
-        <FormField
-          label="Description"
-          placeholder="Enter description"
-          value={values.description}
-          onChange={(v) => setField("description", v)}
-          type="text"
-        />
-        {errors.description && <p className="text-xs text-red-500 px-3">{errors.description}</p>}
-
-        <FormField
-          label="Amount"
-          placeholder="Enter amount"
-          value={values.amount}
-          onChange={(v) => setField("amount", v)}
-          type="number"
-        />
-        {errors.amount && <p className="text-xs text-red-500 px-3">{errors.amount}</p>}
-
-        {/* Payment Method Selection */}
-        <div className="mt-10 flex items-center justify-center gap-x-6">
-          <div
-            onClick={() => setPaymentMethod("card")}
-            className={`${cardBase} ${
-              paymentMethod === "card" ? selectedCard : unselectedCard
-            }`}
-          >
-            <Image
-              src="/Popcard.png"
-              alt="Card Payment"
-              width={48}
-              height={48}
-              className="object-contain"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <FormField
+              label="Date"
+              placeholder="Enter date"
+              value={values.date}
+              onChange={(v) => setField("date", v)}
+              type="date"
             />
+            {errors.date && <p className="px-3 pt-1 text-xs text-red-500">{errors.date}</p>}
           </div>
 
-          <div
-            onClick={() => setPaymentMethod("cash")}
-            className={`${cardBase} ${
-              paymentMethod === "cash" ? selectedCard : unselectedCard
-            }`}
-          >
-            <Image
-              src="/Popcash.png"
-              alt="Cash Payment"
-              width={48}
-              height={40}
-              className="object-contain"
+          <div>
+            <FormField
+              label="Category"
+              placeholder="Select category"
+              value={values.category}
+              onChange={(v) => setField("category", v)}
+              type="dropdown"
+              options={CATEGORY_OPTIONS}
             />
+            {errors.category && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.category}</p>
+            )}
+          </div>
+
+          <div>
+            <FormField
+              label="Amount"
+              placeholder="Enter amount"
+              value={values.amount}
+              onChange={(v) => setField("amount", v)}
+              type="number"
+            />
+            {errors.amount && <p className="px-3 pt-1 text-xs text-red-500">{errors.amount}</p>}
+          </div>
+
+          <div>
+            <FormField
+              label="Payment Method"
+              placeholder="Select payment method"
+              value={paymentMethod}
+              onChange={(v) => {
+                setPaymentMethod(v as PaymentMethod);
+                if (errors.paymentMethod) {
+                  setErrors((prev) => ({ ...prev, paymentMethod: "" }));
+                }
+              }}
+              type="dropdown"
+              options={PAYMENT_OPTIONS}
+            />
+            {errors.paymentMethod && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.paymentMethod}</p>
+            )}
+          </div>
+
+          <div className="md:col-span-2">
+            <FormField
+              label="Branch"
+              placeholder="Select branch"
+              value={values.branch}
+              onChange={(v) => setField("branch", v)}
+              type="dropdown"
+              options={BRANCH_OPTIONS}
+              disabled={!canEditBranch}
+            />
+            {errors.branch && <p className="px-3 pt-1 text-xs text-red-500">{errors.branch}</p>}
+          </div>
+
+          <div className="md:col-span-2">
+            <FormField
+              label="Description"
+              placeholder="Enter description"
+              value={values.description}
+              onChange={(v) => setField("description", v)}
+              type="text"
+            />
+            {errors.description && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.description}</p>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center justify-center">
-          <div className="w-105">
+        <div className="flex items-center justify-center pt-2">
+          <div className="w-full md:w-[420px]">
             <PopupActions
               actions={[
                 { label: "Cancel", onClick: handleCancel, variant: "secondary" },
@@ -203,91 +278,3 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
 };
 
 export default AddExpensesPopup;
-
-
-// // ============================================
-//   // Seed ExpenseCategory
-//   // ============================================
-//  // await prisma.expenseCategory.createMany({
-//    // data: [
-//       // CAFE
-//       { categoryId: 'ec-001', businessTypeId: 'bt-001', category: 'Ingredients' },
-//       { categoryId: 'ec-002', businessTypeId: 'bt-001', category: 'Utilities' },
-//       { categoryId: 'ec-003', businessTypeId: 'bt-001', category: 'Staff Salaries' },
-//       { categoryId: 'ec-004', businessTypeId: 'bt-001', category: 'Rent' },
-//       { categoryId: 'ec-005', businessTypeId: 'bt-001', category: 'Equipment Maintenance' },
-//       { categoryId: 'ec-006', businessTypeId: 'bt-001', category: 'Packaging' },
-//       { categoryId: 'ec-007', businessTypeId: 'bt-001', category: 'Marketing' },
-//       { categoryId: 'ec-008', businessTypeId: 'bt-001', category: 'Cleaning Supplies' },
-//       { categoryId: 'ec-009', businessTypeId: 'bt-001', category: 'Licenses & Permits' },
-//       { categoryId: 'ec-010', businessTypeId: 'bt-001', category: 'Insurance' },
-//       { categoryId: 'ec-011', businessTypeId: 'bt-001', category: 'Repairs' },
-//       { categoryId: 'ec-012', businessTypeId: 'bt-001', category: 'Transportation' },
-
-//       // CLOTHING
-//       { categoryId: 'ec-101', businessTypeId: 'bt-002', category: 'Stock Purchase' },
-//       { categoryId: 'ec-102', businessTypeId: 'bt-002', category: 'Utilities' },
-//       { categoryId: 'ec-103', businessTypeId: 'bt-002', category: 'Staff Salaries' },
-//       { categoryId: 'ec-104', businessTypeId: 'bt-002', category: 'Rent' },
-//       { categoryId: 'ec-105', businessTypeId: 'bt-002', category: 'Marketing' },
-//       { categoryId: 'ec-106', businessTypeId: 'bt-002', category: 'Packaging' },
-//       { categoryId: 'ec-107', businessTypeId: 'bt-002', category: 'Equipment Maintenance' },
-//       { categoryId: 'ec-108', businessTypeId: 'bt-002', category: 'Cleaning Supplies' },
-//       { categoryId: 'ec-109', businessTypeId: 'bt-002', category: 'Licenses & Permits' },
-//       { categoryId: 'ec-110', businessTypeId: 'bt-002', category: 'Insurance' },
-//       { categoryId: 'ec-111', businessTypeId: 'bt-002', category: 'Security' },
-//       { categoryId: 'ec-112', businessTypeId: 'bt-002', category: 'Transportation' },
-
-//       // SUPERMARKET
-//       { categoryId: 'ec-201', businessTypeId: 'bt-003', category: 'Stock Purchase' },
-//       { categoryId: 'ec-202', businessTypeId: 'bt-003', category: 'Utilities' },
-//       { categoryId: 'ec-203', businessTypeId: 'bt-003', category: 'Staff Salaries' },
-//       { categoryId: 'ec-204', businessTypeId: 'bt-003', category: 'Rent' },
-//       { categoryId: 'ec-205', businessTypeId: 'bt-003', category: 'Logistics' },
-//       { categoryId: 'ec-206', businessTypeId: 'bt-003', category: 'Cold Storage' },
-//       { categoryId: 'ec-207', businessTypeId: 'bt-003', category: 'Marketing' },
-//       { categoryId: 'ec-208', businessTypeId: 'bt-003', category: 'Equipment Maintenance' },
-//       { categoryId: 'ec-209', businessTypeId: 'bt-003', category: 'Cleaning Supplies' },
-//       { categoryId: 'ec-210', businessTypeId: 'bt-003', category: 'Licenses & Permits' },
-//       { categoryId: 'ec-211', businessTypeId: 'bt-003', category: 'Insurance' },
-//       { categoryId: 'ec-212', businessTypeId: 'bt-003', category: 'Security' },
-
-//       // PHARMACY
-//       { categoryId: 'ec-301', businessTypeId: 'bt-004', category: 'Medicine Purchase' },
-//       { categoryId: 'ec-302', businessTypeId: 'bt-004', category: 'Utilities' },
-//       { categoryId: 'ec-303', businessTypeId: 'bt-004', category: 'Staff Salaries' },
-//       { categoryId: 'ec-304', businessTypeId: 'bt-004', category: 'Rent' },
-//       { categoryId: 'ec-305', businessTypeId: 'bt-004', category: 'Cold Storage' },
-//       { categoryId: 'ec-306', businessTypeId: 'bt-004', category: 'Licenses & Permits' },
-//       { categoryId: 'ec-307', businessTypeId: 'bt-004', category: 'Insurance' },
-//       { categoryId: 'ec-308', businessTypeId: 'bt-004', category: 'Security' },
-//       { categoryId: 'ec-309', businessTypeId: 'bt-004', category: 'Cleaning Supplies' },
-//       { categoryId: 'ec-310', businessTypeId: 'bt-004', category: 'Equipment Maintenance' },
-//       { categoryId: 'ec-311', businessTypeId: 'bt-004', category: 'Packaging' },
-
-//       // HARDWARE
-//       { categoryId: 'ec-401', businessTypeId: 'bt-005', category: 'Stock Purchase' },
-//       { categoryId: 'ec-402', businessTypeId: 'bt-005', category: 'Utilities' },
-//       { categoryId: 'ec-403', businessTypeId: 'bt-005', category: 'Staff Salaries' },
-//       { categoryId: 'ec-404', businessTypeId: 'bt-005', category: 'Rent' },
-//       { categoryId: 'ec-405', businessTypeId: 'bt-005', category: 'Transportation' },
-//       { categoryId: 'ec-406', businessTypeId: 'bt-005', category: 'Equipment Maintenance' },
-//       { categoryId: 'ec-407', businessTypeId: 'bt-005', category: 'Marketing' },
-//       { categoryId: 'ec-408', businessTypeId: 'bt-005', category: 'Security' },
-//       { categoryId: 'ec-409', businessTypeId: 'bt-005', category: 'Insurance' },
-//       { categoryId: 'ec-410', businessTypeId: 'bt-005', category: 'Licenses & Permits' },
-
-//       // BOOKSHOP
-//       { categoryId: 'ec-501', businessTypeId: 'bt-006', category: 'Book Purchase' },
-//       { categoryId: 'ec-502', businessTypeId: 'bt-006', category: 'Utilities' },
-//       { categoryId: 'ec-503', businessTypeId: 'bt-006', category: 'Staff Salaries' },
-//       { categoryId: 'ec-504', businessTypeId: 'bt-006', category: 'Rent' },
-//       { categoryId: 'ec-505', businessTypeId: 'bt-006', category: 'Marketing' },
-//       { categoryId: 'ec-506', businessTypeId: 'bt-006', category: 'Packaging' },
-//       { categoryId: 'ec-507', businessTypeId: 'bt-006', category: 'Equipment Maintenance' },
-//       { categoryId: 'ec-508', businessTypeId: 'bt-006', category: 'Cleaning Supplies' },
-//       { categoryId: 'ec-509', businessTypeId: 'bt-006', category: 'Licenses & Permits' },
-//       { categoryId: 'ec-510', businessTypeId: 'bt-006', category: 'Insurance' }
-//     ],
-//     skipDuplicates: true
-//   })

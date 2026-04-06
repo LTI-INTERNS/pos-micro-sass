@@ -32,6 +32,7 @@ export type ExistingProduct = {
   id: number | string;
   name: string;
   category: string;
+  categoryId?: string;
   brand?: string;
   description?: string;
   options?: ProductOption[];
