@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
@@ -13,15 +14,11 @@ import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Fil
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 
-type UserRole = "superadmin" | "admin" | "manager";
-
-const mockSession = {
-  role: "admin" as UserRole,
-  name: "John Doe",
-  branch: "Colombo",             
-};
+type UserRole = "owner" | "admin" | "manager";
 
 export default function ExpensesContent() {
+  const { data: session, status } = useSession();
+
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
@@ -35,12 +32,42 @@ export default function ExpensesContent() {
     branch?: string;
   }>({});
 
-  const isSuperAdmin = mockSession.role === "superadmin";
+  const sessionRole =
+    typeof session?.user?.role === "string"
+      ? session.user.role.toLowerCase()
+      : undefined;
 
-  // Superadmin sees all branches; admin/manager sees their branch only
-  const branchFilteredExpenses = isSuperAdmin
-    ? mockExpenses
-    : mockExpenses.filter((e) => e.branch === mockSession.branch);
+  const role: UserRole | undefined =
+    sessionRole === "owner" ||
+    sessionRole === "admin" ||
+    sessionRole === "manager"
+      ? sessionRole
+      : undefined;
+
+  const branchName = session?.user?.branchName?.trim() ?? "";
+
+  const isOwner = role === "owner";
+  const isAdmin = role === "admin";
+  const canUseBranchFilter = isOwner || isAdmin;
+  const showBranchColumn = isOwner || isAdmin;
+
+  const branchFilteredExpenses = useMemo(() => {
+    if (status === "loading") return [];
+
+    if (isOwner) return mockExpenses;
+
+    if (!branchName) return mockExpenses;
+
+    return mockExpenses.filter(
+      (e) => e.branch.trim().toLowerCase() === branchName.toLowerCase()
+    );
+  }, [status, isOwner, branchName]);
+
+  const visibleFilters = canUseBranchFilter
+    ? filters
+    : Object.fromEntries(
+        Object.entries(filters).filter(([key]) => key !== "branch")
+      );
 
   const categoryOptions = getFilterOptions(branchFilteredExpenses, "category");
   const paymentOptions = getFilterOptions(branchFilteredExpenses, "payment");
@@ -54,22 +81,30 @@ export default function ExpensesContent() {
     end,
     dateKey: "date",
     searchKeys: ["id", "category", "description"],
-    filters,
+    filters: canUseBranchFilter ? filters : { ...filters, branch: "" },
   });
 
-  const isFilterApplied = Object.values(filters).some(
+  const isFilterApplied = Object.values(visibleFilters).some(
     (v) => v && v.trim() !== ""
   );
 
   const removeFilter = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: "" }));
+    if (!canUseBranchFilter && key === "branch") return;
+
+    setFilters((prev) => ({
+      ...prev,
+      [key]: "",
+    }));
   };
 
   const exportCSV = useCSVExport<Expenses>();
 
+  if (status === "loading") {
+    return <div className="w-full p-4">Loading expenses...</div>;
+  }
+
   return (
     <div className="w-full space-y-5">
-
       <DateRangePicker
         startDate={start}
         endDate={end}
@@ -94,17 +129,21 @@ export default function ExpensesContent() {
           onClearFilters={() => setFilters({})}
         />
 
-        <FilterChips filters={filters} onRemove={removeFilter} />
+        <FilterChips filters={visibleFilters} onRemove={removeFilter} />
 
         <FilterPopup
           open={showFilter}
           onClose={() => setShowFilter(false)}
           onApply={(values) => {
-            setFilters(values);
+            const nextValues = canUseBranchFilter
+              ? values
+              : { ...values, branch: "" };
+
+            setFilters(nextValues);
             setShowFilter(false);
           }}
           fields={[
-            ...(isSuperAdmin
+            ...(canUseBranchFilter
               ? [{ name: "branch", placeholder: "Branch", options: branchOptions }]
               : []),
             { name: "category", placeholder: "Category", options: categoryOptions },
@@ -127,7 +166,10 @@ export default function ExpensesContent() {
         />
       </div>
 
-      <ExpensesTable Expenses={filteredExpenses} showBranch={isSuperAdmin} />
+      <ExpensesTable
+        Expenses={filteredExpenses}
+        showBranch={showBranchColumn}
+      />
 
       <AddExpensesPopup
         open={showAddExpense}
