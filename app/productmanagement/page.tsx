@@ -38,6 +38,7 @@ function toPopupProduct(p: Product) {
       values: opt.values,
     })),
     variants: (p.variants ?? []).map((v, i) => ({
+      ...(v as any),          // preserves real variantId from the backend spread
       id: i + 1,
       sku: v.sku,
       barcode: "",
@@ -68,20 +69,31 @@ export default function DashboardPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  }
+  // ── ALL hooks must be declared before any conditional return ─────────────────
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addVariantOpen, setAddVariantOpen] = useState(false);
+  const [addStockOpen, setAddStockOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const { filters: urlFilters, setFilter } = useUrlFilters();
+
+  const search = urlFilters.search || "";
+  const setSearch = (val: string) => setFilter("search", val);
+  const filterOpen = !!urlFilters.filterOpen;
+  const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
 
   const role = session?.user?.role?.toLowerCase();
-
   const userRole: UserRole =
     role === "owner" || role === "admin" || role === "manager"
       ? (role as UserRole)
       : "manager";
-
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [viewOpen, setViewOpen] = useState(false);
 
   useEffect(() => {
     productService.getAll()
@@ -89,19 +101,12 @@ export default function DashboardPage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  const { filters: urlFilters, setFilter } = useUrlFilters();
-  const search = urlFilters.search || "";
-  const setSearch = (val: string) => setFilter("search", val);
-  const filterOpen = !!urlFilters.filterOpen;
-  const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
-
-  const [editOpen, setEditOpen] = useState(false);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addVariantOpen, setAddVariantOpen] = useState(false);
-  const [addStockOpen, setAddStockOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  // Fetch full company catalog when the "Add from Catalog" popup opens.
+  // Uses ?catalog=true to bypass the branch filter so managers see everything.
+  useEffect(() => {
+    if (!addVariantOpen) return;
+    productService.getCatalog().then(setCatalogProducts);
+  }, [addVariantOpen]);
 
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
@@ -131,17 +136,12 @@ export default function DashboardPage() {
   const enrichedProducts: EnrichedProduct[] = useMemo(() => {
     return products.map(p => {
       const variantsCount = p.variants?.length || 0;
-      // Since backend doesn't send real branch/stock data yet, we infer/mock these for the UI filters:
-      const availabilityStr = "Available"; // Mocked
-      const isLowStock = "No"; // Mocked
-      const branchName = "All Branches"; // Mocked
-
       return {
         ...p,
         numberOfVariants: String(variantsCount),
-        availability: availabilityStr,
-        lowStockStatus: isLowStock,
-        branch: branchName
+        availability: "Available",   // Mocked
+        lowStockStatus: "No",        // Mocked
+        branch: "All Branches",      // Mocked
       };
     });
   }, [products]);
@@ -156,7 +156,21 @@ export default function DashboardPage() {
   const isFilterApplied = Object.values(filters).some((v) => v && String(v).trim() !== "");
   const removeFilter = (key: string) => setFilter(key, null);
 
-  const existingProductsForVariant = products.map(toPopupProduct);
+  // Build catalog list for the manager "Add from Company Catalog" popup.
+  // - Catalog source: ALL company products (from getCatalog, bypasses branch filter)
+  // - Mark products already stocked in this branch as alreadyAdded:true
+  const branchProductIds = useMemo(
+    () => new Set(products.map((p) => p.id)),
+    [products]
+  );
+  const existingProductsForVariant = useMemo(
+    () =>
+      catalogProducts.map((p) => ({
+        ...toPopupProduct(p),
+        alreadyAdded: branchProductIds.has(p.id),
+      })),
+    [catalogProducts, branchProductIds]
+  );
 
   const productPopupOpen = editOpen || addOpen || addVariantOpen;
   const handleProductPopupClose = () => {
@@ -165,58 +179,38 @@ export default function DashboardPage() {
     setAddVariantOpen(false);
   };
 
-  // ── Base product (strip variant tag) — used for all popups ───────────────────
-  // In manager view selectedProduct is tagged with _selectedVariantSku from the
-  // clicked variant row. We strip that tag so every popup receives the full
-  // Product with ALL its variants intact.
   const baseSelectedProduct: Product | null = selectedProduct
     ? getBaseProduct(selectedProduct)
     : null;
 
-  // ── Build initialData for the edit popup from the FULL base product ──────────
-  // Previously this was derived from `selectedProduct` (the tagged variant row),
-  // which sometimes caused only a single variant to be visible. Using
-  // `baseSelectedProduct` guarantees every variant is included.
   const editInitialData =
     editOpen && baseSelectedProduct
       ? {
-        name: baseSelectedProduct.name,
-        categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
-        brand: "",
-        description: baseSelectedProduct.description || "",
-        options: (baseSelectedProduct.options ?? []).map((opt, i) => ({
-          id: i + 1,
-          name: opt.name,
-          values: opt.values,
-        })),
-        variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
-          id: i + 1,
-          sku: v.sku,
-          barcode: "",
-          imageUrl: v.imageUrl || "",
-          basePrice: String(v.price),
-          sellingPrice: String(v.price),
-          sellUnit: "Each",
-          optionValues: v.optionValues ?? [],
-        })),
-      }
+          name: baseSelectedProduct.name,
+          categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
+          brand: "",
+          description: baseSelectedProduct.description || "",
+          options: (baseSelectedProduct.options ?? []).map((opt, i) => ({
+            id: i + 1,
+            name: opt.name,
+            values: opt.values,
+          })),
+          variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
+            id: i + 1,
+            sku: v.sku,
+            barcode: "",
+            imageUrl: v.imageUrl || "",
+            basePrice: String(v.price),
+            sellingPrice: String(v.price),
+            sellUnit: "Each",
+            optionValues: v.optionValues ?? [],
+          })),
+        }
       : null;
 
-  // ── companyProduct ────────────────────────────────────────────────────────────
-  // Always null for the manager role.
-  //
-  // When companyProduct is NOT null, AddProductPopup diffs it against
-  // initialData to find variants not yet on the branch. Because both objects
-  // would come from the same Product record every variant cancels out and the
-  // list appears empty.
-  //
-  // Passing null causes AddProductPopup's useEffect to skip the diff and call
-  // setState(initialData) directly, which populates the form with ALL options
-  // and variants from the full product.
-  //
-  // When this page is later extended to support owner/admin roles, replace the
-  // null with: `editOpen && baseSelectedProduct ? toPopupProduct(baseSelectedProduct) : null`
   const companyProductData: ExistingProduct | null = null;
+
+  // ── Now safe to do conditional rendering in JSX ─────────────────────────────
 
   return (
     <DashboardLayout>
@@ -285,24 +279,58 @@ export default function DashboardPage() {
         open={productPopupOpen}
         onClose={handleProductPopupClose}
         onSave={async (updatedProduct) => {
+          // This fires for non-catalog flows (Add New Product, Edit Product)
           try {
             if (editOpen && baseSelectedProduct) {
-              // In the onSave handler, log what goes to the service:
               console.log("SENDING TO SERVICE:", {
-                  id: baseSelectedProduct.id,
-                  payload: updatedProduct
+                id: baseSelectedProduct.id,
+                payload: updatedProduct,
               });
-              const updated = await productService.update(baseSelectedProduct.id, updatedProduct as any);
+              await productService.update(baseSelectedProduct.id, updatedProduct as any);
               const refreshed = await productService.getAll();
               setProducts(refreshed);
             } else {
+              console.log("CREATING PRODUCT PAYLOAD:", JSON.stringify(updatedProduct, null, 2));
               const created = await productService.create(updatedProduct as any);
               setProducts(prev => [...prev, created as any]);
             }
           } catch (error: any) {
             console.error("Failed to save product:", error);
-            const msg = error.response?.data?.error?.message || error.response?.data?.message || error.message || "Failed to save product.";
+            const msg =
+              error.response?.data?.error?.message ||
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to save product.";
             alert(`Error from Server: ${msg}`);
+          }
+          handleProductPopupClose();
+        }}
+        onAddToBranch={async (selectedCatalogProducts) => {
+          // Catalog mode: register each selected product's variants in this branch
+          // by calling /branch-variants/stock with stockQty:0.
+          // This creates the BranchVariant rows so the product appears in manager's table.
+          try {
+            const { apiClient } = await import("@/lib/api-client");
+            for (const p of selectedCatalogProducts) {
+              const variants = (p.variants ?? []).map((v: any) => ({
+                variantId: (v as any).variantId ?? v.id ?? v.sku,
+                stockQty:  0,
+                stockUnit: v.sellUnit || "Each",
+                lowStock:  0,
+              }));
+              if (variants.length === 0) continue;
+              await apiClient.post("/branch-variants/stock", { variants });
+            }
+            // Refresh branch product list
+            const refreshed = await productService.getAll();
+            setProducts(refreshed);
+          } catch (error: any) {
+            console.error("Failed to add products to branch:", error);
+            const msg =
+              error.response?.data?.message ||
+              error.message ||
+              "Failed to add products to branch.";
+            alert(`Error: ${msg}`);
           }
           handleProductPopupClose();
         }}
@@ -314,7 +342,7 @@ export default function DashboardPage() {
         businessTypeId="BT001"
       />
 
-      {/* ViewProductPopup — passes the tagged product so manager sees variant details */}
+      {/* ViewProductPopup */}
       <ViewProductPopup
         open={viewOpen}
         onClose={() => setViewOpen(false)}
@@ -322,23 +350,24 @@ export default function DashboardPage() {
         userRole={userRole}
       />
 
-      {/* AddStockPopup — uses base product (no variant tag needed) */}
+      {/* AddStockPopup */}
       {baseSelectedProduct && (
         <AddStockPopup
           product={baseSelectedProduct}
           isOpen={addStockOpen}
           onClose={() => setAddStockOpen(false)}
           userRole={userRole}
-          // TODO: replace with session-derived branch name
           branchName="Colombo Branch"
-          onSave={(data) => {
-            console.log("FULL STOCK DATA:", data);
+          onSave={async () => {
+            // Re-fetch branch-scoped products so table reflects new stock immediately
+            const refreshed = await productService.getAll();
+            setProducts(refreshed);
             setAddStockOpen(false);
           }}
         />
       )}
 
-      {/* DeleteProductPopup — uses base product */}
+      {/* DeleteProductPopup */}
       {baseSelectedProduct && (
         <DeleteProductPopup
           isOpen={deleteOpen}
@@ -350,7 +379,6 @@ export default function DashboardPage() {
                 await productService.delete(baseSelectedProduct.id);
                 setProducts((prev) => prev.filter((p) => p.id !== baseSelectedProduct.id));
               } else {
-                // Future enhancement: deleting specific variants via backend
                 setProducts((prev) =>
                   prev.map((p) => {
                     if (p.id !== baseSelectedProduct.id) return p;
