@@ -54,6 +54,7 @@ export type AddProductPopupProps = {
   isAddVariantMode?: boolean;
   existingProducts?: ExistingProduct[];
   companyProduct?: ExistingProduct | null;
+  catalogLoading?: boolean;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
