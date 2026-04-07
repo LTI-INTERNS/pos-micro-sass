@@ -356,6 +356,151 @@ export default function DashboardPage() {
       })
       .filter((product) => (product.variants?.length ?? 0) > 0);
   }, [filteredProducts, filters.availability, filters.lowStockStatus, userRole]);
+
+  const managerStats = useMemo(() => {
+    const allProductsCount = products.length;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    let productVariantsCount = 0;
+    let lowStockVariantCount = 0;
+    let availableStockVariantCount = 0;
+    let currentWindowVariantCount = 0;
+    let previousWindowVariantCount = 0;
+
+    const currentWindowProductCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= thirtyDaysAgo;
+    }).length;
+
+    const previousWindowProductCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo;
+    }).length;
+
+    products.forEach((product) => {
+      (product.variants ?? []).forEach((variant) => {
+        productVariantsCount += 1;
+
+        const variantCreatedAtRaw = variant.createdAt ?? product.createdAt;
+        if (variantCreatedAtRaw) {
+          const variantCreatedAt = new Date(variantCreatedAtRaw);
+          if (!Number.isNaN(variantCreatedAt.getTime())) {
+            if (variantCreatedAt >= thirtyDaysAgo) {
+              currentWindowVariantCount += 1;
+            } else if (variantCreatedAt >= sixtyDaysAgo) {
+              previousWindowVariantCount += 1;
+            }
+          }
+        }
+
+        const stockQty = Number(variant.stockQty ?? 0);
+        const lowStock = Number(variant.lowStock ?? 0);
+        const isLowStock = stockQty > 0 && stockQty <= lowStock;
+        const isAvailableStock = (variant.available ?? true) && stockQty > 0;
+
+        if (isLowStock) {
+          lowStockVariantCount += 1;
+        }
+        if (isAvailableStock) {
+          availableStockVariantCount += 1;
+        }
+      });
+    });
+
+    const lowStockVariantPercentage =
+      productVariantsCount > 0
+        ? `${((lowStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
+        : "0.0%";
+    const availableStockVariantPercentage =
+      productVariantsCount > 0
+        ? `${((availableStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
+        : "0.0%";
+
+    const allProductsTrend: "up" | "down" =
+      currentWindowProductCount >= previousWindowProductCount ? "up" : "down";
+    const allProductsPercentage =
+      previousWindowProductCount > 0
+        ? `${(((currentWindowProductCount - previousWindowProductCount) / previousWindowProductCount) * 100).toFixed(1)}%`
+        : currentWindowProductCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    const productVariantsTrend: "up" | "down" =
+      currentWindowVariantCount >= previousWindowVariantCount ? "up" : "down";
+    const productVariantsPercentage =
+      previousWindowVariantCount > 0
+        ? `${(((currentWindowVariantCount - previousWindowVariantCount) / previousWindowVariantCount) * 100).toFixed(1)}%`
+        : currentWindowVariantCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    return {
+      allProductsCount,
+      productVariantsCount,
+      lowStockVariantCount,
+      availableStockVariantCount,
+      allProductsTrend,
+      allProductsPercentage,
+      productVariantsTrend,
+      productVariantsPercentage,
+      lowStockVariantPercentage,
+      availableStockVariantPercentage,
+    };
+  }, [products]);
+
+  const ownerAdminStats = useMemo(() => {
+    const categoriesCount = new Set(
+      products
+        .map((product) => product.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ).size;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const newProductsCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= thirtyDaysAgo;
+    }).length;
+
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const previousNewProductsCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo;
+    }).length;
+
+    const newProductsTrend: "up" | "down" =
+      newProductsCount >= previousNewProductsCount ? "up" : "down";
+
+    const newProductsPercentage =
+      previousNewProductsCount > 0
+        ? `${(((newProductsCount - previousNewProductsCount) / previousNewProductsCount) * 100).toFixed(1)}%`
+        : newProductsCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    return {
+      categoriesCount,
+      newProductsCount,
+      newProductsTrend,
+      newProductsPercentage,
+    };
+  }, [products]);
+
   const removeFilter = (key: string) => setFilter(key, null);
 
   // Build catalog list for the manager "Add from Company Catalog" popup.
@@ -451,7 +596,23 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="w-full space-y-6">
         <DateRangePicker />
-        <StatCardGrid />
+        <StatCardGrid
+          userRole={userRole}
+          allProductsCount={managerStats.allProductsCount}
+          productVariantsCount={managerStats.productVariantsCount}
+          allProductsTrend={managerStats.allProductsTrend}
+          allProductsPercentage={managerStats.allProductsPercentage}
+          productVariantsTrend={managerStats.productVariantsTrend}
+          productVariantsPercentage={managerStats.productVariantsPercentage}
+          lowStockVariantCount={managerStats.lowStockVariantCount}
+          availableStockVariantCount={managerStats.availableStockVariantCount}
+          lowStockVariantPercentage={managerStats.lowStockVariantPercentage}
+          availableStockVariantPercentage={managerStats.availableStockVariantPercentage}
+          categoriesCount={ownerAdminStats.categoriesCount}
+          newProductsCount={ownerAdminStats.newProductsCount}
+          newProductsTrend={ownerAdminStats.newProductsTrend}
+          newProductsPercentage={ownerAdminStats.newProductsPercentage}
+        />
 
         <div className="relative w-full">
           <SearchBar
