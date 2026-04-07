@@ -112,6 +112,7 @@ export const productService = {
         search?: string;
         categoryId?: string;
         status?: string;
+        branchId?: string;
         page?: number;
         limit?: number;
     }): Promise<Product[]> =>
