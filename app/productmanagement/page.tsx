@@ -22,6 +22,25 @@ import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNega
 import { productService, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 
+// ── Shared local interfaces ───────────────────────────────────────────────────
+
+interface VariantLike {
+  variantId?: string | number;
+  id?: string | number;
+  sku: string;
+  sellUnit?: string;
+}
+
+interface ApiError {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+      error?: { message?: string };
+    };
+  };
+}
+
 // ── Helper: map a Product to the ExistingProduct / initialData shape ──────────
 
 function toPopupProduct(p: Product) {
@@ -38,7 +57,7 @@ function toPopupProduct(p: Product) {
       values: opt.values,
     })),
     variants: (p.variants ?? []).map((v, i) => ({
-      ...(v as any),          // preserves real variantId from the backend spread
+      ...(v as unknown as Record<string, unknown>), // preserves real variantId from the backend spread
       id: i + 1,
       sku: v.sku,
       barcode: "",
@@ -64,7 +83,7 @@ function getBaseProduct(p: Product): Product {
 type UserRole = "owner" | "admin" | "manager";
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -110,7 +129,7 @@ export default function DashboardPage() {
 
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
-    const { search, filterOpen, ...rest } = urlFilters;
+    const { search: _search, filterOpen: _filterOpen, ...rest } = urlFilters;
     return rest;
   }, [urlFilters]);
 
@@ -286,20 +305,21 @@ export default function DashboardPage() {
                 id: baseSelectedProduct.id,
                 payload: updatedProduct,
               });
-              await productService.update(baseSelectedProduct.id, updatedProduct as any);
+              await productService.update(baseSelectedProduct.id, updatedProduct as never);
               const refreshed = await productService.getAll();
               setProducts(refreshed);
             } else {
               console.log("CREATING PRODUCT PAYLOAD:", JSON.stringify(updatedProduct, null, 2));
-              const created = await productService.create(updatedProduct as any);
-              setProducts(prev => [...prev, created as any]);
+              const created = await productService.create(updatedProduct as never);
+              setProducts(prev => [...prev, created as Product]);
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error("Failed to save product:", error);
+            const err = error as ApiError;
             const msg =
-              error.response?.data?.error?.message ||
-              error.response?.data?.message ||
-              error.message ||
+              err?.response?.data?.error?.message ||
+              err?.response?.data?.message ||
+              err?.message ||
               "Failed to save product.";
             alert(`Error from Server: ${msg}`);
           }
@@ -312,8 +332,8 @@ export default function DashboardPage() {
           try {
             const { apiClient } = await import("@/lib/api-client");
             for (const p of selectedCatalogProducts) {
-              const variants = (p.variants ?? []).map((v: any) => ({
-                variantId: (v as any).variantId ?? v.id ?? v.sku,
+              const variants = (p.variants ?? []).map((v: VariantLike) => ({
+                variantId: v.variantId ?? v.id ?? v.sku,
                 stockQty:  0,
                 stockUnit: v.sellUnit || "Each",
                 lowStock:  0,
@@ -324,11 +344,12 @@ export default function DashboardPage() {
             // Refresh branch product list
             const refreshed = await productService.getAll();
             setProducts(refreshed);
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error("Failed to add products to branch:", error);
+            const err = error as ApiError;
             const msg =
-              error.response?.data?.message ||
-              error.message ||
+              err?.response?.data?.message ||
+              err?.message ||
               "Failed to add products to branch.";
             alert(`Error: ${msg}`);
           }
@@ -389,7 +410,7 @@ export default function DashboardPage() {
                   })
                 );
               }
-            } catch (error) {
+            } catch (error: unknown) {
               console.error("Failed to delete product:", error);
               alert("Failed to delete product.");
             } finally {
