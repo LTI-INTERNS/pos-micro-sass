@@ -376,6 +376,11 @@ export default function ProductsTable({
 
   // ── Owner / admin view — one row per product ─────────────────────────────────
   const productColumns: Column<Product>[] = [
+    {
+      key: "index",
+      label: "#",
+      render: (_, index) => index + 1,
+    },
     { key: "name", label: "Name" },
     { key: "category", label: "Category" },
     {
