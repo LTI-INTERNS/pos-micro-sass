@@ -43,12 +43,14 @@ export function Step1VariantSelect({
   onToggle,
   onSelectAll,
   onLoadProduct,
+  isLoading = false,
 }: {
   products: ExistingProduct[];
   selectedIds: Set<number | string>;
   onToggle: (p: ExistingProduct) => void;
   onSelectAll: (filtered: ExistingProduct[], checked: boolean) => void;
   onLoadProduct: (p: ExistingProduct) => void;
+  isLoading?: boolean;
 }) {
   const [search, setSearch] = React.useState("");
   const [categoryFilter, setCategoryFilter] = React.useState("");
@@ -100,7 +102,12 @@ export function Step1VariantSelect({
       </div>
 
       <div className="overflow-y-auto rounded-xl border border-gray-200" style={{ maxHeight: "38vh" }}>
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="py-10 text-center text-sm text-gray-400 flex flex-col items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-500 border-t-transparent"></div>
+            <span>Loading products...</span>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="py-10 text-center text-sm text-gray-400">No products found.</div>
         ) : (
           <table className="w-full text-sm border-collapse">
