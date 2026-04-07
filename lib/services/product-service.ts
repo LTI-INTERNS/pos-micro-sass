@@ -41,6 +41,7 @@ function buildBranchesStock(variants: any[]): Record<string, any> {
 function extractBranchStock(variant: any) {
     const bv = variant.branchVariants?.[0] ?? null;
     return {
+        branchVariantCreatedAt:  bv?.createdAt ?? null,
         stockQty:             bv !== null ? Number(bv.stockQty ?? 0) : 0,
         lowStock:             bv !== null ? Number(bv.lowStock ?? 0) : 0,
         available:            bv !== null ? Boolean(bv.availability ?? true) : true,
