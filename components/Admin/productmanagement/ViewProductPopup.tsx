@@ -431,8 +431,10 @@ export default function ViewProductPopup({
               )}
             </div>
 
-            {/* Category + Supplier */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Category + Supplier + Brand */}
+            <div className="grid grid-cols-3 gap-4">
+              
+              {/* Category */}
               <div>
                 <Label>Category</Label>
                 <div className="mt-1">
@@ -443,6 +445,8 @@ export default function ViewProductPopup({
                   )}
                 </div>
               </div>
+
+              {/* Supplier */}
               <div>
                 <Label>Supplier</Label>
                 <div className="mt-1">
@@ -453,6 +457,19 @@ export default function ViewProductPopup({
                   )}
                 </div>
               </div>
+
+              {/* Brand */}
+              <div>
+                <Label>Brand</Label>
+                <div className="mt-1">
+                  {product.brand ? (
+                    <Tag>{product.brand}</Tag>
+                  ) : (
+                    <span className="text-sm text-gray-400">Not specified</span>
+                  )}
+                </div>
+              </div>
+
             </div>
 
             {/* ── Owner/Admin: Branch pills ──────────────────────────────────── */}
