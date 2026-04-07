@@ -9,13 +9,18 @@ type ProductStatCardGridProps = {
   productVariantsPercentage?: string;
   productVariantsTrend?: "up" | "down";
   lowStockVariantCount?: number;
-  availableStockVariantCount?: number;
+  outOfStockVariantCount?: number;
   categoriesCount?: number;
+  categoriesPercentage?: string;
+  categoriesTrend?: "up" | "down";
   newProductsCount?: number;
   lowStockVariantPercentage?: string;
-  availableStockVariantPercentage?: string;
+  outOfStockVariantPercentage?: string;
   newProductsPercentage?: string;
   newProductsTrend?: "up" | "down";
+  onAllVariantsClick?: () => void;
+  onLowStockClick?: () => void;
+  onOutOfStockClick?: () => void;
 };
 
 type ProductStatCard = {
@@ -24,6 +29,7 @@ type ProductStatCard = {
   percentage?: string;
   trend?: "up" | "down";
   caption?: string;
+  onClick?: () => void;
 };
 
 export default function StatCardGrid({
@@ -35,13 +41,18 @@ export default function StatCardGrid({
   productVariantsPercentage = "",
   productVariantsTrend = "up",
   lowStockVariantCount = 0,
-  availableStockVariantCount = 0,
+  outOfStockVariantCount = 0,
   categoriesCount = 0,
+  categoriesPercentage = "",
+  categoriesTrend = "up",
   newProductsCount = 0,
   lowStockVariantPercentage = "",
-  availableStockVariantPercentage = "",
+  outOfStockVariantPercentage = "",
   newProductsPercentage = "",
   newProductsTrend = "up",
+  onAllVariantsClick,
+  onLowStockClick,
+  onOutOfStockClick,
 }: ProductStatCardGridProps) {
   const baseCards: ProductStatCard[] = [
     {
@@ -52,11 +63,12 @@ export default function StatCardGrid({
       caption: "vs previous 30 days",
     },
     {
-      title: "Product Variants",
+      title: "All Product Variants",
       value: String(productVariantsCount),
       percentage: productVariantsPercentage,
       trend: productVariantsTrend,
       caption: "vs previous 30 days",
+      onClick: userRole === "manager" ? onAllVariantsClick : undefined,
     },
   ];
 
@@ -69,20 +81,24 @@ export default function StatCardGrid({
             percentage: lowStockVariantPercentage,
             trend: "down" as const,
             caption: "of all variants",
+            onClick: onLowStockClick,
           },
           {
-            title: "Available Stock Variants",
-            value: String(availableStockVariantCount),
-            percentage: availableStockVariantPercentage,
-            trend: "up" as const,
+            title: "Out of Stock Variants",
+            value: String(outOfStockVariantCount),
+            percentage: outOfStockVariantPercentage,
+            trend: "down" as const,
             caption: "of all variants",
+            onClick: onOutOfStockClick,
           },
         ]
       : [
           {
             title: "No. of Categories",
             value: String(categoriesCount),
-            caption: "distinct categories",
+            percentage: categoriesPercentage,
+            trend: categoriesTrend,
+            caption: "vs previous 30 days",
           },
           {
             title: "New Products",
@@ -105,6 +121,7 @@ export default function StatCardGrid({
           percentage={card.percentage ?? ""}
           trend={card.trend ?? "up"}
           caption={card.caption}
+          onClick={card.onClick}
           showDetailButton={false}
         />
       ))}
