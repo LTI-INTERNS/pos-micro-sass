@@ -33,6 +33,7 @@ export default function AddProductPopup({
   isAddVariantMode = false,
   existingProducts = [],
   companyProduct = null,
+  catalogLoading = false,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
   const [step, setStep] = React.useState(0);
@@ -234,6 +235,7 @@ export default function AddProductPopup({
               onToggle={handleToggleProduct}
               onSelectAll={handleSelectAll}
               onLoadProduct={handleLoadProduct}
+              isLoading={catalogLoading}
             />
           ) : step === 0 ? (
             <Step1 state={state} onChange={patch} categories={categories} isManagerEditMode={isManagerEditMode} />
