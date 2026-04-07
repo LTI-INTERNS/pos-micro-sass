@@ -112,6 +112,8 @@ export default function DashboardPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [start, setStart] = useState<Date | undefined>();
+  const [end, setEnd] = useState<Date | undefined>();
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -300,6 +302,9 @@ export default function DashboardPage() {
   const filteredProducts = useTableFilters({
     data: enrichedProducts,
     search,
+    start,
+    end,
+    dateKey: userRole === "manager" ? undefined : "createdAt",
     searchKeys: ["id", "name", "category"],
     filters:
       userRole === "manager"
@@ -321,6 +326,7 @@ export default function DashboardPage() {
 
     const availabilityFilter = filters.availability?.trim();
     const stockFilter = filters.lowStockStatus?.trim();
+    const hasDateRange = Boolean(start && end);
 
     if (!availabilityFilter && !stockFilter) {
       return filteredProducts as Product[];
@@ -332,6 +338,14 @@ export default function DashboardPage() {
           const availabilityStatus = (variant.available ?? true)
             ? "Available"
             : "Unavailable";
+
+          if (hasDateRange) {
+            const createdRaw = variant.branchVariantCreatedAt ?? variant.createdAt;
+            if (!createdRaw) return false;
+            const createdDate = new Date(createdRaw);
+            if (Number.isNaN(createdDate.getTime())) return false;
+            if (createdDate < (start as Date) || createdDate > (end as Date)) return false;
+          }
 
           const stockQty = Number(variant.stockQty ?? 0);
           const lowStock = Number(variant.lowStock ?? 0);
@@ -355,7 +369,7 @@ export default function DashboardPage() {
         return { ...product, variants: matchingVariants };
       })
       .filter((product) => (product.variants?.length ?? 0) > 0);
-  }, [filteredProducts, filters.availability, filters.lowStockStatus, userRole]);
+  }, [filteredProducts, filters.availability, filters.lowStockStatus, userRole, start, end]);
 
   const managerStats = useMemo(() => {
     const allProductsCount = products.length;
@@ -367,7 +381,7 @@ export default function DashboardPage() {
 
     let productVariantsCount = 0;
     let lowStockVariantCount = 0;
-    let availableStockVariantCount = 0;
+    let outOfStockVariantCount = 0;
     let currentWindowVariantCount = 0;
     let previousWindowVariantCount = 0;
 
@@ -404,13 +418,13 @@ export default function DashboardPage() {
         const stockQty = Number(variant.stockQty ?? 0);
         const lowStock = Number(variant.lowStock ?? 0);
         const isLowStock = stockQty > 0 && stockQty <= lowStock;
-        const isAvailableStock = (variant.available ?? true) && stockQty > 0;
+        const isOutOfStock = stockQty <= 0;
 
         if (isLowStock) {
           lowStockVariantCount += 1;
         }
-        if (isAvailableStock) {
-          availableStockVariantCount += 1;
+        if (isOutOfStock) {
+          outOfStockVariantCount += 1;
         }
       });
     });
@@ -419,9 +433,9 @@ export default function DashboardPage() {
       productVariantsCount > 0
         ? `${((lowStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
         : "0.0%";
-    const availableStockVariantPercentage =
+    const outOfStockVariantPercentage =
       productVariantsCount > 0
-        ? `${((availableStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
+        ? `${((outOfStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
         : "0.0%";
 
     const allProductsTrend: "up" | "down" =
@@ -446,15 +460,30 @@ export default function DashboardPage() {
       allProductsCount,
       productVariantsCount,
       lowStockVariantCount,
-      availableStockVariantCount,
+      outOfStockVariantCount,
       allProductsTrend,
       allProductsPercentage,
       productVariantsTrend,
       productVariantsPercentage,
       lowStockVariantPercentage,
-      availableStockVariantPercentage,
+      outOfStockVariantPercentage,
     };
   }, [products]);
+
+  const handleLowStockCardClick = () => {
+    if (userRole !== "manager") return;
+    setFilters({ lowStockStatus: "Low Stock" });
+  };
+
+  const handleOutOfStockCardClick = () => {
+    if (userRole !== "manager") return;
+    setFilters({ lowStockStatus: "No Stock" });
+  };
+
+  const handleAllVariantsCardClick = () => {
+    if (userRole !== "manager") return;
+    setFilters({ availability: null, lowStockStatus: null });
+  };
 
   const ownerAdminStats = useMemo(() => {
     const categoriesCount = new Set(
@@ -476,6 +505,30 @@ export default function DashboardPage() {
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
+    const currentWindowCategoriesCount = new Set(
+      products
+        .filter((product) => {
+          if (!product.createdAt) return false;
+          const createdAt = new Date(product.createdAt);
+          if (Number.isNaN(createdAt.getTime())) return false;
+          return createdAt >= thirtyDaysAgo;
+        })
+        .map((product) => product.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ).size;
+
+    const previousWindowCategoriesCount = new Set(
+      products
+        .filter((product) => {
+          if (!product.createdAt) return false;
+          const createdAt = new Date(product.createdAt);
+          if (Number.isNaN(createdAt.getTime())) return false;
+          return createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo;
+        })
+        .map((product) => product.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ).size;
+
     const previousNewProductsCount = products.filter((product) => {
       if (!product.createdAt) return false;
       const createdAt = new Date(product.createdAt);
@@ -486,6 +539,18 @@ export default function DashboardPage() {
     const newProductsTrend: "up" | "down" =
       newProductsCount >= previousNewProductsCount ? "up" : "down";
 
+    const categoriesTrend: "up" | "down" =
+      currentWindowCategoriesCount >= previousWindowCategoriesCount
+        ? "up"
+        : "down";
+
+    const categoriesPercentage =
+      previousWindowCategoriesCount > 0
+        ? `${(((currentWindowCategoriesCount - previousWindowCategoriesCount) / previousWindowCategoriesCount) * 100).toFixed(1)}%`
+        : currentWindowCategoriesCount > 0
+        ? "100.0%"
+        : "0.0%";
+
     const newProductsPercentage =
       previousNewProductsCount > 0
         ? `${(((newProductsCount - previousNewProductsCount) / previousNewProductsCount) * 100).toFixed(1)}%`
@@ -495,6 +560,8 @@ export default function DashboardPage() {
 
     return {
       categoriesCount,
+      categoriesTrend,
+      categoriesPercentage,
       newProductsCount,
       newProductsTrend,
       newProductsPercentage,
@@ -595,7 +662,14 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangePicker />
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
         <StatCardGrid
           userRole={userRole}
           allProductsCount={managerStats.allProductsCount}
@@ -604,11 +678,16 @@ export default function DashboardPage() {
           allProductsPercentage={managerStats.allProductsPercentage}
           productVariantsTrend={managerStats.productVariantsTrend}
           productVariantsPercentage={managerStats.productVariantsPercentage}
+          onAllVariantsClick={handleAllVariantsCardClick}
           lowStockVariantCount={managerStats.lowStockVariantCount}
-          availableStockVariantCount={managerStats.availableStockVariantCount}
+          outOfStockVariantCount={managerStats.outOfStockVariantCount}
           lowStockVariantPercentage={managerStats.lowStockVariantPercentage}
-          availableStockVariantPercentage={managerStats.availableStockVariantPercentage}
+          outOfStockVariantPercentage={managerStats.outOfStockVariantPercentage}
+          onLowStockClick={handleLowStockCardClick}
+          onOutOfStockClick={handleOutOfStockCardClick}
           categoriesCount={ownerAdminStats.categoriesCount}
+          categoriesTrend={ownerAdminStats.categoriesTrend}
+          categoriesPercentage={ownerAdminStats.categoriesPercentage}
           newProductsCount={ownerAdminStats.newProductsCount}
           newProductsTrend={ownerAdminStats.newProductsTrend}
           newProductsPercentage={ownerAdminStats.newProductsPercentage}
