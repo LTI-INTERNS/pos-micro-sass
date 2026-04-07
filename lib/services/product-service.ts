@@ -78,19 +78,28 @@ function mapProduct(p: any): Product {
     return {
         ...p,
         id: p.productId || p.id,
+        brand: p.brandName || p.brand || undefined,
         categoryId: p.categoryId || p.category?.categoryId || '',
         category:
             typeof p.category === 'object' && p.category !== null
                 ? p.category.categoryName
                 : p.category || '',
-        options: (p.options ?? []).map((opt: any) => ({
-            ...opt,
-            // Backend stores the option label as `optionName` (enum); frontend expects `name`
-            name: opt.name ?? opt.optionName ?? '',
-            values: (opt.values ?? []).map((v: any) =>
-                typeof v === 'object' && v !== null ? v.value : v
-            ),
-        })),
+        options: (p.options ?? []).map((opt: any) => {
+            const values = (opt.values ?? []).map((v: any) => {
+                // Handle both direct string values and { value, ... } structure
+                if (typeof v === 'string') return v;
+                if (v && typeof v === 'object' && v.value) return v.value;
+                return '';
+            }).filter((v: string) => v.trim() !== '');
+
+            return {
+                ...opt,
+                // Backend stores the option label as `optionName` (enum); frontend expects `name`
+                name: opt.optionName ?? opt.name ?? '',
+                id: opt.optionId ?? opt.id,
+                values,
+            };
+        }),
         variants: (p.variants ?? []).map(mapVariant),
         // Attach branch stock map for admin/owner popup
         // Only populated when branchId is not filtered (i.e. admin/owner view)
