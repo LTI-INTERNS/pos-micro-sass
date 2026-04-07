@@ -35,6 +35,7 @@ export interface Product {
     lowstock: number;
     category: string;
     categoryId?: string;
+    brand?: string;
     supplier?: string;
     status?: string;
     image?: string;
