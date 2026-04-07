@@ -6,6 +6,7 @@ export interface ProductOptionValue {
 export interface ProductVariant {
     id: number;
     createdAt?: string;
+    branchVariantCreatedAt?: string;
     sku: string;
     price: number;
     basePrice?: string;
