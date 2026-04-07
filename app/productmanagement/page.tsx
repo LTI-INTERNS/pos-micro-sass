@@ -21,6 +21,7 @@ import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNega
 
 import { productService, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
 // ── Shared local interfaces ───────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ function toPopupProduct(p: Product) {
     name: p.name,
     category: p.category,
     categoryId: p.categoryId,
-    brand: "",
+    brand: p.brand || "",
     description: p.description || "",
     options: (p.options ?? []).map((opt, i) => ({
       id: i + 1,
@@ -84,6 +85,7 @@ type UserRole = "owner" | "admin" | "manager";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const { storeInfo } = useStoreInfo();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -92,6 +94,7 @@ export default function DashboardPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -124,7 +127,10 @@ export default function DashboardPage() {
   // Uses ?catalog=true to bypass the branch filter so managers see everything.
   useEffect(() => {
     if (!addVariantOpen) return;
-    productService.getCatalog().then(setCatalogProducts);
+    setCatalogLoading(true);
+    productService.getCatalog()
+      .then(setCatalogProducts)
+      .finally(() => setCatalogLoading(false));
   }, [addVariantOpen]);
 
   // Exclude UI state from actual data filters
@@ -207,10 +213,10 @@ export default function DashboardPage() {
       ? {
           name: baseSelectedProduct.name,
           categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
-          brand: "",
+          brand: baseSelectedProduct.brand || "",
           description: baseSelectedProduct.description || "",
-          options: (baseSelectedProduct.options ?? []).map((opt, i) => ({
-            id: i + 1,
+          options: (baseSelectedProduct.options ?? []).map((opt) => ({
+            id: opt.id,
             name: opt.name,
             values: opt.values,
           })),
@@ -360,7 +366,8 @@ export default function DashboardPage() {
         initialData={editInitialData}
         companyProduct={companyProductData}
         userRole={userRole}
-        businessTypeId="BT001"
+        businessTypeId={storeInfo.businessTypeId as any}
+        catalogLoading={catalogLoading}
       />
 
       {/* ViewProductPopup */}
