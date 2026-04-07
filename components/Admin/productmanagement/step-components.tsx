@@ -32,6 +32,8 @@ import {
   NewBadge,
   SelectAllCheckbox,
 } from "./ui-components";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
@@ -520,7 +522,7 @@ export function Step3({
 }) {
   const isCafe = businessTypeId === "BT001";
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
-
+  const { currency } = useCurrency();
   const addManual = () =>
     onChange({ variants: [...state.variants, { id: Date.now(), sku: "", barcode: "", imageUrl: "", basePrice: "", sellingPrice: "", sellUnit: "Each", optionValues: [] }] });
 
@@ -637,7 +639,7 @@ export function Step3({
                 <span className="text-[12px] font-medium text-gray-600">{label}</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                {[["SKU", v.sku], ["Base price", v.basePrice ? `$${v.basePrice}` : "—"], ["Selling price", v.sellingPrice ? `$${v.sellingPrice}` : "—"]].map(([lbl, val]) => (
+                {[["SKU", v.sku], ["Base price", v.basePrice ? formatCurrency(Number(v.basePrice), currency) : "—"], ["Selling price", v.sellingPrice ? formatCurrency(Number(v.sellingPrice), currency) : "—"]].map(([lbl, val]) => (
                   <div key={lbl} className="bg-white border border-gray-200 rounded-xl px-3 py-2">
                     <p className="text-[10px] text-gray-400 mb-0.5">{lbl}</p>
                     <p className="text-[13px] font-medium text-gray-700">{val || "—"}</p>
@@ -686,7 +688,7 @@ export function Step3({
                     <span className="text-[12px] font-medium text-gray-600">{label}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    {[["SKU", v.sku], ["Base price", v.basePrice ? `$${v.basePrice}` : "—"], ["Selling price", v.sellingPrice ? `$${v.sellingPrice}` : "—"]].map(([lbl, val]) => (
+                    {[["SKU", v.sku], ["Base price", v.basePrice ? formatCurrency(Number(v.basePrice), currency) : "—"], ["Selling price", v.sellingPrice ? formatCurrency(Number(v.sellingPrice), currency) : "—"]].map(([lbl, val]) => (
                       <div key={lbl} className="bg-white border border-gray-200 rounded-xl px-3 py-2">
                         <p className="text-[10px] text-gray-400 mb-0.5">{lbl}</p>
                         <p className="text-[13px] font-medium text-gray-700">{val || "—"}</p>
