@@ -27,6 +27,18 @@ type ExtendedVariant = ProductVariant & {
   taxRate?: number;
   lowStock?: number;
   available?: boolean;
+  sellUnit?: string;
+  basePrice?: number | string;
+  sellingPrice?: number | string;
+};
+
+// Shape of raw branch stock data attached to the product at runtime
+type BranchStockMap = Record<string, Record<string, BranchVariantDetail>>;
+
+// Shape of the per-branch variant data used for stock pill calculations
+type BranchVariantRaw = {
+  stockQty?: number;
+  available?: boolean;
 };
 
 // ─── Helper: convert DB enum string to a readable label ───────────────────────
@@ -352,8 +364,8 @@ export default function ViewProductPopup({
       ? (product.variants?.find((v) => v.sku === selectedVariantSku) as ExtendedVariant | undefined)
       : null;
 
-  const branchesStock: Record<string, Record<string, any>> | undefined =
-    (product as any).branchesStock;
+  const branchesStock: BranchStockMap | undefined =
+    (product as Product & { branchesStock?: BranchStockMap }).branchesStock;
   const branchNames = branchesStock ? Object.keys(branchesStock) : [];
 
   // Resolve branch detail — prefer fields on focusedVariant, fall back to branchesStock lookup
@@ -450,12 +462,13 @@ export default function ViewProductPopup({
                 <div className="flex flex-wrap gap-2 mt-1">
                   {branchNames.map((branch) => {
                     const bvMap = branchesStock![branch];
-                    const totalStock = Object.values(bvMap).reduce(
-                      (sum: number, bv: any) => sum + (bv.stockQty ?? 0),
+                    const bvList = Object.values(bvMap) as BranchVariantRaw[];
+                    const totalStock = bvList.reduce(
+                      (sum, bv) => sum + (bv.stockQty ?? 0),
                       0
                     );
-                    const hasOutOfStock = Object.values(bvMap).some((bv: any) => bv.stockQty === 0);
-                    const allUnavailable = Object.values(bvMap).every((bv: any) => !bv.available);
+                    const hasOutOfStock = bvList.some((bv) => bv.stockQty === 0);
+                    const allUnavailable = bvList.every((bv) => !bv.available);
 
                     return (
                       <button
@@ -669,13 +682,13 @@ export default function ViewProductPopup({
                           </div>
                           <div>
                             <p className="text-[11px] text-gray-400">Sell Unit</p>
-                            <p className="text-sm text-gray-700">{(focusedVariant as any).sellUnit ?? "—"}</p>
+                            <p className="text-sm text-gray-700">{focusedVariant.sellUnit ?? "—"}</p>
                           </div>
                           <div>
                             <p className="text-[11px] text-gray-400">Base Price</p>
                             <p className="text-sm text-gray-700">
                               {formatCurrency(
-                                Number((focusedVariant as any).basePrice ?? focusedVariant.price ?? 0),
+                                Number(focusedVariant.basePrice ?? focusedVariant.price ?? 0),
                                 currency, useCents
                               )}
                             </p>
@@ -684,7 +697,7 @@ export default function ViewProductPopup({
                             <p className="text-[11px] text-gray-400">Selling Price</p>
                             <p className="text-sm font-semibold text-orange-600">
                               {formatCurrency(
-                                Number((focusedVariant as any).sellingPrice ?? focusedVariant.price ?? 0),
+                                Number(focusedVariant.sellingPrice ?? focusedVariant.price ?? 0),
                                 currency, useCents
                               )}
                             </p>
