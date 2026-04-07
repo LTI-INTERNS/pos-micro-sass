@@ -26,6 +26,36 @@ type VariantState = {
   price:     number;
 };
 
+// Shape of raw variant data coming from the backend (product.variants may carry
+// extra fields not declared in the Product type).
+type RawVariant = {
+  variantId?:           string;
+  sku:                  string;
+  price:                number;
+  stockQty?:            number | string | null;
+  sellUnit?:            string;
+  stockUnit?:           string;
+  priceOverride?:       number | string | null;
+  sellingPriceOverride?: number | string | null;
+  discount?:            number | string | null;
+  taxRate?:             number | string | null;
+  lowStock?:            number | string | null;
+  optionValues?:        string[];
+  imageUrl?:            string;
+};
+
+// Shape of rows returned by /branch-variants/existing
+type ExistingBranchVariantRow = {
+  variantId:            string;
+  stockQty?:            number | string | null;
+  stockUnit?:           string;
+  priceOverride?:       number | string | null;
+  sellingPriceOverride?: number | string | null;
+  discount?:            number | string | null;
+  taxRate?:             number | string | null;
+  lowStock?:            number | string | null;
+};
+
 type Props = {
   product:    Product;
   isOpen:     boolean;
@@ -161,20 +191,20 @@ export default function AddStockPopup({
       const prefilled: Record<string, BranchVariantData> = {};
 
       product.variants.forEach((v, i) => {
-        const vAny = v as any;
-        const variantId = vAny.variantId ?? v.sku;
+        const raw = v as unknown as RawVariant;
+        const variantId = raw.variantId ?? v.sku;
         const id = i + 1;
         const key = `${id}_manager`;
 
-        stockMap[variantId] = Number(vAny.stockQty ?? 0);
+        stockMap[variantId] = Number(raw.stockQty ?? 0);
         prefilled[key] = {
           stockQty:             "",             // blank — user types amount to ADD
-          stockUnit:            mapStockUnitDisplay(vAny.sellUnit ?? vAny.stockUnit ?? "EA"),
-          basePriceOverride:    vAny.priceOverride        != null ? String(vAny.priceOverride)        : "",
-          sellingPriceOverride: vAny.sellingPriceOverride != null ? String(vAny.sellingPriceOverride) : "",
-          discount:             vAny.discount   != null ? String(vAny.discount)   : "",
-          taxRate:              vAny.taxRate     != null ? String(vAny.taxRate)    : "",
-          lowStock:             vAny.lowStock    != null ? String(vAny.lowStock)   : "",
+          stockUnit:            mapStockUnitDisplay(raw.sellUnit ?? raw.stockUnit ?? "EA"),
+          basePriceOverride:    raw.priceOverride        != null ? String(raw.priceOverride)        : "",
+          sellingPriceOverride: raw.sellingPriceOverride != null ? String(raw.sellingPriceOverride) : "",
+          discount:             raw.discount   != null ? String(raw.discount)   : "",
+          taxRate:              raw.taxRate     != null ? String(raw.taxRate)    : "",
+          lowStock:             raw.lowStock    != null ? String(raw.lowStock)   : "",
         };
       });
       setCurrentStock(stockMap);
@@ -193,13 +223,15 @@ export default function AddStockPopup({
   // closure in the pre-fill useEffect below.
   const variants: VariantState[] = useMemo(
     () =>
-      product.variants.map((v, i) => ({
-        id:        i + 1,
-        variantId: (v as typeof v & { variantId?: string }).variantId ?? v.sku,
-        sku:       v.sku,
-        price:     v.price,
-      })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      product.variants.map((v, i) => {
+        const raw = v as unknown as RawVariant;
+        return {
+          id:        i + 1,
+          variantId: raw.variantId ?? v.sku,
+          sku:       v.sku,
+          price:     v.price,
+        };
+      }),
     [product.variants]
   );
 
@@ -214,11 +246,11 @@ export default function AddStockPopup({
 
     setPrefilling(true);
     apiClient
-      .get<{ success: boolean; data: any[] }>(
+      .get<{ success: boolean; data: ExistingBranchVariantRow[] }>(
         `/branch-variants/existing?branchId=${selectedBranch.id}&variantIds=${encodeURIComponent(variantIds)}`
       )
       .then((res) => {
-        const existingRows: any[] = res.data?.data ?? [];
+        const existingRows: ExistingBranchVariantRow[] = res.data?.data ?? [];
         console.log('[AddStock] pre-fill rows:', existingRows);
 
         // Build currentStock map: variantId → stockQty
@@ -236,7 +268,7 @@ export default function AddStockPopup({
             const key = `${match.id}_${selectedBranch.id}`;
             next[key] = {
               stockQty:             "",  // intentionally blank — user types amount to ADD
-              stockUnit:            mapStockUnitDisplay(row.stockUnit),
+              stockUnit:            mapStockUnitDisplay(row.stockUnit ?? ""),
               basePriceOverride:    row.priceOverride        != null ? String(row.priceOverride)        : "",
               sellingPriceOverride: row.sellingPriceOverride != null ? String(row.sellingPriceOverride) : "",
               discount:             row.discount    != null ? String(row.discount)    : "",
@@ -247,7 +279,7 @@ export default function AddStockPopup({
           return next;
         });
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error('[AddStock] Failed to pre-fill existing values:', err);
         setSaveError('Could not load existing branch stock values.');
       })
@@ -306,9 +338,10 @@ export default function AddStockPopup({
       });
 
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save stock:", err);
-      const msg = err?.response?.data?.message || err?.message || "Failed to save stock.";
+      const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
+      const msg = apiErr?.response?.data?.message || apiErr?.message || "Failed to save stock.";
       setSaveError(msg);
     } finally {
       setSaving(false);
