@@ -1,27 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react"; // 1. Import useSession
+import { useSession } from "next-auth/react";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import AddBranchForm from "@/components/Admin/branchmanagement/AddBranchForm";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
-import { Branch } from "@/lib/services";
+import { Branch } from "@/lib/services/branch-service";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 
 type Props = {
   selectedBranch: Branch | null;
+  onAdd?: (values: Record<string, string>) => void; // Added onAdd prop
   onEdit?: (branch: Branch) => void;
   onDelete?: () => void;
 };
 
-export default function BranchActionsBar({ selectedBranch, onEdit, onDelete }: Props) {
-  const { data: session } = useSession(); // 2. Get session data
+export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDelete }: Props) {
+  const { data: session } = useSession(); 
   const [showPopup, setShowPopup] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
-  // 3. Extract role and determine permissions
-  // We check for both "ADMIN" and "admin" to be safe with casing
   const userRole = session?.user?.role?.toUpperCase(); 
   const isAdmin = userRole === "ADMIN";
   const isOwner = userRole === "OWNER";
@@ -35,7 +34,6 @@ export default function BranchActionsBar({ selectedBranch, onEdit, onDelete }: P
     { 
       name: "email", 
       label: "Email", 
-      // If user is ADMIN, they cannot edit. If OWNER, they can.
       readOnly: isAdmin && !isOwner 
     },
     { name: "password", label: "Password" },
@@ -77,7 +75,10 @@ export default function BranchActionsBar({ selectedBranch, onEdit, onDelete }: P
           open={showPopup}
           onClose={() => setShowPopup(false)}
           branchId=""
-          onSubmit={() => setShowPopup(false)}
+          onSubmit={(values) => {
+            onAdd?.(values); // Call onAdd and pass the payload up
+            setShowPopup(false);
+          }}
         />
       )}
 
