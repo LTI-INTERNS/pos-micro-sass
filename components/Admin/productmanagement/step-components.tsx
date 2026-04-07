@@ -13,7 +13,6 @@ import {
   NEW_ID_PREFIX,
   isNewId,
 } from "./types";
-import { BusinessTypeId } from "@/components/Admin/productmanagement/Productcategorydata";
 import {
   Label,
   Input,
@@ -511,7 +510,6 @@ export function Step2({
 export function Step3({
   state,
   onChange,
-  businessTypeId,
   isManagerVariantMode,
   isManagerEditMode,
   selectedVariantIds,
@@ -520,14 +518,12 @@ export function Step3({
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
-  businessTypeId?: BusinessTypeId;
   isManagerVariantMode: boolean;
   isManagerEditMode: boolean;
   selectedVariantIds: Set<number>;
   onToggleVariant: (id: number) => void;
   selectedProductCount: number;
 }) {
-  const isCafe = businessTypeId === "BT001";
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
   const { currency } = useCurrency();
   const addManual = () =>

@@ -16,6 +16,7 @@ import AddProductPopup, { ExistingProduct } from "@/components/Admin/productmana
 import AddStockPopup from "@/components/Admin/productmanagement/addStockPopup";
 import DeleteProductPopup from "@/components/Admin/productmanagement/DeleteProductPopup";
 import ViewProductPopup from "@/components/Admin/productmanagement/ViewProductPopup";
+import { BusinessTypeId } from "@/components/Admin/productmanagement/Productcategorydata";
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
@@ -207,6 +208,7 @@ export default function DashboardPage() {
 
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { search: _search, filterOpen: _filterOpen, branch: _branch, ...rest } = urlFilters;
     return rest;
   }, [urlFilters]);
@@ -310,7 +312,9 @@ export default function DashboardPage() {
       userRole === "manager"
         ? (() => {
             const {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               availability: _availability,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
               lowStockStatus: _lowStockStatus,
               ...rest
             } = filters;
@@ -816,7 +820,7 @@ export default function DashboardPage() {
         initialData={editInitialData}
         companyProduct={companyProductData}
         userRole={userRole}
-        businessTypeId={storeInfo.businessTypeId as any}
+        businessTypeId={storeInfo.businessTypeId as BusinessTypeId}
         catalogLoading={catalogLoading}
       />
 
