@@ -29,11 +29,11 @@ export default function Navigation({
       logoAlt={logoAlt}
       middleContent={<h2>{title}</h2>}
       rightContent={
-        showLogout ? ( // 👈 condition here
+        showLogout ? (
           <div className="flex items-center gap-3">
             <ActionButton
               label="Log Out"
-              onClick={() => router.push("/saaslogin")}
+              onClick={() => signOut({ callbackUrl: "/saaslogin" })}
               variant="primary"
               fullWidth={false}
               className="px-5"
