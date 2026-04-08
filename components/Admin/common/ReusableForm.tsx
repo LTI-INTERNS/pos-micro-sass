@@ -7,61 +7,74 @@ export type FieldConfig = {
   name: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "number" | "date" | "dropdown" | "password" | "email" | "tel";
-  options?: { value: string; label: string }[];
-  disabled?: boolean; 
-  required?: boolean;
+  type?: "text" | "number" | "email" | "password";
+  readOnly?: boolean;
 };
 
 type ReusableFormProps = {
   fields: FieldConfig[];
   initialValues?: Record<string, string>;
+  values?: Record<string, string>;
+  onFieldChange?: (name: string, value: string) => void;
   onSubmit: (values: Record<string, string>) => void;
+  className?: string;
 };
 
 export default function ReusableForm({
   fields,
   initialValues,
+  values: controlledValues,
+  onFieldChange,
   onSubmit,
+  className = "",
 }: ReusableFormProps) {
-  const [values, setValues] = React.useState<Record<string, string>>(() => {
+  const isControlled = controlledValues !== undefined;
+
+  const [internalValues, setInternalValues] = React.useState<Record<string, string>>(() => {
     const base: Record<string, string> = {};
-    for (const f of fields) {
-      base[f.name] = initialValues?.[f.name] ?? "";
+    for (const field of fields) {
+      base[field.name] = initialValues?.[field.name] ?? "";
     }
     return base;
   });
 
   React.useEffect(() => {
-    const base: Record<string, string> = {};
-    for (const f of fields) {
-      base[f.name] = initialValues?.[f.name] ?? "";
+    if (isControlled) return;
+
+    const nextValues: Record<string, string> = {};
+    for (const field of fields) {
+      nextValues[field.name] = initialValues?.[field.name] ?? "";
     }
-    setValues(base);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(fields), JSON.stringify(initialValues)]);
+    setInternalValues(nextValues);
+  }, [fields, initialValues, isControlled]);
+
+  const values = isControlled ? controlledValues : internalValues;
 
   const setField = (name: string, next: string) => {
-    setValues((prev) => ({ ...prev, [name]: next }));
+    if (isControlled) {
+      onFieldChange?.(name, next);
+      return;
+    }
+
+    setInternalValues((prev) => ({ ...prev, [name]: next }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(values);
+    onSubmit(values ?? {});
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {fields.map((f) => (
+    <form onSubmit={handleSubmit} className={`space-y-4 ${className}`}>
+      {fields.map((field) => (
         <FormField
-          key={f.name}
-          label={f.label}
-          placeholder={f.placeholder}
-          type={f.type ?? "text"}
-          options={f.options}
-          disabled={f.disabled}   
-          value={values[f.name] ?? ""}
-          onChange={(next) => setField(f.name, next)}
+          key={field.name}
+          label={field.label}
+          placeholder={field.placeholder}
+          value={values?.[field.name] ?? ""}
+          onChange={(next) => setField(field.name, next)}
+          type={field.type ?? "text"}
+          readOnly={field.readOnly}
         />
       ))}
     </form>
