@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import SupplierActionsBar from "@/components/Admin/suppliermanagement/SupplierActionBar";
@@ -9,65 +9,22 @@ import StatCardGrid from "@/components/Admin/suppliermanagement/StatCardGrid";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useSession } from "next-auth/react";
+import { supplierService } from "@/lib/services/supplier-service";
+import { branchService } from "@/lib/services/branch-service";
+import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from "@/types/supplier.types";
+import type { Branch } from "@/types/branch.types";
 
 type UserRole = "owner" | "admin" | "manager";
 
-export type Supplier = {
-  id: number;
-  type: "Individual" | "Company";
-  name: string;
-  address: string;
-  phone: number;
-  email: string;
-  coverarea: string;
-  branches: string[];
-  regNo: string;
-};
-
-const suppliers: Supplier[] = [
-  {
-    id: 1,
-    type: "Individual",
-    name: "Kamal Perera",
-    phone: 771234567,
-    address: "120 Main Street, Nugegoda",
-    email: "kamal@gmail.com",
-    coverarea: "Western Province",
-    branches: ["Colombo", "Negombo"],
-    regNo: "SUP-001",
-  },
-  {
-    id: 2,
-    type: "Company",
-    name: "ABC Traders",
-    phone: 719876543,
-    address: "123 Main Street, Colombo",
-    email: "abc@gmail.com",
-    coverarea: "Southern Province",
-    branches: ["Galle", "Matara"],
-    regNo: "SUP-002",
-  },
-  {
-    id: 3,
-    type: "Individual",
-    name: "Sunil Fernando",
-    phone: 761112233,
-    address: "123 Main Street, Kandy",
-    email: "sunil@gmail.com",
-    coverarea: "Central Province",
-    branches: ["Kandy", "Matale"],
-    regNo: "SUP-003",
-  },
-];
-
 export default function SupplierPage() {
   const [search, setSearch] = useState("");
-  const [suppliersList, setSuppliersList] = useState<Supplier[]>(suppliers);
+  const [suppliersList, setSuppliersList] = useState<Supplier[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
 
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   const sessionRole =
     typeof session?.user?.role === "string"
@@ -90,13 +47,31 @@ export default function SupplierPage() {
   const canViewAllSuppliers = isOwner || isAdmin;
   const canManageSuppliers = isOwner || isAdmin;
 
-  // useEffect(() => {
-  //   console.log("Session status:", status);
-  //   console.log("Full session:", session);
-  //   console.log("Raw session role:", session?.user?.role);
-  //   console.log("Normalized role:", role);
-  //   console.log("Branch name:", branchName);
-  // }, [status, session, role, branchName]);
+  useEffect(() => {
+    let ignore = false;
+
+    const load = async () => {
+      try {
+        const [supplierData, branchData] = await Promise.all([
+          supplierService.getAll(),
+          branchService.getAll(),
+        ]);
+
+        if (ignore) return;
+
+        setSuppliersList(supplierData);
+        setBranches(branchData);
+      } catch (error) {
+        console.error("Failed to load suppliers:", error);
+      }
+    };
+
+    load();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const branchFilteredSuppliers = canViewAllSuppliers
     ? suppliersList
@@ -153,20 +128,40 @@ export default function SupplierPage() {
           .toLowerCase()
           .includes(filters.coverarea.toLowerCase().trim());
 
-      const matchesSearch = s.name
-        .toLowerCase()
-        .includes(search.toLowerCase().trim());
+      const nameToSearch = `${s.name} ${s.companyName ?? ""}`.toLowerCase();
+      const matchesSearch = nameToSearch.includes(search.toLowerCase().trim());
 
       return matchesType && matchesCoverArea && matchesSearch;
     });
   }, [filters, search, branchFilteredSuppliers, isManager]);
 
-  const handleDeleteSupplier = () => {
-    if (!selectedSupplier) return;
+ const handleAddSupplier = async (payload: CreateSupplierInput) => {
+  try {
+    console.log("ADDING SUPPLIER PAYLOAD:", payload);
+
+    const created = await supplierService.create(payload);
+    setSuppliersList((prev) => [created, ...prev]);
+  } catch (error: any) {
+    console.error("ADD SUPPLIER FULL ERROR:", error);
+    console.error("ADD SUPPLIER RESPONSE:", error?.response);
+    console.error("ADD SUPPLIER RESPONSE DATA:", error?.response?.data);
+    throw error;
+  }
+};
+
+  const handleEditSupplier = async (supplierId: string, payload: UpdateSupplierInput) => {
+    const updated = await supplierService.update(supplierId, payload);
 
     setSuppliersList((prev) =>
-      prev.filter((s) => s.id !== selectedSupplier.id)
+      prev.map((supplier) => (supplier.id === updated.id ? updated : supplier))
     );
+    setSelectedSupplier(updated);
+  };
+
+  const handleDeleteSupplier = async (supplierId: string) => {
+    await supplierService.delete(supplierId);
+
+    setSuppliersList((prev) => prev.filter((s) => s.id !== supplierId));
     setSelectedSupplier(null);
   };
 
@@ -205,6 +200,7 @@ export default function SupplierPage() {
                 : values;
 
               setFilters((prev) => ({ ...prev, ...nextValues }));
+              setFilterOpen(false);
             }}
           />
         </div>
@@ -213,16 +209,11 @@ export default function SupplierPage() {
           <Suspense fallback={null}>
             <SupplierActionsBar
               selectedSupplier={selectedSupplier}
+              branches={branches}
+              onAdd={handleAddSupplier}
+              onEdit={handleEditSupplier}
               onDelete={handleDeleteSupplier}
-              onEdit={(updatedSupplier: Supplier) => {
-                setSuppliersList((prev) =>
-                prev.map((s) =>
-                  s.id === updatedSupplier.id ? updatedSupplier : s
-                )
-              );
-              setSelectedSupplier(updatedSupplier);
-            }}
-          />
+            />
           </Suspense>
         )}
 
@@ -232,7 +223,6 @@ export default function SupplierPage() {
           setSelectedSupplier={setSelectedSupplier}
           userRole={role}
         />
-
       </div>
     </DashboardLayout>
   );

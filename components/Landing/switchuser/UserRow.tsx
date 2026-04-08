@@ -100,40 +100,28 @@ export default function UserRow() {
   }
 
   return (
-    <div className="relative mx-auto max-w-5xl bg-transparent">
-      <div
-        onWheel={(e) => {
-          const el = e.currentTarget;
-          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            e.preventDefault();
-            el.scrollLeft += e.deltaY;
-          }
-        }}
-        className="
-          flex gap-12 px-6 py-3
-          overflow-x-auto
-          snap-x snap-mandatory
-          scroll-smooth
-          scrollbar-hide
-          bg-transparent
-          cursor-pointer
-          items-center justify-center
-        "
-      >
-        {cashiers.map((cashier) => (
-          <div
-            key={cashier.cashierId}
-            onClick={() => handleSelectUser(cashier)}
-            className="shrink-0 snap-center bg-transparent"
-            style={{ width: "calc((100% - 192px) / 5)" }}
-          >
-            <UserAvatar
-              name={cashier.name}
-              img={cashier.imgUrl ?? `${FALLBACK_IMG}${cashier.cashierNo}`}
-            />
-          </div>
-        ))}
-      </div>
+  <div className="relative mx-auto w-full max-w-6xl bg-transparent px-6">
+    <div
+      className="
+        flex flex-wrap justify-center items-start
+        gap-x-12 gap-y-8
+        py-4
+        bg-transparent
+      "
+    >
+      {cashiers.map((cashier) => (
+        <div
+          key={cashier.cashierId}
+          onClick={() => handleSelectUser(cashier)}
+          className="w-[110px] flex justify-center bg-transparent cursor-pointer"
+        >
+          <UserAvatar
+            name={cashier.name}
+            img={cashier.imgUrl ?? `${FALLBACK_IMG}${cashier.cashierNo}`}
+          />
+        </div>
+      ))}
     </div>
-  );
+  </div>
+);
 }
