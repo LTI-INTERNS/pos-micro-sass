@@ -8,10 +8,10 @@ import StatCardGrid from "@/components/Admin/ordermanagement/orderStarCardGrid";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
 import OrdersTable from "@/components/Admin/ordermanagement/order-table";
-import OrderBillModal from "@/components/Admin/ordermanagement/OrderBillModal";
 import { orderService } from "@/lib/services";
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
+import OrderReceiptPreviewModal from "@/components/Admin/ordermanagement/orderReceiptPreviewModel";
 
 export type OrderItem = {
   name: string;
@@ -44,7 +44,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [billOpen, setBillOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   const [filters, setFilters] = useState<{
     branch?: string;
@@ -54,8 +54,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     orderService.getAll().then((data) => {
-      // if your service already returns items/customer, this works directly
-      // if not, this fallback adds mock items so the bill can render
       const normalized = (data as Order[]).map((order) => ({
         ...order,
         customer: order.customer ?? "Walk-in Customer",
@@ -177,7 +175,7 @@ export default function DashboardPage() {
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
-    setBillOpen(true);
+    setReceiptOpen(true);
   };
 
   if (status === "loading") {
@@ -233,9 +231,9 @@ export default function DashboardPage() {
 
         <OrdersTable orders={filteredOrders} onView={handleViewOrder} />
 
-        <OrderBillModal
-          open={billOpen}
-          onClose={() => setBillOpen(false)}
+        <OrderReceiptPreviewModal
+          open={receiptOpen}
+          onClose={() => setReceiptOpen(false)}
           order={selectedOrder}
         />
       </div>
