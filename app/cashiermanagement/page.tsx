@@ -13,6 +13,7 @@ import DeactivateCashierPopup from "@/components/Admin/cashiermanagement/Deactiv
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import { cashierService } from "@/lib/services/cashier-service";
+import CashierStatCardGrid from "@/components/Admin/cashiermanagement/cashierStatCardGrid";
 import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.types";
 
 function toTableCashier(c: ApiCashier): TableCashier {
@@ -235,6 +236,8 @@ export default function CashierManagementPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
+
+        <CashierStatCardGrid />
 
         {actionError && (
           <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-300">
