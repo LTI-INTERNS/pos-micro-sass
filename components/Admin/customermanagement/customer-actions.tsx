@@ -9,27 +9,27 @@ import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup"
 
 type Props = {
   selectedCustomer: Customer | null;
-  onAdd?: () => void;
-  onEdit?: (customer: Customer) => void;
+  onAdd?:    (customer: Customer) => void;
+  onEdit?:   (customer: Customer) => void;
   onDelete?: () => void;
 };
 
 export default function CustomerActionsBar({
   selectedCustomer,
+  onAdd,
   onEdit,
-  onDelete
+  onDelete,
 }: Props) {
   const [showPopup, setShowPopup] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
   const editFields: EditField[] = [
-    { name: "name", label: "Customer Name", type: "text" },
-    { name: "phone", label: "Phone", type: "number" },
-    { name: "promoCard", label: "Promo Code", type: "text" },
-    { name: "points", label: "Points", type: "number" },
-    { name: "email", label: "Email", type: "text" },
-    { name: "outstanding", label: "Outstanding", type: "number" },
+    { name: "name",      label: "Customer Name", type: "text"   },
+    { name: "phone",     label: "Phone",         type: "number" },
+    { name: "promoCard", label: "Promo Code",    type: "text"   },
+    { name: "points",    label: "Points",        type: "number" },
+    { name: "email",     label: "Email",         type: "text"   },
   ];
 
   return (
@@ -66,6 +66,10 @@ export default function CustomerActionsBar({
         <AddCustomerForm
           open={showPopup}
           onClose={() => setShowPopup(false)}
+          onAdded={(newCustomer) => {
+            onAdd?.(newCustomer);
+            setShowPopup(false);
+          }}
         />
       )}
 
