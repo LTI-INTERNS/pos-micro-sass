@@ -54,9 +54,10 @@ export default function BranchesPage() {
   });
 
   // --- NEW: Handle Adding Branch ---
+  // Inside your BranchesPage component:
+
   const handleAddBranch = async (values: Record<string, string>) => {
     try {
-      // Map form values to backend expected payload
       const payload = {
         name: values.name,
         city: values.city,
@@ -69,27 +70,28 @@ export default function BranchesPage() {
       
       const newBranch = await branchService.create(payload as any);
       setAllBranches((prev) => [...prev, newBranch]);
-    } catch (error) {
-      console.error("Failed to add branch", error);
-      alert("Failed to add branch. Please check the network or backend logs.");
+    } catch (error: any) {
+      // THE FIX: Pull the exact message from our backend!
+      if (error.response && error.response.data && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("Failed to add branch. Please check the network.");
+      }
     }
   };
 
-  // --- NEW: Handle Editing Branch ---
   const handleEditBranch = async (updatedBranch: Branch) => {
     if (!selectedBranch) return;
     try {
-      // Map branch state values to backend expected payload
       const payload: any = {
         name: updatedBranch.name,
         city: updatedBranch.city,
         phone: updatedBranch.phone,
         address: updatedBranch.address,
-        registrationNumber: updatedBranch.regno, // Mapping regno back
+        registrationNumber: updatedBranch.regno, 
         email: updatedBranch.email,
       };
 
-      // If a new password was typed in the edit form
       if ((updatedBranch as any).password) {
         payload.password = (updatedBranch as any).password;
       }
@@ -97,9 +99,13 @@ export default function BranchesPage() {
       const updated = await branchService.update(selectedBranch.id, payload);
       setAllBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       setSelectedBranch(updated);
-    } catch (error) {
-      console.error("Failed to edit branch", error);
-      alert("Failed to update branch.");
+    } catch (error: any) {
+      // THE FIX: Pull the exact message from our backend!
+      if (error.response && error.response.data && error.response.data.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("Failed to update branch.");
+      }
     }
   };
 

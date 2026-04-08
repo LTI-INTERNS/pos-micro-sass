@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "next-auth/react"; 
 import ActionButton from "@/components/Admin/common/ActionButton";
 import AddBranchForm from "@/components/Admin/branchmanagement/AddBranchForm";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
@@ -10,7 +10,7 @@ import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup"
 
 type Props = {
   selectedBranch: Branch | null;
-  onAdd?: (values: Record<string, string>) => void; // Added onAdd prop
+  onAdd?: (values: Record<string, string>) => void;
   onEdit?: (branch: Branch) => void;
   onDelete?: () => void;
 };
@@ -30,7 +30,8 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
     { name: "city", label: "City" },
     { name: "phone", label: "Phone" },
     { name: "address", label: "Address" },
-    { name: "regno", label: "Reg No", type: "number" },
+    // THE FIX: Changed type from "number" to "text" so you can type letters!
+    { name: "regno", label: "Reg No", type: "text" }, 
     { 
       name: "email", 
       label: "Email", 
@@ -76,7 +77,7 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
           onClose={() => setShowPopup(false)}
           branchId=""
           onSubmit={(values) => {
-            onAdd?.(values); // Call onAdd and pass the payload up
+            onAdd?.(values); 
             setShowPopup(false);
           }}
         />

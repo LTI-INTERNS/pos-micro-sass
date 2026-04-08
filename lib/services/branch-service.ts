@@ -10,7 +10,9 @@ interface BackendBranch {
     phone:    string;
     email:    string;
     address:  string;
+    // Account for both property names just in case the backend maps it differently
     registrationNumber?: string; 
+    regno?: string;
 }
 
 interface ApiResponse<T> {
@@ -26,8 +28,8 @@ const mapBranch = (b: BackendBranch): Branch => ({
     phone:   b.phone,
     email:   b.email,
     address: b.address,
-    // Safely convert the incoming string to a number to satisfy the frontend type
-    regno:   b.registrationNumber ? Number(b.registrationNumber) : 0, 
+    // THE FIX: Take the string exactly as it is without trying to run Number() on it.
+    regno:   b.registrationNumber || b.regno || '', 
 });
 
 export const branchService = {
