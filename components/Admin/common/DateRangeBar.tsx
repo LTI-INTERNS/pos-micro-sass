@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Calendar, ChevronDown, X } from "lucide-react";
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { format, isToday } from "date-fns";
 
 type Props = {

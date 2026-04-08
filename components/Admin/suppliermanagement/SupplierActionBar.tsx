@@ -4,53 +4,78 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
-import SupplierPopUp from "@/components/Admin/suppliermanagement/SupplierPopUp";
-import type { Supplier } from "@/components/Admin/suppliermanagement/SupplierTable";
-import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
+import SupplierPopUp, {
+  SupplierFormValues,
+} from "@/components/Admin/suppliermanagement/SupplierPopUp";
+import type {
+  Supplier,
+  CreateSupplierInput,
+  UpdateSupplierInput,
+} from "@/types/supplier.types";
+import type { Branch } from "@/types/branch.types";
 
 type Props = {
   selectedSupplier: Supplier | null;
-  onDelete?: () => void;
-  onEdit?: (updatedSupplier: Supplier) => void;
+  branches: Branch[];
+  onAdd: (payload: CreateSupplierInput) => Promise<void>;
+  onEdit: (supplierId: string, payload: UpdateSupplierInput) => Promise<void>;
+  onDelete: (supplierId: string) => Promise<void>;
 };
 
-export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit }: Props) {
-  const [showPopup, setShowPopup] = useState(false);
+function buildPayload(values: SupplierFormValues & { supplierType: "company" | "individual" }): CreateSupplierInput {
+  const common = {
+    email: values.email.trim(),
+    address: values.address.trim(),
+    coverArea: values.coverArea.trim(),
+    regNo: values.registrationNumber.trim() || undefined,
+    branchIds: values.branchIds,
+  };
+
+  if (values.supplierType === "company") {
+    return {
+      type: "COMPANY",
+      name: values.contactPersonName.trim(),
+      phone: values.contactPersonPhone.trim(),
+      companyName: values.companyName.trim() || undefined,
+      ...common,
+    };
+  }
+
+  return {
+    type: "INDIVIDUAL",
+    name: values.name.trim(),
+    phone: values.phone.trim(),
+    ...common,
+  };
+}
+
+export default function SupplierActionsBar({
+  selectedSupplier,
+  branches,
+  onAdd,
+  onEdit,
+  onDelete,
+}: Props) {
+  const [showAddPopup, setShowAddPopup] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
-  const [editPopupOpen, setEditPopupOpen] = useState(false);
 
   const searchParams = useSearchParams();
 
-  // 🔹 Auto-open Add New Supplier popup when redirected from AddStockPopup
   useEffect(() => {
     if (searchParams.get("action") === "add") {
-      setShowPopup(true);
+      setShowAddPopup(true);
 
-      // Clean up ?action=add from the URL without a re-render loop
       const url = new URL(window.location.href);
       url.searchParams.delete("action");
       window.history.replaceState(null, "", url.toString());
     }
   }, [searchParams]);
 
-  const editFields: EditField[] = [
-  {
-  name: "type",
-  label: "Supplier Type",
-  type: "select",
-  options: [
-    { label: "Individual", value: "Individual" },
-    { label: "Company", value: "Company" },
-  ],
-},
-  { name: "name", label: "Supplier Name" },
-  { name: "address", label: "Address" },
-  { name: "phone", label: "Phone", type: "number" },
-  { name: "email", label: "Email" },
-  { name: "coverarea", label: "Cover Area" },
-  { name: "regNo", label: "Registration No" },
-  { name: "branches", label: "Branches" }, 
-];
+  const branchOptions = branches.map((branch) => ({
+    id: branch.id,
+    name: branch.name,
+  }));
 
   return (
     <>
@@ -73,25 +98,53 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
               alert("Please select a supplier first!");
               return;
             }
-            setEditPopupOpen(true);
+            setShowEditPopup(true);
           }}
         />
 
         <ActionButton
           label="Add New Supplier"
           variant="primary"
-          onClick={() => setShowPopup(true)}
+          onClick={() => setShowAddPopup(true)}
         />
       </div>
 
-      {showPopup && (
+      {showAddPopup && (
         <SupplierPopUp
-          open={showPopup}
-          onClose={() => setShowPopup(false)}
-          supplierId="A001"
-          onSave={(vals) => {
-            console.log(vals);
-            setShowPopup(false);
+          open={showAddPopup}
+          onClose={() => setShowAddPopup(false)}
+          title="New Supplier"
+          branchOptions={branchOptions}
+          onSave={async (values) => {
+            try {
+              const payload = buildPayload(values);
+              console.log("CREATE SUPPLIER PAYLOAD:", payload);
+              await onAdd(payload);
+              setShowAddPopup(false);
+            } catch (error) {
+              console.error("Failed to create supplier:", error);
+              alert("Failed to create supplier.");
+            }
+          }}
+        />
+      )}
+
+      {selectedSupplier && showEditPopup && (
+        <SupplierPopUp
+          open={showEditPopup}
+          onClose={() => setShowEditPopup(false)}
+          title="Edit Supplier"
+          initialSupplier={selectedSupplier}
+          supplierId={selectedSupplier.id}
+          branchOptions={branchOptions}
+          onSave={async (values) => {
+            try {
+              await onEdit(selectedSupplier.id, buildPayload(values));
+              setShowEditPopup(false);
+            } catch (error) {
+              console.error("Failed to update supplier:", error);
+              alert("Failed to update supplier.");
+            }
           }}
         />
       )}
@@ -107,27 +160,18 @@ export default function SupplierActionsBar({ selectedSupplier, onDelete, onEdit 
               <br /><br />
               ID - {s.id}<br />
               Type - {s.type}<br />
-              Supplier Name - {s.name}<br />
+              Supplier Name - {s.companyName || s.name}<br />
               Cover Area - {s.coverarea}
             </>
           )}
-          onConfirm={() => {
-            onDelete?.();
-            setDeletePopupOpen(false);
-          }}
-        />
-      )}
-
-      {selectedSupplier && editPopupOpen && (
-        <EditEntityModal<Supplier>
-          open={editPopupOpen}
-          title="Edit Supplier"
-          initialValues={selectedSupplier}
-          fields={editFields}
-          onClose={() => setEditPopupOpen(false)}
-          onSave={(updatedSupplier) => {
-            onEdit?.(updatedSupplier);
-            setEditPopupOpen(false);
+          onConfirm={async () => {
+            try {
+              await onDelete(selectedSupplier.id);
+              setDeletePopupOpen(false);
+            } catch (error) {
+              console.error("Failed to delete supplier:", error);
+              alert("Failed to delete supplier.");
+            }
           }}
         />
       )}

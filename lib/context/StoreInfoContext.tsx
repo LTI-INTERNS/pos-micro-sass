@@ -8,13 +8,14 @@ import type { BusinessTypeEnum, SubscriptionInfo } from "@/types/subscription.ty
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type StoreInfo = {
-  storeName:    string;
-  branchName:   string;
-  cashierName:  string;
-  telephone:    string;
-  logoUrl:      string | null;
-  businessType: BusinessTypeEnum | "";   // e.g. "CAFE" | "SUPERMARKET" | ""
-  subscription: SubscriptionInfo | null; // null until the fetch resolves
+  storeName:     string;
+  branchName:    string;
+  cashierName:   string;
+  telephone:     string;
+  logoUrl:       string | null;
+  businessType:  BusinessTypeEnum | "";     // e.g. "CAFE" | "SUPERMARKET" | ""
+  businessTypeId: string;                    // Business type ID from database
+  subscription:  SubscriptionInfo | null;   // null until the fetch resolves
 };
 
 type StoreInfoContextType = {
@@ -25,13 +26,14 @@ type StoreInfoContextType = {
 // ── Defaults ──────────────────────────────────────────────────────────────────
 
 const defaultStoreInfo: StoreInfo = {
-  storeName:    "",
-  branchName:   "",
-  cashierName:  "",
-  telephone:    "",
-  logoUrl:      null,
-  businessType: "",
-  subscription: null,
+  storeName:     "",
+  branchName:    "",
+  cashierName:   "",
+  telephone:     "",
+  logoUrl:       null,
+  businessType:  "",
+  businessTypeId: "",
+  subscription:  null,
 };
 
 // ── Backend response shape ────────────────────────────────────────────────────
@@ -39,10 +41,11 @@ const defaultStoreInfo: StoreInfo = {
 interface StoreInfoResponse {
   success: boolean;
   data: {
-    logoUrl:      string;
-    telephone:    string;
-    businessType: BusinessTypeEnum;
-    subscription: SubscriptionInfo;
+    logoUrl:       string;
+    telephone:     string;
+    businessType:  BusinessTypeEnum;
+    businessTypeId: string;
+    subscription:  SubscriptionInfo;
   };
 }
 
@@ -80,10 +83,11 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
         if (!res.success) return;
         setStoreInfoState((prev) => ({
           ...prev,
-          logoUrl:      res.data.logoUrl      || prev.logoUrl,
-          telephone:    res.data.telephone    || prev.telephone,
-          businessType: res.data.businessType || prev.businessType,
-          subscription: res.data.subscription ?? prev.subscription,
+          logoUrl:       res.data.logoUrl       || prev.logoUrl,
+          telephone:     res.data.telephone     || prev.telephone,
+          businessType:  res.data.businessType  || prev.businessType,
+          businessTypeId: res.data.businessTypeId || prev.businessTypeId,
+          subscription:  res.data.subscription  ?? prev.subscription,
         }));
       })
       .catch(() => {
