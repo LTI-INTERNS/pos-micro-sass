@@ -1,29 +1,62 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
-import ExpensesTable, { Expenses } from "@/components/Admin/expensesmanagement/ExpensesTable";
+import ExpensesTable, {
+  Expenses,
+} from "@/components/Admin/expensesmanagement/ExpensesTable";
 import StatCardGrid from "@/components/Admin/expensesmanagement/ExpensesStatCardGrid";
 import AddExpensesPopup from "@/components/Admin/expensesmanagement/AddExpensesPopup";
-import { mockExpenses } from "@/components/Admin/expensesmanagement/mock";
-import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import {
+  BranchItem,
+  expenseApi,
+  ExpenseApiItem,
+  ExpenseCategoryItem,
+} from "@/lib/api/expenses";
+import {
+  useTableFilters,
+  getFilterOptions,
+} from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 
 type UserRole = "owner" | "admin" | "manager";
 
+const normalizeExpense = (item: ExpenseApiItem): Expenses => ({
+  id: item.expensesId,
+  expenseId: item.expensesId,
+  date: item.date ? new Date(item.date).toISOString().split("T")[0] : "",
+  category: item.category?.category ?? "",
+  categoryId: item.categoryId,
+  description: item.description ?? "",
+  amount: Number(item.amount ?? 0),
+  payment: item.paymentType ?? "",
+  paymentType: (item.paymentType ?? "CASH") as "CASH" | "CARD",
+  addedby: item.addedBy ?? "",
+  branch: item.branch?.name ?? "",
+  branchId: item.branchId,
+});
+
 export default function ExpensesContent() {
   const { data: session, status } = useSession();
+  console.log("SESSION DATA:", session);
 
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showExpensePopup, setShowExpensePopup] = useState(false);
+
+  const [expenses, setExpenses] = useState<Expenses[]>([]);
+  const [categories, setCategories] = useState<ExpenseCategoryItem[]>([]);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expenses | null>(null);
 
   const [filters, setFilters] = useState<{
     category?: string;
@@ -51,17 +84,49 @@ export default function ExpensesContent() {
   const canUseBranchFilter = isOwner || isAdmin;
   const showBranchColumn = isOwner || isAdmin;
 
+  const fetchAll = async () => {
+    if (!session) return;
+
+    try {
+      setPageLoading(true);
+
+      const [expenseRows, categoryRows, branchRows] = await Promise.all([
+        expenseApi.getExpenses(session),
+        expenseApi.getExpenseCategories(session),
+        expenseApi.getBranches(session).catch(() => []),
+      ]);
+
+      setExpenses(expenseRows.map(normalizeExpense));
+      setCategories(categoryRows);
+      setBranches(branchRows);
+    } catch (error: any) {
+      console.error("Failed to load expenses:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to load expense data."
+      );
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchAll();
+    }
+  }, [status]);
+
   const branchFilteredExpenses = useMemo(() => {
     if (status === "loading") return [];
 
-    if (isOwner) return mockExpenses;
+    if (isOwner || isAdmin) return expenses;
 
-    if (!branchName) return mockExpenses;
+    if (!branchName) return expenses;
 
-    return mockExpenses.filter(
+    return expenses.filter(
       (e) => e.branch.trim().toLowerCase() === branchName.toLowerCase()
     );
-  }, [status, isOwner, branchName]);
+  }, [status, isOwner, isAdmin, branchName, expenses]);
 
   const visibleFilters = canUseBranchFilter
     ? filters
@@ -72,7 +137,7 @@ export default function ExpensesContent() {
   const categoryOptions = getFilterOptions(branchFilteredExpenses, "category");
   const paymentOptions = getFilterOptions(branchFilteredExpenses, "payment");
   const addedByOptions = getFilterOptions(branchFilteredExpenses, "addedby");
-  const branchOptions = getFilterOptions(mockExpenses, "branch");
+  const branchOptions = getFilterOptions(expenses, "branch");
 
   const filteredExpenses = useTableFilters<Expenses>({
     data: branchFilteredExpenses,
@@ -99,7 +164,80 @@ export default function ExpensesContent() {
 
   const exportCSV = useCSVExport<Expenses>();
 
-  if (status === "loading") {
+  const resetPopupState = () => {
+    setShowExpensePopup(false);
+    setEditingExpense(null);
+  };
+
+  const handleCreate = async (values: {
+    categoryId: string;
+    date: string;
+    description: string;
+    amount: number;
+    paymentType: "CASH" | "CARD";
+    branchId?: string;
+  }) => {
+    try {
+      setSaveLoading(true);
+      await expenseApi.createExpense(session, values);
+      await fetchAll();
+      resetPopupState();
+    } catch (error: any) {
+      console.error("Create expense failed:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to create expense."
+      );
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleUpdate = async (values: {
+    categoryId: string;
+    date: string;
+    description: string;
+    amount: number;
+    paymentType: "CASH" | "CARD";
+    branchId?: string;
+  }) => {
+    if (!editingExpense) return;
+
+    try {
+      setSaveLoading(true);
+      await expenseApi.updateExpense(session, editingExpense.expenseId, values);
+      await fetchAll();
+      resetPopupState();
+    } catch (error: any) {
+      console.error("Update expense failed:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to update expense."
+      );
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDelete = async (expense: Expenses) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${expense.description}"?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await expenseApi.deleteExpense(session, expense.expenseId);
+      await fetchAll();
+    } catch (error: any) {
+      console.error("Delete expense failed:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to delete expense."
+      );
+    }
+  };
+
+  if (status === "loading" || pageLoading) {
     return <div className="w-full p-4">Loading expenses...</div>;
   }
 
@@ -157,7 +295,10 @@ export default function ExpensesContent() {
         <ActionButton
           label="Add Expense"
           variant="primary"
-          onClick={() => setShowAddExpense(true)}
+          onClick={() => {
+            setEditingExpense(null);
+            setShowExpensePopup(true);
+          }}
         />
         <ActionButton
           label="Export CSV"
@@ -169,15 +310,34 @@ export default function ExpensesContent() {
       <ExpensesTable
         Expenses={filteredExpenses}
         showBranch={showBranchColumn}
+        onEdit={(expense) => {
+          setEditingExpense(expense);
+          setShowExpensePopup(true);
+        }}
+        onDelete={handleDelete}
       />
 
       <AddExpensesPopup
-        open={showAddExpense}
-        onClose={() => setShowAddExpense(false)}
-        onSave={(values) => {
-          console.log("Saved expense:", values);
-          setShowAddExpense(false);
-        }}
+        open={showExpensePopup}
+        onClose={resetPopupState}
+        onSave={editingExpense ? handleUpdate : handleCreate}
+        categories={categories}
+        branches={branches}
+        loading={saveLoading}
+        mode={editingExpense ? "edit" : "create"}
+        initialValues={
+          editingExpense
+            ? {
+                expensesId: editingExpense.expenseId,
+                date: editingExpense.date,
+                categoryId: editingExpense.categoryId,
+                description: editingExpense.description,
+                amount: editingExpense.amount,
+                paymentType: editingExpense.paymentType,
+                branchId: editingExpense.branchId,
+              }
+            : null
+        }
       />
     </div>
   );

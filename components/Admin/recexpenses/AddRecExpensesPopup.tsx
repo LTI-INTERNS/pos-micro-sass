@@ -5,66 +5,66 @@ import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import {
+  BranchItem,
+  RecurringExpenseCategoryItem,
+  RecurringExpenseFormPayload,
+} from "@/lib/api/recurringExpenses";
 
-type RecExpenseValues = {
-  date: string;
-  category: string;
-  description: string;
-  amount: string;
-  branch: string;
-};
+type PaymentMethod = "CASH" | "CARD" | "";
 
-type PaymentMethod = "card" | "cash" | "check" | "bankTransfer" | "";
-
-type FormErrors = Partial<Record<keyof RecExpenseValues, string>> & {
+type FormErrors = {
+  date?: string;
+  categoryId?: string;
+  description?: string;
+  amount?: string;
+  branchId?: string;
   paymentMethod?: string;
 };
 
-type AddRecExpensesPopupProps = {
-  open: boolean;
-  onClose: () => void;
-  onSave: (values: RecExpenseValues & { paymentMethod: PaymentMethod }) => void;
+type RecExpenseFormValues = {
+  date: string;
+  categoryId: string;
+  description: string;
+  amount: string;
+  branchId: string;
 };
 
 type UserRole = "owner" | "admin" | "manager";
 
-const CATEGORY_OPTIONS = [
-  { value: "Monthly Rent", label: "Monthly Rent" },
-  { value: "Monthly Salaries", label: "Monthly Salaries" },
-  { value: "Electricity Bill", label: "Electricity Bill" },
-  { value: "Water Bill", label: "Water Bill" },
-  { value: "Internet & Phone", label: "Internet & Phone" },
-  { value: "Equipment Lease", label: "Equipment Lease" },
-  { value: "Insurance Premium", label: "Insurance Premium" },
-  { value: "Software Subscription", label: "Software Subscription" },
-  { value: "Waste Management", label: "Waste Management" },
-  { value: "Security Service", label: "Security Service" },
-  { value: "Cleaning Service", label: "Cleaning Service" },
-  { value: "Cold Storage Lease", label: "Cold Storage Lease" },
-  { value: "Cold Storage Maintenance", label: "Cold Storage Maintenance" },
-  { value: "Transportation Contracts", label: "Transportation Contracts" },
-];
-
-const BRANCH_OPTIONS = [
-  { value: "Colombo", label: "Colombo" },
-  { value: "Negombo", label: "Negombo" },
-  { value: "Nugegoda", label: "Nugegoda" },
-  { value: "Galle", label: "Galle" },
-  { value: "Matara", label: "Matara" },
-  { value: "Kandy", label: "Kandy" },
-];
+type AddRecExpensesPopupProps = {
+  open: boolean;
+  onClose: () => void;
+  onSave: (values: RecurringExpenseFormPayload) => Promise<void> | void;
+  categories: RecurringExpenseCategoryItem[];
+  branches: BranchItem[];
+  loading?: boolean;
+  mode?: "create" | "edit";
+  initialValues?: {
+    recExpensesId?: string;
+    date?: string;
+    categoryId?: string;
+    description?: string;
+    amount?: number | string;
+    paymentType?: "CASH" | "CARD";
+    branchId?: string;
+  } | null;
+};
 
 const PAYMENT_OPTIONS = [
-  { value: "cash", label: "Cash" },
-  { value: "card", label: "Card" },
-  { value: "check", label: "Check" },
-  { value: "bankTransfer", label: "Bank Transfer" },
+  { value: "CASH", label: "Cash" },
+  { value: "CARD", label: "Card" },
 ];
 
 const AddRecExpensesPopup = ({
   open,
   onClose,
   onSave,
+  categories,
+  branches,
+  loading = false,
+  mode = "create",
+  initialValues,
 }: AddRecExpensesPopupProps) => {
   const { data: session } = useSession();
 
@@ -81,14 +81,15 @@ const AddRecExpensesPopup = ({
       : undefined;
 
   const canEditBranch = role === "owner" || role === "admin";
-  const sessionBranch = session?.user?.branchName?.trim() ?? "";
+  const sessionBranchId =
+    (session?.user as any)?.branchId?.trim?.() || "";
 
-  const [values, setValues] = React.useState<RecExpenseValues>({
+  const [values, setValues] = React.useState<RecExpenseFormValues>({
     date: "",
-    category: "",
+    categoryId: "",
     description: "",
     amount: "",
-    branch: "",
+    branchId: "",
   });
 
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("");
@@ -98,20 +99,33 @@ const AddRecExpensesPopup = ({
     if (!open) return;
 
     setValues({
-      date: "",
-      category: "",
-      description: "",
-      amount: "",
-      branch: canEditBranch ? "" : sessionBranch,
+      date: initialValues?.date || "",
+      categoryId: initialValues?.categoryId || "",
+      description: initialValues?.description || "",
+      amount:
+        initialValues?.amount !== undefined && initialValues?.amount !== null
+          ? String(initialValues.amount)
+          : "",
+      branchId:
+        initialValues?.branchId || (canEditBranch ? "" : sessionBranchId),
     });
 
-    setPaymentMethod("");
+    setPaymentMethod(initialValues?.paymentType || "");
     setErrors({});
-  }, [open, canEditBranch, sessionBranch]);
+  }, [open, initialValues, canEditBranch, sessionBranchId]);
 
-  const setField = (name: keyof RecExpenseValues, value: string) => {
+  const categoryOptions = categories.map((item) => ({
+    value: item.categoryId,
+    label: item.category,
+  }));
+
+  const branchOptions = branches.map((item) => ({
+    value: item.branchId,
+    label: item.name,
+  }));
+
+  const setField = (name: keyof RecExpenseFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
-
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -121,7 +135,7 @@ const AddRecExpensesPopup = ({
     const newErrors: FormErrors = {};
 
     if (!values.date.trim()) newErrors.date = "Date is required";
-    if (!values.category.trim()) newErrors.category = "Category is required";
+    if (!values.categoryId.trim()) newErrors.categoryId = "Category is required";
 
     if (!values.description.trim()) {
       newErrors.description = "Description is required";
@@ -137,8 +151,8 @@ const AddRecExpensesPopup = ({
       newErrors.amount = "Amount must be greater than 0";
     }
 
-    if (!values.branch.trim()) {
-      newErrors.branch = "Branch is required";
+    if (!values.branchId.trim()) {
+      newErrors.branchId = "Branch is required";
     }
 
     if (!paymentMethod) {
@@ -149,36 +163,36 @@ const AddRecExpensesPopup = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
-    onSave({ ...values, paymentMethod });
+
+    await onSave({
+      categoryId: values.categoryId,
+      date: values.date,
+      description: values.description.trim(),
+      amount: Number(values.amount),
+      paymentType: paymentMethod as "CASH" | "CARD",
+      ...(values.branchId ? { branchId: values.branchId } : {}),
+    });
   };
 
   const handleCancel = () => {
     onClose();
-    setValues({
-      date: "",
-      category: "",
-      description: "",
-      amount: "",
-      branch: canEditBranch ? "" : sessionBranch,
-    });
-    setPaymentMethod("");
     setErrors({});
   };
 
   return (
     <ModalShell
       open={open}
-      title="Add Recurring Expense"
+      title={mode === "edit" ? "Edit Recurring Expense" : "Add Recurring Expense"}
       onClose={handleCancel}
       widthClassName="w-[760px] max-w-[92vw]"
     >
       <form
         className="space-y-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          handleSave();
+          await handleSave();
         }}
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -190,22 +204,20 @@ const AddRecExpensesPopup = ({
               onChange={(v) => setField("date", v)}
               type="date"
             />
-            {errors.date && (
-              <p className="px-3 pt-1 text-xs text-red-500">{errors.date}</p>
-            )}
+            {errors.date && <p className="px-3 pt-1 text-xs text-red-500">{errors.date}</p>}
           </div>
 
           <div>
             <FormField
               label="Category"
               placeholder="Select category"
-              value={values.category}
-              onChange={(v) => setField("category", v)}
+              value={values.categoryId}
+              onChange={(v) => setField("categoryId", v)}
               type="dropdown"
-              options={CATEGORY_OPTIONS}
+              options={categoryOptions}
             />
-            {errors.category && (
-              <p className="px-3 pt-1 text-xs text-red-500">{errors.category}</p>
+            {errors.categoryId && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.categoryId}</p>
             )}
           </div>
 
@@ -217,9 +229,7 @@ const AddRecExpensesPopup = ({
               onChange={(v) => setField("amount", v)}
               type="number"
             />
-            {errors.amount && (
-              <p className="px-3 pt-1 text-xs text-red-500">{errors.amount}</p>
-            )}
+            {errors.amount && <p className="px-3 pt-1 text-xs text-red-500">{errors.amount}</p>}
           </div>
 
           <div>
@@ -237,9 +247,7 @@ const AddRecExpensesPopup = ({
               options={PAYMENT_OPTIONS}
             />
             {errors.paymentMethod && (
-              <p className="px-3 pt-1 text-xs text-red-500">
-                {errors.paymentMethod}
-              </p>
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.paymentMethod}</p>
             )}
           </div>
 
@@ -247,14 +255,14 @@ const AddRecExpensesPopup = ({
             <FormField
               label="Branch"
               placeholder="Select branch"
-              value={values.branch}
-              onChange={(v) => setField("branch", v)}
+              value={values.branchId}
+              onChange={(v) => setField("branchId", v)}
               type="dropdown"
-              options={BRANCH_OPTIONS}
+              options={branchOptions}
               disabled={!canEditBranch}
             />
-            {errors.branch && (
-              <p className="px-3 pt-1 text-xs text-red-500">{errors.branch}</p>
+            {errors.branchId && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.branchId}</p>
             )}
           </div>
 
@@ -267,19 +275,27 @@ const AddRecExpensesPopup = ({
               type="text"
             />
             {errors.description && (
-              <p className="px-3 pt-1 text-xs text-red-500">
-                {errors.description}
-              </p>
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.description}</p>
             )}
           </div>
         </div>
 
         <div className="flex items-center justify-center pt-2">
-          <div className="w-full md:w-[420px]">
+          <div className="w-full md:w-105">
             <PopupActions
               actions={[
                 { label: "Cancel", onClick: handleCancel, variant: "secondary" },
-                { label: "Save", onClick: handleSave, variant: "primary" },
+                {
+                  label: loading
+                    ? mode === "edit"
+                      ? "Updating..."
+                      : "Saving..."
+                    : mode === "edit"
+                    ? "Update"
+                    : "Save",
+                  onClick: handleSave,
+                  variant: "primary",
+                },
               ]}
             />
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -11,12 +11,37 @@ import RecurringExpensesTable, {
 } from "@/components/Admin/recexpenses/RecExpensesTable";
 import StatCardGrid from "@/components/Admin/recexpenses/RecStatCardGrid";
 import AddRecExpensesPopup from "@/components/Admin/recexpenses/AddRecExpensesPopup";
-import { mockRecurringExpenses } from "@/components/Admin/recexpenses/mock";
-import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import {
+  BranchItem,
+  recurringExpenseApi,
+  RecurringExpenseApiItem,
+  RecurringExpenseCategoryItem,
+} from "@/lib/api/recurringExpenses";
+import {
+  useTableFilters,
+  getFilterOptions,
+} from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 
 type UserRole = "owner" | "admin" | "manager";
+
+const normalizeRecurringExpense = (
+  item: RecurringExpenseApiItem
+): RecurringExpenses => ({
+  id: item.recExpensesId,
+  recExpenseId: item.recExpensesId,
+  date: item.date ? new Date(item.date).toISOString().split("T")[0] : "",
+  category: item.category?.category ?? "",
+  categoryId: item.categoryId,
+  description: item.description ?? "",
+  amount: Number(item.amount ?? 0),
+  payment: item.paymentType ?? "",
+  paymentType: (item.paymentType ?? "CASH") as "CASH" | "CARD",
+  addedby: item.addedBy ?? "",
+  branch: item.branch?.name ?? "",
+  branchId: item.branchId,
+});
 
 export default function RecurringExpensesContent() {
   const { data: session, status } = useSession();
@@ -25,7 +50,15 @@ export default function RecurringExpensesContent() {
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
-  const [showAddRecExpense, setShowAddRecExpense] = useState(false);
+  const [showRecExpensePopup, setShowRecExpensePopup] = useState(false);
+
+  const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpenses[]>([]);
+  const [categories, setCategories] = useState<RecurringExpenseCategoryItem[]>([]);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [editingRecExpense, setEditingRecExpense] =
+    useState<RecurringExpenses | null>(null);
 
   const [filters, setFilters] = useState<{
     category?: string;
@@ -53,17 +86,48 @@ export default function RecurringExpensesContent() {
   const canUseBranchFilter = isOwner || isAdmin;
   const showBranchColumn = isOwner || isAdmin;
 
+  const fetchAll = async () => {
+    if (!session) return;
+
+    try {
+      setPageLoading(true);
+
+      const [rows, categoryRows, branchRows] = await Promise.all([
+        recurringExpenseApi.getRecurringExpenses(session),
+        recurringExpenseApi.getRecurringExpenseCategories(session),
+        recurringExpenseApi.getBranches(session).catch(() => []),
+      ]);
+
+      setRecurringExpenses(rows.map(normalizeRecurringExpense));
+      setCategories(categoryRows);
+      setBranches(branchRows);
+    } catch (error: any) {
+      console.error("Failed to load recurring expenses:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to load recurring expense data."
+      );
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchAll();
+    }
+  }, [status]);
+
   const branchFilteredRecurringExpenses = useMemo(() => {
     if (status === "loading") return [];
 
-    if (isOwner) return mockRecurringExpenses;
+    if (isOwner || isAdmin) return recurringExpenses;
+    if (!branchName) return recurringExpenses;
 
-    if (!branchName) return mockRecurringExpenses;
-
-    return mockRecurringExpenses.filter(
+    return recurringExpenses.filter(
       (e) => e.branch.trim().toLowerCase() === branchName.toLowerCase()
     );
-  }, [status, isOwner, branchName]);
+  }, [status, isOwner, isAdmin, branchName, recurringExpenses]);
 
   const visibleFilters = canUseBranchFilter
     ? filters
@@ -83,7 +147,7 @@ export default function RecurringExpensesContent() {
     branchFilteredRecurringExpenses,
     "addedby"
   );
-  const branchOptions = getFilterOptions(mockRecurringExpenses, "branch");
+  const branchOptions = getFilterOptions(recurringExpenses, "branch");
 
   const filteredRecurringExpenses = useTableFilters<RecurringExpenses>({
     data: branchFilteredRecurringExpenses,
@@ -108,9 +172,89 @@ export default function RecurringExpensesContent() {
     }));
   };
 
-  const exportToCSV = useCSVExport<RecurringExpenses>();
+  const exportCSV = useCSVExport<RecurringExpenses>();
 
-  if (status === "loading") {
+  const resetPopupState = () => {
+    setShowRecExpensePopup(false);
+    setEditingRecExpense(null);
+  };
+
+  const handleCreate = async (values: {
+    categoryId: string;
+    date: string;
+    description: string;
+    amount: number;
+    paymentType: "CASH" | "CARD";
+    branchId?: string;
+  }) => {
+    try {
+      setSaveLoading(true);
+      await recurringExpenseApi.createRecurringExpense(session, values);
+      await fetchAll();
+      resetPopupState();
+    } catch (error: any) {
+      console.error("Create recurring expense failed:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to create recurring expense."
+      );
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleUpdate = async (values: {
+    categoryId: string;
+    date: string;
+    description: string;
+    amount: number;
+    paymentType: "CASH" | "CARD";
+    branchId?: string;
+  }) => {
+    if (!editingRecExpense) return;
+
+    try {
+      setSaveLoading(true);
+      await recurringExpenseApi.updateRecurringExpense(
+        session,
+        editingRecExpense.recExpenseId,
+        values
+      );
+      await fetchAll();
+      resetPopupState();
+    } catch (error: any) {
+      console.error("Update recurring expense failed:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to update recurring expense."
+      );
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleDelete = async (expense: RecurringExpenses) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${expense.description}"?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await recurringExpenseApi.deleteRecurringExpense(
+        session,
+        expense.recExpenseId
+      );
+      await fetchAll();
+    } catch (error: any) {
+      console.error("Delete recurring expense failed:", error);
+      alert(
+        error?.response?.data?.error?.message ||
+          "Failed to delete recurring expense."
+      );
+    }
+  };
+
+  if (status === "loading" || pageLoading) {
     return <div className="w-full p-4">Loading recurring expenses...</div>;
   }
 
@@ -157,21 +301,9 @@ export default function RecurringExpensesContent() {
             ...(canUseBranchFilter
               ? [{ name: "branch", placeholder: "Branch", options: branchOptions }]
               : []),
-            {
-              name: "category",
-              placeholder: "Category",
-              options: categoryOptions,
-            },
-            {
-              name: "payment",
-              placeholder: "Payment",
-              options: paymentOptions,
-            },
-            {
-              name: "addedby",
-              placeholder: "Added By",
-              options: addedByOptions,
-            },
+            { name: "category", placeholder: "Category", options: categoryOptions },
+            { name: "payment", placeholder: "Payment", options: paymentOptions },
+            { name: "addedby", placeholder: "Added By", options: addedByOptions },
           ]}
         />
       </div>
@@ -180,13 +312,16 @@ export default function RecurringExpensesContent() {
         <ActionButton
           label="Add Recurring Expense"
           variant="primary"
-          onClick={() => setShowAddRecExpense(true)}
+          onClick={() => {
+            setEditingRecExpense(null);
+            setShowRecExpensePopup(true);
+          }}
         />
         <ActionButton
           label="Export CSV"
           variant="primary"
           onClick={() =>
-            exportToCSV(filteredRecurringExpenses, "RecurringExpenses.csv")
+            exportCSV(filteredRecurringExpenses, "RecurringExpenses.csv")
           }
         />
       </div>
@@ -194,15 +329,34 @@ export default function RecurringExpensesContent() {
       <RecurringExpensesTable
         RecurringExpenses={filteredRecurringExpenses}
         showBranch={showBranchColumn}
+        onEdit={(expense) => {
+          setEditingRecExpense(expense);
+          setShowRecExpensePopup(true);
+        }}
+        onDelete={handleDelete}
       />
 
       <AddRecExpensesPopup
-        open={showAddRecExpense}
-        onClose={() => setShowAddRecExpense(false)}
-        onSave={(values) => {
-          console.log("Saved Rec expense:", values);
-          setShowAddRecExpense(false);
-        }}
+        open={showRecExpensePopup}
+        onClose={resetPopupState}
+        onSave={editingRecExpense ? handleUpdate : handleCreate}
+        categories={categories}
+        branches={branches}
+        loading={saveLoading}
+        mode={editingRecExpense ? "edit" : "create"}
+        initialValues={
+          editingRecExpense
+            ? {
+                recExpensesId: editingRecExpense.recExpenseId,
+                date: editingRecExpense.date,
+                categoryId: editingRecExpense.categoryId,
+                description: editingRecExpense.description,
+                amount: editingRecExpense.amount,
+                paymentType: editingRecExpense.paymentType,
+                branchId: editingRecExpense.branchId,
+              }
+            : null
+        }
       />
     </div>
   );

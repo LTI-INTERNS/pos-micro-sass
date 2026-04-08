@@ -5,67 +5,67 @@ import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import {
+  BranchItem,
+  ExpenseCategoryItem,
+  ExpenseFormPayload,
+} from "@/lib/api/expenses";
 
-type ExpenseValues = {
-  date: string;
-  category: string;
-  description: string;
-  amount: string;
-  branch: string;
-};
+type PaymentMethod = "CASH" | "CARD" | "";
 
-type PaymentMethod = "card" | "cash" | "check" | "bankTransfer" | "";
-
-type FormErrors = Partial<Record<keyof ExpenseValues, string>> & {
+type FormErrors = {
+  date?: string;
+  categoryId?: string;
+  description?: string;
+  amount?: string;
+  branchId?: string;
   paymentMethod?: string;
 };
 
-type AddExpensesPopupProps = {
-  open: boolean;
-  onClose: () => void;
-  onSave: (values: ExpenseValues & { paymentMethod: PaymentMethod }) => void;
+type ExpenseFormValues = {
+  date: string;
+  categoryId: string;
+  description: string;
+  amount: string;
+  branchId: string;
 };
 
 type UserRole = "owner" | "admin" | "manager";
 
-const CATEGORY_OPTIONS = [
-  { value: "Ingredients", label: "Ingredients" },
-  { value: "Utilities", label: "Utilities" },
-  { value: "Staff Salaries", label: "Staff Salaries" },
-  { value: "Rent", label: "Rent" },
-  { value: "Equipment Maintenance", label: "Equipment Maintenance" },
-  { value: "Packaging", label: "Packaging" },
-  { value: "Marketing", label: "Marketing" },
-  { value: "Cleaning Supplies", label: "Cleaning Supplies" },
-  { value: "Licenses & Permits", label: "Licenses & Permits" },
-  { value: "Insurance", label: "Insurance" },
-  { value: "Repairs", label: "Repairs" },
-  { value: "Transportation", label: "Transportation" },
-  { value: "Stock Purchase", label: "Stock Purchase" },
-  { value: "Logistics", label: "Logistics" },
-  { value: "Cold Storage", label: "Cold Storage" },
-  { value: "Security", label: "Security" },
-  { value: "Medicine Purchase", label: "Medicine Purchase" },
-  { value: "Book Purchase", label: "Book Purchase" },
-];
-
-const BRANCH_OPTIONS = [
-  { value: "Colombo", label: "Colombo" },
-  { value: "Negombo", label: "Negombo" },
-  { value: "Nugegoda", label: "Nugegoda" },
-  { value: "Galle", label: "Galle" },
-  { value: "Matara", label: "Matara" },
-  { value: "Kandy", label: "Kandy" },
-];
+type AddExpensesPopupProps = {
+  open: boolean;
+  onClose: () => void;
+  onSave: (values: ExpenseFormPayload) => Promise<void> | void;
+  categories: ExpenseCategoryItem[];
+  branches: BranchItem[];
+  loading?: boolean;
+  mode?: "create" | "edit";
+  initialValues?: {
+    expensesId?: string;
+    date?: string;
+    categoryId?: string;
+    description?: string;
+    amount?: number | string;
+    paymentType?: "CASH" | "CARD";
+    branchId?: string;
+  } | null;
+};
 
 const PAYMENT_OPTIONS = [
-  { value: "cash", label: "Cash" },
-  { value: "card", label: "Card" },
-  { value: "check", label: "Check" },
-  { value: "bankTransfer", label: "Bank Transfer" },
+  { value: "CASH", label: "Cash" },
+  { value: "CARD", label: "Card" },
 ];
 
-const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
+const AddExpensesPopup = ({
+  open,
+  onClose,
+  onSave,
+  categories,
+  branches,
+  loading = false,
+  mode = "create",
+  initialValues,
+}: AddExpensesPopupProps) => {
   const { data: session } = useSession();
 
   const sessionRole =
@@ -81,14 +81,15 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
       : undefined;
 
   const canEditBranch = role === "owner" || role === "admin";
-  const sessionBranch = session?.user?.branchName?.trim() ?? "";
-
-  const [values, setValues] = React.useState<ExpenseValues>({
+  const sessionBranchId =
+    (session?.user as any)?.branchId?.trim?.() ||
+    "";
+  const [values, setValues] = React.useState<ExpenseFormValues>({
     date: "",
-    category: "",
+    categoryId: "",
     description: "",
     amount: "",
-    branch: "",
+    branchId: "",
   });
 
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>("");
@@ -98,17 +99,32 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
     if (!open) return;
 
     setValues({
-      date: "",
-      category: "",
-      description: "",
-      amount: "",
-      branch: canEditBranch ? "" : sessionBranch,
+      date: initialValues?.date || "",
+      categoryId: initialValues?.categoryId || "",
+      description: initialValues?.description || "",
+      amount:
+        initialValues?.amount !== undefined && initialValues?.amount !== null
+          ? String(initialValues.amount)
+          : "",
+      branchId:
+        initialValues?.branchId || (canEditBranch ? "" : sessionBranchId),
     });
-    setPaymentMethod("");
-    setErrors({});
-  }, [open, canEditBranch, sessionBranch]);
 
-  const setField = (name: keyof ExpenseValues, value: string) => {
+    setPaymentMethod(initialValues?.paymentType || "");
+    setErrors({});
+  }, [open, initialValues, canEditBranch, sessionBranchId]);
+
+  const categoryOptions = categories.map((item) => ({
+    value: item.categoryId,
+    label: item.category,
+  }));
+
+  const branchOptions = branches.map((item) => ({
+    value: item.branchId,
+    label: item.name,
+  }));
+
+  const setField = (name: keyof ExpenseFormValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -119,7 +135,7 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
     const newErrors: FormErrors = {};
 
     if (!values.date.trim()) newErrors.date = "Date is required";
-    if (!values.category.trim()) newErrors.category = "Category is required";
+    if (!values.categoryId.trim()) newErrors.categoryId = "Category is required";
 
     if (!values.description.trim()) {
       newErrors.description = "Description is required";
@@ -135,8 +151,8 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
       newErrors.amount = "Amount must be greater than 0";
     }
 
-    if (!values.branch.trim()) {
-      newErrors.branch = "Branch is required";
+    if (!values.branchId.trim()) {
+      newErrors.branchId = "Branch is required";
     }
 
     if (!paymentMethod) {
@@ -147,36 +163,36 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
-    onSave({ ...values, paymentMethod });
+
+    await onSave({
+      categoryId: values.categoryId,
+      date: values.date,
+      description: values.description.trim(),
+      amount: Number(values.amount),
+      paymentType: paymentMethod as "CASH" | "CARD",
+      ...(values.branchId ? { branchId: values.branchId } : {}),
+    });
   };
 
   const handleCancel = () => {
     onClose();
-    setValues({
-      date: "",
-      category: "",
-      description: "",
-      amount: "",
-      branch: canEditBranch ? "" : sessionBranch,
-    });
-    setPaymentMethod("");
     setErrors({});
   };
 
   return (
     <ModalShell
       open={open}
-      title="Add New Expense"
+      title={mode === "edit" ? "Edit Expense" : "Add New Expense"}
       onClose={handleCancel}
       widthClassName="w-[760px] max-w-[92vw]"
     >
       <form
         className="space-y-4"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          handleSave();
+          await handleSave();
         }}
       >
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -195,13 +211,13 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
             <FormField
               label="Category"
               placeholder="Select category"
-              value={values.category}
-              onChange={(v) => setField("category", v)}
+              value={values.categoryId}
+              onChange={(v) => setField("categoryId", v)}
               type="dropdown"
-              options={CATEGORY_OPTIONS}
+              options={categoryOptions}
             />
-            {errors.category && (
-              <p className="px-3 pt-1 text-xs text-red-500">{errors.category}</p>
+            {errors.categoryId && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.categoryId}</p>
             )}
           </div>
 
@@ -239,13 +255,15 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
             <FormField
               label="Branch"
               placeholder="Select branch"
-              value={values.branch}
-              onChange={(v) => setField("branch", v)}
+              value={values.branchId}
+              onChange={(v) => setField("branchId", v)}
               type="dropdown"
-              options={BRANCH_OPTIONS}
+              options={branchOptions}
               disabled={!canEditBranch}
             />
-            {errors.branch && <p className="px-3 pt-1 text-xs text-red-500">{errors.branch}</p>}
+            {errors.branchId && (
+              <p className="px-3 pt-1 text-xs text-red-500">{errors.branchId}</p>
+            )}
           </div>
 
           <div className="md:col-span-2">
@@ -267,7 +285,17 @@ const AddExpensesPopup = ({ open, onClose, onSave }: AddExpensesPopupProps) => {
             <PopupActions
               actions={[
                 { label: "Cancel", onClick: handleCancel, variant: "secondary" },
-                { label: "Save", onClick: handleSave, variant: "primary" },
+                {
+                  label: loading
+                    ? mode === "edit"
+                      ? "Updating..."
+                      : "Saving..."
+                    : mode === "edit"
+                    ? "Update"
+                    : "Save",
+                  onClick: handleSave,
+                  variant: "primary",
+                },
               ]}
             />
           </div>
