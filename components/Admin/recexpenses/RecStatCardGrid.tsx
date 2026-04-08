@@ -1,16 +1,16 @@
-import StatCard from '@/components/Admin/common/StatCard';
-import { calcStatSummary } from '@/lib/utils/statCardUtils';
-import { RecurringExpenses } from '@/components/Admin/recexpenses/RecExpensesTable';
+import StatCard from "@/components/Admin/common/StatCard";
+import { calcStatSummary } from "@/lib/utils/statCardUtils";
+import { RecurringExpenses } from "@/components/Admin/recexpenses/RecExpensesTable";
 
 type Props = {
   recurringexpenses?: RecurringExpenses[];
 };
-  
+
 export default function StatCardGrid({ recurringexpenses = [] }: Props) {
   const { total, thisMonthTotal, totalTrend, monthlyTrend } = calcStatSummary(
     recurringexpenses,
     "date",
-    "amount",
+    "amount"
   );
 
   const statCards = [
@@ -31,7 +31,7 @@ export default function StatCardGrid({ recurringexpenses = [] }: Props) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2">
       {statCards.map((card) => (
         <StatCard
           key={card.title}
