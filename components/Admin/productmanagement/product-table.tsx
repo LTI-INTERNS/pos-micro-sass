@@ -23,13 +23,13 @@ type Props = {
 // fields when fetching for a manager. This type describes those extras.
 
 type RawVariantExtras = {
-  variantId?:           string;
-  available?:           boolean;
-  basePrice?:           number | string;
-  sellingPrice?:        number | string;
-  priceOverride?:       number | string | null;
+  variantId?: string;
+  available?: boolean;
+  basePrice?: number | string;
+  sellingPrice?: number | string;
+  priceOverride?: number | string | null;
   sellingPriceOverride?: number | string | null;
-  stockQty?:            number;
+  stockQty?: number;
 };
 
 // ─── Supplier resolution helper ───────────────────────────────────────────────
@@ -84,34 +84,34 @@ function buildVariantRows(products: Product[]): VariantRow[] {
 
       const branchDetail = branchStock
         ? Object.values(branchStock)
-            .flatMap((b) => Object.entries(b))
-            .find(([sku]) => sku === variant.sku)?.[1]
+          .flatMap((b) => Object.entries(b))
+          .find(([sku]) => sku === variant.sku)?.[1]
         : undefined;
 
       const available: boolean =
         raw.available ?? branchDetail?.available ?? true;
 
       // Prices: prefer branch override, fall back to product base price
-      const basePrice    = Number(raw.basePrice    ?? raw.price ?? 0);
+      const basePrice = Number(raw.basePrice ?? raw.price ?? 0);
       const sellingPrice = Number(raw.sellingPrice ?? raw.price ?? 0);
-      const priceOverride        = raw.priceOverride        != null ? Number(raw.priceOverride)        : null;
+      const priceOverride = raw.priceOverride != null ? Number(raw.priceOverride) : null;
       const sellingPriceOverride = raw.sellingPriceOverride != null ? Number(raw.sellingPriceOverride) : null;
 
       rows.push({
-        id:                   `${product.id}__${variant.sku}`,
-        _product:             product,
-        _sku:                 variant.sku,
-        _variantId:           raw.variantId ?? variant.sku,
-        productName:          product.name,
+        id: `${product.id}__${variant.sku}`,
+        _product: product,
+        _sku: variant.sku,
+        _variantId: raw.variantId ?? variant.sku,
+        productName: product.name,
         variantLabel,
-        sku:                  variant.sku,
-        category:             product.category ?? "",
-        supplier:             product.supplier ?? "",
+        sku: variant.sku,
+        category: product.category ?? "",
+        supplier: product.supplier ?? "",
         basePrice,
         sellingPrice,
         priceOverride,
         sellingPriceOverride,
-        stockQty:             raw.stockQty ?? 0,
+        stockQty: raw.stockQty ?? 0,
         available,
       });
     }
@@ -202,11 +202,11 @@ export default function ProductsTable({
       : undefined;
 
     const managerColumns: Column<VariantRow>[] = [
-       {
-    key: "index",
-    label: "#",
-    render: (_, index) => index + 1,
-  },
+      {
+        key: "index",
+        label: "",
+        render: (_, index) => index + 1,
+      },
       {
         key: "productName",
         label: "Product · Variant",
@@ -230,7 +230,7 @@ export default function ProductsTable({
         key: "basePrice",
         label: "Base Price",
         render: (row) => {
-          const effective  = row.priceOverride ?? row.basePrice;
+          const effective = row.priceOverride ?? row.basePrice;
           const isOverride = row.priceOverride != null && row.priceOverride !== row.basePrice;
           const overrideColor = row.priceOverride != null
             ? row.priceOverride > row.basePrice
@@ -260,7 +260,7 @@ export default function ProductsTable({
         key: "sellingPrice",
         label: "Selling Price",
         render: (row) => {
-          const effective  = row.sellingPriceOverride ?? row.sellingPrice;
+          const effective = row.sellingPriceOverride ?? row.sellingPrice;
           const isOverride = row.sellingPriceOverride != null && row.sellingPriceOverride !== row.sellingPrice;
           const overrideColor = row.sellingPriceOverride != null
             ? row.sellingPriceOverride > row.sellingPrice
@@ -295,8 +295,8 @@ export default function ProductsTable({
               row.stockQty === 0
                 ? "text-red-500 font-medium"
                 : row.stockQty <= 10
-                ? "text-orange-500 font-medium"
-                : "text-gray-700"
+                  ? "text-orange-500 font-medium"
+                  : "text-gray-700"
             }
           >
             {row.stockQty}
@@ -310,8 +310,8 @@ export default function ProductsTable({
           const ts = toggleStates[row.id];
           // Use optimistic value if we've toggled this row, otherwise use data from API
           const isAvailable = ts ? ts.value : row.available;
-          const isSaving    = ts?.saving ?? false;
-          const isError     = ts?.error  ?? false;
+          const isSaving = ts?.saving ?? false;
+          const isError = ts?.error ?? false;
 
           return (
             <div className="flex items-center gap-2">
@@ -324,15 +324,14 @@ export default function ProductsTable({
                 }
               />
               <span
-                className={`text-[11px] font-medium ${
-                  isError
+                className={`text-[11px] font-medium ${isError
                     ? "text-red-500"
                     : isSaving
-                    ? "text-gray-400"
-                    : isAvailable
-                    ? "text-green-600"
-                    : "text-gray-400"
-                }`}
+                      ? "text-gray-400"
+                      : isAvailable
+                        ? "text-green-600"
+                        : "text-gray-400"
+                  }`}
               >
                 {isError ? "Failed — retry" : isSaving ? "Saving…" : isAvailable ? "Available" : "Unavailable"}
               </span>
@@ -378,7 +377,7 @@ export default function ProductsTable({
   const productColumns: Column<Product>[] = [
     {
       key: "index",
-      label: "#",
+      label: "",
       render: (_, index) => index + 1,
     },
     { key: "name", label: "Name" },

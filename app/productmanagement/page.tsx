@@ -190,6 +190,7 @@ export default function DashboardPage() {
       .finally(() => setCatalogLoading(false));
   }, [addVariantOpen]);
 
+
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -227,6 +228,7 @@ export default function DashboardPage() {
     availability: string;
     lowStockStatus: string;
     branch: string;
+    allBarcodes: string;
   };
 
   const enrichedProducts: EnrichedProduct[] = useMemo(() => {
@@ -265,6 +267,7 @@ export default function DashboardPage() {
         availability: availabilityStatus,
         lowStockStatus: stockStatus,
         branch: activeBranchLabel || stockedBranchNames[0] || "All Branches",
+        allBarcodes: variants.map(v => typeof v === "object" && v !== null && "barcode" in v ? String(v.barcode) : "").filter(Boolean).join(" "),
       };
     });
   }, [products, activeBranchLabel]);
@@ -295,6 +298,49 @@ export default function DashboardPage() {
       return Boolean(branchesStock && Object.prototype.hasOwnProperty.call(branchesStock, selectedBranch));
     });
   }, [canUseBranchFilter, enrichedProducts, selectedBranch]);
+
+  // Global Barcode Scanner Hook for Product Management
+  useEffect(() => {
+    let barcodeString = "";
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (barcodeString.length > 0) {
+          const matchedItem = branchFilteredProducts.find((p) =>
+            p.variants?.some((v: any) => v.barcode === barcodeString)
+          );
+          if (matchedItem) {
+            setSearch(barcodeString);
+          }
+          barcodeString = "";
+        }
+        return;
+      }
+
+      if (e.key.length === 1) {
+        barcodeString += e.key;
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        timeoutId = setTimeout(() => {
+          barcodeString = "";
+        }, 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [branchFilteredProducts, setSearch]);
 
   const tableFilters = useMemo(() => {
     // Branch filtering is handled separately against stocked branch records.
@@ -329,7 +375,7 @@ export default function DashboardPage() {
     start,
     end,
     dateKey: userRole === "manager" ? undefined : "createdAt",
-    searchKeys: ["id", "name", "category"],
+    searchKeys: ["id", "name", "category", "allBarcodes"],
     filters:
       userRole === "manager"
         ? (() => {
