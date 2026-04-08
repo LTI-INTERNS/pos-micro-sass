@@ -5,6 +5,8 @@ export interface ProductOptionValue {
 
 export interface ProductVariant {
     id: number;
+    createdAt?: string;
+    branchVariantCreatedAt?: string;
     sku: string;
     price: number;
     basePrice?: string;
@@ -27,6 +29,7 @@ export interface ProductOption {
 
 export interface Product {
     id: string;
+    createdAt?: string;
     name: string;
     price: number;
     discount: number;
@@ -35,6 +38,7 @@ export interface Product {
     lowstock: number;
     category: string;
     categoryId?: string;
+    brand?: string;
     supplier?: string;
     status?: string;
     image?: string;
