@@ -9,7 +9,7 @@ import DiscountTable, { Discount } from "@/components/Admin/settings/Discount/Di
 import AddDiscountPopup from "@/components/Admin/settings/Discount/AddDiscountPopup";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import { mockDiscounts } from "@/components/Admin/settings/Discount/mock";
-import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 
 export default function DiscountContent() {
