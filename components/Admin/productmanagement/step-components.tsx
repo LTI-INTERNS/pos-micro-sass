@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { getCategoriesByBusinessType, BusinessTypeId } from "./Productcategorydata";
 import {
   ProductState,
   ProductVariant,
@@ -249,7 +250,7 @@ export function Step1({
           </Select>
         </FieldWrap>
         <FieldWrap>
-          <Label required>Brand</Label>
+          <Label>Brand</Label>
           <Input placeholder="Enter Brand Name" value={state.brand} onChange={(e) => onChange({ brand: e.target.value })} />
         </FieldWrap>
       </Grid2>
@@ -510,6 +511,7 @@ export function Step2({
 export function Step3({
   state,
   onChange,
+  businessTypeId,
   isManagerVariantMode,
   isManagerEditMode,
   selectedVariantIds,
@@ -518,6 +520,7 @@ export function Step3({
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
+  businessTypeId?: unknown;
   isManagerVariantMode: boolean;
   isManagerEditMode: boolean;
   selectedVariantIds: Set<number>;
@@ -526,6 +529,118 @@ export function Step3({
 }) {
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
   const { currency } = useCurrency();
+  const [parsedBarcodeDetails, setParsedBarcodeDetails] = React.useState<
+    Record<number, { scheme: string; itemCode: string; embeddedPrice: string }>
+  >({});
+  const categories = React.useMemo(
+    () => getCategoriesByBusinessType(businessTypeId as BusinessTypeId | undefined),
+    [businessTypeId]
+  );
+  const categoryName = React.useMemo(() => {
+    return categories.find((category) => category.categoryId === state.categoryId)?.categoryName ?? state.categoryId;
+  }, [categories, state.categoryId]);
+  const activeOptions = React.useMemo(
+    () => state.options.filter((option) => option.name.trim() && option.values.length > 0),
+    [state.options]
+  );
+
+  const normalizeSkuPart = (value: string) =>
+    value
+      .trim()
+      .replace(/&/g, " and ")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toUpperCase();
+
+  const buildSkuBase = (variant: ProductVariant) => {
+    const optionPart = variant.optionValues
+      .filter((entry) => entry.optionName.trim() && entry.value.trim())
+      .map((entry) => `${entry.optionName}-${entry.value}`)
+      .join("-");
+
+    const parts = [state.name, categoryName, state.brand, optionPart]
+      .map(normalizeSkuPart)
+      .filter(Boolean);
+
+    return parts.join("-");
+  };
+
+  const generateMixedDigits = (length = 8) => {
+    const timestampPart = String(Date.now()).slice(-4);
+    const randomDigits = Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
+    return `${timestampPart}${randomDigits}`;
+  };
+
+  const buildUniqueSku = (variant: ProductVariant) => {
+    const existingSkus = new Set(
+      state.variants
+        .filter((item) => item.id !== variant.id)
+        .map((item) => item.sku.trim().toUpperCase())
+        .filter(Boolean)
+    );
+
+    const baseSku = buildSkuBase(variant) || "SKU";
+    let candidate = `${baseSku}-${generateMixedDigits()}`;
+    let attempts = 0;
+
+    while (existingSkus.has(candidate.toUpperCase())) {
+      candidate = `${baseSku}-${generateMixedDigits()}`;
+      attempts += 1;
+      if (attempts > 20) {
+        candidate = `${baseSku}-${Date.now()}`;
+        break;
+      }
+    }
+
+    return candidate;
+  };
+
+  const parseEmbeddedBarcode = (rawBarcode: string) => {
+    const digits = rawBarcode.replace(/\D/g, "");
+
+    // Common weighted/price-embedded EAN-13 style: 2x + item(5) + price(5) + check(1)
+    if (/^\d{13}$/.test(digits)) {
+      const prefix = Number(digits.slice(0, 2));
+      if (prefix >= 20 && prefix <= 29) {
+        const itemCode = digits.slice(2, 7);
+        const embeddedCents = Number(digits.slice(7, 12));
+        return {
+          scheme: "EAN13_PRICE",
+          itemCode,
+          embeddedPrice: (embeddedCents / 100).toFixed(2),
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const handleAutoGenerateSku = (variant: ProductVariant) => {
+    update(variant.id, "sku", buildUniqueSku(variant));
+  };
+
+  const getVariantOptionValue = (variant: ProductVariant, optionName: string) =>
+    variant.optionValues.find((entry) => entry.optionName === optionName)?.value ?? "";
+
+  const updateVariantOptionValue = (variantId: number, optionName: string, value: string) => {
+    onChange({
+      variants: state.variants.map((variant) => {
+        if (variant.id !== variantId) return variant;
+
+        const nextOptionValues = variant.optionValues.filter((entry) => entry.optionName !== optionName);
+        if (value) {
+          nextOptionValues.push({ optionName, value });
+        }
+
+        return {
+          ...variant,
+          optionValues: nextOptionValues,
+        };
+      }),
+    });
+  };
+
   const addManual = () =>
     onChange({ variants: [...state.variants, { id: Date.now(), sku: "", barcode: "", imageUrl: "", basePrice: "", sellingPrice: "", sellUnit: "Each", optionValues: [] }] });
 
@@ -533,8 +648,39 @@ export function Step3({
     onChange({ variants: [...state.variants, { id: NEW_ID_PREFIX + Date.now(), sku: "", barcode: "", imageUrl: "", basePrice: "", sellingPrice: "", sellUnit: "Each", optionValues: [] }] });
 
   const remove = (id: number) => onChange({ variants: state.variants.filter((v) => v.id !== id) });
+  const updateVariant = (id: number, patch: Partial<ProductVariant>) =>
+    onChange({ variants: state.variants.map((v) => (v.id === id ? { ...v, ...patch } : v)) });
   const update = (id: number, key: keyof ProductVariant, val: string) =>
     onChange({ variants: state.variants.map((v) => (v.id === id ? { ...v, [key]: val } : v)) });
+
+  const handleBarcodeChange = (variant: ProductVariant, rawValue: string) => {
+    const barcode = rawValue.trim();
+    const parsed = parseEmbeddedBarcode(barcode);
+
+    const patch: Partial<ProductVariant> = { barcode };
+
+    if (parsed) {
+      patch.basePrice = parsed.embeddedPrice;
+      patch.sellingPrice = parsed.embeddedPrice;
+      if (!variant.sku.trim()) {
+        const productSeed = normalizeSkuPart(state.name || "SKU");
+        patch.sku = `${productSeed}-${parsed.itemCode}`;
+      }
+      setParsedBarcodeDetails((prev) => ({
+        ...prev,
+        [variant.id]: parsed,
+      }));
+    } else {
+      setParsedBarcodeDetails((prev) => {
+        if (!prev[variant.id]) return prev;
+        const next = { ...prev };
+        delete next[variant.id];
+        return next;
+      });
+    }
+
+    updateVariant(variant.id, patch);
+  };
 
   const [variantImages, setVariantImages] = React.useState<Record<number, string>>({});
   const handleVariantImage = (id: number, file: File | null) => {
@@ -549,12 +695,38 @@ export function Step3({
     <>
       <Grid2>
         <FieldWrap>
-          <Label required>SKU</Label>
-          <Input placeholder="SKU-001" value={v.sku} onChange={(e) => update(v.id, "sku", e.target.value)} />
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <Label required>SKU</Label>
+            <button
+              type="button"
+              onClick={() => handleAutoGenerateSku(v)}
+              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-100"
+              title="Auto-generate SKU"
+            >
+              ✦ Auto-generate
+            </button>
+          </div>
+          <Input
+            placeholder="SKU-001"
+            value={v.sku}
+            onChange={(e) => update(v.id, "sku", e.target.value)}
+          />
+          <p className="mt-1 text-[10px] text-gray-400">
+            Auto SKU uses product name, category, brand and option values.
+          </p>
         </FieldWrap>
         <FieldWrap>
           <Label>Barcode</Label>
-          <Input placeholder="1234567890" value={v.barcode} onChange={(e) => update(v.id, "barcode", e.target.value)} />
+          <Input
+            placeholder="1234567890"
+            value={v.barcode}
+            onChange={(e) => handleBarcodeChange(v, e.target.value)}
+          />
+          {parsedBarcodeDetails[v.id] && (
+            <p className="mt-1 text-[10px] text-orange-600">
+              Embedded barcode detected ({parsedBarcodeDetails[v.id].scheme}) - item code {parsedBarcodeDetails[v.id].itemCode}, price {parsedBarcodeDetails[v.id].embeddedPrice}
+            </p>
+          )}
         </FieldWrap>
       </Grid2>
       <Grid3>
@@ -573,6 +745,38 @@ export function Step3({
           </Select>
         </FieldWrap>
       </Grid3>
+      {activeOptions.length > 0 && (
+        <FieldWrap>
+          <Label required>Option mapping</Label>
+          <div className="space-y-3">
+            {activeOptions.map((option) => {
+              const currentValue = getVariantOptionValue(v, option.name);
+
+              return (
+                <div key={`${v.id}-${option.name}`} className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                      {option.name}
+                    </span>
+                    <span className="text-[10px] font-medium text-orange-500">Required</span>
+                  </div>
+                  <Select
+                    value={currentValue}
+                    onChange={(e) => updateVariantOptionValue(v.id, option.name, e.target.value)}
+                  >
+                    <option value="">Select value…</option>
+                    {option.values.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
+        </FieldWrap>
+      )}
       <FieldWrap>
         <Label>Variant image</Label>
         <input
