@@ -36,6 +36,13 @@ interface BackendResponse<T> {
     data:    T;
 }
 
+// ── Stats type ───────────────────────────────────────────────────────────────
+
+export interface CustomerStats {
+    total:        { value: number; pctChange: number };
+    newThisMonth: { value: number; pctChange: number };
+}
+
 // ── Service ───────────────────────────────────────────────────────────────────
 
 export const customerService = {
@@ -91,4 +98,14 @@ export const customerService = {
         apiClient
             .delete(`/customers/${customerId}`)
             .then(() => undefined),
+    /**
+     * GET /api/v1/customers/stats
+     */
+    getStats: (branchId?: string): Promise<CustomerStats> =>
+        apiClient
+            .get<BackendResponse<CustomerStats>>('/customers/stats', {
+                params: branchId ? { branchId } : undefined,
+            })
+            .then(res => res.data.data),
+
 };
