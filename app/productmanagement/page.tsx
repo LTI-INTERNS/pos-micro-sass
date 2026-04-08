@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
   const canUseBranchFilter = userRole === "admin" || userRole === "owner";
   const activeBranchId = canUseBranchFilter
-    ? (urlFilters.branch || "")
+    ? (urlFilters.branchId || "")
     : (session?.user?.branchId ?? "");
 
   const branchLookup = useMemo(() => {
@@ -151,11 +151,6 @@ export default function DashboardPage() {
     }
     return session?.user?.branchName || "";
   }, [activeBranchId, branchLookup, session?.user?.branchName]);
-
-  const branchOptions = useMemo(
-    () => branches.map((branch) => ({ label: formatBranchLabel(branch), value: branch.id })),
-    [branches]
-  );
 
   useEffect(() => {
     setSelectedProduct(null);
@@ -209,7 +204,7 @@ export default function DashboardPage() {
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { search: _search, filterOpen: _filterOpen, branch: _branch, ...rest } = urlFilters;
+    const { search: _search, filterOpen: _filterOpen, branchId: _branchId, ...rest } = urlFilters;
     return rest;
   }, [urlFilters]);
 
@@ -271,23 +266,32 @@ export default function DashboardPage() {
         stockStatus = "In Stock";
       }
 
+      const stockedBranchNames = Object.keys(
+        (p as Product & { branchesStock?: Record<string, unknown> }).branchesStock ?? {}
+      );
+
       return {
         ...p,
         numberOfVariants: String(variantsCount),
         availability: availabilityStatus,
         lowStockStatus: stockStatus,
-        branch: activeBranchLabel || "All Branches",
+        branch: activeBranchLabel || stockedBranchNames[0] || "All Branches",
       };
     });
   }, [products, activeBranchLabel]);
+
+  const branchFilterOptions = useMemo(
+    () => getFilterOptions(enrichedProducts, "branch"),
+    [enrichedProducts]
+  );
 
   const displayFilters = useMemo(() => {
     const visible: Record<string, string> = {};
 
     Object.entries(urlFilters).forEach(([key, value]) => {
-      if (key === "search" || key === "filterOpen") return;
+      if (key === "search" || key === "filterOpen" || key === "branchId") return;
       if (!value) return;
-      visible[key] = key === "branch" ? (branchLookup.get(value) || value) : value;
+      visible[key] = key === "branch" ? value : value;
     });
 
     return visible;
@@ -297,6 +301,7 @@ export default function DashboardPage() {
     ([key, value]) =>
       key !== "search" &&
       key !== "filterOpen" &&
+      key !== "branchId" &&
       value &&
       String(value).trim() !== ""
   );
@@ -572,7 +577,29 @@ export default function DashboardPage() {
     };
   }, [products]);
 
-  const removeFilter = (key: string) => setFilter(key, null);
+  const removeFilter = (key: string) => {
+    if (key === "branch") {
+      setFilter("branchId", null);
+    }
+    setFilter(key, null);
+  };
+
+  const handleFilterApply = (newFilters: Record<string, string | null>) => {
+    if (!canUseBranchFilter) {
+      setFilters(newFilters);
+      return;
+    }
+
+    const selectedBranchLabel = newFilters.branch?.trim();
+    const matchedBranch = selectedBranchLabel
+      ? branches.find((branch) => formatBranchLabel(branch) === selectedBranchLabel)
+      : undefined;
+
+    setFilters({
+      ...newFilters,
+      branchId: matchedBranch?.id ?? null,
+    });
+  };
 
   // Build catalog list for the manager "Add from Company Catalog" popup.
   // - Catalog source: ALL company products (from getCatalog, bypasses branch filter)
@@ -712,11 +739,11 @@ export default function DashboardPage() {
           <FilterPopup
             open={filterOpen}
             onClose={() => setFilterOpen(false)}
-            onApply={setFilters}
+            onApply={handleFilterApply}
             closeOnApply={false}
             fields={
               canUseBranchFilter ? [
-                { name: "branch", placeholder: "Branch", options: branchOptions },
+                { name: "branch", placeholder: "Branch", options: branchFilterOptions },
                 { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
                 { name: "numberOfVariants", placeholder: "Number of Variants", options: getFilterOptions(enrichedProducts, "numberOfVariants") },
               ] : [
