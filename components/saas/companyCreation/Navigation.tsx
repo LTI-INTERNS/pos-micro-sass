@@ -15,6 +15,7 @@ type NavigationProps = {
   logoSrc?: string;
   logoAlt?: string;
   showLogout?: boolean;
+  rightContent?: React.ReactNode;
 };
 
 export default function Navigation({
@@ -22,6 +23,7 @@ export default function Navigation({
   logoSrc,
   logoAlt,
   showLogout = true,
+  rightContent,
 }: NavigationProps) {
   return (
      <Navbar
@@ -29,11 +31,13 @@ export default function Navigation({
       logoAlt={logoAlt}
       middleContent={<h2>{title}</h2>}
       rightContent={
-        showLogout ? ( // 👈 condition here
+        rightContent ? (
+          rightContent // ✅ custom content (like Home button)
+        ) : showLogout ? (
           <div className="flex items-center gap-3">
             <ActionButton
               label="Log Out"
-              onClick={() => router.push("/saaslogin")}
+              onClick={() => signOut({ callbackUrl: "/saaslogin" })}
               variant="primary"
               fullWidth={false}
               className="px-5"

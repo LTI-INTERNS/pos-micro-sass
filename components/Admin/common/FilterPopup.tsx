@@ -14,6 +14,7 @@ type FilterPopupProps = {
   onClose: () => void;
   fields: SelectField[];
   onApply: (values: Record<string, string>) => void;
+  closeOnApply?: boolean;
 };
 
 export default function FilterPopup({
@@ -21,14 +22,21 @@ export default function FilterPopup({
   onClose,
   fields,
   onApply,
+  closeOnApply = true,
 }: FilterPopupProps) {
   const [values, setValues] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
     if (open) {
-      const initial: Record<string, string> = {};
-      fields.forEach((f) => (initial[f.name] = ""));
-      setValues(initial);
+      setValues((prev) => {
+        const next: Record<string, string> = {};
+        fields.forEach((f) => {
+          next[f.name] = prev[f.name] ?? "";
+        });
+        return next;
+      });
+    } else {
+      setValues({});
     }
   }, [open, fields]);
 
@@ -96,7 +104,9 @@ export default function FilterPopup({
                 variant: "primary",
                 onClick: () => {
                   onApply(values);
-                  onClose();
+                  if (closeOnApply) {
+                    onClose();
+                  }
                 },
               },
             ]}
