@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Settings, X } from 'lucide-react';
+import { useStoreInfo } from '@/lib/context/StoreInfoContext';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,6 +20,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const userRole = (session?.user?.role?.toUpperCase() ?? 'CASHIER') as UserRole;
 
+  const { storeInfo } = useStoreInfo();
+  const hasAI = storeInfo.subscription?.advancedAnalytics ?? false;
+
   const allMenuItems = useMemo(() => [
     { label: 'Dashboard',            path: '/overview',          roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Staff Management',     path: '/staffmanagement',   roles: ['OWNER', 'ADMIN'] as UserRole[] },
@@ -30,17 +34,19 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Profit Calculation',   path: '/profitcalculation', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Supplier Management',  path: '/suppliermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Reports',              path: '/reports',           roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
-    { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
+    // ── AI Prediction — only shown when the plan includes advancedAnalytics ──
+    { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[], planRequired: true },
     { label: 'Branches',             path: '/branchmanagement',  roles: ['OWNER', 'ADMIN'] as UserRole[] },
     { label: 'POS Dashboard',        path: '/posdashboard',      roles: ['CASHIER'] as UserRole[] },
   ], []);
 
   const menuItems = useMemo(() => {
     return allMenuItems.filter(item => {
-      if (!item.roles) return true;
-      return item.roles.includes(userRole);
+      if (item.roles && !item.roles.includes(userRole)) return false;
+      if (item.planRequired && !hasAI) return false;
+      return true;
     });
-  }, [userRole, allMenuItems]);
+  }, [userRole, allMenuItems, hasAI]);
 
   const activeItem = useMemo(() => {
     if (pathname.startsWith('/settings')) return 'Settings';

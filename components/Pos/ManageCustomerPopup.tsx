@@ -4,13 +4,7 @@ import { useState } from "react";
 import ManageCustomer from "@/components/Pos/ManageCustomer";
 import AddCustomerForm from "@/components/Pos/posdashboard/AddCustomerForm";
 import { CustomerFormValues } from "@/components/Admin/common/AddCustomerModal";
-
-type Customer = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-};
+import type { Customer } from "@/types/customer.types";
 
 type Props = {
   onClose: () => void;
@@ -37,8 +31,11 @@ export default function ManageCustomersPopup({
             
             onCustomerSelected({
               name: customer.name,
-              phoneNumber: customer.phone,
-              email: customer.email,
+              phoneNumber1: customer.phone,
+              phoneNumber2: customer.phones[0]?.phone2 ?? undefined,
+              email: customer.email ?? undefined,
+              promocard: customer.promoCard ?? undefined,
+              activeState: customer.activeState,
             });
             onClose();
           }}
@@ -49,7 +46,6 @@ export default function ManageCustomersPopup({
         open={showAdd}
         onClose={onClose}
         onSubmit={(customer) => {
-          // Already CustomerFormValues
           onCustomerSelected(customer);
           onClose();
         }}

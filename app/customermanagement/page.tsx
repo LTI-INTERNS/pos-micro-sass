@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -8,82 +10,162 @@ import CustomerActionsBar from "@/components/Admin/customermanagement/customer-a
 import CustomersTable from "@/components/Admin/customermanagement/customers-table";
 import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
 import StatCardGrid from "@/components/Admin/customermanagement/customerStarGrid";
-import { customerService, Customer } from "@/lib/services";
-import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
+import { useTableFilters } from "@/components/Admin/common/Filterlogic";
+import { customerService } from "@/lib/services/customer-service";
+import type { Customer } from "@/types/customer.types";
+
+const ALLOWED_ROLES = ["OWNER", "ADMIN", "MANAGER"] as const;
+type AllowedRole = (typeof ALLOWED_ROLES)[number];
+
+function isAllowedRole(role: string): role is AllowedRole {
+  return (ALLOWED_ROLES as readonly string[]).includes(role);
+}
 
 export default function CustomersPage() {
-  const [start, setStart] = useState<Date | undefined>();
-  const [end, setEnd] = useState<Date | undefined>();
-  const [search, setSearch] = useState("");
-  const [showFilter, setShowFilter] = useState(false);
+  // ── Session ───────────────────────────────────────────────────────────────
+  const { data: session, status } = useSession();
+  const role     = session?.user?.role     ?? "";
+  const branchId = session?.user?.branchId ?? "";
+  const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
+
+  // ── Data state ────────────────────────────────────────────────────────────
+  const [customers, setCustomers]   = useState<Customer[]>([]);
+  const [isLoading, setIsLoading]   = useState(true);
+  const [fetchError, setFetchError] = useState("");
+
+  // ── UI state ──────────────────────────────────────────────────────────────
+  const [start, setStart]                       = useState<Date | undefined>();
+  const [end, setEnd]                           = useState<Date | undefined>();
+  const [search, setSearch]                     = useState("");
+  const [showFilter, setShowFilter]             = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [actionLoading, setActionLoading]       = useState(false);
+  const [actionError, setActionError]           = useState("");
+  const [filters, setFilters]                   = useState<{ points?: string; branch?: string; status?: string }>({});
+
+  // ── Fetch ─────────────────────────────────────────────────────────────────
+  const fetchCustomers = useCallback(async () => {
+    if (!isAllowedRole(role)) return;
+    try {
+      setIsLoading(true);
+      setFetchError("");
+      const data = await customerService.getAll(canSeeAllBranches ? undefined : branchId);
+      setCustomers(data);
+    } catch {
+      setFetchError("Failed to load customers. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [role, branchId, canSeeAllBranches]);
 
   useEffect(() => {
-    customerService.getAll().then(setCustomers);
-  }, []);
+    if (status === "authenticated") fetchCustomers();
+  }, [status, fetchCustomers]);
 
-  const [filters, setFilters] = useState<{
-    points?: string;
-  }>({});
-
-  const handleDeleteCustomer = () => {
-    if (!selectedCustomer) return;
-    setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
-    setSelectedCustomer(null);
-  };
-
-  const isFilterApplied = Object.values(filters).some(
-    (v) => v && v.trim() !== ""
+  // ── ALL hooks before any early return ─────────────────────────────────────
+  const branchOptions = useMemo(
+    () =>
+      canSeeAllBranches
+        ? Array.from(new Set(customers.map((c) => c.branch.name).filter(Boolean))).map(
+            (b) => ({ label: b, value: b })
+          )
+        : [],
+    [customers, canSeeAllBranches]
   );
 
-  const handleRemoveFilter = (key: string) => {
-    setFilters((prev) => ({ ...prev, [key]: "" }));
-  };
-
-  const clearAllFilters = () => {
-    setFilters({});
-  };
-
-  const filterFields: SelectField[] = [
-    {
-      name: "points",
-      placeholder: "Select Points Range",
-      options: [
+  const filterFields: SelectField[] = useMemo(
+    () => [
+      ...(canSeeAllBranches
+        ? [{ name: "branch", placeholder: "Select Branch", options: branchOptions } as SelectField]
+        : []),
+      {
+        name: "status",
+        placeholder: "Select Status",
+        options: [
+          { label: "Active",   value: "active"   },
+          { label: "Inactive", value: "inactive" },
+        ],
+      },
+      {
+        name: "points",
+        placeholder: "Select Points Range",
+        options: [
         { label: "Below 50", value: "lt50" },
         { label: "50 - 100", value: "50-100" },
         { label: "Above 100", value: "gt100" },
-      ],
-    },
-  ];
+        ],
+      },
+    ],
+    [canSeeAllBranches, branchOptions]
+  );
 
-  // Use generic filter hook only for search + date
-  const baseFilteredCustomers = useTableFilters<Customer>({
-    data: customers,
+  const baseFiltered = useTableFilters<Customer>({
+    data:       customers,
     search,
     start,
     end,
-    searchKeys: ["id", "name", "email", "promoCard"],
-    filters: {}, // ✅ do not pass points filter here
+    searchKeys: ["id", "name", "email", "phone", "promoCard"],
+    filters:    {},
   });
 
-  // Apply points filter manually
-  const filteredCustomers = baseFilteredCustomers.filter((c) => {
-    if (!filters.points) return true;
-
-    switch (filters.points) {
-      case "lt50":
-        return c.points < 50;
-      case "50-100":
-        return c.points >= 50 && c.points <= 100;
-      case "gt100":
-        return c.points > 100;
-      default:
+  const filteredCustomers = useMemo(
+    () =>
+      baseFiltered.filter((c) => {
+        if (filters.branch && c.branch.name !== filters.branch)                return false;
+        if (filters.status === "active"   && !c.activeState)                  return false;
+        if (filters.status === "inactive" &&  c.activeState)                  return false;
+        if (filters.points === "lt50"   && c.points >= 50)                    return false;
+        if (filters.points === "50-100" && (c.points < 50 || c.points > 100)) return false;
+        if (filters.points === "gt100"  && c.points <= 100)                   return false;
         return true;
-    }
-  });
+      }),
+    [baseFiltered, filters]
+  );
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const isFilterApplied    = Object.values(filters).some((v) => v && v.trim() !== "");
+  const handleRemoveFilter = (key: string) => setFilters((prev) => ({ ...prev, [key]: "" }));
+  const clearAllFilters    = () => setFilters({});
+
+  const handleDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+    setActionLoading(true);
+    setActionError("");
+    try {
+      await customerService.remove(selectedCustomer.id);
+      setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
+      setSelectedCustomer(null);
+    } catch {
+      setActionError("Failed to delete customer. Please try again.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleEditCustomer = (updatedCustomer: Customer) => {
+    setCustomers((prev) =>
+      prev.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c))
+    );
+    setSelectedCustomer(updatedCustomer);
+  };
+
+  // ── Role guard — after ALL hooks ──────────────────────────────────────────
+  if (status === "loading") {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64 text-gray-500">
+          Loading...
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (status === "unauthenticated" || !isAllowedRole(role)) {
+    redirect("/login");
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
@@ -97,6 +179,12 @@ export default function CustomersPage() {
         />
 
         <StatCardGrid />
+
+        {(fetchError || actionError) && (
+          <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+            {fetchError || actionError}
+          </div>
+        )}
 
         <div className="relative">
           <SearchBar
@@ -119,7 +207,7 @@ export default function CustomersPage() {
             open={showFilter}
             onClose={() => setShowFilter(false)}
             onApply={(values) => {
-              setFilters(values as { points?: string });
+              setFilters(values as typeof filters);
               setShowFilter(false);
             }}
             fields={filterFields}
@@ -128,22 +216,22 @@ export default function CustomersPage() {
 
         <CustomerActionsBar
           selectedCustomer={selectedCustomer}
+          onAdd={(newCustomer) => setCustomers((prev) => [newCustomer, ...prev])}
           onDelete={handleDeleteCustomer}
-          onEdit={(updatedCustomer) => {
-            setCustomers((prev) =>
-              prev.map((c) =>
-                c.id === updatedCustomer.id ? updatedCustomer : c
-              )
-            );
-            setSelectedCustomer(updatedCustomer);
-          }}
+          onEdit={handleEditCustomer}
         />
 
-        <CustomersTable
-          customers={filteredCustomers}
-          selectedCustomer={selectedCustomer}
-          setSelectedCustomer={setSelectedCustomer}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+            Loading customers...
+          </div>
+        ) : (
+          <CustomersTable
+            customers={filteredCustomers}
+            selectedCustomer={selectedCustomer}
+            setSelectedCustomer={setSelectedCustomer}
+          />
+        )}
       </div>
     </DashboardLayout>
   );
