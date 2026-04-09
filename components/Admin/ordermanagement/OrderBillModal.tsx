@@ -1,9 +1,16 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
+import { Printer } from "lucide-react";
+import type { Order } from "@/types/order.types";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+import { useReceiptSettings } from "@/lib/context/ReceiptSettingsContext";
 import ModalShell from "@/components/Admin/common/ModalShell";
-import PopupActions from "@/components/Admin/common/PopupActions";
-import { Order } from "@/lib/services";
+import ActionButton from "@/components/Admin/common/ActionButton";
+import ReceiptDisplay from "@/components/Admin/settings/AdditionalSettings/ReceiptDisplay";
+import { generateReceiptHTML } from "@/lib/utils/generateReceiptHTML";
 
 type Props = {
   open: boolean;
@@ -11,180 +18,204 @@ type Props = {
   order: Order | null;
 };
 
-export default function OrderBillModal({ open, onClose, order }: Props) {
-  const printRef = useRef<HTMLDivElement>(null);
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-  const handlePrint = () => {
-    if (!printRef.current || !order) return;
+/** Map Order.items → ReceiptDisplay item shape. */
+function buildReceiptItems(order: Order): { name: string; qty: number; price: number }[] {
+  if (order.items && order.items.length > 0) {
+    return order.items.map((it) => ({
+      name:  it.name,
+      qty:   it.qty,
+      price: it.price,
+    }));
+  }
+  // Fallback: single line showing the order total (no items returned yet)
+  return [{ name: `Order #${order.orderNumber}`, qty: 1, price: order.totalamount ?? 0 }];
+}
 
-    const printContents = printRef.current.innerHTML;
-    const printWindow = window.open("", "_blank", "width=900,height=700");
+/**
+ * Derive cashPaid / cardPaid from the payment breakdown.
+ * Walks paymentDetails and sums by method; falls back to top-level cashReceived.
+ */
+function deriveCashCard(order: Order): { cashPaid: number | undefined; cardPaid: number | undefined } {
+  let cashPaid = 0;
+  let cardPaid = 0;
 
-    if (!printWindow) return;
+  for (const payment of order.payments ?? []) {
+    for (const detail of payment.paymentDetails ?? []) {
+      if (detail.method === "CASH") cashPaid += Number(detail.amount);
+      if (detail.method === "CARD") cardPaid += Number(detail.amount);
+    }
+  }
 
-    printWindow.document.open();
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Order Bill #${order.id}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 24px;
-              color: #111827;
-              background: #ffffff;
-              
-            }
-            .bill-container {
-              max-width: 800px;
-              margin: 0 auto;
-              border: 1px solid #e5e7eb;
-              padding: 24px;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 24px;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 24px;
-            }
-            .header p {
-              margin-top: 6px;
-              color: #6b7280;
-              font-size: 14px;
-            }
-            .meta {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 10px 24px;
-              margin-bottom: 24px;
-              font-size: 14px;
-            }
-            .meta-item {
-              padding: 6px 0;
-              border-bottom: 1px solid #f3f4f6;
-            }
-            .summary {
-              margin-top: 24px;
-              display: flex;
-              justify-content: flex-end;
-            }
-            .summary-box {
-              width: 280px;
-            }
-            .summary-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 10px 0;
-              border-bottom: 1px solid #e5e7eb;
-              font-size: 14px;
-            }
-            .summary-row.total {
-              font-weight: bold;
-              font-size: 16px;
-            }
-            .footer {
-              margin-top: 32px;
-              text-align: center;
-              font-size: 13px;
-              color: #6b7280;
-            }
-            @media print {
-              body {
-                padding: 0;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          ${printContents}
-          <script>
-            window.onload = function() {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+  // Fallback for simple cash orders
+  if (cashPaid === 0 && order.cashReceived) cashPaid = order.cashReceived;
+
+  // Infer from paymenttype when detail records are absent
+  if (cashPaid === 0 && cardPaid === 0) {
+    const pt = (order.paymenttype ?? "").toLowerCase();
+    if (pt === "cash")  cashPaid = order.totalamount ?? 0;
+    if (pt === "card")  cardPaid = order.totalamount ?? 0;
+    // Split: leave both at 0 — receipt will show paymentMethod label only
+  }
+
+  return {
+    cashPaid: cashPaid > 0 ? cashPaid : undefined,
+    cardPaid: cardPaid > 0 ? cardPaid : undefined,
   };
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function OrderBillModal({ open, onClose, order }: Props) {
+  const { currency, useCents }   = useCurrency();
+  const { storeInfo }            = useStoreInfo();
+  const { receiptSettings }      = useReceiptSettings();
 
   if (!order) return null;
+
+  const format = (value: number) => formatCurrency(value, currency, useCents);
+
+  const orderDate = order.dateTime ? new Date(order.dateTime) : new Date();
+  const date      = orderDate.toLocaleDateString();
+  const time      = orderDate.toLocaleTimeString();
+
+  const items         = buildReceiptItems(order);
+  const { cashPaid, cardPaid } = deriveCashCard(order);
+
+  const discount      = order.discountAmount ?? 0;
+  const tax           = order.tax            ?? 0;
+  const total         = order.totalamount    ?? 0;
+  const paymentMethod = order.paymenttype    ?? "Cash";
+
+  // Build absolute logo URL for the print window (relative URLs don't work in about:blank)
+  const absoluteLogoUrl = storeInfo.logoUrl
+    ? storeInfo.logoUrl.startsWith("http")
+      ? storeInfo.logoUrl
+      : typeof window !== "undefined"
+        ? `${window.location.origin}${storeInfo.logoUrl}`
+        : storeInfo.logoUrl
+    : null;
+
+  const handlePrint = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) return;
+
+    const receiptHTML = generateReceiptHTML({
+      headerText:         receiptSettings.headerText,
+      footerMessage:      receiptSettings.footerMessage,
+      showLogo:           receiptSettings.showLogo,
+      showTaxNumber:      receiptSettings.showTaxNumber,
+      taxNumber:          receiptSettings.taxNumber,
+      showCustomerDetails: receiptSettings.showCustomerDetails,
+      customerDetails:    order.customer ?? "",
+      storeName:          storeInfo.storeName,
+      branchName:         order.branch    || storeInfo.branchName,
+      cashierName:        order.cashier   || storeInfo.cashierName,
+      telephone:          storeInfo.telephone,
+      logoUrl:            absoluteLogoUrl,
+      orderId:            order.orderNumber,
+      date,
+      time,
+      items,
+      discount,
+      tax,
+      total,
+      paymentMethod,
+      cashPaid,
+      cardPaid,
+      formatPrice: format,
+    });
+
+    printWindow.document.open();
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+      const images = printWindow.document.images;
+      let loaded   = 0;
+
+      if (images.length === 0) {
+        printWindow.print();
+        printWindow.close();
+        return;
+      }
+
+      for (const img of images) {
+        if (img.complete) {
+          loaded++;
+        } else {
+          img.onload = img.onerror = () => {
+            loaded++;
+            if (loaded === images.length) {
+              printWindow.print();
+              printWindow.close();
+            }
+          };
+        }
+      }
+
+      if (loaded === images.length) {
+        printWindow.print();
+        printWindow.close();
+      }
+    };
+  };
 
   return (
     <ModalShell
       open={open}
       onClose={onClose}
-      title={`Order Bill - #${order.id}`}
-      widthClassName="w-[820px] max-w-[95vw]"
+      title={`Receipt Preview – #${order.orderNumber}`}
+      widthClassName="w-[320px] max-w-[92vw]"
     >
-      <div className="space-y-4">
-        <div
-          ref={printRef}
-          className="rounded-lg border border-gray-200 bg-white p-6"
+      {/* Scrollable receipt preview */}
+      <div className="mb-4 max-h-[45vh] overflow-y-scroll pr-2">
+        <ReceiptDisplay
+          headerText={receiptSettings.headerText}
+          footerMessage={receiptSettings.footerMessage}
+          showLogo={receiptSettings.showLogo}
+          showTaxNumber={receiptSettings.showTaxNumber}
+          taxNumber={receiptSettings.taxNumber}
+          showCustomerDetails={receiptSettings.showCustomerDetails}
+          customerDetails={order.customer ?? ""}
+          storeName={storeInfo.storeName}
+          branchName={order.branch    || storeInfo.branchName}
+          cashierName={order.cashier  || storeInfo.cashierName}
+          telephone={storeInfo.telephone}
+          logoUrl={storeInfo.logoUrl}
+          orderId={order.orderNumber}
+          date={date}
+          time={time}
+          items={items}
+          discount={discount}
+          tax={tax}
+          total={total}
+          paymentMethod={paymentMethod}
+          cashPaid={cashPaid}
+          cardPaid={cardPaid}
+          format={format}
+        />
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-center gap-3 border-t border-gray-200 pt-4">
+        <ActionButton
+          variant="outline"
+          label="Cancel"
+          onClick={onClose}
+          fullWidth
+          className="flex-1"
+        />
+        <ActionButton
+          variant="primary"
+          onClick={handlePrint}
+          fullWidth
+          className="flex flex-1 items-center justify-center gap-2"
         >
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-black">Order Bill</h1>
-            <p className="mt-1 text-sm text-black">
-              Generated order receipt
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm text-black">
-            <div className="border-b border-gray-100 pb-2">
-              <strong>Order ID:</strong> #{order.id}
-            </div>
-            <div className="border-b border-gray-100 pb-2">
-              <strong>Date & Time:</strong> {order.dateTime ?? "-"}
-            </div>
-            <div className="border-b border-gray-100 pb-2">
-              <strong>Branch:</strong> {order.branch ?? "-"}
-            </div>
-            <div className="border-b border-gray-100 pb-2">
-              <strong>Cashier:</strong> {order.cashier ?? "-"}
-            </div>
-            <div className="border-b border-gray-100 pb-2">
-              <strong>Payment Type:</strong> {order.paymenttype ?? "-"}
-            </div>
-            <div className="border-b border-gray-100 pb-2">
-              <strong>Status:</strong> {order.status ?? "-"}
-            </div>
-          </div>
-
-          <div className="mt-8 flex justify-end text-black">
-            <div className="w-full max-w-[320px] space-y-3">
-              <div className="flex items-center justify-between border-b border-gray-200 pb-2 text-sm">
-                <span>Total Amount</span>
-                <span className="font-semibold">
-                  {order.totalamount !== undefined
-                    ? `LKR ${order.totalamount.toFixed(2)}`
-                    : "-"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-10 text-center text-sm text-gray-500">
-            <p>Thank you for your purchase</p>
-            <p>Generated by your POS system</p>
-          </div>
-        </div>
-
-        <div className="flex justify-center">
-          <div className="w-full max-w-[420px]">
-            <PopupActions
-              actions={[
-                { label: "Close", onClick: onClose, variant: "secondary" },
-                {
-                  label: "Print / Save PDF",
-                  onClick: handlePrint,
-                  variant: "primary",
-                },
-              ]}
-            />
-          </div>
-        </div>
+          <Printer className="h-4 w-4" />
+          Print
+        </ActionButton>
       </div>
     </ModalShell>
   );
