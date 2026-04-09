@@ -204,7 +204,7 @@ export default function ProductsTable({
     const managerColumns: Column<VariantRow>[] = [
        {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
       {

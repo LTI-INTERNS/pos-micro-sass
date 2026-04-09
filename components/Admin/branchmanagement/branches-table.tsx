@@ -14,7 +14,7 @@ export default function BranchesTable({ branches, selectedBranch, setSelectedBra
     // { key: "id", label: "ID" },
      {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
     { key: "name", label: "Name" },
