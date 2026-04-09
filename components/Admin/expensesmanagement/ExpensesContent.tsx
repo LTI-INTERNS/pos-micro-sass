@@ -36,14 +36,13 @@ const normalizeExpense = (item: ExpenseApiItem): Expenses => ({
   amount: Number(item.amount ?? 0),
   payment: item.paymentType ?? "",
   paymentType: (item.paymentType ?? "CASH") as "CASH" | "CARD",
-  addedby: item.addedBy ?? "",
+  addedby: item.addedByName ?? "",
   branch: item.branch?.name ?? "",
   branchId: item.branchId,
 });
 
 export default function ExpensesContent() {
   const { data: session, status } = useSession();
-  console.log("SESSION DATA:", session);
 
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
@@ -57,6 +56,7 @@ export default function ExpensesContent() {
   const [pageLoading, setPageLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expenses | null>(null);
+  const [selectedExpense, setSelectedExpense] = useState<Expenses | null>(null);
 
   const [filters, setFilters] = useState<{
     category?: string;
@@ -96,9 +96,19 @@ export default function ExpensesContent() {
         expenseApi.getBranches(session).catch(() => []),
       ]);
 
-      setExpenses(expenseRows.map(normalizeExpense));
+      const normalizedExpenses = expenseRows.map(normalizeExpense);
+
+      setExpenses(normalizedExpenses);
       setCategories(categoryRows);
       setBranches(branchRows);
+
+      setSelectedExpense((prev) => {
+        if (!prev) return null;
+        return (
+          normalizedExpenses.find((item) => item.expenseId === prev.expenseId) ??
+          null
+        );
+      });
     } catch (error: any) {
       console.error("Failed to load expenses:", error);
       alert(
@@ -112,7 +122,7 @@ export default function ExpensesContent() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      fetchAll();
+      void fetchAll();
     }
   }, [status]);
 
@@ -148,6 +158,18 @@ export default function ExpensesContent() {
     searchKeys: ["id", "category", "description"],
     filters: canUseBranchFilter ? filters : { ...filters, branch: "" },
   });
+
+  useEffect(() => {
+    if (!selectedExpense) return;
+
+    const stillExists = filteredExpenses.find(
+      (item) => item.expenseId === selectedExpense.expenseId
+    );
+
+    if (!stillExists) {
+      setSelectedExpense(null);
+    }
+  }, [filteredExpenses, selectedExpense]);
 
   const isFilterApplied = Object.values(visibleFilters).some(
     (v) => v && v.trim() !== ""
@@ -219,14 +241,20 @@ export default function ExpensesContent() {
     }
   };
 
-  const handleDelete = async (expense: Expenses) => {
+  const handleDelete = async () => {
+    if (!selectedExpense) {
+      alert("Please select an expense first.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${expense.description}"?`
+      `Are you sure you want to delete "${selectedExpense.description}"?`
     );
     if (!confirmed) return;
 
     try {
-      await expenseApi.deleteExpense(session, expense.expenseId);
+      await expenseApi.deleteExpense(session, selectedExpense.expenseId);
+      setSelectedExpense(null);
       await fetchAll();
     } catch (error: any) {
       console.error("Delete expense failed:", error);
@@ -291,7 +319,7 @@ export default function ExpensesContent() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-wrap gap-3">
         <ActionButton
           label="Add Expense"
           variant="primary"
@@ -300,6 +328,27 @@ export default function ExpensesContent() {
             setShowExpensePopup(true);
           }}
         />
+
+        <ActionButton
+          label="Edit Expense"
+          variant="outline"
+          onClick={() => {
+            if (!selectedExpense) {
+              alert("Please select an expense first.");
+              return;
+            }
+
+            setEditingExpense(selectedExpense);
+            setShowExpensePopup(true);
+          }}
+        />
+
+        <ActionButton
+          label="Delete Expense"
+          variant="outline"
+          onClick={handleDelete}
+        />
+
         <ActionButton
           label="Export CSV"
           variant="primary"
@@ -310,11 +359,8 @@ export default function ExpensesContent() {
       <ExpensesTable
         Expenses={filteredExpenses}
         showBranch={showBranchColumn}
-        onEdit={(expense) => {
-          setEditingExpense(expense);
-          setShowExpensePopup(true);
-        }}
-        onDelete={handleDelete}
+        selectedExpenseId={selectedExpense?.id }
+        onSelectExpense={setSelectedExpense}
       />
 
       <AddExpensesPopup
