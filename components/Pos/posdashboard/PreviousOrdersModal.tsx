@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
@@ -8,92 +9,162 @@ import { orderService } from "@/lib/services";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 import PreviousOrderDetailsModal from "@/components/Pos/posdashboard/PreviousOrderDetailsModal";
-import { previousOrderDetailsMap } from "@/app/ordermanagement/previousOrderDetailsMock";
+import type { Order } from "@/types/order.types";
 
 type Props = {
   open: boolean;
   onClose: () => void;
 };
 
-type Order = {
-  id: number;
-  dateTime?: string;
-  branch?: string;
-  cashier?: string;
-  paymenttype?: string;
-  totalamount?: number;
-  status?: string;
-  action?: string;
-};
+/** ISO date string for N days ago, used as the startDate query param. */
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
 
 export default function PreviousOrdersModal({ open, onClose }: Props) {
-  const [allOrders, setAllOrders] = useState<Order[]>([]);
-  useEffect(() => {
-    if (!open) return;
-    orderService.getAll().then(setAllOrders).catch(() => setAllOrders([]));
-  }, [open]);
+  const { data: session } = useSession();
+  const branchId = session?.user?.branchId ?? "";
+
   const { currency, useCents } = useCurrency();
+
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState("");
   const [search, setSearch] = useState("");
 
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [detailsOpen, setDetailsOpen]     = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const selectedDetails = selectedOrderId ? previousOrderDetailsMap[selectedOrderId] ?? null : null;
+  // ── Fetch last 7 days of orders for this branch ────────────────────────
+  useEffect(() => {
+    if (!open || !branchId) return;
 
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        setFetchError("");
+
+        const data = await orderService.getAll({
+          branchId,
+          startDate: daysAgo(7),
+        });
+
+        if (!cancelled) setAllOrders(data);
+      } catch {
+        if (!cancelled) setFetchError("Failed to load orders.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [open, branchId]);
+
+  // ── Client-side search ─────────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return allOrders;
-
-    return allOrders.filter((o: Order) => String(o.id).includes(q) || o.cashier?.toLowerCase().includes(q));
+    return allOrders.filter(
+      (o) =>
+        o.orderNumber.toLowerCase().includes(q) ||
+        (o.cashier ?? "").toLowerCase().includes(q)
+    );
   }, [search, allOrders]);
 
+  // ── Table columns ──────────────────────────────────────────────────────
   const columns: Column<Order>[] = [
-    { key: "id", label: "Order ID" },
-    { key: "dateTime", label: "Date & Time" },
-    { key: "cashier", label: "Cashier" },
-    { key: "paymenttype", label: "Payment" },
     {
-      key: "totalamount",
-      label: "Total Amount",
-      render: (row) => row.totalamount !== undefined
-        ? formatCurrency(row.totalamount, currency, useCents)
-        : "-",
+      key:    "orderNumber",
+      label:  "Order No.",
     },
-    { key: "status", label: "Status" },
+    {
+      key:    "dateTime",
+      label:  "Date & Time",
+      render: (row) =>
+        row.dateTime ? new Date(row.dateTime).toLocaleString() : "-",
+    },
+    { key: "cashier",     label: "Cashier"  },
+    { key: "paymenttype", label: "Payment"  },
+    {
+      key:    "totalamount",
+      label:  "Total",
+      align:  "right",
+      render: (row) =>
+        row.totalamount !== undefined
+          ? formatCurrency(row.totalamount, currency, useCents)
+          : "-",
+    },
+    {
+      key:    "status",
+      label:  "Status",
+      render: (row) => {
+        const s = (row.status ?? "").toUpperCase();
+        const styles: Record<string, string> = {
+          COMPLETED: "bg-green-100 text-green-700",
+          PENDING:   "bg-yellow-100 text-yellow-700",
+          CANCELED:  "bg-red-100 text-red-600",
+        };
+        return (
+          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${styles[s] ?? "bg-gray-100 text-gray-600"}`}>
+            {row.status ?? "-"}
+          </span>
+        );
+      },
+    },
   ];
+
+  const handleSelectRow = (row: Order | null) => {
+    if (!row) return;
+    setSelectedOrder(row);
+    setDetailsOpen(true);
+  };
 
   return (
     <>
-      <ModalShell open={open} title="Previous Orders" onClose={onClose} widthClassName="w-[1100px] max-w-[95vw]">
+      <ModalShell
+        open={open}
+        title="Previous Orders (Last 7 Days)"
+        onClose={onClose}
+        widthClassName="w-[1100px] max-w-[95vw]"
+      >
         <div className="space-y-4">
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by Order ID or Cashier"
+            placeholder="Search by order number or cashier…"
             showFilter={false}
           />
-          <div className="mb-4 max-h-50 overflow-y-auto">
 
-            <CommonTable
-              data={filteredOrders}
-              columns={columns}
-              emptyMessage="No orders found"
-              onSelectRow={(row) => {
-                if (!row) return;
+          {fetchError && (
+            <p className="text-sm text-red-500">{fetchError}</p>
+          )}
 
-                setSelectedOrderId(Number(row.id));
-                setDetailsOpen(true);
-              }}
-            />
-          </div>
-
+          {isLoading ? (
+            <div className="py-10 text-center text-sm text-gray-400">
+              Loading orders…
+            </div>
+          ) : (
+            <div className="max-h-[400px] overflow-y-auto">
+              <CommonTable
+                data={filteredOrders}
+                columns={columns}
+                emptyMessage="No orders found in the last 7 days"
+                onSelectRow={handleSelectRow}
+              />
+            </div>
+          )}
         </div>
       </ModalShell>
 
       <PreviousOrderDetailsModal
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
-        details={selectedDetails}
+        order={selectedOrder}
       />
     </>
   );

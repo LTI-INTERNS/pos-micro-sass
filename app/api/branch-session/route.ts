@@ -15,8 +15,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Partial<BranchSessionBody>;
 
-    console.log("BRANCH SESSION POST BODY:", body);
-
     if (
       !body.branchId ||
       !body.branchName ||
@@ -55,8 +53,6 @@ export async function POST(req: NextRequest) {
       companyName: body.companyName,
     };
 
-    console.log("BRANCH SESSION CTX:", ctx);
-
     const res = NextResponse.json({
       success: true,
       debug: {
@@ -86,11 +82,6 @@ export async function POST(req: NextRequest) {
       maxAge: COOKIE_MAX_AGE,
     });
 
-    console.log("BRANCH SESSION COOKIES SET:", {
-      tokenCookie: "branch_session_token",
-      ctxCookie: "branch_session_ctx",
-    });
-
     return res;
   } catch (error) {
     console.error("FAILED TO CREATE BRANCH SESSION:", error);
@@ -111,8 +102,6 @@ export async function GET(req: NextRequest) {
   try {
     const raw = req.cookies.get("branch_session_ctx")?.value;
 
-    console.log("BRANCH SESSION GET RAW COOKIE:", raw);
-
     if (!raw) {
       return NextResponse.json(
         { success: false, error: "No branch session" },
@@ -121,8 +110,6 @@ export async function GET(req: NextRequest) {
     }
 
     const ctx = JSON.parse(decodeURIComponent(raw));
-
-    console.log("BRANCH SESSION GET PARSED CTX:", ctx);
 
     return NextResponse.json({ success: true, data: ctx });
   } catch (error) {
@@ -140,8 +127,6 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE() {
-  console.log("DELETING BRANCH SESSION COOKIES");
-
   const res = NextResponse.json({ success: true });
 
   res.cookies.set({

@@ -23,28 +23,22 @@ function isAllowedRole(role: string): role is AllowedRole {
 }
 
 export default function CustomersPage() {
-  // ── Session ───────────────────────────────────────────────────────────────
   const { data: session, status } = useSession();
   const role     = session?.user?.role     ?? "";
   const branchId = session?.user?.branchId ?? "";
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
-  // ── Data state ────────────────────────────────────────────────────────────
   const [customers, setCustomers]   = useState<Customer[]>([]);
   const [isLoading, setIsLoading]   = useState(true);
   const [fetchError, setFetchError] = useState("");
 
-  // ── UI state ──────────────────────────────────────────────────────────────
   const [start, setStart]                       = useState<Date | undefined>();
   const [end, setEnd]                           = useState<Date | undefined>();
   const [search, setSearch]                     = useState("");
   const [showFilter, setShowFilter]             = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [actionLoading, setActionLoading]       = useState(false);
-  const [actionError, setActionError]           = useState("");
   const [filters, setFilters]                   = useState<{ points?: string; branch?: string; status?: string }>({});
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchCustomers = useCallback(async () => {
     if (!isAllowedRole(role)) return;
     try {
@@ -63,7 +57,6 @@ export default function CustomersPage() {
     if (status === "authenticated") fetchCustomers();
   }, [status, fetchCustomers]);
 
-  // ── ALL hooks before any early return ─────────────────────────────────────
   const branchOptions = useMemo(
     () =>
       canSeeAllBranches
@@ -123,24 +116,14 @@ export default function CustomersPage() {
     [baseFiltered, filters]
   );
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
   const isFilterApplied    = Object.values(filters).some((v) => v && v.trim() !== "");
   const handleRemoveFilter = (key: string) => setFilters((prev) => ({ ...prev, [key]: "" }));
   const clearAllFilters    = () => setFilters({});
 
-  const handleDeleteCustomer = async () => {
+  const handleDeleteCustomer = () => {
     if (!selectedCustomer) return;
-    setActionLoading(true);
-    setActionError("");
-    try {
-      await customerService.remove(selectedCustomer.id);
-      setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
-      setSelectedCustomer(null);
-    } catch {
-      setActionError("Failed to delete customer. Please try again.");
-    } finally {
-      setActionLoading(false);
-    }
+    setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
+    setSelectedCustomer(null);
   };
 
   const handleEditCustomer = (updatedCustomer: Customer) => {
@@ -150,7 +133,6 @@ export default function CustomersPage() {
     setSelectedCustomer(updatedCustomer);
   };
 
-  // ── Role guard — after ALL hooks ──────────────────────────────────────────
   if (status === "loading") {
     return (
       <DashboardLayout>
@@ -165,7 +147,6 @@ export default function CustomersPage() {
     redirect("/login");
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <DashboardLayout>
       <div className="w-full space-y-5">
@@ -180,9 +161,9 @@ export default function CustomersPage() {
 
         <StatCardGrid />
 
-        {(fetchError || actionError) && (
+        {fetchError && (
           <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            {fetchError || actionError}
+            {fetchError}
           </div>
         )}
 
