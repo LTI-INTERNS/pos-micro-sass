@@ -30,7 +30,7 @@ export default function SettingPage() {
     }
   }, [storeInfo]);
 
-  // Define TABS (This was the missing part causing your error)
+  // Define TABS
   const TABS = useMemo(() => {
     const tabs = [
       { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
@@ -60,7 +60,7 @@ export default function SettingPage() {
         {activeTab === "discountManagement" && <DiscountContent />}
         
         {activeTab === "subscriptionPlan" && (userRole === "owner" || userRole === "superadmin") && (
-          <SubscriptionPlanCards defaultPlanId="basic" />
+          <SubscriptionPlanCards /> 
         )}
 
         {activeTab === "companyDetails" && (
