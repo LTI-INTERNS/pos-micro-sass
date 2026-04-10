@@ -16,7 +16,7 @@ export default function OrdersTable({ orders, onView }: OrdersTableProps) {
   const orderColumns: Column<Order>[] = [
     {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
     { key: "id", label: "Order ID" },

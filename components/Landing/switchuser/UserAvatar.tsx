@@ -10,12 +10,12 @@ export default function UserAvatar({ name, img }: Props) {
   const initial = name?.trim()?.charAt(0)?.toUpperCase() || "?";
 
   return (
-    <div className="group flex flex-col items-center">
+    <div className="group flex w-[110px] flex-col items-center text-center">
       <div
         className="
           relative h-20 w-20 rounded-full
           transition-transform duration-200 ease-out
-          group-hover:scale-120
+          group-hover:scale-110
         "
       >
         <div
@@ -47,12 +47,13 @@ export default function UserAvatar({ name, img }: Props) {
 
       <div
         className="
-          mt-3 text-xs text-white/60
+          mt-3 w-full text-xs text-white/70
           transition-all duration-200 ease-out
           group-hover:text-white
-          group-hover:scale-110
-          group-hover:translate-y-1.5
+          group-hover:scale-105
+          group-hover:translate-y-1
           origin-top
+          text-center break-words
         "
       >
         {name}

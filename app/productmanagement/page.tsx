@@ -16,11 +16,32 @@ import AddProductPopup, { ExistingProduct } from "@/components/Admin/productmana
 import AddStockPopup from "@/components/Admin/productmanagement/addStockPopup";
 import DeleteProductPopup from "@/components/Admin/productmanagement/DeleteProductPopup";
 import ViewProductPopup from "@/components/Admin/productmanagement/ViewProductPopup";
+import { BusinessTypeId } from "@/components/Admin/productmanagement/Productcategorydata";
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
-import { productService, Product } from "@/lib/services";
+import { branchService, productService, Branch, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
+import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+
+// ── Shared local interfaces ───────────────────────────────────────────────────
+
+interface VariantLike {
+  variantId?: string | number;
+  id?: string | number;
+  sku: string;
+  sellUnit?: string;
+}
+
+interface ApiError {
+  message?: string;
+  response?: {
+    data?: {
+      message?: string;
+      error?: { message?: string };
+    };
+  };
+}
 
 // ── Helper: map a Product to the ExistingProduct / initialData shape ──────────
 
@@ -30,7 +51,7 @@ function toPopupProduct(p: Product) {
     name: p.name,
     category: p.category,
     categoryId: p.categoryId,
-    brand: "",
+    brand: p.brand || "",
     description: p.description || "",
     options: (p.options ?? []).map((opt, i) => ({
       id: i + 1,
@@ -38,6 +59,7 @@ function toPopupProduct(p: Product) {
       values: opt.values,
     })),
     variants: (p.variants ?? []).map((v, i) => ({
+      ...(v as unknown as Record<string, unknown>), // preserves real variantId from the backend spread
       id: i + 1,
       sku: v.sku,
       barcode: "",
@@ -60,103 +82,583 @@ function getBaseProduct(p: Product): Product {
   return copy as Product;
 }
 
+function formatBranchLabel(branch: Branch) {
+  return branch.city?.trim() ? `${branch.name} (${branch.city})` : branch.name;
+}
+
 type UserRole = "owner" | "admin" | "manager";
 
+const managerAvailabilityOptions = [
+  { label: "Available", value: "Available" },
+  { label: "Unavailable", value: "Unavailable" },
+];
+
+const managerStockOptions = [
+  { label: "Low Stock", value: "Low Stock" },
+  { label: "No Stock", value: "No Stock" },
+  { label: "In Stock", value: "In Stock" },
+];
+
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
+  const { storeInfo } = useStoreInfo();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  }
-
-  const role = session?.user?.role?.toLowerCase();
-
-  const userRole: UserRole =
-    role === "owner" || role === "admin" || role === "manager"
-      ? (role as UserRole)
-      : "manager";
+  // ── ALL hooks must be declared before any conditional return ─────────────────
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [start, setStart] = useState<Date | undefined>();
+  const [end, setEnd] = useState<Date | undefined>();
   const [viewOpen, setViewOpen] = useState(false);
-
-  useEffect(() => {
-    productService.getAll()
-      .then(setProducts)
-      .finally(() => setIsLoading(false));
-  }, []);
-
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  const { filters: urlFilters, setFilter } = useUrlFilters();
-  const search = urlFilters.search || "";
-  const setSearch = (val: string) => setFilter("search", val);
-  const filterOpen = !!urlFilters.filterOpen;
-  const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
-
   const [editOpen, setEditOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [addVariantOpen, setAddVariantOpen] = useState(false);
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const { filters: urlFilters, setFilter } = useUrlFilters();
+
+  const search = urlFilters.search || "";
+  const setSearch = (val: string) => setFilter("search", val);
+  const filterOpen = !!urlFilters.filterOpen;
+  const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
+
+  const role = session?.user?.role?.toLowerCase();
+  const userRole: UserRole =
+    role === "owner" || role === "admin" || role === "manager"
+      ? (role as UserRole)
+      : "manager";
+
+  const canUseBranchFilter = userRole === "admin" || userRole === "owner";
+  const activeBranchId = canUseBranchFilter ? "" : (session?.user?.branchId ?? "");
+
+  const activeBranchLabel = session?.user?.branchName || "";
+
+  useEffect(() => {
+    setSelectedProduct(null);
+    setViewOpen(false);
+    setEditOpen(false);
+    setAddOpen(false);
+    setAddVariantOpen(false);
+    setAddStockOpen(false);
+    setDeleteOpen(false);
+  }, [activeBranchId]);
+
+  useEffect(() => {
+    if (!session) return;
+    branchService.getAll().then(setBranches);
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    let cancelled = false;
+
+    setIsLoading(true);
+    productService
+      .getAll(activeBranchId ? { branchId: activeBranchId } : undefined)
+      .then((data) => {
+        if (!cancelled) {
+          setProducts(data);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, activeBranchId]);
+
+  // Fetch full company catalog when the "Add from Catalog" popup opens.
+  // Uses ?catalog=true to bypass the branch filter so managers see everything.
+  useEffect(() => {
+    if (!addVariantOpen) return;
+    setCatalogLoading(true);
+    productService.getCatalog()
+      .then(setCatalogProducts)
+      .finally(() => setCatalogLoading(false));
+  }, [addVariantOpen]);
+
+
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
-    const { search, filterOpen, ...rest } = urlFilters;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { search: _search, filterOpen: _filterOpen, ...rest } = urlFilters;
     return rest;
   }, [urlFilters]);
 
   const setFilters = (newFilters: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete("filterOpen");
+
+    Object.entries(urlFilters).forEach(([key]) => {
+      if (key !== "search" && key !== "filterOpen") {
+        params.delete(key);
+      }
+    });
+
     Object.entries(newFilters).forEach(([k, v]) => {
       if (v) params.set(k, v);
       else params.delete(k);
     });
-    router.push(`${pathname}?${params.toString()}`);
+
+    const queryString = params.toString();
+    router.push(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
-  useLowStockNotifications({ products, branchId: 1, branchName: "Colombo Branch", branchManager: "Nimal Perera" });
-  useNegativeStockAlerts({ products, branchId: 1, branchName: "Colombo Branch", branchManager: "Nimal Perera" });
+  const notificationBranchId = 1;
+  const notificationBranchName = activeBranchLabel || "Selected Branch";
+
+  useLowStockNotifications({ products, branchId: notificationBranchId, branchName: notificationBranchName, branchManager: "Nimal Perera" });
+  useNegativeStockAlerts({ products, branchId: notificationBranchId, branchName: notificationBranchName, branchManager: "Nimal Perera" });
 
   type EnrichedProduct = Product & {
     numberOfVariants: string;
     availability: string;
     lowStockStatus: string;
     branch: string;
+    allBarcodes: string;
   };
 
   const enrichedProducts: EnrichedProduct[] = useMemo(() => {
     return products.map(p => {
       const variantsCount = p.variants?.length || 0;
-      // Since backend doesn't send real branch/stock data yet, we infer/mock these for the UI filters:
-      const availabilityStr = "Available"; // Mocked
-      const isLowStock = "No"; // Mocked
-      const branchName = "All Branches"; // Mocked
+      const variants = p.variants ?? [];
+
+      const hasAvailableVariant = variants.some((variant) => Boolean(variant.available ?? true));
+      const availabilityStatus = hasAvailableVariant ? "Available" : "Unavailable";
+
+      const variantStatuses = variants.map((variant) => {
+        const stockQty = Number(variant.stockQty ?? 0);
+        const lowStock = Number(variant.lowStock ?? 0);
+
+        if (stockQty <= 0) return "No Stock";
+        if (stockQty <= lowStock) return "Low Stock";
+        return "In Stock";
+      });
+
+      let stockStatus = "No Stock";
+      if (variantStatuses.includes("No Stock")) {
+        stockStatus = "No Stock";
+      } else if (variantStatuses.includes("Low Stock")) {
+        stockStatus = "Low Stock";
+      } else if (variantStatuses.includes("In Stock")) {
+        stockStatus = "In Stock";
+      }
+
+      const stockedBranchNames = Object.keys(
+        (p as Product & { branchesStock?: Record<string, unknown> }).branchesStock ?? {}
+      );
 
       return {
         ...p,
         numberOfVariants: String(variantsCount),
-        availability: availabilityStr,
-        lowStockStatus: isLowStock,
-        branch: branchName
+        availability: availabilityStatus,
+        lowStockStatus: stockStatus,
+        branch: activeBranchLabel || stockedBranchNames[0] || "All Branches",
+        allBarcodes: variants.map(v => typeof v === "object" && v !== null && "barcode" in v ? String(v.barcode) : "").filter(Boolean).join(" "),
       };
     });
-  }, [products]);
+  }, [products, activeBranchLabel]);
+
+  const branchFilterOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          products.flatMap((product) =>
+            Object.keys(
+              (product as Product & { branchesStock?: Record<string, unknown> }).branchesStock ?? {}
+            )
+          )
+        )
+      ).map((branch) => ({ label: branch, value: branch })),
+    [products]
+  );
+
+  const selectedBranch = filters.branch?.trim() || "";
+
+  const branchFilteredProducts = useMemo(() => {
+    if (!canUseBranchFilter || !selectedBranch) {
+      return enrichedProducts;
+    }
+
+    return enrichedProducts.filter((product) => {
+      const branchesStock = (product as Product & { branchesStock?: Record<string, unknown> }).branchesStock;
+      return Boolean(branchesStock && Object.prototype.hasOwnProperty.call(branchesStock, selectedBranch));
+    });
+  }, [canUseBranchFilter, enrichedProducts, selectedBranch]);
+
+  // Global Barcode Scanner Hook for Product Management
+  useEffect(() => {
+    let barcodeString = "";
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (barcodeString.length > 0) {
+          const matchedItem = branchFilteredProducts.find((p) =>
+            p.variants?.some((v: any) => v.barcode === barcodeString)
+          );
+          if (matchedItem) {
+            setSearch(barcodeString);
+          }
+          barcodeString = "";
+        }
+        return;
+      }
+
+      if (e.key.length === 1) {
+        barcodeString += e.key;
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        timeoutId = setTimeout(() => {
+          barcodeString = "";
+        }, 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [branchFilteredProducts, setSearch]);
+
+  const tableFilters = useMemo(() => {
+    // Branch filtering is handled separately against stocked branch records.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { branch: _branch, ...rest } = filters;
+    return rest;
+  }, [filters]);
+
+  const displayFilters = useMemo(() => {
+    const visible: Record<string, string> = {};
+
+    Object.entries(urlFilters).forEach(([key, value]) => {
+      if (key === "search" || key === "filterOpen") return;
+      if (!value) return;
+      visible[key] = value;
+    });
+
+    return visible;
+  }, [urlFilters]);
+
+  const isFilterApplied = Object.entries(urlFilters).some(
+    ([key, value]) =>
+      key !== "search" &&
+      key !== "filterOpen" &&
+      value &&
+      String(value).trim() !== ""
+  );
 
   const filteredProducts = useTableFilters({
-    data: enrichedProducts,
+    data: branchFilteredProducts,
     search,
-    searchKeys: ["id", "name", "category"],
-    filters,
+    start,
+    end,
+    dateKey: userRole === "manager" ? undefined : "createdAt",
+    searchKeys: ["id", "name", "category", "allBarcodes"],
+    filters:
+      userRole === "manager"
+        ? (() => {
+            const {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              availability: _availability,
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              lowStockStatus: _lowStockStatus,
+              ...rest
+            } = tableFilters;
+            return rest;
+          })()
+        : tableFilters,
   });
 
-  const isFilterApplied = Object.values(filters).some((v) => v && String(v).trim() !== "");
-  const removeFilter = (key: string) => setFilter(key, null);
+  const managerVariantFilteredProducts = useMemo(() => {
+    if (userRole !== "manager") {
+      return filteredProducts as Product[];
+    }
 
-  const existingProductsForVariant = products.map(toPopupProduct);
+    const availabilityFilter = filters.availability?.trim();
+    const stockFilter = filters.lowStockStatus?.trim();
+    const hasDateRange = Boolean(start && end);
+
+    return (filteredProducts as Product[])
+      .map((product) => {
+        const matchingVariants = (product.variants ?? []).filter((variant) => {
+          const availabilityStatus = (variant.available ?? true)
+            ? "Available"
+            : "Unavailable";
+
+          if (hasDateRange) {
+            const createdRaw = variant.branchVariantCreatedAt ?? variant.createdAt ?? product.createdAt;
+            if (!createdRaw) return false;
+            const createdDate = new Date(createdRaw);
+            if (Number.isNaN(createdDate.getTime())) return false;
+            if (createdDate < (start as Date) || createdDate > (end as Date)) return false;
+          }
+
+          const stockQty = Number(variant.stockQty ?? 0);
+          const lowStock = Number(variant.lowStock ?? 0);
+          const variantStockStatus =
+            stockQty <= 0
+              ? "No Stock"
+              : stockQty <= lowStock
+              ? "Low Stock"
+              : "In Stock";
+
+          if (availabilityFilter && availabilityStatus !== availabilityFilter) {
+            return false;
+          }
+          if (stockFilter && variantStockStatus !== stockFilter) {
+            return false;
+          }
+
+          return true;
+        });
+
+        return { ...product, variants: matchingVariants };
+      })
+      .filter((product) => (product.variants?.length ?? 0) > 0);
+  }, [filteredProducts, filters.availability, filters.lowStockStatus, userRole, start, end]);
+
+  const managerStats = useMemo(() => {
+    const allProductsCount = products.length;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    let productVariantsCount = 0;
+    let lowStockVariantCount = 0;
+    let outOfStockVariantCount = 0;
+    let currentWindowVariantCount = 0;
+    let previousWindowVariantCount = 0;
+
+    const currentWindowProductCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= thirtyDaysAgo;
+    }).length;
+
+    const previousWindowProductCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo;
+    }).length;
+
+    products.forEach((product) => {
+      (product.variants ?? []).forEach((variant) => {
+        productVariantsCount += 1;
+
+        const variantCreatedAtRaw = variant.createdAt ?? product.createdAt;
+        if (variantCreatedAtRaw) {
+          const variantCreatedAt = new Date(variantCreatedAtRaw);
+          if (!Number.isNaN(variantCreatedAt.getTime())) {
+            if (variantCreatedAt >= thirtyDaysAgo) {
+              currentWindowVariantCount += 1;
+            } else if (variantCreatedAt >= sixtyDaysAgo) {
+              previousWindowVariantCount += 1;
+            }
+          }
+        }
+
+        const stockQty = Number(variant.stockQty ?? 0);
+        const lowStock = Number(variant.lowStock ?? 0);
+        const isLowStock = stockQty > 0 && stockQty <= lowStock;
+        const isOutOfStock = stockQty <= 0;
+
+        if (isLowStock) {
+          lowStockVariantCount += 1;
+        }
+        if (isOutOfStock) {
+          outOfStockVariantCount += 1;
+        }
+      });
+    });
+
+    const lowStockVariantPercentage =
+      productVariantsCount > 0
+        ? `${((lowStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
+        : "0.0%";
+    const outOfStockVariantPercentage =
+      productVariantsCount > 0
+        ? `${((outOfStockVariantCount / productVariantsCount) * 100).toFixed(1)}%`
+        : "0.0%";
+
+    const allProductsTrend: "up" | "down" =
+      currentWindowProductCount >= previousWindowProductCount ? "up" : "down";
+    const allProductsPercentage =
+      previousWindowProductCount > 0
+        ? `${(((currentWindowProductCount - previousWindowProductCount) / previousWindowProductCount) * 100).toFixed(1)}%`
+        : currentWindowProductCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    const productVariantsTrend: "up" | "down" =
+      currentWindowVariantCount >= previousWindowVariantCount ? "up" : "down";
+    const productVariantsPercentage =
+      previousWindowVariantCount > 0
+        ? `${(((currentWindowVariantCount - previousWindowVariantCount) / previousWindowVariantCount) * 100).toFixed(1)}%`
+        : currentWindowVariantCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    return {
+      allProductsCount,
+      productVariantsCount,
+      lowStockVariantCount,
+      outOfStockVariantCount,
+      allProductsTrend,
+      allProductsPercentage,
+      productVariantsTrend,
+      productVariantsPercentage,
+      lowStockVariantPercentage,
+      outOfStockVariantPercentage,
+    };
+  }, [products]);
+
+  const handleLowStockCardClick = () => {
+    if (userRole !== "manager") return;
+    setFilters({ lowStockStatus: "Low Stock" });
+  };
+
+  const handleOutOfStockCardClick = () => {
+    if (userRole !== "manager") return;
+    setFilters({ lowStockStatus: "No Stock" });
+  };
+
+  const handleAllVariantsCardClick = () => {
+    if (userRole !== "manager") return;
+    setFilters({ availability: null, lowStockStatus: null });
+  };
+
+  const ownerAdminStats = useMemo(() => {
+    const categoriesCount = new Set(
+      products
+        .map((product) => product.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ).size;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const newProductsCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= thirtyDaysAgo;
+    }).length;
+
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const currentWindowCategoriesCount = new Set(
+      products
+        .filter((product) => {
+          if (!product.createdAt) return false;
+          const createdAt = new Date(product.createdAt);
+          if (Number.isNaN(createdAt.getTime())) return false;
+          return createdAt >= thirtyDaysAgo;
+        })
+        .map((product) => product.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ).size;
+
+    const previousWindowCategoriesCount = new Set(
+      products
+        .filter((product) => {
+          if (!product.createdAt) return false;
+          const createdAt = new Date(product.createdAt);
+          if (Number.isNaN(createdAt.getTime())) return false;
+          return createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo;
+        })
+        .map((product) => product.category?.trim())
+        .filter((category): category is string => Boolean(category))
+    ).size;
+
+    const previousNewProductsCount = products.filter((product) => {
+      if (!product.createdAt) return false;
+      const createdAt = new Date(product.createdAt);
+      if (Number.isNaN(createdAt.getTime())) return false;
+      return createdAt >= sixtyDaysAgo && createdAt < thirtyDaysAgo;
+    }).length;
+
+    const newProductsTrend: "up" | "down" =
+      newProductsCount >= previousNewProductsCount ? "up" : "down";
+
+    const categoriesTrend: "up" | "down" =
+      currentWindowCategoriesCount >= previousWindowCategoriesCount
+        ? "up"
+        : "down";
+
+    const categoriesPercentage =
+      previousWindowCategoriesCount > 0
+        ? `${(((currentWindowCategoriesCount - previousWindowCategoriesCount) / previousWindowCategoriesCount) * 100).toFixed(1)}%`
+        : currentWindowCategoriesCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    const newProductsPercentage =
+      previousNewProductsCount > 0
+        ? `${(((newProductsCount - previousNewProductsCount) / previousNewProductsCount) * 100).toFixed(1)}%`
+        : newProductsCount > 0
+        ? "100.0%"
+        : "0.0%";
+
+    return {
+      categoriesCount,
+      categoriesTrend,
+      categoriesPercentage,
+      newProductsCount,
+      newProductsTrend,
+      newProductsPercentage,
+    };
+  }, [products]);
+
+  const removeFilter = (key: string) => {
+    setFilter(key, null);
+  };
+
+  const handleFilterApply = (newFilters: Record<string, string | null>) => {
+    setFilters(newFilters);
+  };
+
+  // Build catalog list for the manager "Add from Company Catalog" popup.
+  // - Catalog source: ALL company products (from getCatalog, bypasses branch filter)
+  // - Mark products already stocked in this branch as alreadyAdded:true
+  const branchProductIds = useMemo(
+    () => new Set(products.map((p) => p.id)),
+    [products]
+  );
+  const existingProductsForVariant = useMemo(
+    () =>
+      catalogProducts.map((p) => ({
+        ...toPopupProduct(p),
+        alreadyAdded: branchProductIds.has(p.id),
+      })),
+    [catalogProducts, branchProductIds]
+  );
 
   const productPopupOpen = editOpen || addOpen || addVariantOpen;
   const handleProductPopupClose = () => {
@@ -165,64 +667,105 @@ export default function DashboardPage() {
     setAddVariantOpen(false);
   };
 
-  // ── Base product (strip variant tag) — used for all popups ───────────────────
-  // In manager view selectedProduct is tagged with _selectedVariantSku from the
-  // clicked variant row. We strip that tag so every popup receives the full
-  // Product with ALL its variants intact.
   const baseSelectedProduct: Product | null = selectedProduct
     ? getBaseProduct(selectedProduct)
     : null;
 
-  // ── Build initialData for the edit popup from the FULL base product ──────────
-  // Previously this was derived from `selectedProduct` (the tagged variant row),
-  // which sometimes caused only a single variant to be visible. Using
-  // `baseSelectedProduct` guarantees every variant is included.
+  const handleVariantAvailabilityChange = (
+    productId: string,
+    sku: string,
+    available: boolean
+  ) => {
+    setProducts((prev) =>
+      prev.map((product) => {
+        if (product.id !== productId) return product;
+        return {
+          ...product,
+          variants: (product.variants ?? []).map((variant) =>
+            variant.sku === sku ? { ...variant, available } : variant
+          ),
+        };
+      })
+    );
+
+    setSelectedProduct((prev) => {
+      if (!prev || prev.id !== productId) return prev;
+      return {
+        ...prev,
+        variants: (prev.variants ?? []).map((variant) =>
+          variant.sku === sku ? { ...variant, available } : variant
+        ),
+      };
+    });
+  };
+
+  const reloadProducts = async () => {
+    const refreshed = await productService.getAll(activeBranchId ? { branchId: activeBranchId } : undefined);
+    setProducts(refreshed);
+  };
+
   const editInitialData =
     editOpen && baseSelectedProduct
       ? {
-        name: baseSelectedProduct.name,
-        categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
-        brand: "",
-        description: baseSelectedProduct.description || "",
-        options: (baseSelectedProduct.options ?? []).map((opt, i) => ({
-          id: i + 1,
-          name: opt.name,
-          values: opt.values,
-        })),
-        variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
-          id: i + 1,
-          sku: v.sku,
-          barcode: "",
-          imageUrl: v.imageUrl || "",
-          basePrice: String(v.price),
-          sellingPrice: String(v.price),
-          sellUnit: "Each",
-          optionValues: v.optionValues ?? [],
-        })),
-      }
+          name: baseSelectedProduct.name,
+          categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
+          brand: baseSelectedProduct.brand || "",
+          description: baseSelectedProduct.description || "",
+          options: (baseSelectedProduct.options ?? []).map((opt) => ({
+            id: opt.id,
+            name: opt.name,
+            values: opt.values,
+          })),
+          variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
+            id: i + 1,
+            sku: v.sku,
+            barcode: "",
+            imageUrl: v.imageUrl || "",
+            basePrice: String(v.price),
+            sellingPrice: String(v.price),
+            sellUnit: "Each",
+            optionValues: v.optionValues ?? [],
+          })),
+        }
       : null;
 
-  // ── companyProduct ────────────────────────────────────────────────────────────
-  // Always null for the manager role.
-  //
-  // When companyProduct is NOT null, AddProductPopup diffs it against
-  // initialData to find variants not yet on the branch. Because both objects
-  // would come from the same Product record every variant cancels out and the
-  // list appears empty.
-  //
-  // Passing null causes AddProductPopup's useEffect to skip the diff and call
-  // setState(initialData) directly, which populates the form with ALL options
-  // and variants from the full product.
-  //
-  // When this page is later extended to support owner/admin roles, replace the
-  // null with: `editOpen && baseSelectedProduct ? toPopupProduct(baseSelectedProduct) : null`
   const companyProductData: ExistingProduct | null = null;
+
+  // ── Now safe to do conditional rendering in JSX ─────────────────────────────
 
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangePicker />
-        <StatCardGrid />
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
+        <StatCardGrid
+          userRole={userRole}
+          allProductsCount={managerStats.allProductsCount}
+          productVariantsCount={managerStats.productVariantsCount}
+          allProductsTrend={managerStats.allProductsTrend}
+          allProductsPercentage={managerStats.allProductsPercentage}
+          productVariantsTrend={managerStats.productVariantsTrend}
+          productVariantsPercentage={managerStats.productVariantsPercentage}
+          onAllVariantsClick={handleAllVariantsCardClick}
+          lowStockVariantCount={managerStats.lowStockVariantCount}
+          outOfStockVariantCount={managerStats.outOfStockVariantCount}
+          lowStockVariantPercentage={managerStats.lowStockVariantPercentage}
+          outOfStockVariantPercentage={managerStats.outOfStockVariantPercentage}
+          onLowStockClick={handleLowStockCardClick}
+          onOutOfStockClick={handleOutOfStockCardClick}
+          categoriesCount={ownerAdminStats.categoriesCount}
+          categoriesTrend={ownerAdminStats.categoriesTrend}
+          categoriesPercentage={ownerAdminStats.categoriesPercentage}
+          newProductsCount={ownerAdminStats.newProductsCount}
+          newProductsTrend={ownerAdminStats.newProductsTrend}
+          newProductsPercentage={ownerAdminStats.newProductsPercentage}
+        />
 
         <div className="relative w-full">
           <SearchBar
@@ -235,20 +778,21 @@ export default function DashboardPage() {
             isFilterApplied={isFilterApplied}
             onClearFilters={() => setFilters({})}
           />
-          <FilterChips filters={filters} onRemove={removeFilter} />
+          <FilterChips filters={displayFilters} onRemove={removeFilter} />
           <FilterPopup
             open={filterOpen}
             onClose={() => setFilterOpen(false)}
-            onApply={(values) => { setFilters(values); setFilterOpen(false); }}
+            onApply={handleFilterApply}
+            closeOnApply={false}
             fields={
-              userRole === "admin" || userRole === "owner" ? [
-                { name: "branch", placeholder: "Branch", options: getFilterOptions(enrichedProducts, "branch") },
+              canUseBranchFilter ? [
+                { name: "branch", placeholder: "Branch", options: branchFilterOptions },
                 { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
                 { name: "numberOfVariants", placeholder: "Number of Variants", options: getFilterOptions(enrichedProducts, "numberOfVariants") },
               ] : [
                 { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
-                { name: "availability", placeholder: "Availability", options: getFilterOptions(enrichedProducts, "availability") },
-                { name: "lowStockStatus", placeholder: "Low Stock", options: getFilterOptions(enrichedProducts, "lowStockStatus") },
+                { name: "availability", placeholder: "Availability", options: managerAvailabilityOptions },
+                { name: "lowStockStatus", placeholder: "Stock", options: managerStockOptions },
               ]
             }
           />
@@ -268,9 +812,10 @@ export default function DashboardPage() {
           <div className="p-8 text-center text-slate-500">Loading products...</div>
         ) : (
           <ProductsTable
-            products={filteredProducts as unknown as Product[]}
+            products={managerVariantFilteredProducts as Product[]}
             selectedProduct={selectedProduct}
             setSelectedProduct={setSelectedProduct}
+            onToggleAvailability={handleVariantAvailabilityChange}
             onView={(product: Product) => {
               setSelectedProduct(product);
               setViewOpen(true);
@@ -285,24 +830,58 @@ export default function DashboardPage() {
         open={productPopupOpen}
         onClose={handleProductPopupClose}
         onSave={async (updatedProduct) => {
+          // This fires for non-catalog flows (Add New Product, Edit Product)
           try {
             if (editOpen && baseSelectedProduct) {
-              // In the onSave handler, log what goes to the service:
               console.log("SENDING TO SERVICE:", {
-                  id: baseSelectedProduct.id,
-                  payload: updatedProduct
+                id: baseSelectedProduct.id,
+                payload: updatedProduct,
               });
-              const updated = await productService.update(baseSelectedProduct.id, updatedProduct as any);
-              const refreshed = await productService.getAll();
-              setProducts(refreshed);
+              await productService.update(baseSelectedProduct.id, updatedProduct as never);
+              await reloadProducts();
             } else {
-              const created = await productService.create(updatedProduct as any);
-              setProducts(prev => [...prev, created as any]);
+              console.log("CREATING PRODUCT PAYLOAD:", JSON.stringify(updatedProduct, null, 2));
+              await productService.create(updatedProduct as never);
+              await reloadProducts();
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error("Failed to save product:", error);
-            const msg = error.response?.data?.error?.message || error.response?.data?.message || error.message || "Failed to save product.";
+            const err = error as ApiError;
+            const msg =
+              err?.response?.data?.error?.message ||
+              err?.response?.data?.message ||
+              err?.message ||
+              "Failed to save product.";
             alert(`Error from Server: ${msg}`);
+          }
+          handleProductPopupClose();
+        }}
+        onAddToBranch={async (selectedCatalogProducts) => {
+          // Catalog mode: register each selected product's variants in this branch
+          // by calling /branch-variants/stock with stockQty:0.
+          // This creates the BranchVariant rows so the product appears in manager's table.
+          try {
+            const { apiClient } = await import("@/lib/api-client");
+            for (const p of selectedCatalogProducts) {
+              const variants = (p.variants ?? []).map((v: VariantLike) => ({
+                variantId: v.variantId ?? v.id ?? v.sku,
+                stockQty:  0,
+                stockUnit: v.sellUnit || "Each",
+                lowStock:  0,
+              }));
+              if (variants.length === 0) continue;
+              await apiClient.post("/branch-variants/stock", { variants });
+            }
+            // Refresh branch product list
+            await reloadProducts();
+          } catch (error: unknown) {
+            console.error("Failed to add products to branch:", error);
+            const err = error as ApiError;
+            const msg =
+              err?.response?.data?.message ||
+              err?.message ||
+              "Failed to add products to branch.";
+            alert(`Error: ${msg}`);
           }
           handleProductPopupClose();
         }}
@@ -311,10 +890,11 @@ export default function DashboardPage() {
         initialData={editInitialData}
         companyProduct={companyProductData}
         userRole={userRole}
-        businessTypeId="BT001"
+        businessTypeId={storeInfo.businessTypeId as BusinessTypeId}
+        catalogLoading={catalogLoading}
       />
 
-      {/* ViewProductPopup — passes the tagged product so manager sees variant details */}
+      {/* ViewProductPopup */}
       <ViewProductPopup
         open={viewOpen}
         onClose={() => setViewOpen(false)}
@@ -322,23 +902,23 @@ export default function DashboardPage() {
         userRole={userRole}
       />
 
-      {/* AddStockPopup — uses base product (no variant tag needed) */}
+      {/* AddStockPopup */}
       {baseSelectedProduct && (
         <AddStockPopup
           product={baseSelectedProduct}
           isOpen={addStockOpen}
           onClose={() => setAddStockOpen(false)}
           userRole={userRole}
-          // TODO: replace with session-derived branch name
-          branchName="Colombo Branch"
-          onSave={(data) => {
-            console.log("FULL STOCK DATA:", data);
+          branchName={activeBranchLabel || "Selected Branch"}
+          onSave={async () => {
+            // Re-fetch branch-scoped products so table reflects new stock immediately
+            await reloadProducts();
             setAddStockOpen(false);
           }}
         />
       )}
 
-      {/* DeleteProductPopup — uses base product */}
+      {/* DeleteProductPopup */}
       {baseSelectedProduct && (
         <DeleteProductPopup
           isOpen={deleteOpen}
@@ -350,7 +930,6 @@ export default function DashboardPage() {
                 await productService.delete(baseSelectedProduct.id);
                 setProducts((prev) => prev.filter((p) => p.id !== baseSelectedProduct.id));
               } else {
-                // Future enhancement: deleting specific variants via backend
                 setProducts((prev) =>
                   prev.map((p) => {
                     if (p.id !== baseSelectedProduct.id) return p;
@@ -361,7 +940,7 @@ export default function DashboardPage() {
                   })
                 );
               }
-            } catch (error) {
+            } catch (error: unknown) {
               console.error("Failed to delete product:", error);
               alert("Failed to delete product.");
             } finally {

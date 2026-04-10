@@ -6,29 +6,40 @@ import { formatCurrency } from "@/lib/context/formatCurrency";
 
 export type Expenses = {
   id: string;
+  expenseId: string;
   date: string;
   category: string;
+  categoryId: string;
   description: string;
   amount: number;
   payment: string;
+  paymentType: "CASH" | "CARD";
   addedby: string;
   branch: string;
+  branchId: string;
 };
 
 type Props = {
   Expenses: Expenses[];
   showBranch?: boolean;
+  selectedExpenseId?: string ;
+  onSelectExpense?: (expense: Expenses | null) => void;
 };
 
-export default function ExpensesTable({ Expenses, showBranch = false }: Props) {
+export default function ExpensesTable({
+  Expenses,
+  showBranch = false,
+  selectedExpenseId,
+  onSelectExpense,
+}: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Expenses>[] = [
-     {
-    key: "index",
-    label: "#",
-    render: (_, index) => index + 1,
-  },
+    {
+      key: "index",
+      label: "",
+      render: (_, index) => index + 1,
+    },
     { key: "date", label: "Date" },
     { key: "category", label: "Category" },
     { key: "description", label: "Description" },
@@ -50,6 +61,8 @@ export default function ExpensesTable({ Expenses, showBranch = false }: Props) {
       data={Expenses}
       columns={columns}
       emptyMessage="No Expenses found"
+      selectedRowId={selectedExpenseId  }
+      onSelectRow={onSelectExpense}
     />
   );
 }

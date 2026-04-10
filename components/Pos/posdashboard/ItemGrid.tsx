@@ -30,9 +30,49 @@ export default function ItemGrid({ search, onAdd }: Props) {
     fetchProducts();
   }, []);
 
-  const filteredItems = items.filter((i) =>
-    i.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Global Barcode Scanner Hook
+  useEffect(() => {
+    let barcodeString = "";
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        if (barcodeString.length > 0) {
+          const matchedItem = items.find((item) => item.barcode === barcodeString);
+          if (matchedItem) {
+            onAdd(matchedItem);
+          }
+          barcodeString = "";
+        }
+        return;
+      }
+
+      if (e.key.length === 1) {
+        barcodeString += e.key;
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        // Barcode scanners usually type very fast (< 20ms per character).
+        // 50ms is a safe threshold for most scanners.
+        timeoutId = setTimeout(() => {
+          barcodeString = "";
+        }, 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [items, onAdd]);
+
+  const filteredItems = items.filter((i) => {
+    const term = search.toLowerCase();
+    return (
+      i.name.toLowerCase().includes(term) ||
+      (i.barcode && i.barcode.toLowerCase().includes(term))
+    );
+  });
 
   /* ── LOADING ── */
   if (loading) {

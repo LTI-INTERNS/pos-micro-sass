@@ -1,5 +1,5 @@
 import StatCard from "@/components/Admin/common/StatCard";
-import type { Supplier } from "@/components/Admin/suppliermanagement/SupplierTable";
+import type { Supplier } from "@/types/supplier.types";
 
 type Props = {
   suppliers?: Supplier[];
@@ -14,8 +14,25 @@ export default function StatCardGrid({
 
   const allCount = suppliers.length;
 
-  const thisMonthCount = suppliers.filter((s) => s.id > 2).length;
-  const lastMonthCount = suppliers.filter((s) => s.id <= 2).length;
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
+  const previousMonth = previousMonthDate.getMonth();
+  const previousYear = previousMonthDate.getFullYear();
+
+  const thisMonthCount = suppliers.filter((s) => {
+    if (!s.createdAt) return false;
+    const date = new Date(s.createdAt);
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+  }).length;
+
+  const lastMonthCount = suppliers.filter((s) => {
+    if (!s.createdAt) return false;
+    const date = new Date(s.createdAt);
+    return date.getMonth() === previousMonth && date.getFullYear() === previousYear;
+  }).length;
 
   const calcTrend = (current: number, previous: number) => {
     if (previous === 0) return { label: "+0.0%", trend: "up" as const };

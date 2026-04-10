@@ -23,6 +23,7 @@ export default function AddProductPopup({
   open,
   onClose,
   onSave,
+  onAddToBranch,
   initialData,
   userRole,
   businessTypeId,
@@ -32,6 +33,7 @@ export default function AddProductPopup({
   isAddVariantMode = false,
   existingProducts = [],
   companyProduct = null,
+  catalogLoading = false,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
   const [step, setStep] = React.useState(0);
@@ -123,6 +125,69 @@ export default function AddProductPopup({
   const managerAddedNewItems = isManagerEditMode && (hasNewOptions || hasNewVariants);
 
   const validateStep = (): string | null => {
+    const activeOptionNames = state.options
+      .map((option) => option.name.trim())
+      .filter((name) => name.length > 0);
+
+    const validateUniqueSkus = (variants: ProductState["variants"]) => {
+      const seen = new Set<string>();
+
+      for (const variant of variants) {
+        const sku = variant.sku.trim();
+        if (!sku) continue;
+
+        const normalized = sku.toUpperCase();
+        if (seen.has(normalized)) {
+          return `SKU ${sku} is already used in another variant.`;
+        }
+
+        seen.add(normalized);
+      }
+
+      return null;
+    };
+
+    const validateVariantOptions = (variant: ProductState["variants"][number]) => {
+      if (activeOptionNames.length === 0) return null;
+
+      for (const optionName of activeOptionNames) {
+        const selectedValue = variant.optionValues.find((entry) => entry.optionName === optionName)?.value?.trim();
+        if (!selectedValue) {
+          return `Please select a value for ${optionName} on every variant.`;
+        }
+      }
+
+      return null;
+    };
+
+    const validateBarcodeCollisions = (variants: ProductState["variants"]) => {
+      const barcodeOwnerMap = new Map<string, string>();
+
+      for (const variant of variants) {
+        const barcode = variant.barcode.trim();
+        if (!barcode) continue;
+
+        const optionSignature = variant.optionValues
+          .map((entry) => `${entry.optionName}:${entry.value}`)
+          .sort()
+          .join("|");
+
+        const variantIdentity =
+          optionSignature ||
+          variant.sku.trim().toUpperCase() ||
+          `variant-${variant.id}`;
+
+        const currentOwner = barcodeOwnerMap.get(barcode);
+        if (currentOwner && currentOwner !== variantIdentity) {
+          return `Barcode ${barcode} is already used by a different variant in this product.`;
+        }
+
+        barcodeOwnerMap.set(barcode, variantIdentity);
+      }
+
+      return null;
+    };
+
     if (step === 0) {
       if (isManagerVariantMode) {
         if (selectedProductIds.size === 0) return "Please select at least one product to add a variant to.";
@@ -138,17 +203,31 @@ export default function AddProductPopup({
         return "Please select at least one variant.";
       if (!isManagerVariantMode && !isManagerEditMode) {
         if (state.variants.length === 0) return "Please add at least one product variant.";
+        const duplicateSkuError = validateUniqueSkus(state.variants);
+        if (duplicateSkuError) return duplicateSkuError;
+        const barcodeCollisionError = validateBarcodeCollisions(state.variants);
+        if (barcodeCollisionError) return barcodeCollisionError;
         for (const v of state.variants) {
           if (!v.sku.trim()) return "All variants must have a SKU.";
           if (!v.basePrice) return "All variants must have a base price.";
           if (!v.sellingPrice) return "All variants must have a selling price.";
+          const optionError = validateVariantOptions(v);
+          if (optionError) return optionError;
         }
       }
       if (isManagerEditMode) {
-        for (const v of state.variants.filter((v) => isNewId(v.id))) {
+        const editableVariants = state.variants.filter((v) => isNewId(v.id));
+        const duplicateSkuError = validateUniqueSkus(state.variants);
+        if (duplicateSkuError) return duplicateSkuError;
+        const barcodeCollisionError = validateBarcodeCollisions(state.variants);
+        if (barcodeCollisionError) return barcodeCollisionError;
+
+        for (const v of editableVariants) {
           if (!v.sku.trim()) return "New variants must have a SKU.";
           if (!v.basePrice) return "New variants must have a base price.";
           if (!v.sellingPrice) return "New variants must have a selling price.";
+          const optionError = validateVariantOptions(v);
+          if (optionError) return optionError;
         }
       }
     }
@@ -160,15 +239,20 @@ export default function AddProductPopup({
   const handleBack = () => { if (step > 0) setStep((s) => s - 1); };
 
   const handleSave = () => {
+    if (isManagerVariantMode) {
+      // Catalog mode: pass the full selected ExistingProduct objects back
+      // so the parent can call the stock API with real variantIds.
+      if (onAddToBranch) {
+        const selected = existingProducts.filter((p) => selectedProductIds.has(p.id));
+        onAddToBranch(selected);
+      }
+      onClose();
+      return;
+    }
+
     let finalState: ProductState;
 
-    if (isManagerVariantMode) {
-      finalState = {
-        ...state,
-        options: state.options.filter((o) => selectedOptionIds.has(o.id)),
-        variants: state.variants.filter((v) => selectedVariantIds.has(v.id)),
-      };
-    } else if (isManagerEditMode) {
+    if (isManagerEditMode) {
       finalState = {
         ...state,
         options: state.options.filter((o) => isNewId(o.id) || selectedOptionIds.has(o.id)),
@@ -178,10 +262,10 @@ export default function AddProductPopup({
       finalState = state;
     }
 
-    if (userRole === "manager" && (isManagerVariantMode || managerAddedNewItems)) {
+    if (userRole === "manager" && managerAddedNewItems) {
       addNotification({
         type: "approval_pending",
-        message: `${isManagerVariantMode ? "New variant" : "New items"} request from ${branchName} — "${finalState.name.trim()}" awaiting approval`,
+        message: `New items request from ${branchName} — "${finalState.name.trim()}" awaiting approval`,
         productApproval: {
           id: Date.now(),
           productName: finalState.name.trim(),
@@ -228,6 +312,7 @@ export default function AddProductPopup({
               onToggle={handleToggleProduct}
               onSelectAll={handleSelectAll}
               onLoadProduct={handleLoadProduct}
+              isLoading={catalogLoading}
             />
           ) : step === 0 ? (
             <Step1 state={state} onChange={patch} categories={categories} isManagerEditMode={isManagerEditMode} />

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { getCategoriesByBusinessType, BusinessTypeId } from "./Productcategorydata";
 import {
   ProductState,
   ProductVariant,
@@ -13,7 +14,6 @@ import {
   NEW_ID_PREFIX,
   isNewId,
 } from "./types";
-import { BusinessTypeId } from "@/components/Admin/productmanagement/Productcategorydata";
 import {
   Label,
   Input,
@@ -32,6 +32,8 @@ import {
   NewBadge,
   SelectAllCheckbox,
 } from "./ui-components";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
@@ -41,12 +43,14 @@ export function Step1VariantSelect({
   onToggle,
   onSelectAll,
   onLoadProduct,
+  isLoading = false,
 }: {
   products: ExistingProduct[];
   selectedIds: Set<number | string>;
   onToggle: (p: ExistingProduct) => void;
   onSelectAll: (filtered: ExistingProduct[], checked: boolean) => void;
   onLoadProduct: (p: ExistingProduct) => void;
+  isLoading?: boolean;
 }) {
   const [search, setSearch] = React.useState("");
   const [categoryFilter, setCategoryFilter] = React.useState("");
@@ -62,8 +66,10 @@ export function Step1VariantSelect({
     return matchesSearch && matchesCategory;
   });
 
-  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selectedIds.has(p.id));
-  const someFilteredSelected = filtered.some((p) => selectedIds.has(p.id)) && !allFilteredSelected;
+  // Only selectable products can be toggled via select-all
+  const selectableFiltered = filtered.filter((p) => !p.alreadyAdded);
+  const allFilteredSelected = selectableFiltered.length > 0 && selectableFiltered.every((p) => selectedIds.has(p.id));
+  const someFilteredSelected = selectableFiltered.some((p) => selectedIds.has(p.id)) && !allFilteredSelected;
 
   return (
     <>
@@ -96,7 +102,12 @@ export function Step1VariantSelect({
       </div>
 
       <div className="overflow-y-auto rounded-xl border border-gray-200" style={{ maxHeight: "38vh" }}>
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="py-10 text-center text-sm text-gray-400 flex flex-col items-center justify-center gap-2">
+            <div className="animate-spin rounded-full h-5 w-5 border-2 border-orange-500 border-t-transparent"></div>
+            <span>Loading products...</span>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="py-10 text-center text-sm text-gray-400">No products found.</div>
         ) : (
           <table className="w-full text-sm border-collapse">
@@ -107,7 +118,7 @@ export function Step1VariantSelect({
                     <SelectAllCheckbox
                       checked={allFilteredSelected}
                       indeterminate={someFilteredSelected}
-                      onChange={(e) => onSelectAll(filtered, e.target.checked)}
+                      onChange={(e) => onSelectAll(selectableFiltered, e.target.checked)}
                     />
                     <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-gray-200 text-gray-500 text-[9px] font-bold cursor-default select-none">
                       i
@@ -126,19 +137,43 @@ export function Step1VariantSelect({
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const isSel = selectedIds.has(p.id);
+                const isSel    = selectedIds.has(p.id);
+                const isAdded  = !!p.alreadyAdded;
                 return (
                   <tr
                     key={p.id}
-                    onClick={() => { onToggle(p); onLoadProduct(p); }}
-                    className={`border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${isSel ? "bg-orange-50" : "hover:bg-gray-50"}`}
+                    onClick={isAdded ? undefined : () => { onToggle(p); onLoadProduct(p); }}
+                    className={[
+                      "border-b border-gray-100 last:border-b-0 transition-colors",
+                      isAdded
+                        ? "bg-gray-50 opacity-50 cursor-not-allowed select-none"
+                        : isSel
+                          ? "bg-orange-50 cursor-pointer"
+                          : "hover:bg-gray-50 cursor-pointer",
+                    ].join(" ")}
                   >
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0 ${isSel ? "border-orange-500 bg-orange-500" : "border-gray-300 bg-white"}`}>
-                        {isSel && <CheckIcon />}
-                      </span>
+                      {isAdded ? (
+                        /* Locked checkbox visual */
+                        <span className="inline-flex items-center justify-center w-4 h-4 rounded border-2 border-gray-200 bg-gray-100 flex-shrink-0">
+                          <svg className="w-2.5 h-2.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center justify-center w-4 h-4 rounded border-2 transition-colors flex-shrink-0 ${isSel ? "border-orange-500 bg-orange-500" : "border-gray-300 bg-white"}`}>
+                          {isSel && <CheckIcon />}
+                        </span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800">{p.name}</td>
+                    <td className="px-4 py-3 font-medium text-gray-800">
+                      <span>{p.name}</span>
+                      {isAdded && (
+                        <span className="ml-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-500 tracking-wide">
+                          Already added
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{p.category}</td>
                     <td className="px-4 py-3 text-gray-500">{p.brand || "—"}</td>
                     <td className="px-4 py-3 text-gray-500">
@@ -215,7 +250,7 @@ export function Step1({
           </Select>
         </FieldWrap>
         <FieldWrap>
-          <Label required>Brand</Label>
+          <Label>Brand</Label>
           <Input placeholder="Enter Brand Name" value={state.brand} onChange={(e) => onChange({ brand: e.target.value })} />
         </FieldWrap>
       </Grid2>
@@ -382,14 +417,18 @@ export function Step2({
                   </Select>
                 </FieldWrap>
                 <FieldWrap>
-                  <Label>Values (press Enter to add)</Label>
+                  <Label>Values (press Enter or Tab to add)</Label>
                   <Input
                     placeholder="e.g. 500mg"
                     onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
+                      if (e.key !== "Enter" && e.key !== "Tab") return;
                       e.preventDefault();
                       const val = (e.target as HTMLInputElement).value.trim();
                       if (val) { addValue(opt.id, val); (e.target as HTMLInputElement).value = ""; }
+                    }}
+                    onBlur={(e) => {
+                      const val = e.target.value.trim();
+                      if (val) { addValue(opt.id, val); e.target.value = ""; }
                     }}
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
@@ -435,14 +474,18 @@ export function Step2({
             </Select>
           </FieldWrap>
           <FieldWrap>
-            <Label>Values (press Enter to add)</Label>
+            <Label>Values (press Enter or Tab to add)</Label>
             <Input
               placeholder="e.g. 500mg"
               onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
+                if (e.key !== "Enter" && e.key !== "Tab") return;
                 e.preventDefault();
                 const val = (e.target as HTMLInputElement).value.trim();
                 if (val) { addValue(opt.id, val); (e.target as HTMLInputElement).value = ""; }
+              }}
+              onBlur={(e) => {
+                const val = e.target.value.trim();
+                if (val) { addValue(opt.id, val); e.target.value = ""; }
               }}
             />
             <div className="flex flex-wrap gap-1.5 mt-2">
@@ -477,15 +520,126 @@ export function Step3({
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
-  businessTypeId?: BusinessTypeId;
+  businessTypeId?: unknown;
   isManagerVariantMode: boolean;
   isManagerEditMode: boolean;
   selectedVariantIds: Set<number>;
   onToggleVariant: (id: number) => void;
   selectedProductCount: number;
 }) {
-  const isCafe = businessTypeId === "bt-001";
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
+  const { currency } = useCurrency();
+  const [parsedBarcodeDetails, setParsedBarcodeDetails] = React.useState<
+    Record<number, { scheme: string; itemCode: string; embeddedPrice: string }>
+  >({});
+  const categories = React.useMemo(
+    () => getCategoriesByBusinessType(businessTypeId as BusinessTypeId | undefined),
+    [businessTypeId]
+  );
+  const categoryName = React.useMemo(() => {
+    return categories.find((category) => category.categoryId === state.categoryId)?.categoryName ?? state.categoryId;
+  }, [categories, state.categoryId]);
+  const activeOptions = React.useMemo(
+    () => state.options.filter((option) => option.name.trim() && option.values.length > 0),
+    [state.options]
+  );
+
+  const normalizeSkuPart = (value: string) =>
+    value
+      .trim()
+      .replace(/&/g, " and ")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .toUpperCase();
+
+  const buildSkuBase = (variant: ProductVariant) => {
+    const optionPart = variant.optionValues
+      .filter((entry) => entry.optionName.trim() && entry.value.trim())
+      .map((entry) => `${entry.optionName}-${entry.value}`)
+      .join("-");
+
+    const parts = [state.name, categoryName, state.brand, optionPart]
+      .map(normalizeSkuPart)
+      .filter(Boolean);
+
+    return parts.join("-");
+  };
+
+  const generateMixedDigits = (length = 8) => {
+    const timestampPart = String(Date.now()).slice(-4);
+    const randomDigits = Array.from({ length }, () => Math.floor(Math.random() * 10)).join("");
+    return `${timestampPart}${randomDigits}`;
+  };
+
+  const buildUniqueSku = (variant: ProductVariant) => {
+    const existingSkus = new Set(
+      state.variants
+        .filter((item) => item.id !== variant.id)
+        .map((item) => item.sku.trim().toUpperCase())
+        .filter(Boolean)
+    );
+
+    const baseSku = buildSkuBase(variant) || "SKU";
+    let candidate = `${baseSku}-${generateMixedDigits()}`;
+    let attempts = 0;
+
+    while (existingSkus.has(candidate.toUpperCase())) {
+      candidate = `${baseSku}-${generateMixedDigits()}`;
+      attempts += 1;
+      if (attempts > 20) {
+        candidate = `${baseSku}-${Date.now()}`;
+        break;
+      }
+    }
+
+    return candidate;
+  };
+
+  const parseEmbeddedBarcode = (rawBarcode: string) => {
+    const digits = rawBarcode.replace(/\D/g, "");
+
+    // Common weighted/price-embedded EAN-13 style: 2x + item(5) + price(5) + check(1)
+    if (/^\d{13}$/.test(digits)) {
+      const prefix = Number(digits.slice(0, 2));
+      if (prefix >= 20 && prefix <= 29) {
+        const itemCode = digits.slice(2, 7);
+        const embeddedCents = Number(digits.slice(7, 12));
+        return {
+          scheme: "EAN13_PRICE",
+          itemCode,
+          embeddedPrice: (embeddedCents / 100).toFixed(2),
+        };
+      }
+    }
+
+    return null;
+  };
+
+  const handleAutoGenerateSku = (variant: ProductVariant) => {
+    update(variant.id, "sku", buildUniqueSku(variant));
+  };
+
+  const getVariantOptionValue = (variant: ProductVariant, optionName: string) =>
+    variant.optionValues.find((entry) => entry.optionName === optionName)?.value ?? "";
+
+  const updateVariantOptionValue = (variantId: number, optionName: string, value: string) => {
+    onChange({
+      variants: state.variants.map((variant) => {
+        if (variant.id !== variantId) return variant;
+
+        const nextOptionValues = variant.optionValues.filter((entry) => entry.optionName !== optionName);
+        if (value) {
+          nextOptionValues.push({ optionName, value });
+        }
+
+        return {
+          ...variant,
+          optionValues: nextOptionValues,
+        };
+      }),
+    });
+  };
 
   const addManual = () =>
     onChange({ variants: [...state.variants, { id: Date.now(), sku: "", barcode: "", imageUrl: "", basePrice: "", sellingPrice: "", sellUnit: "Each", optionValues: [] }] });
@@ -494,8 +648,39 @@ export function Step3({
     onChange({ variants: [...state.variants, { id: NEW_ID_PREFIX + Date.now(), sku: "", barcode: "", imageUrl: "", basePrice: "", sellingPrice: "", sellUnit: "Each", optionValues: [] }] });
 
   const remove = (id: number) => onChange({ variants: state.variants.filter((v) => v.id !== id) });
+  const updateVariant = (id: number, patch: Partial<ProductVariant>) =>
+    onChange({ variants: state.variants.map((v) => (v.id === id ? { ...v, ...patch } : v)) });
   const update = (id: number, key: keyof ProductVariant, val: string) =>
     onChange({ variants: state.variants.map((v) => (v.id === id ? { ...v, [key]: val } : v)) });
+
+  const handleBarcodeChange = (variant: ProductVariant, rawValue: string) => {
+    const barcode = rawValue.trim();
+    const parsed = parseEmbeddedBarcode(barcode);
+
+    const patch: Partial<ProductVariant> = { barcode };
+
+    if (parsed) {
+      patch.basePrice = parsed.embeddedPrice;
+      patch.sellingPrice = parsed.embeddedPrice;
+      if (!variant.sku.trim()) {
+        const productSeed = normalizeSkuPart(state.name || "SKU");
+        patch.sku = `${productSeed}-${parsed.itemCode}`;
+      }
+      setParsedBarcodeDetails((prev) => ({
+        ...prev,
+        [variant.id]: parsed,
+      }));
+    } else {
+      setParsedBarcodeDetails((prev) => {
+        if (!prev[variant.id]) return prev;
+        const next = { ...prev };
+        delete next[variant.id];
+        return next;
+      });
+    }
+
+    updateVariant(variant.id, patch);
+  };
 
   const [variantImages, setVariantImages] = React.useState<Record<number, string>>({});
   const handleVariantImage = (id: number, file: File | null) => {
@@ -510,12 +695,38 @@ export function Step3({
     <>
       <Grid2>
         <FieldWrap>
-          <Label required>SKU</Label>
-          <Input placeholder="SKU-001" value={v.sku} onChange={(e) => update(v.id, "sku", e.target.value)} />
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <Label required>SKU</Label>
+            <button
+              type="button"
+              onClick={() => handleAutoGenerateSku(v)}
+              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-100"
+              title="Auto-generate SKU"
+            >
+              ✦ Auto-generate
+            </button>
+          </div>
+          <Input
+            placeholder="SKU-001"
+            value={v.sku}
+            onChange={(e) => update(v.id, "sku", e.target.value)}
+          />
+          <p className="mt-1 text-[10px] text-gray-400">
+            Auto SKU uses product name, category, brand and option values.
+          </p>
         </FieldWrap>
         <FieldWrap>
           <Label>Barcode</Label>
-          <Input placeholder="1234567890" value={v.barcode} onChange={(e) => update(v.id, "barcode", e.target.value)} />
+          <Input
+            placeholder="1234567890"
+            value={v.barcode}
+            onChange={(e) => handleBarcodeChange(v, e.target.value)}
+          />
+          {parsedBarcodeDetails[v.id] && (
+            <p className="mt-1 text-[10px] text-orange-600">
+              Embedded barcode detected ({parsedBarcodeDetails[v.id].scheme}) - item code {parsedBarcodeDetails[v.id].itemCode}, price {parsedBarcodeDetails[v.id].embeddedPrice}
+            </p>
+          )}
         </FieldWrap>
       </Grid2>
       <Grid3>
@@ -534,30 +745,71 @@ export function Step3({
           </Select>
         </FieldWrap>
       </Grid3>
-      {isCafe && (
+      {activeOptions.length > 0 && (
         <FieldWrap>
-          <Label required>Variant image</Label>
-          <input
-            type="file"
-            accept="image/jpeg,image/png"
-            onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer"
-          />
-          {variantImages[v.id] && (
-            <div className="relative mt-2 h-20 w-20">
-              <Image src={variantImages[v.id]} alt="Preview" fill className="rounded-lg object-cover border" sizes="80px" />
-              <button
-                type="button"
-                onClick={() => {
-                  setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
-                  update(v.id, "imageUrl", "");
-                }}
-                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black"
-              >✕</button>
-            </div>
-          )}
+          <Label required>Option mapping</Label>
+          <div className="space-y-3">
+            {activeOptions.map((option) => {
+              const currentValue = getVariantOptionValue(v, option.name);
+
+              return (
+                <div key={`${v.id}-${option.name}`} className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                      {option.name}
+                    </span>
+                    <span className="text-[10px] font-medium text-orange-500">Required</span>
+                  </div>
+                  <Select
+                    value={currentValue}
+                    onChange={(e) => updateVariantOptionValue(v.id, option.name, e.target.value)}
+                  >
+                    <option value="">Select value…</option>
+                    {option.values.map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              );
+            })}
+          </div>
         </FieldWrap>
       )}
+      <FieldWrap>
+        <Label>Variant image</Label>
+        <input
+          type="file"
+          accept="image/jpeg,image/png"
+          onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
+          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer"
+        />
+        {/* Show newly-picked image OR existing DB image */}
+        {(variantImages[v.id] || v.imageUrl) && (
+          <div className="relative mt-2 h-20 w-20 group">
+            <Image
+              src={variantImages[v.id] || v.imageUrl!}
+              alt="Preview"
+              fill
+              className="rounded-lg object-cover border border-gray-200"
+              sizes="80px"
+            />
+            {/* Label: "Current" when showing DB image, "New" when showing local pick */}
+            <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-semibold text-white bg-black/40 rounded-b-lg py-0.5 pointer-events-none">
+              {variantImages[v.id] ? "New" : "Current"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
+                update(v.id, "imageUrl", "");
+              }}
+              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black opacity-0 group-hover:opacity-100 transition"
+            >✕</button>
+          </div>
+        )}
+      </FieldWrap>
     </>
   );
 
@@ -594,7 +846,7 @@ export function Step3({
                 <span className="text-[12px] font-medium text-gray-600">{label}</span>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                {[["SKU", v.sku], ["Base price", v.basePrice ? `$${v.basePrice}` : "—"], ["Selling price", v.sellingPrice ? `$${v.sellingPrice}` : "—"]].map(([lbl, val]) => (
+                {[["SKU", v.sku], ["Base price", v.basePrice ? formatCurrency(Number(v.basePrice), currency) : "—"], ["Selling price", v.sellingPrice ? formatCurrency(Number(v.sellingPrice), currency) : "—"]].map(([lbl, val]) => (
                   <div key={lbl} className="bg-white border border-gray-200 rounded-xl px-3 py-2">
                     <p className="text-[10px] text-gray-400 mb-0.5">{lbl}</p>
                     <p className="text-[13px] font-medium text-gray-700">{val || "—"}</p>
@@ -643,7 +895,7 @@ export function Step3({
                     <span className="text-[12px] font-medium text-gray-600">{label}</span>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    {[["SKU", v.sku], ["Base price", v.basePrice ? `$${v.basePrice}` : "—"], ["Selling price", v.sellingPrice ? `$${v.sellingPrice}` : "—"]].map(([lbl, val]) => (
+                    {[["SKU", v.sku], ["Base price", v.basePrice ? formatCurrency(Number(v.basePrice), currency) : "—"], ["Selling price", v.sellingPrice ? formatCurrency(Number(v.sellingPrice), currency) : "—"]].map(([lbl, val]) => (
                       <div key={lbl} className="bg-white border border-gray-200 rounded-xl px-3 py-2">
                         <p className="text-[10px] text-gray-400 mb-0.5">{lbl}</p>
                         <p className="text-[13px] font-medium text-gray-700">{val || "—"}</p>
