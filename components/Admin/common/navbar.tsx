@@ -48,7 +48,13 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
           </div>
         </div>
         <div className="w-px h-8 bg-gray-200 hidden sm:block"></div>
-        <span className="font-bold text-gray-800">Dashboard</span>
+        <span className="font-bold text-gray-800">
+          {role === 'ADMIN'
+            ? 'Admin Dashboard'
+            : role === 'OWNER'
+            ? 'Owner Dashboard'
+            : 'Dashboard'}
+        </span>
       </div>
 
       <div className="flex items-center gap-4">
