@@ -22,6 +22,7 @@ type AddCustomerModalProps = {
   submitLabel?: string;
   onClose: () => void;
   onSubmit: (values: CustomerFormValues) => void;
+  headerSlot?: React.ReactNode;
 };
 
 export default function AddCustomerModal({
@@ -30,6 +31,7 @@ export default function AddCustomerModal({
   submitLabel = "Add Customer",
   onClose,
   onSubmit,
+  headerSlot,
 }: AddCustomerModalProps) {
   const [values, setValues] = React.useState<CustomerFormValues>({
     name: "",
@@ -120,6 +122,7 @@ export default function AddCustomerModal({
       onClose={handleCancel}
       widthClassName="w-[600px] max-w-[92vw]"
     >
+      {headerSlot}
       <form className="space-y-1 mt-[-10px]">
         <FormField
           label="Customer Name *"

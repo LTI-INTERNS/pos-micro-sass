@@ -9,6 +9,14 @@ import { ApiResponse } from '@/types/api.types';
 
 export type { Cashier, CashierResponse, CreateCashierInput, UpdateCashierInput };
 
+
+// ── Stats type ────────────────────────────────────────────────────────────────
+
+export interface CashierStats {
+    total:        { value: number; pctChange: number };
+    newThisMonth: { value: number; pctChange: number };
+}
+
 // ── Backend getAll response shape ─────────────────────────────────────────────
 interface CashierListItem extends CashierResponse {
     phone: string;
@@ -98,4 +106,14 @@ export const cashierService = {
         apiClient
             .delete(`/cashiers/${cashierId}`)
             .then(() => undefined),
+    /**
+     * GET /api/v1/cashiers/stats
+     */
+    getStats: (branchId?: string): Promise<CashierStats> =>
+        apiClient
+            .get<{ success: boolean; data: CashierStats }>('/cashiers/stats', {
+                params: branchId ? { branchId } : undefined,
+            })
+            .then(res => res.data.data),
+
 };
