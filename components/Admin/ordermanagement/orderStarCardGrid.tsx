@@ -1,77 +1,100 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import StatCard from "@/components/Admin/common/StatCard";
+import { orderService } from "@/lib/services";
+import type { OrderStats } from "@/types/order.types";
 
-type Order = {
-  id: number;
-  dateTime?: string;
-  branch?: string;
-  cashier?: string;
-  paymenttype?: string;
-  totalamount?: number;
-  status?: string;
-  action?: string;
-};
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-type Props = {
-  /**
-   * Pass role-filtered orders from the page.
-   * - superadmin: all orders
-   * - admin/manager: only their branch orders
-   */
-  orders: Order[];
-};
-
-function parseOrderDate(dateTime?: string): Date | null {
-  if (!dateTime) return null;
-  const d = new Date(dateTime);
-  return Number.isNaN(d.getTime()) ? null : d;
+function formatPct(pct: number): string {
+  return (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
 }
 
-export default function StatCardGrid({ orders }: Props) {
-  const allOrdersCount = orders.length;
+function pctTrend(pct: number): "up" | "down" {
+  return pct >= 0 ? "up" : "down";
+}
 
-  // Prefer status-based "New" if your data has it.
-  const statusNewCount = orders.filter(
-    (o) => (o.status ?? "").toLowerCase() === "new"
-  ).length;
+// ── Component ─────────────────────────────────────────────────────────────────
 
-  // Fallback: treat orders from last 7 days as "New Orders"
-  const now = new Date();
-  const sevenDaysAgo = new Date(now);
-  sevenDaysAgo.setDate(now.getDate() - 7);
+export default function OrderStatCardGrid() {
+  const { data: session, status } = useSession();
 
-  const recentOrdersCount = orders.filter((o) => {
-    const d = parseOrderDate(o.dateTime);
-    return d ? d >= sevenDaysAgo && d <= now : false;
-  }).length;
+  const role     = session?.user?.role     ?? "";
+  const branchId = session?.user?.branchId ?? "";
 
-  const newOrdersCount = statusNewCount > 0 ? statusNewCount : recentOrdersCount;
+  /**
+   * OWNER / ADMIN  → no branchId → backend returns company-wide stats.
+   * MANAGER        → branchId   → backend scopes to their branch.
+   */
+  const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
-  const statCards = [
+  const [stats, setStats]     = useState<OrderStats | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    setLoading(true);
+    orderService
+      .getStats(canSeeAllBranches ? undefined : branchId)
+      .then(setStats)
+      .catch(() => setStats(null))
+      .finally(() => setLoading(false));
+  }, [status, branchId, canSeeAllBranches]);
+
+  // Derive display values — show "—" while loading, "0" on error
+  const val = (n?: number) => (loading ? "—" : String(n ?? 0));
+  const pct = (n?: number) => (loading || n === undefined ? "" : formatPct(n));
+  const trend = (n?: number): "up" | "down" =>
+    loading || n === undefined ? "up" : pctTrend(n);
+
+  const cards = [
     {
-      title: "All Orders",
-      value: String(allOrdersCount),
-      percentage: "+2.5%",
-      trend: "up" as const,
+      title:   "Total Orders",
+      value:   val(stats?.totalOrders.value),
+      pct:     pct(stats?.totalOrders.pctChange),
+      trend:   trend(stats?.totalOrders.pctChange),
+      caption: "vs last month",
+      amount:  undefined as number | undefined,
+    },
+    {
+      title:   "Total Revenue",
+      value:   undefined as string | undefined,
+      amount:  loading ? undefined : (stats?.totalRevenue.value ?? 0),
+      pct:     pct(stats?.totalRevenue.pctChange),
+      trend:   trend(stats?.totalRevenue.pctChange),
       caption: "vs last month",
     },
     {
-      title: "New Orders",
-      value: String(newOrdersCount),
-      percentage: "+1.5%",
-      trend: "down" as const,
+      title:   "Completed Orders",
+      value:   val(stats?.completedOrders.value),
+      pct:     pct(stats?.completedOrders.pctChange),
+      trend:   trend(stats?.completedOrders.pctChange),
       caption: "vs last month",
+      amount:  undefined as number | undefined,
+    },
+    {
+      title:   "Canceled Orders",
+      value:   val(stats?.canceledOrders.value),
+      pct:     pct(stats?.canceledOrders.pctChange),
+      // Fewer cancellations is good → flip the colour for display
+      trend:   trend(-(stats?.canceledOrders.pctChange ?? 0)),
+      caption: "vs last month",
+      amount:  undefined as number | undefined,
     },
   ];
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-      {statCards.map((card) => (
+      {cards.map((card) => (
         <StatCard
           key={card.title}
           title={card.title}
           value={card.value}
-          // Keep these props, but hide them if empty (safe for future)
-          percentage={card.percentage}
+          amount={card.amount}
+          percentage={card.pct}
           trend={card.trend}
           caption={card.caption}
           showDetailButton={false}
