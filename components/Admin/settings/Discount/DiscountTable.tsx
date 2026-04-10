@@ -32,6 +32,12 @@ export default function DiscountTable({
     : discounts;
 
   const columns: Column<Discount>[] = [
+     {
+    key: "index",
+    label: "",
+    render: (_, index) => index + 1,
+  },
+    // { key: "id", label: "ID" },
     { key: "title", label: "Title" },
     {
       key: "percentage",
