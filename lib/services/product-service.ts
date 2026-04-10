@@ -37,9 +37,19 @@ function buildBranchesStock(variants: any[]): Record<string, any> {
 
 // The backend returns variants with a `branchVariants` array.
 // We pick the first entry (the current branch) and lift stockQty,
-// lowStock, and availability up onto the variant so the table can read them.
+// lowStock, availability, and supplier up onto the variant so the table can read them.
 function extractBranchStock(variant: any) {
     const bv = variant.branchVariants?.[0] ?? null;
+
+    // Resolve a human-readable supplier name from the related supplier object
+    let supplierName: string | undefined;
+    if (bv?.supplier) {
+        supplierName =
+            bv.supplier.type === 'COMPANY'
+                ? bv.supplier.companyName || bv.supplier.name
+                : bv.supplier.name;
+    }
+
     return {
         branchVariantCreatedAt:  bv?.createdAt ?? null,
         stockQty:             bv !== null ? Number(bv.stockQty ?? 0) : 0,
@@ -48,6 +58,9 @@ function extractBranchStock(variant: any) {
         // Branch-level price overrides (null = use product base prices)
         priceOverride:        bv?.priceOverride        != null ? Number(bv.priceOverride)        : null,
         sellingPriceOverride: bv?.sellingPriceOverride != null ? Number(bv.sellingPriceOverride) : null,
+        // Supplier info from the branch variant
+        supplierId:   bv?.supplierId   ?? null,
+        supplierName: supplierName     ?? null,
     };
 }
 
@@ -76,6 +89,22 @@ function mapProduct(p: any): Product {
     // Build branchesStock from raw variants BEFORE mapVariant strips branchVariants
     const branchesStock = buildBranchesStock(p.variants ?? []);
 
+    // Derive a single supplier label from the first variant that has one.
+    // For manager view (branchId-filtered) every variant has at most one BranchVariant,
+    // so this reliably picks up the supplier assigned via Add Stock.
+    const mappedVariantsForSupplier = (p.variants ?? []).map(extractBranchStock);
+    const uniqueSuppliers = [
+        ...new Set(
+            mappedVariantsForSupplier
+                .map((v: any) => v.supplierName)
+                .filter(Boolean) as string[]
+        ),
+    ];
+    const resolvedSupplier =
+        uniqueSuppliers.length === 0   ? undefined
+        : uniqueSuppliers.length === 1 ? uniqueSuppliers[0]
+        : 'Multiple Suppliers';
+
     return {
         ...p,
         id: p.productId || p.id,
@@ -85,6 +114,8 @@ function mapProduct(p: any): Product {
             typeof p.category === 'object' && p.category !== null
                 ? p.category.categoryName
                 : p.category || '',
+        // Supplier resolved from the branch-variant layer
+        supplier: resolvedSupplier,
         options: (p.options ?? []).map((opt: any) => {
             const values = (opt.values ?? []).map((v: any) => {
                 // Handle both direct string values and { value, ... } structure
