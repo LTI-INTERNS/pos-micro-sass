@@ -910,10 +910,10 @@ export default function DashboardPage() {
           onClose={() => setAddStockOpen(false)}
           userRole={userRole}
           branchName={activeBranchLabel || "Selected Branch"}
+          branchId={activeBranchId || undefined}
           onSave={async () => {
-            // Re-fetch branch-scoped products so table reflects new stock immediately
+            // Await the reload so the table is already fresh when the popup closes.
             await reloadProducts();
-            setAddStockOpen(false);
           }}
         />
       )}
