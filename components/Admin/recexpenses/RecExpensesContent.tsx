@@ -38,7 +38,7 @@ const normalizeRecurringExpense = (
   amount: Number(item.amount ?? 0),
   payment: item.paymentType ?? "",
   paymentType: (item.paymentType ?? "CASH") as "CASH" | "CARD",
-  addedby: item.addedBy ?? "",
+  addedby: item.addedByName ?? "",
   branch: item.branch?.name ?? "",
   branchId: item.branchId,
 });
@@ -57,8 +57,8 @@ export default function RecurringExpensesContent() {
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [editingRecExpense, setEditingRecExpense] =
-    useState<RecurringExpenses | null>(null);
+  const [editingRecExpense, setEditingRecExpense] = useState<RecurringExpenses | null>(null);
+  const [selectedRecExpense, setSelectedRecExpense] = useState<RecurringExpenses | null>(null);
 
   const [filters, setFilters] = useState<{
     category?: string;
@@ -98,9 +98,19 @@ export default function RecurringExpensesContent() {
         recurringExpenseApi.getBranches(session).catch(() => []),
       ]);
 
-      setRecurringExpenses(rows.map(normalizeRecurringExpense));
+      const normalizedRows = rows.map(normalizeRecurringExpense);
+
+      setRecurringExpenses(normalizedRows);
       setCategories(categoryRows);
       setBranches(branchRows);
+
+      setSelectedRecExpense((prev) => {
+        if (!prev) return null;
+        return (
+          normalizedRows.find((item) => item.recExpenseId === prev.recExpenseId) ??
+          null
+        );
+      });
     } catch (error: any) {
       console.error("Failed to load recurring expenses:", error);
       alert(
@@ -114,7 +124,7 @@ export default function RecurringExpensesContent() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      fetchAll();
+      void fetchAll();
     }
   }, [status]);
 
@@ -158,6 +168,18 @@ export default function RecurringExpensesContent() {
     searchKeys: ["id", "category", "description"],
     filters: canUseBranchFilter ? filters : { ...filters, branch: "" },
   });
+
+  useEffect(() => {
+    if (!selectedRecExpense) return;
+
+    const stillExists = filteredRecurringExpenses.find(
+      (item) => item.recExpenseId === selectedRecExpense.recExpenseId
+    );
+
+    if (!stillExists) {
+      setSelectedRecExpense(null);
+    }
+  }, [filteredRecurringExpenses, selectedRecExpense]);
 
   const isFilterApplied = Object.values(visibleFilters).some(
     (v) => v && v.trim() !== ""
@@ -233,17 +255,23 @@ export default function RecurringExpensesContent() {
     }
   };
 
-  const handleDelete = async (expense: RecurringExpenses) => {
+  const handleDelete = async () => {
+    if (!selectedRecExpense) {
+      alert("Please select a recurring expense first.");
+      return;
+    }
+
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${expense.description}"?`
+      `Are you sure you want to delete "${selectedRecExpense.description}"?`
     );
     if (!confirmed) return;
 
     try {
       await recurringExpenseApi.deleteRecurringExpense(
         session,
-        expense.recExpenseId
+        selectedRecExpense.recExpenseId
       );
+      setSelectedRecExpense(null);
       await fetchAll();
     } catch (error: any) {
       console.error("Delete recurring expense failed:", error);
@@ -308,7 +336,7 @@ export default function RecurringExpensesContent() {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-wrap gap-3">
         <ActionButton
           label="Add Recurring Expense"
           variant="primary"
@@ -317,6 +345,27 @@ export default function RecurringExpensesContent() {
             setShowRecExpensePopup(true);
           }}
         />
+
+        <ActionButton
+          label="Edit Recurring Expense"
+          variant="outline"
+          onClick={() => {
+            if (!selectedRecExpense) {
+              alert("Please select a recurring expense first.");
+              return;
+            }
+
+            setEditingRecExpense(selectedRecExpense);
+            setShowRecExpensePopup(true);
+          }}
+        />
+
+        <ActionButton
+          label="Delete Recurring Expense"
+          variant="outline"
+          onClick={handleDelete}
+        />
+
         <ActionButton
           label="Export CSV"
           variant="primary"
@@ -329,11 +378,8 @@ export default function RecurringExpensesContent() {
       <RecurringExpensesTable
         RecurringExpenses={filteredRecurringExpenses}
         showBranch={showBranchColumn}
-        onEdit={(expense) => {
-          setEditingRecExpense(expense);
-          setShowRecExpensePopup(true);
-        }}
-        onDelete={handleDelete}
+        selectedRecExpenseId={selectedRecExpense?.id}
+        onSelectRecExpense={setSelectedRecExpense}
       />
 
       <AddRecExpensesPopup

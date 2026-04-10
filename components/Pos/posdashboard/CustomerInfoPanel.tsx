@@ -92,8 +92,9 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       if (msg.type === "CUSTOMER_SELECTED") {
         setSelectedCustomer({
           name: msg.customer.name,
-          phoneNumber: msg.customer.phoneNumber,
+          phoneNumber1: msg.customer.phoneNumber1,
           email: msg.customer.email,
+          activeState: msg.customer.activeState,
         });
       }
       if (msg.type === "CUSTOMER_CLEARED") {
@@ -115,7 +116,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
           customer: selectedCustomer
             ? {
                 name: selectedCustomer.name,
-                phoneNumber: selectedCustomer.phoneNumber,
+                phoneNumber: selectedCustomer.phoneNumber1,
                 email: selectedCustomer.email ?? "",
               }
             : null,
@@ -189,7 +190,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
               <div className="mt-2 space-y-2">
                 <div className="rounded-xl bg-slate-50 p-4 space-y-0.5 text-sm text-black">
                   <p className="font-semibold">{selectedCustomer.name}</p>
-                  <p>{selectedCustomer.phoneNumber}</p>
+                  <p>{selectedCustomer.phoneNumber1}</p>
                   <p>{selectedCustomer.email}</p>
                 </div>
                 <button

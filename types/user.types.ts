@@ -1,14 +1,10 @@
-export interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    image?: string;
-    companyId?: string;
+export interface PersonalDetails {
+  name: string;
+  email: string;
+  phone?: string;
 }
 
-export interface AuthState {
-    user: User | null;
-    setUser: (user: User | null) => void;
-    logout: () => void;
+export interface PasswordUpdatePayload {
+  currentPassword: string;
+  newPassword: string;
 }

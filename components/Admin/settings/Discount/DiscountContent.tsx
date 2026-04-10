@@ -1,62 +1,110 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
-import DiscountTable, { Discount } from "@/components/Admin/settings/Discount/DiscountTable";
+import DiscountTable from "@/components/Admin/settings/Discount/DiscountTable";
 import AddDiscountPopup from "@/components/Admin/settings/Discount/AddDiscountPopup";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
-import { mockDiscounts } from "@/components/Admin/settings/Discount/mock";
 import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 
+import { Discount } from "@/types/discount";
+import { discountService } from "@/lib/services/discountService";
+
 export default function DiscountContent() {
+  const { data: session } = useSession();
+  
+  // THE FIX: Extracting the token exactly like PersonalContent.tsx
+  const token = (session as any)?.user?.backendToken;
+
+  const [discounts, setDiscounts] = useState<Discount[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedDiscount, setSelectedDiscount] =
-    useState<Discount | null>(null);
+  const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
 
   const [filters, setFilters] = useState<{ status?: string }>({});
   const filterLabels: Record<string, string> = {
     active: "Active",
     expired: "Expired",
   };
-  
+
+  const fetchDiscounts = useCallback(async () => {
+    if (!token) return; // Don't fetch if token isn't loaded yet
+    try {
+      setLoading(true);
+      const data = await discountService.getDiscounts(token);
+      setDiscounts(data);
+    } catch (error) {
+      console.error("Error fetching discounts:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchDiscounts();
+  }, [fetchDiscounts]);
+
+  const handleSaveDiscount = async (values: any) => {
+    await discountService.createDiscount({
+      title: values.title,
+      percentage: Number(values.percentage),
+      startDate: values.startDate,
+      endDate: values.endDate,
+      branchId: values.branchId,
+    }, token);
+    await fetchDiscounts();
+  };
+
+  const handleDeleteDiscount = async () => {
+    if (!selectedDiscount) return;
+    try {
+      await discountService.deleteDiscount(selectedDiscount.discountId, token);
+      setSelectedDiscount(null);
+      setDeleteOpen(false);
+      await fetchDiscounts();
+    } catch (error) {
+      console.error("Error deleting discount:", error);
+    }
+  };
 
   const baseFilteredDiscounts = useTableFilters<Discount>({
-  data: mockDiscounts,
-  search,
-  start,
-  end,
-  dateKey: "createdDate",
-  searchKeys: ["id", "title"],
-  filters: {}, // ❗ don't pass status here
-});
+    data: discounts,
+    search,
+    start,
+    end,
+    dateKey: "startDate", 
+    searchKeys: ["discountId", "title"],
+    filters: {},
+  });
 
-const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
-  if (!filters.status) return true;
+  const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
+    if (!filters.status) return true;
 
-  const expired = new Date(d.endDate) < new Date();
+    const expired = new Date(d.endDate) < new Date();
+    if (filters.status === "active") return !expired && d.status;
+    if (filters.status === "expired") return expired || !d.status;
 
-  if (filters.status === "active") return !expired;
-  if (filters.status === "expired") return expired;
+    return true;
+  });
 
-  return true;
-});
-
-  const isFilterApplied = Object.values(filters).some(
-    (v) => v && v.trim() !== ""
-  );
+  const isFilterApplied = Object.values(filters).some((v) => v && v.trim() !== "");
 
   const removeFilter = (key: string) => {
     setFilters((prev) => ({ ...prev, [key]: "" }));
   };
+
+  if (loading) return <div className="p-4 text-sm text-gray-500">Loading discounts...</div>;
 
   return (
     <div className="w-full space-y-5">
@@ -82,7 +130,7 @@ const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
           onClearFilters={() => setFilters({})}
         />
 
-       <FilterChips
+        <FilterChips
           filters={{
             ...filters,
             status: filters.status ? filterLabels[filters.status] : "",
@@ -98,15 +146,15 @@ const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
             setShowFilter(false);
           }}
           fields={[
-  {
-    name: "status",
-    placeholder: "Status",
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Expired", value: "expired" },
-    ],
-  },
-]}
+            {
+              name: "status",
+              placeholder: "Status",
+              options: [
+                { label: "Active", value: "active" },
+                { label: "Expired", value: "expired" },
+              ],
+            },
+          ]}
         />
       </div>
 
@@ -133,10 +181,7 @@ const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
       <AddDiscountPopup
         open={showAddDiscount}
         onClose={() => setShowAddDiscount(false)}
-        onSave={(values) => {
-          console.log("Add Discount:", values);
-          setShowAddDiscount(false);
-        }}
+        onSave={handleSaveDiscount}
       />
 
       {selectedDiscount && (
@@ -147,18 +192,14 @@ const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
           itemName="Discount"
           getDisplayText={(d) => (
             <>
-              ID - {d.id}
-              <br />
               Title - {d.title}
               <br />
               Percentage - {d.percentage}%
+              <br />
+              Branch - {d.branch?.name || "All"}
             </>
           )}
-          onConfirm={() => {
-            console.log("Delete Discount:", selectedDiscount); // DB later
-            setSelectedDiscount(null);
-            setDeleteOpen(false);
-          }}
+          onConfirm={handleDeleteDiscount}
         />
       )}
     </div>
