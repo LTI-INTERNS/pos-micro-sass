@@ -23,6 +23,7 @@ type VariantState = {
   id:        number;
   variantId: string;   // real UUID from DB
   sku:       string;
+  variantLabel: string;
   price:     number;
 };
 
@@ -40,9 +41,21 @@ type RawVariant = {
   discount?:            number | string | null;
   taxRate?:             number | string | null;
   lowStock?:            number | string | null;
-  optionValues?:        string[];
+  optionValues?:        Array<{ optionName?: string; value?: string } | string>;
   imageUrl?:            string;
 };
+
+function getVariantLabel(raw: RawVariant): string {
+  const values = (raw.optionValues ?? [])
+    .map((entry) => {
+      if (typeof entry === "string") return entry;
+      return entry?.value ?? "";
+    })
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  return values.length > 0 ? values.join(" · ") : raw.sku;
+}
 
 // Shape of rows returned by /branch-variants/existing
 type ExistingBranchVariantRow = {
@@ -229,6 +242,7 @@ export default function AddStockPopup({
           id:        i + 1,
           variantId: raw.variantId ?? v.sku,
           sku:       v.sku,
+          variantLabel: getVariantLabel(raw),
           price:     v.price,
         };
       }),
@@ -450,6 +464,9 @@ export default function AddStockPopup({
                   <div className="flex justify-between items-center mb-4 pb-2 border-b border-orange-300">
                     <div>
                       <p className="text-[13px] font-medium text-gray-700">SKU: {v.sku}</p>
+                      {v.variantLabel !== v.sku && (
+                        <p className="text-[11px] text-gray-500 mt-0.5">{v.variantLabel}</p>
+                      )}
                       <p className="text-[11px] text-gray-400 mt-0.5">Base price: {v.price.toFixed(2)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1.5">

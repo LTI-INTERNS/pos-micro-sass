@@ -16,10 +16,9 @@ export default function CustomerTable({ customers, selectedCustomer, setSelected
   const columns: Column<Customer>[] = [
      {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
-    { key: "id", label: "ID", },
     { key: "name", label: "Name", },
     { key: "phone", label: "Phone", },
     { key: "promoCard", label: "Promo Card", },

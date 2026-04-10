@@ -25,7 +25,7 @@ export default function ProfitTable({ profits, showBranch = false }: Props) {
   const columns: Column<Profit>[] = [
      {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
     {

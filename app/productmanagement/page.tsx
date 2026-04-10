@@ -137,20 +137,9 @@ export default function DashboardPage() {
       : "manager";
 
   const canUseBranchFilter = userRole === "admin" || userRole === "owner";
-  const activeBranchId = canUseBranchFilter
-    ? (urlFilters.branchId || "")
-    : (session?.user?.branchId ?? "");
+  const activeBranchId = canUseBranchFilter ? "" : (session?.user?.branchId ?? "");
 
-  const branchLookup = useMemo(() => {
-    return new Map(branches.map((branch) => [branch.id, formatBranchLabel(branch)]));
-  }, [branches]);
-
-  const activeBranchLabel = useMemo(() => {
-    if (activeBranchId) {
-      return branchLookup.get(activeBranchId) || session?.user?.branchName || "";
-    }
-    return session?.user?.branchName || "";
-  }, [activeBranchId, branchLookup, session?.user?.branchName]);
+  const activeBranchLabel = session?.user?.branchName || "";
 
   useEffect(() => {
     setSelectedProduct(null);
@@ -201,10 +190,11 @@ export default function DashboardPage() {
       .finally(() => setCatalogLoading(false));
   }, [addVariantOpen]);
 
+
   // Exclude UI state from actual data filters
   const filters = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { search: _search, filterOpen: _filterOpen, branchId: _branchId, ...rest } = urlFilters;
+    const { search: _search, filterOpen: _filterOpen, ...rest } = urlFilters;
     return rest;
   }, [urlFilters]);
 
@@ -238,6 +228,7 @@ export default function DashboardPage() {
     availability: string;
     lowStockStatus: string;
     branch: string;
+    allBarcodes: string;
   };
 
   const enrichedProducts: EnrichedProduct[] = useMemo(() => {
@@ -276,43 +267,115 @@ export default function DashboardPage() {
         availability: availabilityStatus,
         lowStockStatus: stockStatus,
         branch: activeBranchLabel || stockedBranchNames[0] || "All Branches",
+        allBarcodes: variants.map(v => typeof v === "object" && v !== null && "barcode" in v ? String(v.barcode) : "").filter(Boolean).join(" "),
       };
     });
   }, [products, activeBranchLabel]);
 
   const branchFilterOptions = useMemo(
-    () => getFilterOptions(enrichedProducts, "branch"),
-    [enrichedProducts]
+    () =>
+      Array.from(
+        new Set(
+          products.flatMap((product) =>
+            Object.keys(
+              (product as Product & { branchesStock?: Record<string, unknown> }).branchesStock ?? {}
+            )
+          )
+        )
+      ).map((branch) => ({ label: branch, value: branch })),
+    [products]
   );
+
+  const selectedBranch = filters.branch?.trim() || "";
+
+  const branchFilteredProducts = useMemo(() => {
+    if (!canUseBranchFilter || !selectedBranch) {
+      return enrichedProducts;
+    }
+
+    return enrichedProducts.filter((product) => {
+      const branchesStock = (product as Product & { branchesStock?: Record<string, unknown> }).branchesStock;
+      return Boolean(branchesStock && Object.prototype.hasOwnProperty.call(branchesStock, selectedBranch));
+    });
+  }, [canUseBranchFilter, enrichedProducts, selectedBranch]);
+
+  // Global Barcode Scanner Hook for Product Management
+  useEffect(() => {
+    let barcodeString = "";
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (barcodeString.length > 0) {
+          const matchedItem = branchFilteredProducts.find((p) =>
+            p.variants?.some((v: any) => v.barcode === barcodeString)
+          );
+          if (matchedItem) {
+            setSearch(barcodeString);
+          }
+          barcodeString = "";
+        }
+        return;
+      }
+
+      if (e.key.length === 1) {
+        barcodeString += e.key;
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        timeoutId = setTimeout(() => {
+          barcodeString = "";
+        }, 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [branchFilteredProducts, setSearch]);
+
+  const tableFilters = useMemo(() => {
+    // Branch filtering is handled separately against stocked branch records.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { branch: _branch, ...rest } = filters;
+    return rest;
+  }, [filters]);
 
   const displayFilters = useMemo(() => {
     const visible: Record<string, string> = {};
 
     Object.entries(urlFilters).forEach(([key, value]) => {
-      if (key === "search" || key === "filterOpen" || key === "branchId") return;
+      if (key === "search" || key === "filterOpen") return;
       if (!value) return;
-      visible[key] = key === "branch" ? value : value;
+      visible[key] = value;
     });
 
     return visible;
-  }, [branchLookup, urlFilters]);
+  }, [urlFilters]);
 
   const isFilterApplied = Object.entries(urlFilters).some(
     ([key, value]) =>
       key !== "search" &&
       key !== "filterOpen" &&
-      key !== "branchId" &&
       value &&
       String(value).trim() !== ""
   );
 
   const filteredProducts = useTableFilters({
-    data: enrichedProducts,
+    data: branchFilteredProducts,
     search,
     start,
     end,
     dateKey: userRole === "manager" ? undefined : "createdAt",
-    searchKeys: ["id", "name", "category"],
+    searchKeys: ["id", "name", "category", "allBarcodes"],
     filters:
       userRole === "manager"
         ? (() => {
@@ -322,10 +385,10 @@ export default function DashboardPage() {
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
               lowStockStatus: _lowStockStatus,
               ...rest
-            } = filters;
+            } = tableFilters;
             return rest;
           })()
-        : filters,
+        : tableFilters,
   });
 
   const managerVariantFilteredProducts = useMemo(() => {
@@ -337,10 +400,6 @@ export default function DashboardPage() {
     const stockFilter = filters.lowStockStatus?.trim();
     const hasDateRange = Boolean(start && end);
 
-    if (!availabilityFilter && !stockFilter) {
-      return filteredProducts as Product[];
-    }
-
     return (filteredProducts as Product[])
       .map((product) => {
         const matchingVariants = (product.variants ?? []).filter((variant) => {
@@ -349,7 +408,7 @@ export default function DashboardPage() {
             : "Unavailable";
 
           if (hasDateRange) {
-            const createdRaw = variant.branchVariantCreatedAt ?? variant.createdAt;
+            const createdRaw = variant.branchVariantCreatedAt ?? variant.createdAt ?? product.createdAt;
             if (!createdRaw) return false;
             const createdDate = new Date(createdRaw);
             if (Number.isNaN(createdDate.getTime())) return false;
@@ -578,27 +637,11 @@ export default function DashboardPage() {
   }, [products]);
 
   const removeFilter = (key: string) => {
-    if (key === "branch") {
-      setFilter("branchId", null);
-    }
     setFilter(key, null);
   };
 
   const handleFilterApply = (newFilters: Record<string, string | null>) => {
-    if (!canUseBranchFilter) {
-      setFilters(newFilters);
-      return;
-    }
-
-    const selectedBranchLabel = newFilters.branch?.trim();
-    const matchedBranch = selectedBranchLabel
-      ? branches.find((branch) => formatBranchLabel(branch) === selectedBranchLabel)
-      : undefined;
-
-    setFilters({
-      ...newFilters,
-      branchId: matchedBranch?.id ?? null,
-    });
+    setFilters(newFilters);
   };
 
   // Build catalog list for the manager "Add from Company Catalog" popup.
