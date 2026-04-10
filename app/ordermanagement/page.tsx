@@ -8,7 +8,7 @@ import StatCardGrid from "@/components/Admin/ordermanagement/orderStarCardGrid";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
 import OrdersTable from "@/components/Admin/ordermanagement/order-table";
-import OrderBillModal from "@/components/Admin/ordermanagement/OrderBillModal";
+import OrderBillModal from "@/components/Admin/ordermanagement/orderReceiptPreviewModel";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { orderService } from "@/lib/services";
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
