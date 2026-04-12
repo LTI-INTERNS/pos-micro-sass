@@ -24,7 +24,8 @@ type Props = {
   payment: PaymentSummary;
   customerEmail?: string | null;
   onCancelEdit?: () => void;
-  onConfirm?: (email?: string) => void;
+  onConfirm?: (email?: string, note?: string) => void;
+  isSubmitting?: boolean;
 };
 
 export default function OrderConfirmation({
@@ -35,6 +36,7 @@ export default function OrderConfirmation({
   customerEmail,
   onCancelEdit,
   onConfirm,
+  isSubmitting = false,
 }: Props) {
   const { currency } = useCurrency();
 
@@ -42,6 +44,7 @@ export default function OrderConfirmation({
   const [manualEmail, setManualEmail] = useState<string>("");
   const [addedEmail, setAddedEmail] = useState<string>("");
   const [emailError, setEmailError] = useState("");
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -50,6 +53,7 @@ export default function OrderConfirmation({
       setManualEmail(initial);
       setEmailError("");
       setShowEmailPopup(false);
+      setNote("");
     }
   }, [customerEmail, open]);
 
@@ -87,7 +91,7 @@ export default function OrderConfirmation({
     paymentMethod: payment.paymentMethod,
     cashPaid: payment.cashPaid,
     cardPaid: payment.cardPaid,
-    
+    changeToGive: payment.changeToGive,
     customer: payment.customer
       ? { ...payment.customer, email: effectiveEmail ?? payment.customer.email }
       : null,
@@ -116,6 +120,8 @@ export default function OrderConfirmation({
               <div className="border rounded-xl p-4 bg-slate-50 h-full flex flex-col">
                 <h3 className="font-semibold mb-2 text-black">NOTES</h3>
                 <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
                   placeholder="Add a note for this order (Optional)"
                   className="flex-1 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-black placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
                 />
@@ -123,9 +129,13 @@ export default function OrderConfirmation({
             }
             rightAction={
               addedEmail ? (
-                <button className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer">
+                <button
+                  onClick={() => setShowEmailPopup(true)}
+                  title={addedEmail}
+                  className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+                >
                   <Mail size={16} />
-                  <span>Email</span>
+                  <span className="truncate max-w-[120px]">{addedEmail}</span>
                 </button>
               ) : (
                 <button
@@ -159,10 +169,10 @@ export default function OrderConfirmation({
                 className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50"
               />
               <Buttons
-                label="confirm"
+                label={isSubmitting ? "Saving…" : "confirm"}
                 variant="primary"
-                onClick={() => onConfirm?.(effectiveEmail)}
-                className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600"
+                onClick={() => !isSubmitting && onConfirm?.(effectiveEmail, note)}
+                className={`flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition ${isSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
               />
             </div>
           </div>
