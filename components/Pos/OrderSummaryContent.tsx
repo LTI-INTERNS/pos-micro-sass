@@ -24,6 +24,7 @@ export type CommonPaymentSummary = {
   paymentMethod: string;
   cashPaid: number;
   cardPaid: number;
+  changeToGive?: number;
   customerEmail?: string;
 
   customer?: {
@@ -140,7 +141,11 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-black">{title}</h1>
         <p className="text-slate-500">{subtitle}</p>
-        <p className="text-xs text-slate-400 mt-1">Order #{orderNoLabel}</p>
+        <p className="text-xs text-slate-400 mt-1">
+          {orderNoLabel === 'Pending'
+            ? 'Order # — assigned after confirmation'
+            : `Order #${orderNoLabel}`}
+        </p>
       </div>
 
       <div className="mb-4 max-h-37.5 overflow-y-auto">
@@ -181,8 +186,10 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
               <span className="text-black">{c} {payment.cashPaid.toFixed(2)}</span>
             </div>
             <div className="flex justify-between text-slate-500">
-              <span>CARD PAID</span>
-              <span className="text-black">{c} {payment.cardPaid.toFixed(2)}</span>
+              <span>CHANGE TO GIVE</span>
+              <span className="text-black font-semibold text-green-600">
+                {c} {(payment.changeToGive ?? 0).toFixed(2)}
+              </span>
             </div>
           </div>
 
