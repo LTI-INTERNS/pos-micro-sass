@@ -159,13 +159,14 @@ export interface CreatePaymentInput {
 }
 
 export interface CreateOrderInput {
-    branchId:      string;
-    cashierId:     string;
-    customerId?:   string;
-    discountId?:   string;
-    note?:         string;
-    items:         CreateOrderItemInput[];
-    payment:       CreatePaymentInput;
+    branchId:       string;
+    cashierId:      string;
+    customerId?:    string;
+    discountId?:    string;
+    note?:          string;
+    customerEmail?: string;   // walk-in email entered at POS confirmation screen
+    items:          CreateOrderItemInput[];
+    payment:        CreatePaymentInput;
 }
 
 export interface UpdateOrderInput {
