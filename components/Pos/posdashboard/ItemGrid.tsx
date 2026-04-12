@@ -36,6 +36,8 @@ export default function ItemGrid({ search, onAdd }: Props) {
     let timeoutId: NodeJS.Timeout | null = null;
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.key) return;
+
       if (e.key === "Enter") {
         if (barcodeString.length > 0) {
           const matchedItem = items.find((item) => item.barcode === barcodeString);
