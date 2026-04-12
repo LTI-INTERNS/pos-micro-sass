@@ -1,5 +1,6 @@
 "use client";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import ItemGrid from "@/components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, {
   CustomerInfoPanelHandle,
@@ -12,19 +13,76 @@ import OrderPaymentModal, {
 import OrderConfirmation, { ConfirmItem } from "@/components/Pos/OrderConfirmation";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
-import { Check, X } from "lucide-react";
+import { Check, X, Printer } from "lucide-react";
 import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 import { usePosStore } from "@/store/usePosStore";
+import { orderService } from "@/lib/services/order-service";
+import { useReceiptPrinter } from "@/hooks/useReceiptActions";
+import type { CreateOrderInput } from "@/types/order.types";
+
+// ── Receipt data captured after a successful order save ──────────────────────
+
+type SavedReceiptData = {
+  orderNo: string;
+  currencyCode: string;
+  items: { name: string; qty: number; price: number }[];
+  discountValue: number;
+  cardTax: number;
+  grandTotal: number;
+  paymentMethod: string;
+  cashPaid: number;
+  cardPaid: number;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+};
+
+// ── OrderCompletePopup ────────────────────────────────────────────────────────
 
 function OrderCompletePopup({
   open,
   onClose,
   orderNo,
+  receiptData,
 }: {
   open: boolean;
   onClose: () => void;
   orderNo: string | number;
+  receiptData: SavedReceiptData | null;
 }) {
+  // Hook must always be called — use safe fallbacks when receiptData is null
+  const { handlePrint } = useReceiptPrinter(
+    receiptData
+      ? {
+          orderId:       receiptData.orderNo,
+          currencyCode:  receiptData.currencyCode,
+          items:         receiptData.items,
+          discountValue: receiptData.discountValue,
+          cardTax:       receiptData.cardTax,
+          grandTotal:    receiptData.grandTotal,
+          paymentMethod: receiptData.paymentMethod,
+          cashPaid:      receiptData.cashPaid,
+          cardPaid:      receiptData.cardPaid,
+          customerName:  receiptData.customerName,
+          customerPhone: receiptData.customerPhone,
+          customerEmail: receiptData.customerEmail,
+        }
+      : {
+          orderId:       orderNo,
+          currencyCode:  "LKR",
+          items:         [],
+          discountValue: 0,
+          cardTax:       0,
+          grandTotal:    0,
+          paymentMethod: "",
+          cashPaid:      0,
+          cardPaid:      0,
+          customerName:  null,
+          customerPhone: null,
+          customerEmail: null,
+        }
+  );
+
   return (
     <div
       className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
@@ -54,16 +112,25 @@ function OrderCompletePopup({
           </div>
 
           <h2 className="mt-5 text-2xl font-semibold text-black">Order Completed!</h2>
-          <p className="text-sm text-slate-500 mt-1">Order #{orderNo}</p>
+          <p className="text-sm text-slate-500 mt-1">Order {orderNo}</p>
 
           <div className="my-6 h-px bg-slate-200" />
 
           <p className="text-slate-500">The order has been successfully completed.</p>
 
-          <div className="mt-7 flex justify-center">
+          <div className="mt-7 flex justify-center gap-3">
+            {receiptData && (
+              <button
+                onClick={handlePrint}
+                className="px-6 py-3 h-12 rounded-full border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition active:scale-95 cursor-pointer flex items-center gap-2"
+              >
+                <Printer size={16} />
+                Print Receipt
+              </button>
+            )}
             <button
               onClick={onClose}
-              className="px-8 py-3 h-12 min-w-[200px] rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
+              className="px-8 py-3 h-12 min-w-[140px] rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
             >
               OK
             </button>
@@ -93,18 +160,25 @@ function OrderCompletePopup({
   );
 }
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type SelectedCustomer = {
+  customerId?: string;
   name: string;
   phoneNumber: string;
   email: string;
 } | null;
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 const Page = () => {
   const { currency } = useCurrency();
   const { posSettings } = usePosSettings();
   const { orderItems, addItem, increaseQty, decreaseQty, setQty, clearCart } = usePosStore();
+  const { data: session } = useSession();
 
   const [search, setSearch] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<{
@@ -121,12 +195,14 @@ const Page = () => {
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
 
+  // Holds receipt data built from the REAL order returned by the backend.
+  // This ensures the receipt shows the correct order number and finalised totals.
+  const [savedReceipt, setSavedReceipt] = useState<SavedReceiptData | null>(null);
+
   const [paymentModalKey, setPaymentModalKey] = useState(0);
   const [paymentForceEditable, setPaymentForceEditable] = useState(false);
 
   const panelRef = useRef<CustomerInfoPanelHandle>(null);
-
-  const orderNo = useMemo(() => `ORD-${new Date().getTime()}`, []);
 
   const confirmItems: ConfirmItem[] = useMemo(
     () =>
@@ -144,17 +220,151 @@ const Page = () => {
     addItem(item);
   };
 
-  const hardResetPaymentFlow = () => {
+  const hardResetPaymentFlow = useCallback(() => {
     setPaymentOpen(false);
     setPaymentData(null);
     setPaymentSummary(null);
     setConfirmOpen(false);
     setPaymentForceEditable(false);
-
     setSelectedCustomer(null);
-
     setPaymentModalKey((k) => k + 1);
-  };
+  }, []);
+
+  // Called by OrderConfirmation when cashier clicks "Confirm".
+  // Receives the optional email (may have been added/edited in the modal)
+  // and the optional note typed by the cashier.
+  const handleConfirm = useCallback(
+    async (email?: string, note?: string) => {
+      if (isSubmitting || !paymentSummary) return;
+      setIsSubmitting(true);
+
+      try {
+        const branchId  = session?.user?.branchId  ?? "";
+        const cashierId = session?.user?.cashierId ?? "";
+
+        // Derive PaymentType from the label set by OrderPaymentModal.
+        // Label is "Cash", "Visa", "Master", "Card", or "Cash + <Card>".
+        const hasCash = paymentSummary.cashPaid > 0;
+        const hasCard = paymentSummary.cardPaid > 0;
+        const paymentType: "CASH" | "CARD" | "SPLIT" =
+          hasCash && hasCard ? "SPLIT" :
+          hasCard             ? "CARD"  : "CASH";
+
+        // backend payment.method only accepts CASH | CARD (single value).
+        // For SPLIT, use the dominant method.
+        const method: "CASH" | "CARD" =
+          paymentSummary.cashPaid >= paymentSummary.cardPaid ? "CASH" : "CARD";
+
+        // Backend requires transactionId for any CARD method payment.
+        // The POS modal does not collect a real terminal ID, so we generate
+        // a reference that can be reconciled later if needed.
+        const transactionId = method === "CARD"
+          ? `POS-${Date.now()}`
+          : undefined;
+
+        const effectiveEmail = email?.trim() || selectedCustomer?.email || null;
+
+        const payload: CreateOrderInput = {
+          branchId,
+          cashierId,
+          ...(selectedCustomer?.customerId && { customerId: selectedCustomer.customerId }),
+          ...(paymentSummary.discountId    && { discountId: paymentSummary.discountId }),
+          // Note entered by the cashier on the confirmation screen
+          ...(note?.trim()                 && { note: note.trim() }),
+          // Email entered/confirmed on the confirmation screen — saved to DB
+          ...(effectiveEmail               && { customerEmail: effectiveEmail }),
+          items: orderItems.map((it) => ({
+            variantId: it.id,
+            quantity:  it.qty,
+            unitPrice: it.price,
+          })),
+          payment: {
+            paymentType,
+            method,
+            amount: paymentSummary.grandTotal,
+            // Always send cashReceived + changeToGive for CASH (even if 0),
+            // because the backend requires both fields to be non-null.
+            ...(method === "CASH" && {
+              cashReceived: paymentSummary.cashPaid,
+              changeToGive: paymentSummary.changeToGive,
+            }),
+            ...(transactionId && { transactionId }),
+          },
+        };
+
+        const order = await orderService.create(payload);
+
+        // Build receipt data from the REAL saved order so the receipt shows
+        // the backend-assigned order number (e.g. "003") not the temp ORD-timestamp.
+        const receipt: SavedReceiptData = {
+          orderNo:       order.orderNumber,
+          currencyCode:  paymentSummary.currencyCode ?? currency ?? "LKR",
+          items:         orderItems.map((it) => ({
+            name:  it.name,
+            qty:   it.qty,
+            price: it.price,
+          })),
+          discountValue: paymentSummary.discountValue,
+          cardTax:       paymentSummary.cardTax,
+          grandTotal:    paymentSummary.grandTotal,
+          paymentMethod: paymentSummary.paymentMethod,
+          cashPaid:      paymentSummary.cashPaid,
+          cardPaid:      paymentSummary.cardPaid,
+          customerName:  selectedCustomer?.name        ?? null,
+          customerPhone: selectedCustomer?.phoneNumber  ?? null,
+          customerEmail: effectiveEmail,
+        };
+
+        setSavedReceipt(receipt);
+        setCompletedOrderNo(order.orderNumber);
+
+        setConfirmOpen(false);
+        setPaymentOpen(false);
+        clearCart();
+        hardResetPaymentFlow();
+        setCompleteOpen(true);
+        panelRef.current?.sendOrderConfirmed();
+      } catch (err: unknown) {
+        console.error("Order creation failed:", err);
+
+        // Extract the structured error code the backend sends in the response body.
+        // Shape: { error: { code: string, message: string } }
+        const code: string =
+          (err as any)?.response?.data?.error?.code ?? "UNKNOWN";
+
+        const messages: Record<string, string> = {
+          INSUFFICIENT_STOCK:
+            "One or more items are out of stock. Please remove them from the cart and try again.",
+          VARIANT_NOT_FOUND:
+            "One or more products are no longer available. Please refresh the product list and try again.",
+          DISCOUNT_NOT_VALID:
+            "The selected discount has expired or is not valid for this branch. Please remove it and try again.",
+          MISSING_CASH_FIELDS:
+            "Cash payment details are incomplete. Please go back and re-enter the payment.",
+          MISSING_TRANSACTION_ID:
+            "Card transaction ID is missing. Please go back and re-enter the payment.",
+          EMPTY_ORDER:
+            "The order has no items. Please add at least one item before confirming.",
+          FORBIDDEN:
+            "Only cashiers can create orders. Please log in with a cashier account.",
+        };
+
+        alert(messages[code] ?? "Failed to save the order. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      isSubmitting,
+      paymentSummary,
+      session,
+      selectedCustomer,
+      orderItems,
+      currency,
+      clearCart,
+      hardResetPaymentFlow,
+    ]
+  );
 
   return (
     <DashboardLayout>
@@ -197,15 +407,16 @@ const Page = () => {
               setSelectedCustomer(
                 summary.customer
                   ? {
-                    name: summary.customer.name ?? "",
-                    phoneNumber: summary.customer.phoneNumber1 ?? "",
-                    email: summary.customer.email ?? "",
-                  }
+                      customerId:  summary.customer.customerId ?? undefined,
+                      name:        summary.customer.name ?? "",
+                      phoneNumber: summary.customer.phoneNumber1 ?? "",
+                      email:       summary.customer.email ?? "",
+                    }
                   : null
               );
 
               setPaymentForceEditable(false);
-              setPaymentData({ orderNo, totalAmount: summary.total, tipAmount: 0 });
+              setPaymentData({ orderNo: `Pending`, totalAmount: summary.total, tipAmount: 0 });
               setPaymentOpen(true);
             }}
           />
@@ -243,33 +454,23 @@ const Page = () => {
           items={confirmItems}
           payment={paymentSummary}
           customerEmail={selectedCustomer?.email ?? null}
+          isSubmitting={isSubmitting}
           onCancelEdit={() => {
             setConfirmOpen(false);
             setPaymentForceEditable(true);
             setPaymentOpen(true);
           }}
-          onConfirm={() => {
-            setCompletedOrderNo(paymentSummary.orderNo);
-
-            setConfirmOpen(false);
-            setPaymentOpen(false);
-
-            clearCart();
-            hardResetPaymentFlow();
-
-            setCompleteOpen(true);
-
-            panelRef.current?.sendOrderConfirmed();
-          }}
+          onConfirm={handleConfirm}
         />
       )}
 
       <OrderCompletePopup
         open={completeOpen}
         orderNo={completedOrderNo}
+        receiptData={savedReceipt}
         onClose={() => {
           setCompleteOpen(false);
-
+          setSavedReceipt(null);
           panelRef.current?.sendOrderCleared();
         }}
       />
