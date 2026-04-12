@@ -49,8 +49,16 @@ export const usePosStore = create<PosState>((set) => ({
             .map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it))
             .filter((it) => it.qty > 0),
     })),
-    setQty: (id, qty) => set((state) => ({
-        orderItems: state.orderItems.map((it) => (it.id === id ? { ...it, qty } : it)),
-    })),
+    setQty: (id, qty) => set((state) => {
+        // qty ≤ 0 removes the item entirely (consistent with decreaseQty behaviour).
+        // Fractional values are truncated; anything below 1 is treated as a removal.
+        const safeQty = Math.trunc(qty);
+        if (safeQty <= 0) {
+            return { orderItems: state.orderItems.filter((it) => it.id !== id) };
+        }
+        return {
+            orderItems: state.orderItems.map((it) => (it.id === id ? { ...it, qty: safeQty } : it)),
+        };
+    }),
     clearCart: () => set({ orderItems: [] }),
 }));
