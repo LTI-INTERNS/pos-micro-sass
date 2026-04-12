@@ -8,6 +8,8 @@ declare module 'next-auth' {
         companyId:   string;
         companyName: string;
         token:       string;  // backend JWT — stored as backendToken in session
+        userId?:     string;   // present for OWNER | ADMIN | MANAGER
+        cashierId?:  string;   // present for CASHIER
     }
 
     interface Session {
@@ -21,8 +23,10 @@ declare module 'next-auth' {
             companyId:    string;
             companyName:  string;
             backendToken: string;
+            userId?:      string;   // present for OWNER | ADMIN | MANAGER
+            cashierId?:   string;   // present for CASHIER
         };
-        error?: 'TokenExpired';  // propagated from jwt callback on expiry
+        error?: 'TokenExpired';
     }
 }
 
@@ -34,7 +38,9 @@ declare module 'next-auth/jwt' {
         companyId:    string;
         companyName:  string;
         backendToken: string;
-        tokenExpiry:  number;  // exp from backend JWT (Unix seconds)
+        tokenExpiry:  number;
+        userId?:      string;   // present for OWNER | ADMIN | MANAGER
+        cashierId?:   string;   // present for CASHIER
         error?:       'TokenExpired';
     }
 }
