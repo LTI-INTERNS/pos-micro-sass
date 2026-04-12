@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Delete, Check, X } from "lucide-react";
 
 import DiscountPopup, { DiscountOption } from "@/components/Pos/posdashboard/DiscountPopup";
+import { apiClient } from "@/lib/api-client";
 
 export type PaymentSummary = {
   orderNo: string | number;
@@ -12,6 +13,7 @@ export type PaymentSummary = {
   currencyCode: string;
 
   baseAmount: number;
+  discountId?: string | null;
   discountPercent?: number;
   discountValue: number;
 
@@ -143,14 +145,35 @@ export default function OrderPaymentModal({
   // remember last card type for split label
   const [lastCardMethod, setLastCardMethod] = useState<"Visa" | "Master" | null>(null);
 
-  const discountOptions: DiscountOption[] = useMemo(
-    () => [
-      { id: "disc_broccoli_staff", label: "Broccoli Staff (on total)", percent: 50 },
-      { id: "disc_better_homes", label: "Better homes (on total)", percent: 50 },
-      { id: "disc_fly_dubai", label: "Fly Dubai (on total)", percent: 50 },
-    ],
-    []
-  );
+  // Live discounts fetched from the backend for this branch
+  const [discountOptions, setDiscountOptions] = useState<DiscountOption[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    apiClient
+      .get<{ success: boolean; data: Array<{ discountId: string; title: string; percentage: number; status: boolean; startDate: string; endDate: string }> }>("/discounts")
+      .then((res) => {
+        const now = Date.now();
+        const active = (res.data.data ?? []).filter(
+          (d) =>
+            d.status === true &&
+            new Date(d.startDate).getTime() <= now &&
+            new Date(d.endDate).getTime() >= now
+        );
+        setDiscountOptions(
+          active.map((d) => ({
+            id: d.discountId,
+            label: d.title,
+            percent: Number(d.percentage),
+          }))
+        );
+      })
+      .catch(() => {
+        // Non-fatal: discount popup will show empty; cashier can proceed without discount
+        setDiscountOptions([]);
+      });
+  }, [open]);
 
   // rounding helpers
   const round2 = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
@@ -167,6 +190,7 @@ export default function OrderPaymentModal({
     setActiveField(null);
 
     setSelectedDiscountId(null);
+    setDiscountOptions([]);
 
     setDiscountOpen(false);
     setHasPromptedDiscount(false);
@@ -783,6 +807,7 @@ export default function OrderPaymentModal({
                   currencyCode,
 
                   baseAmount,
+                  discountId: selectedDiscountId,
                   discountPercent: selectedDiscount?.percent,
                   discountValue,
 
