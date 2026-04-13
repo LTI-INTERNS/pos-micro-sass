@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Buttons from "@/components/Admin/common/ActionButton";
 import type { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
 import { useCurrency } from "@/lib/context/CurrencyContext";
-import { Mail, X } from "lucide-react";
+import { Mail, X, Loader2 } from "lucide-react";
 
 import OrderSummaryContent, {
   PaymentIcons,
@@ -14,6 +14,7 @@ import OrderSummaryContent, {
 
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import { customerService } from "@/lib/services/customer-service";
 
 export type ConfirmItem = CommonOrderItem;
 
@@ -26,6 +27,10 @@ type Props = {
   onCancelEdit?: () => void;
   onConfirm?: (email?: string, note?: string) => void;
   isSubmitting?: boolean;
+  /** Inline error message from the backend — replaces alert() */
+  submitError?: string | null;
+  /** When true, confirmation is blocked until a customer or email is present */
+  requiresCustomer?: boolean;
 };
 
 export default function OrderConfirmation({
@@ -37,6 +42,8 @@ export default function OrderConfirmation({
   onCancelEdit,
   onConfirm,
   isSubmitting = false,
+  submitError = null,
+  requiresCustomer = false,
 }: Props) {
   const { currency } = useCurrency();
 
@@ -44,7 +51,15 @@ export default function OrderConfirmation({
   const [manualEmail, setManualEmail] = useState<string>("");
   const [addedEmail, setAddedEmail] = useState<string>("");
   const [emailError, setEmailError] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
   const [note, setNote] = useState("");
+
+  // customerId from the linked customer — present when cashier selected a customer
+  const customerId = (payment.customer as any)?.customerId as string | undefined;
+
+  // Show the email button only when a customer is linked but has no email yet
+  const customerHasNoEmail = Boolean(customerId && !payment.customer?.email && !addedEmail);
 
   useEffect(() => {
     if (open) {
@@ -52,6 +67,7 @@ export default function OrderConfirmation({
       setAddedEmail(initial);
       setManualEmail(initial);
       setEmailError("");
+      setEmailSaved(false);
       setShowEmailPopup(false);
       setNote("");
     }
@@ -63,12 +79,33 @@ export default function OrderConfirmation({
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function handleAddEmail() {
+  async function handleAddEmail() {
     const trimmed = manualEmail.trim();
     if (!validateEmail(trimmed)) {
       setEmailError("Please enter a valid email address.");
       return;
     }
+
+    // If a real customer is linked and has no email, save to DB immediately
+    if (customerId) {
+      setEmailSaving(true);
+      setEmailError("");
+      try {
+        await customerService.updateEmail(customerId, trimmed);
+        setEmailSaved(true);
+      } catch (err: any) {
+        const code = err?.response?.data?.error?.code ?? "";
+        if (code === "DUPLICATE_EMAIL") {
+          setEmailError("This email is already used by another customer.");
+        } else {
+          setEmailError("Failed to save email. Please try again.");
+        }
+        setEmailSaving(false);
+        return;
+      }
+      setEmailSaving(false);
+    }
+
     setAddedEmail(trimmed);
     setEmailError("");
     setShowEmailPopup(false);
@@ -81,6 +118,11 @@ export default function OrderConfirmation({
   }
 
   const effectiveEmail = addedEmail || payment.customer?.email || undefined;
+
+  // Only block confirm when the caller explicitly requires a customer.
+  // Without requiresCustomer=true, guest (no-customer) orders are allowed.
+  const hasCustomer = Boolean(payment.customer || addedEmail);
+  const confirmBlocked = requiresCustomer && !hasCustomer;
 
   const commonPayment: CommonPaymentSummary = {
     orderNo: payment.orderNo,
@@ -128,27 +170,48 @@ export default function OrderConfirmation({
               </div>
             }
             rightAction={
-              addedEmail ? (
-                <button
-                  onClick={() => setShowEmailPopup(true)}
-                  title={addedEmail}
-                  className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
-                >
-                  <Mail size={16} />
-                  <span className="truncate max-w-[120px]">{addedEmail}</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowEmailPopup(true)}
-                  className="flex-1 h-12 rounded-xl border border-orange-400 text-orange-500 flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-orange-50"
-                >
-                  <Mail size={16} />
-                  <span>Add Email</span>
-                </button>
-              )
+              // Only show the email button when customer is linked but has no email.
+              // Once email is added (locally or saved to DB), button shows the saved address.
+              customerHasNoEmail || addedEmail ? (
+                addedEmail ? (
+                  <button
+                    onClick={() => setShowEmailPopup(true)}
+                    title={addedEmail}
+                    className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+                  >
+                    <Mail size={16} />
+                    <span className="truncate max-w-[120px]">{addedEmail}</span>
+                    {emailSaved && <span className="text-green-400 text-[10px] font-semibold ml-1">✓ saved</span>}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowEmailPopup(true)}
+                    className="flex-1 h-12 rounded-xl border border-orange-400 text-orange-500 flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-orange-50"
+                  >
+                    <Mail size={16} />
+                    <span>Add Email</span>
+                  </button>
+                )
+              ) : undefined
             }
           />
           </div>
+
+          {/* Customer required warning — only shown when requiresCustomer=true */}
+          {confirmBlocked && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 text-sm">
+              <span className="text-orange-500">&#9888;</span>
+              <span>A customer is required. Please select a customer or add an email before confirming.</span>
+            </div>
+          )}
+
+          {/* Backend error banner — replaces browser alert() */}
+          {submitError && (
+            <div className="flex items-start gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+              <span className="text-red-500 mt-0.5">&#10007;</span>
+              <span>{submitError}</span>
+            </div>
+          )}
 
           <div className="flex justify-between items-center pt-6 border-t">
             <div>
@@ -163,16 +226,24 @@ export default function OrderConfirmation({
               <Buttons
                 label="Cancel"
                 onClick={() => {
-                  onClose();
-                  onCancelEdit?.();
+                  // onCancelEdit re-opens the payment modal; onClose is called
+                  // by the parent when it transitions back — avoid double-firing.
+                  onCancelEdit ? onCancelEdit() : onClose();
                 }}
                 className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50"
               />
               <Buttons
-                label={isSubmitting ? "Saving…" : "confirm"}
+                label={isSubmitting ? "Saving…" : "Confirm"}
                 variant="primary"
-                onClick={() => !isSubmitting && onConfirm?.(effectiveEmail, note)}
-                className={`flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition ${isSubmitting ? "opacity-60 cursor-not-allowed" : ""}`}
+                onClick={() => {
+                  if (confirmBlocked) return;
+                  if (!isSubmitting) onConfirm?.(effectiveEmail, note);
+                }}
+                className={`flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold transition ${
+                  confirmBlocked || isSubmitting
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-orange-600"
+                }`}
               />
             </div>
           </div>
@@ -183,6 +254,12 @@ export default function OrderConfirmation({
         <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4">
             <h3 className="text-lg font-semibold text-black">Add Customer Email</h3>
+
+            {customerId && (
+              <p className="text-xs text-slate-500">
+                This email will be saved to the customer&apos;s profile in the database.
+              </p>
+            )}
 
             <FormField
               label="Email"
@@ -197,7 +274,12 @@ export default function OrderConfirmation({
             <PopupActions
               actions={[
                 { label: "Cancel", onClick: handleCancelPopup, variant: "secondary" },
-                { label: "Add", onClick: handleAddEmail, variant: "primary" },
+                {
+                  label: emailSaving ? "Saving…" : "Save",
+                  onClick: handleAddEmail,
+                  variant: "primary",
+                  disabled: emailSaving,
+                },
               ]}
             />
           </div>
