@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useRef, useState, useCallback } from "react";
+import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import ItemGrid from "@/components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, {
@@ -13,7 +13,7 @@ import OrderPaymentModal, {
 import OrderConfirmation, { ConfirmItem } from "@/components/Pos/OrderConfirmation";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
-import { Check, X, Printer } from "lucide-react";
+import { Check, X, Printer, AlertCircle } from "lucide-react";
 import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 import { usePosStore } from "@/store/usePosStore";
 import { orderService } from "@/lib/services/order-service";
@@ -160,6 +160,38 @@ function OrderCompletePopup({
   );
 }
 
+// ── PosToast — lightweight non-blocking toast for page-level notices ─────────
+
+function PosToast({
+  message,
+  onDismiss,
+}: {
+  message: string | null;
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    if (!message) return;
+    const id = window.setTimeout(onDismiss, 4000);
+    return () => window.clearTimeout(id);
+  }, [message, onDismiss]);
+
+  if (!message) return null;
+
+  return (
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm shadow-xl max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+      <AlertCircle size={18} className="shrink-0 text-orange-400" />
+      <span className="flex-1">{message}</span>
+      <button
+        onClick={onDismiss}
+        className="shrink-0 text-gray-400 hover:text-white transition cursor-pointer"
+        aria-label="Dismiss"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type SelectedCustomer = {
@@ -179,6 +211,8 @@ const Page = () => {
 
   const [search, setSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentData, setPaymentData] = useState<{
@@ -236,14 +270,20 @@ const Page = () => {
   const handleConfirm = useCallback(
     async (email?: string, note?: string) => {
       if (isSubmitting || !paymentSummary) return;
+
+      // Guard: session must be fully loaded before attempting order creation.
+      if (!session?.user?.branchId || !session?.user?.cashierId) {
+        setSubmitError("Session is not ready. Please wait a moment and try again.");
+        return;
+      }
+
       setIsSubmitting(true);
+      setSubmitError(null);
 
       try {
-        const branchId  = session?.user?.branchId  ?? "";
-        const cashierId = session?.user?.cashierId ?? "";
+        const branchId  = session.user.branchId;
+        const cashierId = session.user.cashierId;
 
-        // Derive PaymentType from the label set by OrderPaymentModal.
-        // Label is "Cash", "Visa", "Master", "Card", or "Cash + <Card>".
         const hasCash = paymentSummary.cashPaid > 0;
         const hasCard = paymentSummary.cardPaid > 0;
         const paymentType: "CASH" | "CARD" | "SPLIT" =
@@ -255,10 +295,8 @@ const Page = () => {
         const method: "CASH" | "CARD" =
           paymentSummary.cashPaid >= paymentSummary.cardPaid ? "CASH" : "CARD";
 
-        // Backend requires transactionId for any CARD method payment.
-        // The POS modal does not collect a real terminal ID, so we generate
-        // a reference that can be reconciled later if needed.
-        const transactionId = method === "CARD"
+        // Backend requires transactionId for any CARD payment.
+        const transactionId = hasCard
           ? `POS-${Date.now()}`
           : undefined;
 
@@ -269,9 +307,7 @@ const Page = () => {
           cashierId,
           ...(selectedCustomer?.customerId && { customerId: selectedCustomer.customerId }),
           ...(paymentSummary.discountId    && { discountId: paymentSummary.discountId }),
-          // Note entered by the cashier on the confirmation screen
           ...(note?.trim()                 && { note: note.trim() }),
-          // Email entered/confirmed on the confirmation screen — saved to DB
           ...(effectiveEmail               && { customerEmail: effectiveEmail }),
           items: orderItems.map((it) => ({
             variantId: it.id,
@@ -282,9 +318,8 @@ const Page = () => {
             paymentType,
             method,
             amount: paymentSummary.grandTotal,
-            // Always send cashReceived + changeToGive for CASH (even if 0),
-            // because the backend requires both fields to be non-null.
-            ...(method === "CASH" && {
+            // Send cash fields whenever cash was involved (CASH or SPLIT with cash).
+            ...(hasCash && {
               cashReceived: paymentSummary.cashPaid,
               changeToGive: paymentSummary.changeToGive,
             }),
@@ -318,17 +353,18 @@ const Page = () => {
         setSavedReceipt(receipt);
         setCompletedOrderNo(order.orderNumber);
 
+        // Show the completion popup first, THEN tear down the payment flow.
+        // Order matters: hardResetPaymentFlow clears selectedCustomer and
+        // paymentSummary — the popup must already be open before that happens.
+        setCompleteOpen(true);
         setConfirmOpen(false);
         setPaymentOpen(false);
         clearCart();
         hardResetPaymentFlow();
-        setCompleteOpen(true);
         panelRef.current?.sendOrderConfirmed();
       } catch (err: unknown) {
         console.error("Order creation failed:", err);
 
-        // Extract the structured error code the backend sends in the response body.
-        // Shape: { error: { code: string, message: string } }
         const code: string =
           (err as any)?.response?.data?.error?.code ?? "UNKNOWN";
 
@@ -349,7 +385,7 @@ const Page = () => {
             "Only cashiers can create orders. Please log in with a cashier account.",
         };
 
-        alert(messages[code] ?? "Failed to save the order. Please try again.");
+        setSubmitError(messages[code] ?? "Failed to save the order. Please try again.");
       } finally {
         setIsSubmitting(false);
       }
@@ -400,7 +436,7 @@ const Page = () => {
             }}
             onPay={(summary) => {
               if (summary.total <= 0) {
-                alert("Please add items to proceed with payment.");
+                setToast("Please add items to proceed with payment.");
                 return;
               }
 
@@ -450,13 +486,19 @@ const Page = () => {
       {paymentSummary && (
         <OrderConfirmation
           open={confirmOpen}
-          onClose={() => setConfirmOpen(false)}
+          onClose={() => {
+            setConfirmOpen(false);
+            setSubmitError(null);
+          }}
           items={confirmItems}
           payment={paymentSummary}
           customerEmail={selectedCustomer?.email ?? null}
           isSubmitting={isSubmitting}
+          submitError={submitError}
+          requiresCustomer={false}
           onCancelEdit={() => {
             setConfirmOpen(false);
+            setSubmitError(null);
             setPaymentForceEditable(true);
             setPaymentOpen(true);
           }}
@@ -474,6 +516,8 @@ const Page = () => {
           panelRef.current?.sendOrderCleared();
         }}
       />
+
+      <PosToast message={toast} onDismiss={() => setToast(null)} />
     </DashboardLayout>
   );
 };
