@@ -10,7 +10,7 @@ type Props = {
   payment: PaymentSummary;
   customerEmail?: string | null;
   onCancelEdit?: () => void;
-  onConfirm?: (email?: string) => void;
+  onConfirm?: (email?: string, note?: string) => void;
 };
 
 export const OrderConfirmationPopup = (props: Props) => {
