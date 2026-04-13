@@ -3,9 +3,16 @@
 import React, { useMemo } from "react";
 import Image from "next/image";
 import OrderTable, { Column } from "@/components/Admin/common/CommonTable";
-import { Printer, Mail } from "lucide-react";
 import { useCurrency } from "@/lib/context/CurrencyContext";
-import { useReceiptPrinter } from "@/hooks/useReceiptActions";
+
+/**
+ * Safely coerce any value (Prisma Decimal string, null, undefined, number)
+ * to a finite JS number. Falls back to 0 so .toFixed() never throws.
+ */
+const n = (v: unknown): number => {
+  const num = Number(v);
+  return Number.isFinite(num) ? num : 0;
+};
 
 export type CommonOrderItem = {
   id: number | string;
@@ -41,13 +48,13 @@ export const commonColumns: Column<CommonOrderItem>[] = [
     key: "price",
     label: "PRICE",
     align: "center",
-    render: (row) => `${row ? `LKR ${row.price.toFixed(2)}` : ""}`,
+    render: (row) => `${row ? `LKR ${n(row.price).toFixed(2)}` : ""}`,
   },
   {
     key: "subtotal",
     label: "SUBTOTAL",
     align: "right",
-    render: (row) => `${row ? `LKR ${row.subtotal.toFixed(2)}` : ""}`,
+    render: (row) => `${row ? `LKR ${n(row.subtotal).toFixed(2)}` : ""}`,
   },
 ];
 
@@ -104,11 +111,6 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
 
   const c = payment.currencyCode ?? currency ?? "LKR";
 
-  const receiptItems = useMemo(
-    () => items.map((it) => ({ name: it.name, qty: it.qty, price: it.price })),
-    [items]
-  );
-
   const itemsSubtotal = useMemo(
     () =>
       items.reduce(
@@ -118,34 +120,28 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
     [items]
   );
 
-  const { handlePrint, handleEmail } = useReceiptPrinter({
-    orderId: payment.orderNo,
-    currencyCode: c,
-    items: receiptItems,
-    discountValue: payment.discountValue,
-    cardTax: payment.cardTax,
-    grandTotal: payment.grandTotal,
-    paymentMethod: payment.paymentMethod,
-    cashPaid: payment.cashPaid,
-    cardPaid: payment.cardPaid,
-    customerName: payment.customer?.name ?? null,
-    customerPhone: payment.customer?.phoneNumber ?? null,
-    customerEmail:
-      payment.customer?.email ?? payment.customerEmail ?? null,
-  });
-
-  const hasEmail = Boolean(payment.customer?.email || payment.customerEmail);
-
   return (
     <>
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-black">{title}</h1>
         <p className="text-slate-500">{subtitle}</p>
-        <p className="text-xs text-slate-400 mt-1">
-          {orderNoLabel === 'Pending'
-            ? 'Order # — assigned after confirmation'
-            : `Order #${orderNoLabel}`}
-        </p>
+        {String(orderNoLabel).startsWith("POS-") ? (
+          <div className="mt-2 flex flex-col items-center gap-1">
+            <p className="text-sm font-mono font-semibold text-slate-700 tracking-wide">
+              Ref&nbsp;#{orderNoLabel}
+            </p>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+              Pending confirmation — order number assigned after save
+            </span>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 mt-1">
+            {orderNoLabel === "Pending"
+              ? "Order # — assigned after confirmation"
+              : `Order #${orderNoLabel}`}
+          </p>
+        )}
       </div>
 
       <div className="mb-4 max-h-37.5 overflow-y-auto">
@@ -162,19 +158,19 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
         <div className="space-y-3 text-sm">
           <div className="flex justify-between text-slate-500">
             <span>SUBTOTAL (Items)</span>
-            <span className="text-black">{c} {itemsSubtotal.toFixed(2)}</span>
+            <span className="text-black">{c} {n(itemsSubtotal).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-slate-500">
             <span>ORDER DISCOUNT</span>
-            <span className="text-black">{c} {payment.discountValue.toFixed(2)}</span>
+            <span className="text-black">{c} {n(payment.discountValue).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-slate-500">
             <span>CARD TAX</span>
-            <span className="text-black">{c} {payment.cardTax.toFixed(2)}</span>
+            <span className="text-black">{c} {n(payment.cardTax).toFixed(2)}</span>
           </div>
           <div className="border-t pt-3 flex justify-between font-semibold">
             <span className="text-black">BILL AMOUNT</span>
-            <span className="text-orange-500">{c} {payment.grandTotal.toFixed(2)}</span>
+            <span className="text-orange-500">{c} {n(payment.grandTotal).toFixed(2)}</span>
           </div>
           <div className="pt-3 border-t space-y-2">
             <div className="flex justify-between text-slate-500">
@@ -183,36 +179,21 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
             </div>
             <div className="flex justify-between text-slate-500">
               <span>CASH PAID</span>
-              <span className="text-black">{c} {payment.cashPaid.toFixed(2)}</span>
+              <span className="text-black">{c} {n(payment.cashPaid).toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
-              <span>CHANGE TO GIVE</span>
-              <span className="text-black font-semibold text-green-600">
-                {c} {(payment.changeToGive ?? 0).toFixed(2)}
-              </span>
-            </div>
+            {/* Only show change when no card was involved and there is actually change */}
+            {n(payment.cardPaid) === 0 && n(payment.changeToGive) > 0 && (
+              <div className="flex justify-between text-slate-500">
+                <span>CHANGE TO GIVE</span>
+                <span className="text-black font-semibold text-green-600">
+                  {c} {n(payment.changeToGive).toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="pt-3 border-t flex gap-3">
-            <button
-              onClick={handlePrint}
-              className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
-            >
-              <Printer size={16} />
-              <span>Get Receipt</span>
-            </button>
-
-            {hasEmail ? (
-              <button
-                onClick={handleEmail}
-                className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
-              >
-                <Mail size={16} />
-                <span>Email</span>
-              </button>
-            ) : (
-              rightAction
-            )}
+            {rightAction}
           </div>
         </div>
       </div>
