@@ -20,7 +20,6 @@ import { orderService } from "@/lib/services/order-service";
 import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 import type { CreateOrderInput } from "@/types/order.types";
 
-// ── Receipt data captured after a successful order save ──────────────────────
 
 type SavedReceiptData = {
   orderNo: string;
@@ -37,8 +36,6 @@ type SavedReceiptData = {
   customerEmail: string | null;
 };
 
-// ── OrderCompletePopup ────────────────────────────────────────────────────────
-
 function OrderCompletePopup({
   open,
   onClose,
@@ -50,7 +47,6 @@ function OrderCompletePopup({
   orderNo: string | number;
   receiptData: SavedReceiptData | null;
 }) {
-  // Hook must always be called — use safe fallbacks when receiptData is null
   const { handlePrint } = useReceiptPrinter(
     receiptData
       ? {
@@ -160,8 +156,6 @@ function OrderCompletePopup({
   );
 }
 
-// ── PosToast — lightweight non-blocking toast for page-level notices ─────────
-
 function PosToast({
   message,
   onDismiss,
@@ -192,16 +186,12 @@ function PosToast({
   );
 }
 
-// ── Types ─────────────────────────────────────────────────────────────────────
-
 type SelectedCustomer = {
   customerId?: string;
   name: string;
   phoneNumber: string;
   email: string;
 } | null;
-
-// ── Page ──────────────────────────────────────────────────────────────────────
 
 const Page = () => {
   const { currency } = useCurrency();
@@ -229,8 +219,6 @@ const Page = () => {
   const [completeOpen, setCompleteOpen] = useState(false);
   const [completedOrderNo, setCompletedOrderNo] = useState<string | number>("-");
 
-  // Holds receipt data built from the REAL order returned by the backend.
-  // This ensures the receipt shows the correct order number and finalised totals.
   const [savedReceipt, setSavedReceipt] = useState<SavedReceiptData | null>(null);
 
   const [paymentModalKey, setPaymentModalKey] = useState(0);
@@ -264,14 +252,10 @@ const Page = () => {
     setPaymentModalKey((k) => k + 1);
   }, []);
 
-  // Called by OrderConfirmation when cashier clicks "Confirm".
-  // Receives the optional email (may have been added/edited in the modal)
-  // and the optional note typed by the cashier.
   const handleConfirm = useCallback(
     async (email?: string, note?: string) => {
       if (isSubmitting || !paymentSummary) return;
 
-      // Guard: session must be fully loaded before attempting order creation.
       if (!session?.user?.branchId || !session?.user?.cashierId) {
         setSubmitError("Session is not ready. Please wait a moment and try again.");
         return;
@@ -290,12 +274,9 @@ const Page = () => {
           hasCash && hasCard ? "SPLIT" :
           hasCard             ? "CARD"  : "CASH";
 
-        // backend payment.method only accepts CASH | CARD (single value).
-        // For SPLIT, use the dominant method.
         const method: "CASH" | "CARD" =
           paymentSummary.cashPaid >= paymentSummary.cardPaid ? "CASH" : "CARD";
 
-        // Backend requires transactionId for any CARD payment.
         const transactionId = hasCard
           ? `POS-${Date.now()}`
           : undefined;
@@ -318,7 +299,6 @@ const Page = () => {
             paymentType,
             method,
             amount: paymentSummary.grandTotal,
-            // Send cash fields whenever cash was involved (CASH or SPLIT with cash).
             ...(hasCash && {
               cashReceived: paymentSummary.cashPaid,
               changeToGive: paymentSummary.changeToGive,
@@ -328,9 +308,6 @@ const Page = () => {
         };
 
         const order = await orderService.create(payload);
-
-        // Build receipt data from the REAL saved order so the receipt shows
-        // the backend-assigned order number (e.g. "003") not the temp ORD-timestamp.
         const receipt: SavedReceiptData = {
           orderNo:       order.orderNumber,
           currencyCode:  paymentSummary.currencyCode ?? currency ?? "LKR",
@@ -352,10 +329,6 @@ const Page = () => {
 
         setSavedReceipt(receipt);
         setCompletedOrderNo(order.orderNumber);
-
-        // Show the completion popup first, THEN tear down the payment flow.
-        // Order matters: hardResetPaymentFlow clears selectedCustomer and
-        // paymentSummary — the popup must already be open before that happens.
         setCompleteOpen(true);
         setConfirmOpen(false);
         setPaymentOpen(false);
