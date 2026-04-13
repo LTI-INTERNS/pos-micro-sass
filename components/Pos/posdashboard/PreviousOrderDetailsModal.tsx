@@ -14,14 +14,9 @@ import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 type Props = {
   open:    boolean;
   onClose: () => void;
-  /** Partial order from the list (id + orderNumber are guaranteed). */
   order:   Order | null;
 };
 
-/**
- * Map a fully-loaded Order's items → CommonOrderItem.
- * `subtotal` comes from the backend's per-item `total` field.
- */
 function toCommonItems(order: Order): CommonOrderItem[] {
   return (order.items ?? []).map((it, i) => ({
     id:       i,
@@ -32,10 +27,6 @@ function toCommonItems(order: Order): CommonOrderItem[] {
   }));
 }
 
-/**
- * Derive cash / card paid amounts from the payment breakdown.
- * Sums per-method amounts across all paymentDetails records.
- */
 function deriveCashCard(order: Order): { cashPaid: number; cardPaid: number } {
   let cashPaid = 0;
   let cardPaid = 0;
@@ -47,19 +38,16 @@ function deriveCashCard(order: Order): { cashPaid: number; cardPaid: number } {
     }
   }
 
-  // Fallback: top-level cashReceived if detail loop yielded nothing
   if (cashPaid === 0 && order.cashReceived) cashPaid = Number(order.cashReceived) || 0;
 
   return { cashPaid, cardPaid };
 }
 
 export default function PreviousOrderDetailsModal({ open, onClose, order }: Props) {
-  // Full order fetched from getById — replaces the incomplete list-row data
   const [fullOrder, setFullOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
 
-  // Fetch full detail whenever the modal opens with an order
   useEffect(() => {
     if (!open || !order?.id) {
       setFullOrder(null);
@@ -92,7 +80,6 @@ export default function PreviousOrderDetailsModal({ open, onClose, order }: Prop
     ? deriveCashCard(displayOrder)
     : { cashPaid: 0, cardPaid: 0 };
 
-  // Receipt printer — always called (hooks must not be conditional)
   const receiptData = displayOrder
     ? {
         orderId:       displayOrder.orderNumber,

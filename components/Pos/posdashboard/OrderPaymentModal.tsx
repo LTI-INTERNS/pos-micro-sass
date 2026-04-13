@@ -268,14 +268,11 @@ export default function OrderPaymentModal({
   //  IMPORTANT: lock only when fully paid AND NOT in forceEditable mode
   const lockInputs = isFullyPaid && !forceEditable;
 
-  //  once card payment is added, lock card type + tax buttons until removed
   const lockCardConfig = cardPaid > EPS;
 
-  //  Disable methods based on who fully covered the bill
   const cashCoversBill = cashPaid > EPS && cardPaid <= EPS && remainingToPay <= 0;
   const cardCoversBill = cardPaid > EPS && remainingToPay <= 0;
 
-  //  Done auto-pulse every 1s while fully paid (works even after returning from confirmation)
   useEffect(() => {
     if (!open) return;
     if (!isFullyPaid) return;
@@ -343,7 +340,6 @@ export default function OrderPaymentModal({
     return nextRaw;
   }
 
-  //  when moving to card section, suggest total remaining with tax automatically
   useEffect(() => {
     if (!open) return;
     if (!isCard) return;
@@ -634,14 +630,11 @@ export default function OrderPaymentModal({
                   const isSelected = selectedMethod === pm.id;
 
                   const disableThis =
-                    //  If cash alone covered full bill → disable both card methods
                     (cashCoversBill && (pm.id === "Visa" || pm.id === "Master")) ||
-                    //  If any card method covered full bill → disable cash + the other card method
                     (cardCoversBill &&
                       (pm.id === "Cash" ||
                         ((pm.id === "Visa" || pm.id === "Master") &&
                           pm.id !== selectedMethod))) ||
-                    //  Once card payment added, can’t switch card types until removed
                     (lockCardConfig &&
                       (pm.id === "Visa" || pm.id === "Master") &&
                       pm.id !== selectedMethod);

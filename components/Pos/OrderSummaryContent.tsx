@@ -5,10 +5,6 @@ import Image from "next/image";
 import OrderTable, { Column } from "@/components/Admin/common/CommonTable";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 
-/**
- * Safely coerce any value (Prisma Decimal string, null, undefined, number)
- * to a finite JS number. Falls back to 0 so .toFixed() never throws.
- */
 const n = (v: unknown): number => {
   const num = Number(v);
   return Number.isFinite(num) ? num : 0;
@@ -181,7 +177,6 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
               <span>CASH PAID</span>
               <span className="text-black">{c} {n(payment.cashPaid).toFixed(2)}</span>
             </div>
-            {/* Only show change when no card was involved and there is actually change */}
             {n(payment.cardPaid) === 0 && n(payment.changeToGive) > 0 && (
               <div className="flex justify-between text-slate-500">
                 <span>CHANGE TO GIVE</span>

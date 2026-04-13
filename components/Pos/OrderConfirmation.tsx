@@ -27,9 +27,7 @@ type Props = {
   onCancelEdit?: () => void;
   onConfirm?: (email?: string, note?: string) => void;
   isSubmitting?: boolean;
-  /** Inline error message from the backend — replaces alert() */
   submitError?: string | null;
-  /** When true, confirmation is blocked until a customer or email is present */
   requiresCustomer?: boolean;
 };
 
@@ -55,10 +53,8 @@ export default function OrderConfirmation({
   const [emailSaved, setEmailSaved] = useState(false);
   const [note, setNote] = useState("");
 
-  // customerId from the linked customer — present when cashier selected a customer
   const customerId = (payment.customer as any)?.customerId as string | undefined;
 
-  // Show the email button only when a customer is linked but has no email yet
   const customerHasNoEmail = Boolean(customerId && !payment.customer?.email && !addedEmail);
 
   useEffect(() => {
@@ -119,8 +115,6 @@ export default function OrderConfirmation({
 
   const effectiveEmail = addedEmail || payment.customer?.email || undefined;
 
-  // Only block confirm when the caller explicitly requires a customer.
-  // Without requiresCustomer=true, guest (no-customer) orders are allowed.
   const hasCustomer = Boolean(payment.customer || addedEmail);
   const confirmBlocked = requiresCustomer && !hasCustomer;
 
@@ -226,8 +220,6 @@ export default function OrderConfirmation({
               <Buttons
                 label="Cancel"
                 onClick={() => {
-                  // onCancelEdit re-opens the payment modal; onClose is called
-                  // by the parent when it transitions back — avoid double-firing.
                   onCancelEdit ? onCancelEdit() : onClose();
                 }}
                 className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50"

@@ -16,7 +16,6 @@ type Props = {
   onClose: () => void;
 };
 
-/** ISO date string for N days ago, used as the startDate query param. */
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -39,7 +38,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
   const [detailsOpen, setDetailsOpen]     = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // ── Fetch last 7 days of orders for this branch ────────────────────────
   useEffect(() => {
     if (!open || !branchId) return;
 
@@ -72,7 +70,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) {
-      // Reset state when modal is closed so stale data isn't shown on re-open
       setAllOrders([]);
       setTotalCount(0);
       setSearch("");
@@ -93,7 +90,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
     );
   }, [search, allOrders]);
 
-  // ── Table columns ──────────────────────────────────────────────────────
   const columns: Column<Order>[] = [
     {
       key:    "orderNumber",
