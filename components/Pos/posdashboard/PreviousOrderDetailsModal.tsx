@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import { Mail, X, Printer } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { X, Printer, Loader2 } from "lucide-react";
 import type { Order } from "@/types/order.types";
+import { orderService } from "@/lib/services/order-service";
 import OrderSummaryContent, {
   PaymentIcons,
   type CommonPaymentSummary,
@@ -13,26 +14,27 @@ import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 type Props = {
   open:    boolean;
   onClose: () => void;
+  /** Partial order from the list (id + orderNumber are guaranteed). */
   order:   Order | null;
 };
 
 /**
- * Map our canonical Order.items → CommonOrderItem (which requires `subtotal`).
- * `subtotal` === `total` from the backend OrderItem record.
+ * Map a fully-loaded Order's items → CommonOrderItem.
+ * `subtotal` comes from the backend's per-item `total` field.
  */
 function toCommonItems(order: Order): CommonOrderItem[] {
   return (order.items ?? []).map((it, i) => ({
     id:       i,
     name:     it.name,
-    qty:      it.qty,
-    price:    it.price,
-    subtotal: it.total,
+    qty:      Number(it.qty)   || 0,
+    price:    Number(it.price) || 0,
+    subtotal: Number(it.total) || 0,
   }));
 }
 
 /**
  * Derive cash / card paid amounts from the payment breakdown.
- * The backend stores per-method amounts in paymentDetails.
+ * Sums per-method amounts across all paymentDetails records.
  */
 function deriveCashCard(order: Order): { cashPaid: number; cardPaid: number } {
   let cashPaid = 0;
@@ -40,33 +42,70 @@ function deriveCashCard(order: Order): { cashPaid: number; cardPaid: number } {
 
   for (const payment of order.payments ?? []) {
     for (const detail of payment.paymentDetails ?? []) {
-      if (detail.method === "CASH") cashPaid += Number(detail.amount);
-      if (detail.method === "CARD") cardPaid += Number(detail.amount);
+      if (detail.method === "CASH") cashPaid += Number(detail.amount) || 0;
+      if (detail.method === "CARD") cardPaid += Number(detail.amount) || 0;
     }
   }
 
-  // Fallback: use top-level cashReceived if detail loop yielded nothing
-  if (cashPaid === 0 && order.cashReceived) cashPaid = order.cashReceived;
+  // Fallback: top-level cashReceived if detail loop yielded nothing
+  if (cashPaid === 0 && order.cashReceived) cashPaid = Number(order.cashReceived) || 0;
 
   return { cashPaid, cardPaid };
 }
 
 export default function PreviousOrderDetailsModal({ open, onClose, order }: Props) {
-  const items = order ? toCommonItems(order) : [];
-  const { cashPaid, cardPaid } = order ? deriveCashCard(order) : { cashPaid: 0, cardPaid: 0 };
+  // Full order fetched from getById — replaces the incomplete list-row data
+  const [fullOrder, setFullOrder] = useState<Order | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState("");
 
-  // Build the receipt data for useReceiptPrinter
-  const receiptData = order
+  // Fetch full detail whenever the modal opens with an order
+  useEffect(() => {
+    if (!open || !order?.id) {
+      setFullOrder(null);
+      setFetchError("");
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        setIsLoading(true);
+        setFetchError("");
+        const data = await orderService.getById(order.id);
+        if (!cancelled) setFullOrder(data);
+      } catch {
+        if (!cancelled) setFetchError("Failed to load order details. Please try again.");
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [open, order?.id]);
+
+  // Derive display data from the full order (or fall back to empty)
+  const displayOrder = fullOrder ?? order;
+  const items = displayOrder ? toCommonItems(displayOrder) : [];
+  const { cashPaid, cardPaid } = displayOrder
+    ? deriveCashCard(displayOrder)
+    : { cashPaid: 0, cardPaid: 0 };
+
+  // Receipt printer — always called (hooks must not be conditional)
+  const receiptData = displayOrder
     ? {
-        orderId:       order.orderNumber,
+        orderId:       displayOrder.orderNumber,
         currencyCode:  "LKR",
         items:         items.map((it) => ({ name: it.name, qty: it.qty, price: it.price })),
-        discountValue: order.discountAmount ?? 0,
-        cardTax:       order.tax ?? 0,
-        grandTotal:    order.totalamount ?? 0,
-        paymentMethod: order.paymenttype ?? "",
+        discountValue: Number(displayOrder.discountAmount) || 0,
+        cardTax:       Number(displayOrder.tax)            || 0,
+        grandTotal:    Number(displayOrder.totalamount)    || 0,
+        paymentMethod: displayOrder.paymenttype ?? "",
         cashPaid,
         cardPaid,
+        customerName:  displayOrder.customer !== "Walk-in Customer" ? displayOrder.customer : null,
+        customerPhone: null as string | null,
         customerEmail: null as string | null,
       }
     : {
@@ -79,29 +118,32 @@ export default function PreviousOrderDetailsModal({ open, onClose, order }: Prop
         paymentMethod: "",
         cashPaid:      0,
         cardPaid:      0,
+        customerName:  null as string | null,
+        customerPhone: null as string | null,
+        customerEmail: null as string | null,
       };
 
-  const { handlePrint, handleEmail } = useReceiptPrinter(receiptData);
+  const { handlePrint } = useReceiptPrinter(receiptData);
 
   if (!open || !order) return null;
 
-  const noteText  = (order.note ?? "").trim();
-  const noteValue = noteText || "No notes available";
-
   const commonPayment: CommonPaymentSummary = {
-    orderNo:       order.orderNumber,
+    orderNo:       displayOrder?.orderNumber ?? order.orderNumber,
     currencyCode:  "LKR",
-    discountValue: order.discountAmount ?? 0,
-    cardTax:       order.tax ?? 0,
-    grandTotal:    order.totalamount ?? 0,
-    paymentMethod: order.paymenttype ?? "—",
+    discountValue: Number(displayOrder?.discountAmount) || 0,
+    cardTax:       Number(displayOrder?.tax)            || 0,
+    grandTotal:    Number(displayOrder?.totalamount)    || 0,
+    paymentMethod: displayOrder?.paymenttype ?? "—",
     cashPaid,
     cardPaid,
   };
 
+  const noteText  = (displayOrder?.note ?? "").trim();
+  const noteValue = noteText || "No notes";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl p-8 space-y-8 relative">
+      <div className="max-w-3xl w-full mx-auto bg-white rounded-2xl p-8 space-y-6 relative">
 
         {/* Close button */}
         <button
@@ -112,68 +154,68 @@ export default function PreviousOrderDetailsModal({ open, onClose, order }: Prop
           <X size={18} />
         </button>
 
-        <div className="prev-order-details">
-          <OrderSummaryContent<CommonOrderItem>
-            title="Previous Order Details"
-            subtitle="View receipt for this completed order"
-            orderNoLabel={order.orderNumber}
-            items={items}
-            payment={commonPayment}
-            leftBlock={
-              <div className="border rounded-xl p-4 bg-slate-50 h-full flex flex-col">
-                <h3 className="font-semibold mb-2 text-black">NOTES</h3>
-                <div className="flex-1">
-                  <textarea
-                    value={noteValue}
-                    readOnly
-                    disabled
-                    className="w-full h-[220px] resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-black/60 focus:outline-none"
-                  />
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center justify-center gap-3 py-12 text-slate-400">
+            <Loader2 size={20} className="animate-spin" />
+            <span className="text-sm">Loading order details…</span>
+          </div>
+        )}
+
+        {/* Error state */}
+        {!isLoading && fetchError && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
+            <span>&#10007;</span>
+            <span>{fetchError}</span>
+          </div>
+        )}
+
+        {/* Content — faded while loading so layout does not jump */}
+        {!fetchError && (
+          <div className={isLoading ? "opacity-30 pointer-events-none" : ""}>
+            <OrderSummaryContent<CommonOrderItem>
+              title="Order Details"
+              subtitle="View receipt for this completed order"
+              orderNoLabel={displayOrder?.orderNumber ?? order.orderNumber}
+              items={items}
+              payment={commonPayment}
+              leftBlock={
+                <div className="border rounded-xl p-4 bg-slate-50 h-full flex flex-col">
+                  <h3 className="font-semibold mb-2 text-black">NOTES</h3>
+                  <div className="flex-1">
+                    <textarea
+                      value={noteValue}
+                      readOnly
+                      disabled
+                      className="w-full h-[220px] resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-black/60 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              }
+              rightAction={null}
+            />
+
+            {/* Bottom bar */}
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pt-6 border-t mt-4">
+              <div>
+                <p className="text-sm text-slate-500">Payment method</p>
+                <div className="flex items-center gap-3 mt-1">
+                  <PaymentIcons paymentMethod={displayOrder?.paymenttype ?? ""} />
+                  <p className="font-medium text-black">{displayOrder?.paymenttype ?? "—"}</p>
                 </div>
               </div>
-            }
-            rightAction={null}
-          />
 
-          {/* Bottom bar */}
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 pt-6 border-t mt-4">
-            <div>
-              <p className="text-sm text-slate-500">Payment method</p>
-              <div className="flex items-center gap-3 mt-1">
-                <PaymentIcons paymentMethod={order.paymenttype ?? ""} />
-                <p className="font-medium text-black">{order.paymenttype ?? "—"}</p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 w-full md:w-auto">
               <button
                 onClick={handlePrint}
-                className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+                disabled={isLoading || !fullOrder}
+                className="h-12 px-6 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Printer size={16} />
-                <span>Get Receipt</span>
+                <span>Print Receipt</span>
               </button>
-
-              {/* Email button only shown if customer has an email */}
-              {receiptData.customerEmail && (
-                <button
-                  onClick={handleEmail}
-                  className="flex-1 md:flex-none md:min-w-[180px] h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
-                >
-                  <Mail size={16} />
-                  <span>Email</span>
-                </button>
-              )}
             </div>
           </div>
-
-          {/* Suppress the duplicate action row rendered inside OrderSummaryContent */}
-          <style jsx global>{`
-            .prev-order-details .grid > :last-child > div.pt-3.border-t.flex.gap-3 {
-              display: none;
-            }
-          `}</style>
-        </div>
+        )}
       </div>
     </div>
   );
