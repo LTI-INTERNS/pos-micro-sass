@@ -7,6 +7,7 @@ export interface PosProduct {
     price: number;
     image?: string;
     barcode?: string;
+    stockQty: number; // Added to track available stock for negative stock alerts
 }
 
 interface ApiResponse<T> {
@@ -34,19 +35,23 @@ export const posService = {
                         
                         const name = optionString ? `${p.name} (${optionString})` : p.name;
                         
-                        // Extract price with branch override if available
+                        // Extract price and stock with branch override if available
                         let price = Number(v.sellingPrice) || 0;
+                        let stockQty = 0;
                         if (v.branchVariants && v.branchVariants.length > 0) {
-                            const branchOverride = v.branchVariants[0].sellingPriceOverride;
+                            const bv = v.branchVariants[0];
+                            const branchOverride = bv.sellingPriceOverride;
                             if (branchOverride !== null && branchOverride !== undefined) {
                                 price = Number(branchOverride);
                             }
+                            stockQty = Number(bv.stockQty) || 0;
                         }
 
                         posProducts.push({
                             id: v.variantId || p.productId, // Fallback just in case
                             name,
                             price,
+                            stockQty,
                             image: v.imageUrl || p.imageUrl || '',
                             barcode: v.barcode || '',
                         });
@@ -57,7 +62,8 @@ export const posService = {
             .catch(() => productsData.map(p => ({ 
                 id: p.id, 
                 name: p.name, 
-                price: p.variants?.[0]?.price ?? 0 
+                price: p.variants?.[0]?.price ?? 0,
+                stockQty: 0
             }))),
 
     createOrder: (data: unknown) =>
