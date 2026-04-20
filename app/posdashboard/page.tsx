@@ -15,6 +15,7 @@ import { usePosSettings } from "@/lib/context/PosSettingsContext";
 import { Check, X } from "lucide-react";
 import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 import { usePosStore } from "@/store/usePosStore";
+import PosNegativeStockToast, { type PosNegativeToastInfo } from "@/components/Pos/notifications/PosNegativeStockToast";
 
 function OrderCompletePopup({
   open,
@@ -128,6 +129,27 @@ const Page = () => {
 
   const orderNo = useMemo(() => `ORD-${new Date().getTime()}`, []);
 
+  // -- Negative Stock Notifications Logic --
+  const [negativeStockToasts, setNegativeStockToasts] = useState<PosNegativeToastInfo[]>([]);
+
+  const triggerNegativeStockAlert = (itemName: string, stockQty: number, attemptedQty: number) => {
+    const id = `neg-toast-${Date.now()}-${Math.random()}`;
+    const newToast: PosNegativeToastInfo = {
+      id,
+      productName: itemName,
+      stockQty,
+      attemptedQty,
+    };
+    setNegativeStockToasts((prev) => [...prev, newToast]);
+
+    // If out of stock, require manual dismiss. If low stock (negative warning), auto-dismiss in 6s.
+    if (stockQty > 0) {
+      setTimeout(() => {
+        setNegativeStockToasts((prev) => prev.filter((t) => t.id !== id));
+      }, 6000);
+    }
+  };
+
   const confirmItems: ConfirmItem[] = useMemo(
     () =>
       orderItems.map((it) => ({
@@ -140,7 +162,18 @@ const Page = () => {
     [orderItems]
   );
 
-  const handleAddItem = (item: { id: string; name: string; price: number; image?: string }) => {
+  const handleAddItem = (item: { id: string; name: string; price: number; image?: string; stockQty?: number }) => {
+    const stock = item.stockQty ?? 0;
+    const existing = orderItems.find((it) => it.id === String(item.id));
+    const newQty = (existing ? existing.qty : 0) + 1;
+
+    if (newQty > stock) {
+      if (posSettings.negativeStockAlertsEnabled) {
+        triggerNegativeStockAlert(item.name, stock, newQty);
+      }
+      return; // <-- Block adding if stock is exceeded ALWAYS
+    }
+
     addItem(item);
   };
 
@@ -181,9 +214,33 @@ const Page = () => {
             ref={panelRef}
             items={orderItems}
             customerDisplayEnabled={posSettings.customerDisplayEnabled}
-            onInc={(id) => increaseQty(id)}
+            onInc={(id) => {
+              const item = orderItems.find(it => it.id === id);
+              if (item) {
+                const stock = item.stockQty ?? 0;
+                if (item.qty + 1 > stock) {
+                  if (posSettings.negativeStockAlertsEnabled) {
+                    triggerNegativeStockAlert(item.name, stock, item.qty + 1);
+                  }
+                  return; // <-- Block increment ALWAYS
+                }
+              }
+              increaseQty(id);
+            }}
             onDec={(id) => decreaseQty(id)}
-            onSetQty={(id, qty) => setQty(id, qty)}
+            onSetQty={(id, qty) => {
+              const item = orderItems.find(it => it.id === id);
+              if (item) {
+                const stock = item.stockQty ?? 0;
+                if (qty > stock && qty > item.qty) {
+                  if (posSettings.negativeStockAlertsEnabled) {
+                    triggerNegativeStockAlert(item.name, stock, qty);
+                  }
+                  return; // <-- Block setting quantity past stock ALWAYS
+                }
+              }
+              setQty(id, qty);
+            }}
             onCancel={() => {
               clearCart();
               hardResetPaymentFlow();
@@ -272,6 +329,11 @@ const Page = () => {
 
           panelRef.current?.sendOrderCleared();
         }}
+      />
+
+      <PosNegativeStockToast 
+        toasts={negativeStockToasts} 
+        onDismiss={(id) => setNegativeStockToasts(prev => prev.filter(t => t.id !== id))} 
       />
     </DashboardLayout>
   );
