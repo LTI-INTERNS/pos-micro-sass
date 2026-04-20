@@ -146,21 +146,23 @@ export interface GetOrdersParams {
 export interface CreateOrderItemInput {
     variantId: string;
     quantity:  number;
-    unitPrice: number;
+    // unitPrice is intentionally omitted — the backend derives price from
+    // BranchVariant.sellingPriceOverride / variant.sellingPrice to prevent tampering.
 }
 
 export interface CreatePaymentInput {
-    paymentType:   PaymentType;
     method:        BasicPaymentMethod;
+    // amount is sent for UI reference; the backend always uses its own computed totalAmount.
     amount:        number;
     cashReceived?: number;
     changeToGive?: number;
     transactionId?: string;
+    // paymentType is intentionally omitted — the backend derives it from method.
 }
 
 export interface CreateOrderInput {
-    branchId:       string;
-    cashierId:      string;
+    // branchId and cashierId are intentionally omitted — the backend reads
+    // them from the verified JWT (req.user) and never trusts the request body.
     customerId?:    string;
     discountId?:    string;
     note?:          string;
