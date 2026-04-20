@@ -7,6 +7,7 @@ export interface PosProduct {
     price: number;
     image?: string;
     barcode?: string;
+    availability: boolean;
     stockQty: number; // Added to track available stock for negative stock alerts
 }
 
@@ -38,6 +39,7 @@ export const posService = {
                         // Extract price and stock with branch override if available
                         let price = Number(v.sellingPrice) || 0;
                         let stockQty = 0;
+                        let availability = true;
                         if (v.branchVariants && v.branchVariants.length > 0) {
                             const bv = v.branchVariants[0];
                             const branchOverride = bv.sellingPriceOverride;
@@ -45,6 +47,7 @@ export const posService = {
                                 price = Number(branchOverride);
                             }
                             stockQty = Number(bv.stockQty) || 0;
+                            availability = Boolean(bv.availability ?? true);
                         }
 
                         posProducts.push({
@@ -52,6 +55,7 @@ export const posService = {
                             name,
                             price,
                             stockQty,
+                            availability,
                             image: v.imageUrl || p.imageUrl || '',
                             barcode: v.barcode || '',
                         });
@@ -63,6 +67,7 @@ export const posService = {
                 id: p.id, 
                 name: p.name, 
                 price: p.variants?.[0]?.price ?? 0,
+                availability: true,
                 stockQty: 0
             }))),
 
