@@ -256,7 +256,7 @@ const Page = () => {
     async (email?: string, note?: string) => {
       if (isSubmitting || !paymentSummary) return;
 
-      if (!session?.user?.branchId || !session?.user?.cashierId) {
+      if (!session?.user?.cashierId) {
         setSubmitError("Session is not ready. Please wait a moment and try again.");
         return;
       }
@@ -265,14 +265,9 @@ const Page = () => {
       setSubmitError(null);
 
       try {
-        const branchId  = session.user.branchId;
-        const cashierId = session.user.cashierId;
 
         const hasCash = paymentSummary.cashPaid > 0;
         const hasCard = paymentSummary.cardPaid > 0;
-        const paymentType: "CASH" | "CARD" | "SPLIT" =
-          hasCash && hasCard ? "SPLIT" :
-          hasCard             ? "CARD"  : "CASH";
 
         const method: "CASH" | "CARD" =
           paymentSummary.cashPaid >= paymentSummary.cardPaid ? "CASH" : "CARD";
@@ -284,8 +279,6 @@ const Page = () => {
         const effectiveEmail = email?.trim() || selectedCustomer?.email || null;
 
         const payload: CreateOrderInput = {
-          branchId,
-          cashierId,
           ...(selectedCustomer?.customerId && { customerId: selectedCustomer.customerId }),
           ...(paymentSummary.discountId    && { discountId: paymentSummary.discountId }),
           ...(note?.trim()                 && { note: note.trim() }),
@@ -293,10 +286,9 @@ const Page = () => {
           items: orderItems.map((it) => ({
             variantId: it.id,
             quantity:  it.qty,
-            unitPrice: it.price,
+            // unitPrice omitted — backend reads from BranchVariant
           })),
           payment: {
-            paymentType,
             method,
             amount: paymentSummary.grandTotal,
             ...(hasCash && {
