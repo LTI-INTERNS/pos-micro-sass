@@ -95,12 +95,12 @@ const managerAvailabilityOptions = [
 
 const managerStockOptions = [
   { label: "Low Stock", value: "Low Stock" },
-  { label: "No Stock", value: "No Stock" },
+  { label: "Out of Stock", value: "Out of Stock" },
   { label: "In Stock", value: "In Stock" },
 ];
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { storeInfo } = useStoreInfo();
   const router = useRouter();
   const pathname = usePathname();
@@ -141,6 +141,11 @@ export default function DashboardPage() {
 
   const activeBranchLabel = session?.user?.branchName || "";
 
+  // Stable primitives extracted so useEffect deps don't use the session object
+  // (session is a new object reference every render → infinite re-render loop)
+  const sessionStatus = status;
+  const sessionCompanyId = session?.user?.companyId ?? "";
+
   useEffect(() => {
     setSelectedProduct(null);
     setViewOpen(false);
@@ -152,12 +157,12 @@ export default function DashboardPage() {
   }, [activeBranchId]);
 
   useEffect(() => {
-    if (!session) return;
+    if (sessionStatus !== "authenticated" || !sessionCompanyId) return;
     branchService.getAll().then(setBranches);
-  }, [session]);
+  }, [sessionStatus, sessionCompanyId]);
 
   useEffect(() => {
-    if (!session) return;
+    if (sessionStatus !== "authenticated" || !sessionCompanyId) return;
 
     let cancelled = false;
 
@@ -178,7 +183,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [session, activeBranchId]);
+  }, [sessionStatus, sessionCompanyId, activeBranchId]);
 
   // Fetch full company catalog when the "Add from Catalog" popup opens.
   // Uses ?catalog=true to bypass the branch filter so managers see everything.
@@ -243,14 +248,14 @@ export default function DashboardPage() {
         const stockQty = Number(variant.stockQty ?? 0);
         const lowStock = Number(variant.lowStock ?? 0);
 
-        if (stockQty <= 0) return "No Stock";
+        if (stockQty <= 0) return "Out of Stock";
         if (stockQty <= lowStock) return "Low Stock";
         return "In Stock";
       });
 
-      let stockStatus = "No Stock";
-      if (variantStatuses.includes("No Stock")) {
-        stockStatus = "No Stock";
+      let stockStatus = "Out of Stock";
+      if (variantStatuses.includes("Out of Stock")) {
+        stockStatus = "Out of Stock";
       } else if (variantStatuses.includes("Low Stock")) {
         stockStatus = "Low Stock";
       } else if (variantStatuses.includes("In Stock")) {
@@ -328,7 +333,7 @@ export default function DashboardPage() {
       if (e.key.length === 1) {
         barcodeString += e.key;
         if (timeoutId) clearTimeout(timeoutId);
-        
+
         timeoutId = setTimeout(() => {
           barcodeString = "";
         }, 50);
@@ -379,15 +384,15 @@ export default function DashboardPage() {
     filters:
       userRole === "manager"
         ? (() => {
-            const {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              availability: _availability,
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              lowStockStatus: _lowStockStatus,
-              ...rest
-            } = tableFilters;
-            return rest;
-          })()
+          const {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            availability: _availability,
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            lowStockStatus: _lowStockStatus,
+            ...rest
+          } = tableFilters;
+          return rest;
+        })()
         : tableFilters,
   });
 
@@ -419,10 +424,10 @@ export default function DashboardPage() {
           const lowStock = Number(variant.lowStock ?? 0);
           const variantStockStatus =
             stockQty <= 0
-              ? "No Stock"
+              ? "Out of Stock"
               : stockQty <= lowStock
-              ? "Low Stock"
-              : "In Stock";
+                ? "Low Stock"
+                : "In Stock";
 
           if (availabilityFilter && availabilityStatus !== availabilityFilter) {
             return false;
@@ -512,8 +517,8 @@ export default function DashboardPage() {
       previousWindowProductCount > 0
         ? `${(((currentWindowProductCount - previousWindowProductCount) / previousWindowProductCount) * 100).toFixed(1)}%`
         : currentWindowProductCount > 0
-        ? "100.0%"
-        : "0.0%";
+          ? "100.0%"
+          : "0.0%";
 
     const productVariantsTrend: "up" | "down" =
       currentWindowVariantCount >= previousWindowVariantCount ? "up" : "down";
@@ -521,8 +526,8 @@ export default function DashboardPage() {
       previousWindowVariantCount > 0
         ? `${(((currentWindowVariantCount - previousWindowVariantCount) / previousWindowVariantCount) * 100).toFixed(1)}%`
         : currentWindowVariantCount > 0
-        ? "100.0%"
-        : "0.0%";
+          ? "100.0%"
+          : "0.0%";
 
     return {
       allProductsCount,
@@ -545,7 +550,7 @@ export default function DashboardPage() {
 
   const handleOutOfStockCardClick = () => {
     if (userRole !== "manager") return;
-    setFilters({ lowStockStatus: "No Stock" });
+    setFilters({ lowStockStatus: "Out of Stock" });
   };
 
   const handleAllVariantsCardClick = () => {
@@ -616,15 +621,15 @@ export default function DashboardPage() {
       previousWindowCategoriesCount > 0
         ? `${(((currentWindowCategoriesCount - previousWindowCategoriesCount) / previousWindowCategoriesCount) * 100).toFixed(1)}%`
         : currentWindowCategoriesCount > 0
-        ? "100.0%"
-        : "0.0%";
+          ? "100.0%"
+          : "0.0%";
 
     const newProductsPercentage =
       previousNewProductsCount > 0
         ? `${(((newProductsCount - previousNewProductsCount) / previousNewProductsCount) * 100).toFixed(1)}%`
         : newProductsCount > 0
-        ? "100.0%"
-        : "0.0%";
+          ? "100.0%"
+          : "0.0%";
 
     return {
       categoriesCount,
@@ -707,26 +712,26 @@ export default function DashboardPage() {
   const editInitialData =
     editOpen && baseSelectedProduct
       ? {
-          name: baseSelectedProduct.name,
-          categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
-          brand: baseSelectedProduct.brand || "",
-          description: baseSelectedProduct.description || "",
-          options: (baseSelectedProduct.options ?? []).map((opt) => ({
-            id: opt.id,
-            name: opt.name,
-            values: opt.values,
-          })),
-          variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
-            id: i + 1,
-            sku: v.sku,
-            barcode: "",
-            imageUrl: v.imageUrl || "",
-            basePrice: String(v.price),
-            sellingPrice: String(v.price),
-            sellUnit: "Each",
-            optionValues: v.optionValues ?? [],
-          })),
-        }
+        name: baseSelectedProduct.name,
+        categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
+        brand: baseSelectedProduct.brand || "",
+        description: baseSelectedProduct.description || "",
+        options: (baseSelectedProduct.options ?? []).map((opt) => ({
+          id: opt.id,
+          name: opt.name,
+          values: opt.values,
+        })),
+        variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
+          id: i + 1,
+          sku: v.sku,
+          barcode: "",
+          imageUrl: v.imageUrl || "",
+          basePrice: String(v.price),
+          sellingPrice: String(v.price),
+          sellUnit: "Each",
+          optionValues: v.optionValues ?? [],
+        })),
+      }
       : null;
 
   const companyProductData: ExistingProduct | null = null;
@@ -865,9 +870,9 @@ export default function DashboardPage() {
             for (const p of selectedCatalogProducts) {
               const variants = (p.variants ?? []).map((v: VariantLike) => ({
                 variantId: v.variantId ?? v.id ?? v.sku,
-                stockQty:  0,
+                stockQty: 0,
                 stockUnit: v.sellUnit || "Each",
-                lowStock:  0,
+                lowStock: 0,
               }));
               if (variants.length === 0) continue;
               await apiClient.post("/branch-variants/stock", { variants });
