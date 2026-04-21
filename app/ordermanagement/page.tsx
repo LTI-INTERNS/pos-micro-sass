@@ -23,6 +23,18 @@ function isAllowedRole(role: string): role is AllowedRole {
   return (ALLOWED_ROLES as readonly string[]).includes(role);
 }
 
+const STATUS_OPTIONS = [
+  { label: "Pending",   value: "PENDING"   },
+  { label: "Completed", value: "COMPLETED" },
+  { label: "Canceled",  value: "CANCELED"  },
+];
+
+const PAYMENT_TYPE_OPTIONS = [
+  { label: "Cash",  value: "CASH"  },
+  { label: "Card",  value: "CARD"  },
+  { label: "Split", value: "SPLIT" },
+];
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function OrderManagementPage() {
@@ -32,10 +44,6 @@ export default function OrderManagementPage() {
   const role     = session?.user?.role     ?? "";
   const branchId = session?.user?.branchId ?? "";
 
-  /**
-   * OWNER / ADMIN → no branchId filter → backend returns all company orders.
-   * MANAGER       → branchId passed    → backend scopes to their branch only.
-   */
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
   // ── Data state ──────────────────────────────────────────────────────────
@@ -57,7 +65,6 @@ export default function OrderManagementPage() {
     status?: string;
   }>({});
 
-  // ── Fetch orders ─────────────────────────────────────────────────────────
   const fetchOrders = useCallback(async () => {
     if (!isAllowedRole(role)) return;
 
@@ -65,9 +72,12 @@ export default function OrderManagementPage() {
       setIsLoading(true);
       setFetchError("");
 
-      const data = await orderService.getAll(
-        canSeeAllBranches ? undefined : { branchId }
-      );
+      const data = await orderService.getAll({
+        ...(!canSeeAllBranches && { branchId }),
+        ...(start && { startDate: start.toISOString().split("T")[0] }),
+        ...(end   && { endDate:   end.toISOString().split("T")[0]   }),
+        limit: 500,
+      });
 
       setAllOrders(data);
     } catch {
@@ -75,20 +85,18 @@ export default function OrderManagementPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [role, branchId, canSeeAllBranches]);
+  }, [role, branchId, canSeeAllBranches, start, end]);
 
   useEffect(() => {
     if (sessionStatus !== "loading") fetchOrders();
   }, [fetchOrders, sessionStatus]);
 
-  // ── Hide branch filter for roles that can't use it ───────────────────────
   useEffect(() => {
     if (!canSeeAllBranches) {
       setFilters((prev) => ({ ...prev, branch: "" }));
     }
   }, [canSeeAllBranches]);
 
-  // ── Filter helpers ───────────────────────────────────────────────────────
   const visibleFilters = canSeeAllBranches
     ? filters
     : Object.fromEntries(
@@ -106,49 +114,37 @@ export default function OrderManagementPage() {
 
   const clearAllFilters = () => setFilters({});
 
-  // ── Filter option lists ──────────────────────────────────────────────────
-  const statusOptions = getFilterOptions(allOrders, "status");
-
   const branchOptions = useMemo(
     () => getFilterOptions(allOrders, "branch"),
     [allOrders]
   );
-
-  const paymentTypeOptions = [
-    { label: "Cash",  value: "CASH"  },
-    { label: "Card",  value: "CARD"  },
-    { label: "Split", value: "SPLIT" },
-  ];
 
   const filterFields: SelectField[] = useMemo(
     () => [
       ...(canSeeAllBranches
         ? [{ name: "branch", placeholder: "Select Branch", options: branchOptions } as SelectField]
         : []),
-      { name: "paymenttype", placeholder: "Select Payment Type", options: paymentTypeOptions },
-      { name: "status",      placeholder: "Select Status",       options: statusOptions      },
+      { name: "paymenttype", placeholder: "Select Payment Type", options: PAYMENT_TYPE_OPTIONS },
+      { name: "status",      placeholder: "Select Status",       options: STATUS_OPTIONS       },
     ],
-    [canSeeAllBranches, branchOptions, statusOptions]
+    [canSeeAllBranches, branchOptions]
   );
 
-  // ── Client-side filtering ────────────────────────────────────────────────
   const filteredOrders = useTableFilters<Order>({
     data:       allOrders,
     search,
     start,
     end,
     dateKey:    "dateTime",
-    searchKeys: ["orderNumber", "cashier"],
+    searchKeys: ["id", "orderNumber", "cashier", "customer"],
     filters:    canSeeAllBranches ? filters : { ...filters, branch: "" },
   });
 
-  // ── View bill ────────────────────────────────────────────────────────────
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
     setBillOpen(true);
   };
 
-  // ── Loading / access guard ───────────────────────────────────────────────
   if (sessionStatus === "loading") {
     return (
       <DashboardLayout>
@@ -201,7 +197,7 @@ export default function OrderManagementPage() {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by order number or cashier…"
+            placeholder="Search by order ID, order number, cashier or customer…"
             debounceMs={300}
             showFilter
             onFilter={() => setShowFilter((v) => !v)}
