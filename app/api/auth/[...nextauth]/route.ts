@@ -12,6 +12,8 @@ interface BackendJwt {
     companyId: string;
     branchId:  string;
     exp:       number;
+    userId?:    string;     // OWNER | ADMIN | MANAGER
+    cashierId?: string;     // CASHIER
 }
 
 export const authOptions: NextAuthOptions = {
@@ -91,12 +93,13 @@ export const authOptions: NextAuthOptions = {
                     id:          credentials.cashierId,
                     email:       '',
                     name:        credentials.name,
-                    role:        credentials.role,
+                    role:        'CASHIER',
                     branchId:    credentials.branchId,
                     branchName:  credentials.branchName,
                     companyId:   credentials.companyId,
                     companyName: credentials.companyName,
                     token:       credentials.token,
+                    cashierId:   credentials.cashierId,  // cashier.cashierId
                 };
             },
         }),
@@ -158,6 +161,11 @@ export const authOptions: NextAuthOptions = {
                 token.companyName  = user.companyName;
                 token.backendToken = user.token;
 
+                // cashierId pre-set by cashier-pin provider
+                if ((user as any).cashierId) {
+                    token.cashierId = (user as any).cashierId;
+                }
+
                 try {
                     const decoded     = jwtDecode<BackendJwt>(user.token);
                     token.tokenExpiry = decoded.exp;
@@ -165,7 +173,14 @@ export const authOptions: NextAuthOptions = {
                     // OWNER/ADMIN have companyId '' until they select one — keep it as-is.
                     if (decoded.companyId) token.companyId = decoded.companyId;
                     if (decoded.branchId)  token.branchId  = decoded.branchId;
-                } catch { /* keep values from authorize() */ }
+
+                    // Decode userId / cashierId from backend JWT
+                    //   CASHIER              → cashierId
+                    //   OWNER | ADMIN | MANAGER → userId
+                    if (decoded.cashierId) token.cashierId = decoded.cashierId;
+                    if (decoded.userId)    token.userId    = decoded.userId;
+
+                } catch { /* keep values already set from authorize() */ }
 
                 return token;
             }
@@ -177,6 +192,10 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
 
+        //  In components / pages:
+        //    OWNER | ADMIN | MANAGER → session.user.userId
+        //    CASHIER                 → session.user.cashierId
+
         async session({ session, token }: { session: Session; token: JWT }) {
             session.user.role         = token.role;
             session.user.branchId     = token.branchId;
@@ -184,6 +203,8 @@ export const authOptions: NextAuthOptions = {
             session.user.companyId    = token.companyId;
             session.user.companyName  = token.companyName;
             session.user.backendToken = token.backendToken;
+            session.user.userId       = token.userId;      // OWNER | ADMIN | MANAGER
+            session.user.cashierId    = token.cashierId;   // CASHIER
 
             if (token.error) session.error = token.error;
 

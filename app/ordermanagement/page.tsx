@@ -145,7 +145,7 @@ export default function OrderManagementPage() {
   // ── View bill ────────────────────────────────────────────────────────────
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
-    setReceiptOpen(true);
+    setBillOpen(true);
   };
 
   // ── Loading / access guard ───────────────────────────────────────────────
