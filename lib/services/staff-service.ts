@@ -1,77 +1,136 @@
 import { apiClient } from "@/lib/api-client";
 import type {
-  Staff,
-  StaffCreateOptions,
+  AdminStaff,
+  BranchOption,
+  CompanyOption,
+  CompanyTag,
   CreateStaffInput,
+  ExistingAdminOption,
+  ManagerStaff,
+  StaffCreateOptions,
+  StaffDirectory,
   UpdateStaffInput,
 } from "@/types/staff.types";
-
-export type { Staff, StaffCreateOptions, CreateStaffInput, UpdateStaffInput };
 
 type ApiResponse<T> = {
   success: boolean;
   data: T;
 };
 
-type BackendStaff = {
-  staffId: string;
+type BackendAdmin = {
+  id: string;
   entityId: string;
-  role: "ADMIN" | "MANAGER";
-  position: "Admin" | "Manager";
+  role: "ADMIN";
+  position: "Admin";
   name: string;
   staffNo: string | null;
-  scopeId: string | null;
-  scopeName: string | null;
   email: string;
   phone: string;
   activeStatus: boolean;
   createdAt: string;
+  assignedCompanies: CompanyTag[];
 };
 
-function mapStaff(item: BackendStaff): Staff {
+type BackendManager = {
+  id: string;
+  entityId: string;
+  role: "MANAGER";
+  position: "Manager";
+  name: string;
+  staffNo: string | null;
+  email: string;
+  phone: string;
+  activeStatus: boolean;
+  createdAt: string;
+  companyId: string;
+  companyName: string;
+  branchId: string;
+  branchName: string;
+};
+
+function mapAdmin(item: BackendAdmin): AdminStaff {
   return {
-    id: item.staffId,
-    entityId: item.entityId,
-    role: item.role,
-    position: item.position,
-    name: item.name,
+    ...item,
     staffNo: item.staffNo ?? "",
-    scopeId: item.scopeId ?? "",
-    scopeName: item.scopeName ?? "",
-    email: item.email,
-    phone: item.phone,
-    activeStatus: item.activeStatus,
-    createdAt: item.createdAt,
+  };
+}
+
+function mapManager(item: BackendManager): ManagerStaff {
+  return {
+    ...item,
+    staffNo: item.staffNo ?? "",
+  };
+}
+
+function mapOptions(data: {
+  managerBranches: BranchOption[];
+  adminCompanies: CompanyOption[];
+  existingAdmins: Array<{
+    id: string;
+    name: string;
+    email: string;
+    staffNo: string | null;
+    phone: string;
+    assignedCompanies: CompanyTag[];
+  }>;
+}): StaffCreateOptions {
+  return {
+    managerBranches: data.managerBranches,
+    adminCompanies: data.adminCompanies,
+    existingAdmins: data.existingAdmins.map(
+      (admin): ExistingAdminOption => ({
+        ...admin,
+        staffNo: admin.staffNo ?? "",
+      })
+    ),
   };
 }
 
 export const staffService = {
-  getAll: async (): Promise<Staff[]> => {
-    const res = await apiClient.get<ApiResponse<BackendStaff[]>>("/staff");
-    return res.data.data.map(mapStaff);
-  },
+  getAll: async (): Promise<StaffDirectory> => {
+    const res = await apiClient.get<
+      ApiResponse<{ admins: BackendAdmin[]; managers: BackendManager[] }>
+    >("/staff");
 
-  getById: async (id: string): Promise<Staff> => {
-    const res = await apiClient.get<ApiResponse<BackendStaff>>(`/staff/${id}`);
-    return mapStaff(res.data.data);
+    return {
+      admins: (res.data.data.admins ?? []).map(mapAdmin),
+      managers: (res.data.data.managers ?? []).map(mapManager),
+    };
   },
 
   getCreateOptions: async (): Promise<StaffCreateOptions> => {
-    const res = await apiClient.get<ApiResponse<StaffCreateOptions>>("/staff/options");
-    return res.data.data;
+    const res = await apiClient.get<
+      ApiResponse<{
+        managerBranches: BranchOption[];
+        adminCompanies: CompanyOption[];
+        existingAdmins: Array<{
+          id: string;
+          name: string;
+          email: string;
+          staffNo: string | null;
+          phone: string;
+          assignedCompanies: CompanyTag[];
+        }>;
+      }>
+    >("/staff/options");
+
+    return mapOptions(res.data.data);
   },
 
-  create: async (data: CreateStaffInput): Promise<Staff> => {
-    const res = await apiClient.post<ApiResponse<BackendStaff>>("/staff", data);
-    return mapStaff(res.data.data);
+  create: async (data: CreateStaffInput): Promise<AdminStaff | ManagerStaff> => {
+    const res = await apiClient.post<ApiResponse<BackendAdmin | BackendManager>>("/staff", data);
+    return res.data.data.role === "ADMIN" ? mapAdmin(res.data.data) : mapManager(res.data.data);
   },
 
-  update: async (id: string, data: UpdateStaffInput): Promise<Staff> => {
-    const res = await apiClient.patch<ApiResponse<BackendStaff>>(`/staff/${id}`, data);
-    return mapStaff(res.data.data);
+  update: async (staffId: string, data: UpdateStaffInput): Promise<AdminStaff | ManagerStaff> => {
+    const res = await apiClient.patch<ApiResponse<BackendAdmin | BackendManager>>(
+      `/staff/${staffId}`,
+      data
+    );
+    return res.data.data.role === "ADMIN" ? mapAdmin(res.data.data) : mapManager(res.data.data);
   },
 
-  remove: async (id: string): Promise<void> => {
-    await apiClient.delete(`/staff/${id}`);
+  remove: async (staffId: string): Promise<void> => {
+    await apiClient.delete(`/staff/${staffId}`);
   },
 };
