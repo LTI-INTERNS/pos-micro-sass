@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const url = `${API}/api/v1/branches/${ctx.branchId}/cashiers`;
+    // THE FIX: Updated to point to /api/v1/auth/branches
+    const url = `${API}/api/v1/auth/branches/${ctx.branchId}/cashiers`;
     console.log("CASHIERS API DEBUG - fetching:", url);
 
     const res = await fetch(url, {

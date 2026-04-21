@@ -5,12 +5,13 @@ export interface OrderItem {
     name: string;
     price: number;
     qty: number;
+    stockQty: number;
     imageUrl?: string;
 }
 
 interface PosState {
     orderItems: OrderItem[];
-    addItem: (item: { id: number | string; name: string; price: number; image?: string }) => void;
+    addItem: (item: { id: number | string; name: string; price: number; image?: string; stockQty?: number }) => void;
     increaseQty: (id: string) => void;
     decreaseQty: (id: string) => void;
     setQty: (id: string, qty: number) => void;
@@ -36,6 +37,7 @@ export const usePosStore = create<PosState>((set) => ({
                     name: item.name,
                     price: item.price,
                     qty: 1,
+                    stockQty: item.stockQty ?? 0,
                     imageUrl: item.image,
                 },
             ],

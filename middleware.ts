@@ -13,10 +13,11 @@ function isBranchOnlyPath(pathname: string) {
 }
 
 function isCashierOnlyPath(pathname: string) {
-  return (
-    pathname.startsWith("/posdashboard") ||
-    pathname.startsWith("/customer-display")
-  );
+  return pathname.startsWith("/posdashboard");
+}
+
+function isCustomerDisplayPath(pathname: string) {
+  return pathname.startsWith("/customer-display");
 }
 
 function isPublicAuthPath(pathname: string) {
@@ -109,7 +110,7 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL("/posdashboard", req.url));
     }
 
-    if (!isCashierOnlyPath(pathname)) {
+    if (!isCashierOnlyPath(pathname) && !isCustomerDisplayPath(pathname)) {
       return NextResponse.redirect(new URL("/posdashboard", req.url));
     }
 
@@ -123,6 +124,14 @@ export async function middleware(req: NextRequest) {
 
   // STAFF / admin-side users cannot access cashier-only pages
   if (isCashierOnlyPath(pathname)) {
+    return NextResponse.redirect(new URL("/overview", req.url));
+  }
+
+  // STAFF should not access customer display, but owner/admin/manager may open it.
+  if (isCustomerDisplayPath(pathname)) {
+    if (role === "OWNER" || role === "ADMIN" || role === "MANAGER") {
+      return NextResponse.next();
+    }
     return NextResponse.redirect(new URL("/overview", req.url));
   }
 
