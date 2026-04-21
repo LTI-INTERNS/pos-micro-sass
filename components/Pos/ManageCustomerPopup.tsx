@@ -30,6 +30,7 @@ export default function ManageCustomersPopup({
           onCustomerSelected={(customer: Customer) => {
             
             onCustomerSelected({
+              customerId: customer.id,
               name: customer.name,
               phoneNumber1: customer.phone,
               phoneNumber2: customer.phones[0]?.phone2 ?? undefined,

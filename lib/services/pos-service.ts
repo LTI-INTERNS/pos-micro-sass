@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/api-client';
-import { productsData } from '@/lib/mocks/productmanagement';
 
 export interface PosProduct {
     id: string;
@@ -33,7 +32,7 @@ export const posService = {
                             ?.map((ov: any) => ov.value?.value)
                             .filter(Boolean)
                             .join(' - ') || '';
-                        
+
                         const name = optionString ? `${p.name} (${optionString})` : p.name;
                         
                         // Extract price and stock with branch override if available
@@ -51,7 +50,7 @@ export const posService = {
                         }
 
                         posProducts.push({
-                            id: v.variantId || p.productId, // Fallback just in case
+                            id: v.variantId,
                             name,
                             price,
                             stockQty,

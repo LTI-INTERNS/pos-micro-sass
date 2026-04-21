@@ -17,12 +17,6 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   const { storeInfo } = useStoreInfo();
   const { posSettings } = usePosSettings();
 
-  /**
-   * Lock:
-   * - keeps branch-session cookie alive
-   * - clears cashier session only
-   * - redirects to switch user screen
-   */
   const handleLock = async () => {
     try {
       localStorage.setItem("isLocked", "true");
@@ -34,13 +28,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
     }
   };
 
-  /**
-   * Full logout:
-   * - clears lock flag
-   * - clears cashier session
-   * - clears branch-session cookie
-   * - redirects to login
-   */
+
   const handleLogout = async () => {
     try {
       localStorage.removeItem("isLocked");

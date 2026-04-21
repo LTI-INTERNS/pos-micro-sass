@@ -10,13 +10,12 @@ interface DashboardLayoutProps {
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <PosNavbar
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        toggleSidebar={() => {/* sidebar not yet implemented */}}
         onOpenOrders={() => setOrdersOpen(true)}
       />
 
