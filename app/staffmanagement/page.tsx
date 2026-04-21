@@ -2,49 +2,67 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { X } from "lucide-react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import AddStaffPopup from "@/components/Admin/staffmanagement/AddStaffPopup";
+import EditStaffPopup from "@/components/Admin/staffmanagement/EditStaffPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
+import TabSelector from "@/components/Admin/common/TabSelector";
+import ModalShell from "@/components/Admin/common/ModalShell";
+import PopupActions from "@/components/Admin/common/PopupActions";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
 import {
   useTableFilters,
   getFilterOptions,
 } from "@/components/Admin/common/Filterlogic";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
-import DeletePopup from "@/components/Admin/common/Deletepopup";
-import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import { staffService } from "@/lib/services/staff-service";
-import type { Staff, StaffCreateOptions } from "@/types/staff.types";
+import type {
+  AdminStaff,
+  ManagerStaff,
+  StaffCreateOptions,
+  StaffDirectory,
+  StaffTab,
+} from "@/types/staff.types";
 
-const emptyOptions: StaffCreateOptions = {
+type AdminTableRow = AdminStaff & { assignedCompanyNames: string };
+type ManagerTableRow = ManagerStaff;
+
+const EMPTY_OPTIONS: StaffCreateOptions = {
   managerBranches: [],
   adminCompanies: [],
+  existingAdmins: [],
 };
+
+const TABS = [
+  { id: "admins", label: "Admins" },
+  { id: "managers", label: "Managers" },
+];
 
 export default function StaffManagementPage() {
   const { data: session } = useSession();
   const userRole = String(session?.user?.role ?? "").toUpperCase();
 
-  const [allStaff, setAllStaff] = useState<Staff[]>([]);
-  const [createOptions, setCreateOptions] = useState<StaffCreateOptions>(emptyOptions);
-
+  const [directory, setDirectory] = useState<StaffDirectory>({ admins: [], managers: [] });
+  const [createOptions, setCreateOptions] = useState<StaffCreateOptions>(EMPTY_OPTIONS);
   const [isLoading, setIsLoading] = useState(true);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [fetchError, setFetchError] = useState("");
   const [actionError, setActionError] = useState("");
-
   const [search, setSearch] = useState("");
-  const [showPopup, setShowPopup] = useState(false);
+  const [activeTab, setActiveTab] = useState<StaffTab>("admins");
+  const [showAddPopup, setShowAddPopup] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
+  const [infoMessage, setInfoMessage] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
-
-  const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
-  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
-  const [editPopupOpen, setEditPopupOpen] = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const exportCSV = useCSVExport();
 
@@ -53,7 +71,7 @@ export default function StaffManagementPage() {
       setIsLoading(true);
       setFetchError("");
       const data = await staffService.getAll();
-      setAllStaff(data);
+      setDirectory(data);
     } catch {
       setFetchError("Failed to load staff data. Please try again.");
     } finally {
@@ -67,7 +85,7 @@ export default function StaffManagementPage() {
       const data = await staffService.getCreateOptions();
       setCreateOptions(data);
     } catch {
-      setCreateOptions(emptyOptions);
+      setCreateOptions(EMPTY_OPTIONS);
     } finally {
       setOptionsLoading(false);
     }
@@ -78,121 +96,205 @@ export default function StaffManagementPage() {
     fetchCreateOptions();
   }, [fetchStaff, fetchCreateOptions]);
 
-  const filteredStaff = useTableFilters<Staff>({
-    data: allStaff,
+  useEffect(() => {
+    setSelectedId(null);
+    setFilters({});
+    setSearch("");
+    setShowFilter(false);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!actionError) return;
+    const timer = window.setTimeout(() => setActionError(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [actionError]);
+
+  const adminRows = useMemo<AdminTableRow[]>(
+    () =>
+      directory.admins.map((admin) => ({
+        ...admin,
+        assignedCompanyNames: admin.assignedCompanies.map((company) => company.name).join(", "),
+      })),
+    [directory.admins]
+  );
+
+  const managerRows = directory.managers;
+
+  const selectedStaff =
+    activeTab === "admins"
+      ? adminRows.find((item) => item.id === selectedId) ?? null
+      : managerRows.find((item) => item.id === selectedId) ?? null;
+
+  const filteredAdmins = useTableFilters<AdminTableRow>({
+    data: adminRows,
     search,
-    searchKeys: ["id", "name", "staffNo", "scopeName", "position", "email", "phone"],
+    searchKeys: ["name", "staffNo", "email", "phone", "assignedCompanyNames"],
     filters,
   });
 
-  const columns: Column<Staff>[] = [
+  const filteredManagers = useTableFilters<ManagerTableRow>({
+    data: managerRows,
+    search,
+    searchKeys: ["name", "staffNo", "email", "phone", "branchName"],
+    filters,
+  });
+
+  const adminColumns: Column<AdminTableRow>[] = [
     { key: "name", label: "Name" },
     { key: "staffNo", label: "Staff No" },
-    { key: "scopeName", label: "Branch/Company" },
-    { key: "position", label: "Position" },
+    {
+      key: "assignedCompanies",
+      label: "Assigned Companies",
+      render: (row) => (
+        <div className="flex flex-wrap gap-1.5">
+          {row.assignedCompanies.map((company) => (
+            <span
+              key={company.companyId}
+              className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-[11px] text-gray-600"
+            >
+              {company.name}
+            </span>
+          ))}
+        </div>
+      ),
+    },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Phone" },
+  ];
+
+  const managerColumns: Column<ManagerTableRow>[] = [
+    { key: "name", label: "Name" },
+    { key: "staffNo", label: "Staff No" },
+    { key: "branchName", label: "Branch" },
     { key: "email", label: "Email" },
     { key: "phone", label: "Phone" },
   ];
 
   const filterFields = useMemo(() => {
+    if (activeTab !== "managers") return [];
+
     return [
       {
-        name: "position",
-        placeholder: "Position",
-        options: getFilterOptions(allStaff, "position"),
-      },
-      {
-        name: "scopeName",
-        placeholder: "Branch/Company",
-        options: getFilterOptions(allStaff, "scopeName"),
+        name: "branchName",
+        placeholder: "Branch",
+        options: getFilterOptions(managerRows, "branchName"),
       },
     ];
-  }, [allStaff]);
+  }, [activeTab, managerRows]);
 
-  const isFilterApplied = Object.values(filters).some(
-    (value) => value && value.trim() !== ""
-  );
+  const isFilterApplied =
+    activeTab === "managers" &&
+    Object.values(filters).some((value) => value && value.trim() !== "");
 
-  const removeFilter = (key: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: "",
-    }));
+  const noAdminCapacity = userRole === "OWNER" && createOptions.adminCompanies.length === 0;
+  const noManagerCapacity = createOptions.managerBranches.length === 0;
+
+  const canEditSelected =
+    !!selectedStaff && !(selectedStaff.role === "ADMIN" && userRole !== "OWNER");
+  const canDeleteSelected =
+    !!selectedStaff && !(selectedStaff.role === "ADMIN" && userRole !== "OWNER");
+
+  const openAddPopup = () => {
+    if (userRole === "OWNER") {
+      if (noAdminCapacity && noManagerCapacity) {
+        setInfoMessage(
+          "All available companies already have admin accounts, and all available branches already have manager accounts."
+        );
+        setShowInfoPopup(true);
+        return;
+      }
+    } else if (noManagerCapacity) {
+      setInfoMessage("All available branches already have manager accounts assigned.");
+      setShowInfoPopup(true);
+      return;
+    }
+
+    setShowAddPopup(true);
   };
 
-  const editFields: EditField[] = [
-    { name: "name", label: "Name", type: "text" },
-    { name: "staffNo", label: "Staff No", type: "text" },
-    { name: "scopeName", label: "Branch/Company", type: "text", readOnly: true },
-    { name: "position", label: "Position", type: "text", readOnly: true },
-    { name: "email", label: "Email", type: "text" },
-    { name: "phone", label: "Phone", type: "text" },
-  ];
+  const handleDeleteClick = () => {
+    if (!selectedStaff) {
+      setActionError("Please select a staff row first.");
+      return;
+    }
 
-  const handleDelete = async () => {
+    if (!canDeleteSelected) {
+      setActionError("Admin accounts can only be deleted by the owner.");
+      return;
+    }
+
+    setShowDeletePopup(true);
+  };
+
+  const handleEditClick = () => {
+    if (!selectedStaff) {
+      setActionError("Please select a staff row first.");
+      return;
+    }
+
+    if (!canEditSelected) {
+      setActionError("Admin accounts can only be edited by the owner.");
+      return;
+    }
+
+    setShowEditPopup(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!selectedStaff) return;
 
-    setActionLoading(true);
-    setActionError("");
-
     try {
+      setActionError("");
       await staffService.remove(selectedStaff.id);
-      setDeletePopupOpen(false);
-      setSelectedStaff(null);
+      setShowDeletePopup(false);
+      setSelectedId(null);
       await fetchStaff();
       await fetchCreateOptions();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message ?? "Failed to delete staff member. Please try again.";
+          ?.message ?? "Failed to delete staff member.";
       setActionError(message);
-    } finally {
-      setActionLoading(false);
     }
   };
 
-  const handleEdit = async (values: Staff) => {
-    if (!selectedStaff) return;
+  const exportData =
+    activeTab === "admins"
+      ? filteredAdmins.map((row) => ({
+          name: row.name,
+          staffNo: row.staffNo,
+          assignedCompanies: row.assignedCompanyNames,
+          email: row.email,
+          phone: row.phone,
+        }))
+      : filteredManagers.map((row) => ({
+          name: row.name,
+          staffNo: row.staffNo,
+          branchName: row.branchName,
+          email: row.email,
+          phone: row.phone,
+        }));
 
-    setActionLoading(true);
-    setActionError("");
-
-    try {
-      await staffService.update(selectedStaff.id, {
-        name: values.name,
-        staffNo: values.staffNo,
-        email: values.email,
-        phone: values.phone,
-      });
-
-      setEditPopupOpen(false);
-      setSelectedStaff(null);
-      await fetchStaff();
-      await fetchCreateOptions();
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
-          ?.message ?? "Failed to update staff member. Please try again.";
-      setActionError(message);
-    } finally {
-      setActionLoading(false);
-    }
-  };
+  const visibleMessage = actionError || fetchError;
+  const shouldShowStaffActions = !(userRole === "ADMIN" && activeTab === "admins");
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {(fetchError || actionError) && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-300">
-            {fetchError || actionError}
+        <TabSelector tabs={TABS} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as StaffTab)} />
+
+        {visibleMessage && (
+          <div className="flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <span>{visibleMessage}</span>
             <button
-              className="ml-3 underline text-red-400 hover:text-red-300"
+              type="button"
               onClick={() => {
-                setFetchError("");
                 setActionError("");
+                setFetchError("");
               }}
+              className="shrink-0 rounded-full p-1 hover:bg-red-100"
             >
-              Dismiss
+              <X size={14} />
             </button>
           </div>
         )}
@@ -201,125 +303,156 @@ export default function StaffManagementPage() {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search Staff..."
+            placeholder={`Search ${activeTab === "admins" ? "Admins" : "Managers"}...`}
             showClear={true}
-            showFilter={true}
+            showFilter={activeTab === "managers"}
             filterLabel="Filter"
             onFilter={() => setShowFilter(true)}
             isFilterApplied={isFilterApplied}
             onClearFilters={() => setFilters({})}
           />
 
-          <FilterChips filters={filters} onRemove={removeFilter} />
+          {activeTab === "managers" && (
+            <>
+              <FilterChips
+                filters={filters}
+                onRemove={(key) => setFilters((prev) => ({ ...prev, [key]: "" }))}
+              />
 
-          <FilterPopup
-            open={showFilter}
-            onClose={() => setShowFilter(false)}
-            fields={filterFields}
-            onApply={(values) => setFilters(values)}
-          />
+              <FilterPopup
+                open={showFilter}
+                onClose={() => setShowFilter(false)}
+                fields={filterFields}
+                onApply={(values) => setFilters(values)}
+              />
+            </>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-3 mt-4">
-          <ActionButton
-            className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
-            label={actionLoading ? "Deleting..." : "Delete Staff"}
-            variant="outline"
-            onClick={() => {
-              if (!selectedStaff) {
-                alert("Please select a staff member first!");
-                return;
+          <div className="mt-4 flex flex-wrap gap-3">
+            {shouldShowStaffActions && (
+              <>
+                <ActionButton
+                  className="rounded-full border border-orange-500 px-4 py-2 text-xs font-semibold text-orange-500 hover:bg-orange-50"
+                  label="Delete Staff"
+                  variant="outline"
+                  onClick={handleDeleteClick}
+                />
+
+                <ActionButton
+                  className="rounded-full border border-orange-500 px-4 py-2 text-xs font-semibold text-orange-500 hover:bg-orange-50"
+                  label="Edit Staff"
+                  variant="outline"
+                  onClick={handleEditClick}
+                />
+
+                <ActionButton
+                  className="rounded-full bg-orange-500 px-5 py-2 text-xs font-semibold text-white"
+                  label="Add New Staff"
+                  variant="primary"
+                  onClick={openAddPopup}
+                />
+              </>
+            )}
+
+            <ActionButton
+              className="rounded-full bg-orange-500 px-5 py-2 text-xs font-semibold text-white"
+              label="Export CSV"
+              variant="primary"
+              onClick={() =>
+                exportCSV(
+                  exportData,
+                  activeTab === "admins" ? "admin-list.csv" : "manager-list.csv"
+                )
               }
-              setDeletePopupOpen(true);
-            }}
-          />
-
-          <ActionButton
-            className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full text-xs font-semibold hover:bg-orange-50"
-            label="Edit Staff"
-            variant="outline"
-            onClick={() => {
-              if (!selectedStaff) {
-                alert("Please select a staff member first!");
-                return;
-              }
-              setEditPopupOpen(true);
-            }}
-          />
-
-          <ActionButton
-            className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
-            label="Add New Staff"
-            variant="primary"
-            onClick={() => setShowPopup(true)}
-          />
-
-          <ActionButton
-            className="bg-orange-500 text-white px-5 py-2 rounded-full text-xs font-semibold"
-            label="Export CSV"
-            variant="primary"
-            onClick={() => exportCSV(filteredStaff, "staff-list.csv")}
-          />
-        </div>
+            />
+          </div>
 
         {isLoading ? (
           <div className="flex justify-center p-12">
             <span className="text-gray-400">Loading staff data...</span>
           </div>
+        ) : activeTab === "admins" ? (
+          <CommonTable
+            title="Admin Accounts"
+            data={filteredAdmins}
+            columns={adminColumns}
+            emptyMessage="No admin accounts found"
+            selectedRowId={selectedId ?? undefined}
+            onSelectRow={(row) => setSelectedId(row?.id ?? null)}
+          />
         ) : (
           <CommonTable
-            title="Staff List"
-            data={filteredStaff}
-            columns={columns}
-            emptyMessage="No staff found"
-            selectedRowId={selectedStaff?.id}
-            onSelectRow={(row) => setSelectedStaff(row)}
+            title="Manager Accounts"
+            data={filteredManagers}
+            columns={managerColumns}
+            emptyMessage="No manager accounts found"
+            selectedRowId={selectedId ?? undefined}
+            onSelectRow={(row) => setSelectedId(row?.id ?? null)}
           />
         )}
       </div>
 
       <AddStaffPopup
-        isOpen={showPopup}
-        onClose={() => setShowPopup(false)}
-        options={createOptions}
-        optionsLoading={optionsLoading}
+        isOpen={showAddPopup}
+        onClose={() => setShowAddPopup(false)}
         onSuccess={async () => {
           await fetchStaff();
           await fetchCreateOptions();
         }}
+        options={createOptions}
+        optionsLoading={optionsLoading}
       />
 
-      {selectedStaff && deletePopupOpen && (
+      <EditStaffPopup
+        isOpen={showEditPopup}
+        staff={selectedStaff as AdminStaff | ManagerStaff | null}
+        options={createOptions}
+        currentUserRole={userRole}
+        onClose={() => setShowEditPopup(false)}
+        onSuccess={async () => {
+          await fetchStaff();
+          await fetchCreateOptions();
+          setSelectedId(null);
+        }}
+      />
+
+      {selectedStaff && showDeletePopup && (
         <DeletePopup
-          isOpen={deletePopupOpen}
+          isOpen={showDeletePopup}
           item={selectedStaff}
           itemName="Staff"
-          onClose={() => setDeletePopupOpen(false)}
-          onConfirm={handleDelete}
+          onClose={() => setShowDeletePopup(false)}
+          onConfirm={handleDeleteConfirm}
           getDisplayText={(item) => (
             <>
               <span className="font-semibold">{item.name}</span>
               <br />
-              {item.position} · {item.scopeName}
+              {item.position}
             </>
           )}
         />
       )}
 
-      {selectedStaff && editPopupOpen && (
-        <EditEntityModal<Staff>
-          open={editPopupOpen}
-          title="Edit Staff"
-          initialValues={selectedStaff}
-          onClose={() => setEditPopupOpen(false)}
-          onSave={handleEdit}
-          fields={editFields}
-        />
-      )}
-
-      {userRole !== "OWNER" && (
-        <div className="hidden" aria-hidden="true" />
-      )}
+      <ModalShell
+        open={showInfoPopup}
+        title="No Staff Slots Available"
+        onClose={() => setShowInfoPopup(false)}
+        widthClassName="w-[520px] max-w-[92vw]"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">{infoMessage}</p>
+          <PopupActions
+            actions={[
+              {
+                label: "Okay",
+                onClick: () => setShowInfoPopup(false),
+                variant: "primary",
+              },
+            ]}
+          />
+        </div>
+      </ModalShell>
     </DashboardLayout>
   );
 }
