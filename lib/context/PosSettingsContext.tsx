@@ -49,6 +49,16 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
     setPosSettingsState(loadFromStorage());
   }, []);
 
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return;
+      setPosSettingsState(loadFromStorage());
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const setPosSettings = (settings: Partial<PosSettings>) => {
     setPosSettingsState((prev) => {
       const next = { ...prev, ...settings };

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import PosNavbar from '@/components/Pos/posdashboard/PosNav';
 import PreviousOrdersModal from '@/components/Pos/posdashboard/PreviousOrdersModal';
+import StockAlertProvider from '@/components/Admin/notifications/StockAlertProvider';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         open={ordersOpen}
         onClose={() => setOrdersOpen(false)}
       />
+
+      {/* Stock alert toasts — branch-wise, variant-level, bottom-right */}
+      <StockAlertProvider />
     </div>
   );
 };

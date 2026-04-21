@@ -6,43 +6,45 @@ import { Product } from "@/lib/services";
 import { apiClient } from "@/lib/api-client";
 import { branchService } from "@/lib/services/branch-service";
 import type { Branch } from "@/lib/services/branch-service";
+import { supplierService } from "@/lib/services/supplier-service";
+import type { Supplier } from "@/lib/services/supplier-service";
 
 const UNITS = ["Each", "kg", "g", "mg", "l", "ml", "m", "inch", "Cube"];
 
 type BranchVariantData = {
-  stockQty:             string;
-  stockUnit:            string;
-  basePriceOverride:    string;
+  stockQty: string;
+  stockUnit: string;
+  basePriceOverride: string;
   sellingPriceOverride: string;
-  discount:             string;
-  taxRate:              string;
-  lowStock:             string;
+  discount: string;
+  taxRate: string;
+  lowStock: string;
 };
 
 type VariantState = {
-  id:        number;
+  id: number;
   variantId: string;   // real UUID from DB
-  sku:       string;
+  sku: string;
   variantLabel: string;
-  price:     number;
+  price: number;
 };
 
 // Shape of raw variant data coming from the backend (product.variants may carry
 // extra fields not declared in the Product type).
 type RawVariant = {
-  variantId?:           string;
-  sku:                  string;
-  price:                number;
-  stockQty?:            number | string | null;
-  sellUnit?:            string;
-  stockUnit?:           string;
-  priceOverride?:       number | string | null;
+  variantId?: string;
+  sku: string;
+  price: number;
+  stockQty?: number | string | null;
+  sellUnit?: string;
+  stockUnit?: string;
+  priceOverride?: number | string | null;
   sellingPriceOverride?: number | string | null;
-  discount?:            number | string | null;
-  taxRate?:             number | string | null;
-  lowStock?:            number | string | null;
-  optionValues?:        Array<{ optionName?: string; value?: string } | string>;
-  imageUrl?:            string;
+  discount?: number | string | null;
+  taxRate?: number | string | null;
+  lowStock?: number | string | null;
+  optionValues?: Array<{ optionName?: string; value?: string } | string>;
+  imageUrl?: string;
 };
 
 function getVariantLabel(raw: RawVariant): string {
@@ -59,23 +61,24 @@ function getVariantLabel(raw: RawVariant): string {
 
 // Shape of rows returned by /branch-variants/existing
 type ExistingBranchVariantRow = {
-  variantId:            string;
-  stockQty?:            number | string | null;
-  stockUnit?:           string;
-  priceOverride?:       number | string | null;
+  variantId: string;
+  stockQty?: number | string | null;
+  stockUnit?: string;
+  priceOverride?: number | string | null;
   sellingPriceOverride?: number | string | null;
-  discount?:            number | string | null;
-  taxRate?:             number | string | null;
-  lowStock?:            number | string | null;
+  discount?: number | string | null;
+  taxRate?: number | string | null;
+  lowStock?: number | string | null;
 };
 
 type Props = {
-  product:    Product;
-  isOpen:     boolean;
-  onClose:    () => void;
-  userRole?:  "owner" | "admin" | "manager";
+  product: Product;
+  isOpen: boolean;
+  onClose: () => void;
+  userRole?: "owner" | "admin" | "manager";
   branchName?: string;
-  onSave?:    (data: { branch: string; supplierId: string | null; variants: Record<string, BranchVariantData> }) => void;
+  branchId?: string;   // manager's branch ID from session — used to filter suppliers
+  onSave?: (data: { branch: string; supplierId: string | null; variants: Record<string, BranchVariantData> }) => Promise<void> | void;
 };
 
 // ─── Small reusable UI pieces ─────────────────────────────────────────────────
@@ -142,13 +145,13 @@ function Tooltip({ text, position = "top" }: { text: string; position?: "top" | 
 }
 
 const defaultBS = (): BranchVariantData => ({
-  stockQty:             "",
-  stockUnit:            "Each",
-  basePriceOverride:    "",
+  stockQty: "",
+  stockUnit: "Each",
+  basePriceOverride: "",
   sellingPriceOverride: "",
-  discount:             "",
-  taxRate:              "",
-  lowStock:             "",
+  discount: "",
+  taxRate: "",
+  lowStock: "",
 });
 
 
@@ -160,6 +163,7 @@ export default function AddStockPopup({
   onClose,
   userRole = "admin",
   branchName: managerBranchName = "",
+  branchId: managerBranchId = "",
   onSave,
 }: Props) {
   const isManager = userRole === "manager";
@@ -168,16 +172,21 @@ export default function AddStockPopup({
     null  // always start null; manager branch resolved via session on the backend
   );
 
-  const [branches, setBranches]               = useState<Branch[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
-  const [branchesError, setBranchesError]     = useState<string | null>(null);
-  const [prefilling, setPrefilling]           = useState(false);
+  const [branchesError, setBranchesError] = useState<string | null>(null);
+  const [prefilling, setPrefilling] = useState(false);
 
-  const [saving, setSaving]                   = useState(false);
-  const [saveError, setSaveError]             = useState<string | null>(null);
-  const [branchVariants, setBranchVariants]   = useState<Record<string, BranchVariantData>>({});
+  // Supplier state
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [suppliersLoading, setSuppliersLoading] = useState(false);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [branchVariants, setBranchVariants] = useState<Record<string, BranchVariantData>>({});
   // currentStock: variantId → existing stockQty in the selected branch
-  const [currentStock, setCurrentStock]       = useState<Record<string, number>>({});
+  const [currentStock, setCurrentStock] = useState<Record<string, number>>({});
 
   // Map DB StockUnit enum values back to display strings
   // Defined here (before useEffects) so both effects can call it.
@@ -196,6 +205,8 @@ export default function AddStockPopup({
     setBranchesError(null);
     setBranchVariants({});
     setCurrentStock({});
+    setSelectedSupplierId("");
+    setSuppliers([]);
 
     if (isManager) {
       // Manager: product variants already carry branch stock fields from
@@ -211,17 +222,28 @@ export default function AddStockPopup({
 
         stockMap[variantId] = Number(raw.stockQty ?? 0);
         prefilled[key] = {
-          stockQty:             "",             // blank — user types amount to ADD
-          stockUnit:            mapStockUnitDisplay(raw.sellUnit ?? raw.stockUnit ?? "EA"),
-          basePriceOverride:    raw.priceOverride        != null ? String(raw.priceOverride)        : "",
+          stockQty: "",             // blank — user types amount to ADD
+          stockUnit: mapStockUnitDisplay(raw.sellUnit ?? raw.stockUnit ?? "EA"),
+          basePriceOverride: raw.priceOverride != null ? String(raw.priceOverride) : "",
           sellingPriceOverride: raw.sellingPriceOverride != null ? String(raw.sellingPriceOverride) : "",
-          discount:             raw.discount   != null ? String(raw.discount)   : "",
-          taxRate:              raw.taxRate     != null ? String(raw.taxRate)    : "",
-          lowStock:             raw.lowStock    != null ? String(raw.lowStock)   : "",
+          discount: raw.discount != null ? String(raw.discount) : "",
+          taxRate: raw.taxRate != null ? String(raw.taxRate) : "",
+          lowStock: raw.lowStock != null ? String(raw.lowStock) : "",
         };
       });
       setCurrentStock(stockMap);
       setBranchVariants(prefilled);
+
+      // For managers, fetch suppliers assigned to their specific branch.
+      // branchId comes from the session (passed as a prop from page.tsx).
+      setSuppliersLoading(true);
+      const fetchFn = managerBranchId
+        ? supplierService.getByBranchId(managerBranchId)
+        : supplierService.getAll();
+      fetchFn
+        .then(setSuppliers)
+        .catch(() => setSuppliers([]))
+        .finally(() => setSuppliersLoading(false));
     } else {
       // Admin/Owner: fetch real branches to pick from
       setBranchesLoading(true);
@@ -239,24 +261,36 @@ export default function AddStockPopup({
       product.variants.map((v, i) => {
         const raw = v as unknown as RawVariant;
         return {
-          id:        i + 1,
+          id: i + 1,
           variantId: raw.variantId ?? v.sku,
-          sku:       v.sku,
+          sku: v.sku,
           variantLabel: getVariantLabel(raw),
-          price:     v.price,
+          price: v.price,
         };
       }),
     [product.variants]
   );
 
 
-  // When a branch is selected, pre-fill existing BranchVariant values.
+  // When a branch is selected, pre-fill existing BranchVariant values AND
+  // load suppliers assigned to that branch.
   // stockQty is intentionally left blank — the user types the AMOUNT TO ADD
   // (backend increments it onto the existing total).
   useEffect(() => {
     if (!selectedBranch) return;
     const variantIds = variants.map(v => v.variantId).filter(Boolean).join(',');
     if (!variantIds) return;
+
+    // Reset supplier selection when branch changes
+    setSelectedSupplierId("");
+
+    // Fetch suppliers for this branch
+    setSuppliersLoading(true);
+    supplierService
+      .getByBranchId(selectedBranch.id)
+      .then(setSuppliers)
+      .catch(() => setSuppliers([]))
+      .finally(() => setSuppliersLoading(false));
 
     setPrefilling(true);
     apiClient
@@ -281,13 +315,13 @@ export default function AddStockPopup({
             if (!match) continue;
             const key = `${match.id}_${selectedBranch.id}`;
             next[key] = {
-              stockQty:             "",  // intentionally blank — user types amount to ADD
-              stockUnit:            mapStockUnitDisplay(row.stockUnit ?? ""),
-              basePriceOverride:    row.priceOverride        != null ? String(row.priceOverride)        : "",
+              stockQty: "",  // intentionally blank — user types amount to ADD
+              stockUnit: mapStockUnitDisplay(row.stockUnit ?? ""),
+              basePriceOverride: row.priceOverride != null ? String(row.priceOverride) : "",
               sellingPriceOverride: row.sellingPriceOverride != null ? String(row.sellingPriceOverride) : "",
-              discount:             row.discount    != null ? String(row.discount)    : "",
-              taxRate:              row.taxRate      != null ? String(row.taxRate)     : "",
-              lowStock:             row.lowStock     != null ? String(row.lowStock)    : "",
+              discount: row.discount != null ? String(row.discount) : "",
+              taxRate: row.taxRate != null ? String(row.taxRate) : "",
+              lowStock: row.lowStock != null ? String(row.lowStock) : "",
             };
           }
           return next;
@@ -300,7 +334,7 @@ export default function AddStockPopup({
       .finally(() => setPrefilling(false));
   }, [selectedBranch, variants]);
 
-  const getBS  = (key: string): BranchVariantData => branchVariants[key] ?? defaultBS();
+  const getBS = (key: string): BranchVariantData => branchVariants[key] ?? defaultBS();
   const updateBS = (key: string, field: keyof BranchVariantData, value: string) => {
     setBranchVariants((prev) => ({
       ...prev,
@@ -313,6 +347,15 @@ export default function AddStockPopup({
   // For managers, the branch is determined server-side from their session
   const showBranchSelection = !isManager && !selectedBranch;
 
+  // The "Add Stock" button should only be enabled when the user has typed
+  // a quantity (> 0) for at least one variant. Without this guard, submitting
+  // sends an empty variants array and the backend returns 400.
+  const hasAnyQty = variants.some((v) => {
+    const key = `${v.id}_${selectedBranch?.id ?? "manager"}`;
+    const qty = parseFloat(branchVariants[key]?.stockQty ?? "");
+    return qty > 0;
+  });
+
   const handleSave = async () => {
     setSaveError(null);
     setSaving(true);
@@ -322,33 +365,35 @@ export default function AddStockPopup({
       const variantPayload = variants
         .map((v) => {
           const key = `${v.id}_${selectedBranch?.id ?? "manager"}`;
-          const bs  = getBS(key);
+          const bs = getBS(key);
           return {
-            variantId:             v.variantId,
-            stockQty:              parseFloat(bs.stockQty)             || 0,
-            stockUnit:             bs.stockUnit,
-            lowStock:              parseFloat(bs.lowStock)              || 0,
-            priceOverride:         bs.basePriceOverride    ? parseFloat(bs.basePriceOverride)    : null,
-            sellingPriceOverride:  bs.sellingPriceOverride ? parseFloat(bs.sellingPriceOverride) : null,
-            discount:              bs.discount             ? parseFloat(bs.discount)             : null,
-            taxRate:               bs.taxRate              ? parseFloat(bs.taxRate)              : null,
+            variantId: v.variantId,
+            stockQty: parseFloat(bs.stockQty) || 0,
+            stockUnit: bs.stockUnit,
+            lowStock: parseFloat(bs.lowStock) || 0,
+            priceOverride: bs.basePriceOverride ? parseFloat(bs.basePriceOverride) : null,
+            sellingPriceOverride: bs.sellingPriceOverride ? parseFloat(bs.sellingPriceOverride) : null,
+            discount: bs.discount ? parseFloat(bs.discount) : null,
+            taxRate: bs.taxRate ? parseFloat(bs.taxRate) : null,
           };
         })
         .filter((v) => branchVariants[`${variants.find(vv => vv.variantId === v.variantId)?.id}_${selectedBranch?.id ?? "manager"}`]);
 
-      // supplierId is always null until supplier management API is integrated
-      const supplierId = null;
+      // Use the selected supplierId (or null if none chosen)
+      const supplierId = selectedSupplierId || null;
 
       await apiClient.post('/branch-variants/stock', {
-        branchId:  selectedBranch?.id ?? undefined,   // undefined = manager uses session branch
+        branchId: selectedBranch?.id ?? undefined,   // undefined = manager uses session branch
         supplierId,
         variants: variantPayload,
       });
 
-      onSave?.({
-        branch:     selectedBranch?.name ?? managerBranchName,
+      // Await onSave so reloadProducts() completes BEFORE the popup closes,
+      // guaranteeing the table reflects the new stock/supplier immediately.
+      await onSave?.({
+        branch: selectedBranch?.name ?? managerBranchName,
         supplierId,
-        variants:   branchVariants,
+        variants: branchVariants,
       });
 
       onClose();
@@ -364,6 +409,7 @@ export default function AddStockPopup({
 
   return (
     <ModalShell open={isOpen} onClose={onClose} title="Add Stock" widthClassName="w-[700px] max-w-[95vw]">
+      <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden pr-1">
       {showBranchSelection ? (
         <div>
           <SectionTitle
@@ -384,24 +430,103 @@ export default function AddStockPopup({
               {branchesError}
             </div>
           )}
-          {!branchesLoading && !branchesError && (
-            branches.length === 0 ? (
-              <p className="text-center text-sm text-gray-400 py-8">No branches found.</p>
-            ) : (
-              <div className="space-y-2">
-                {branches.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setSelectedBranch(b)}
-                    className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl bg-white hover:bg-orange-50 hover:border-orange-200 transition-all duration-150 cursor-pointer"
-                  >
-                    <span className="text-sm font-medium text-gray-800">{b.name}</span>
-                    {b.city && <span className="ml-2 text-[11px] text-gray-400">{b.city}</span>}
-                  </button>
-                ))}
+          {!branchesLoading && !branchesError && (() => {
+            if (branches.length === 0) {
+              return <p className="text-center text-sm text-gray-400 py-8">No branches found.</p>;
+            }
+
+            // Determine which branchIds already have stock for this product.
+            // product.variants spread preserves the raw `branchVariants` array from the API.
+            const assignedBranchIds = new Set<string>(
+              (product.variants as any[]).flatMap(
+                (v: any) => (v.branchVariants ?? []).map((bv: any) => bv.branchId)
+              )
+            );
+
+            const assignedBranches = branches.filter(b => assignedBranchIds.has(b.id));
+            const unassignedBranches = branches.filter(b => !assignedBranchIds.has(b.id));
+
+            const BranchButton = ({ b }: { b: Branch }) => (
+              <button
+                key={b.id}
+                onClick={() => setSelectedBranch(b)}
+                className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl bg-white hover:bg-orange-50 hover:border-orange-200 transition-all duration-150 cursor-pointer flex items-center justify-between group"
+              >
+                <span>
+                  <span className="text-sm font-medium text-gray-800">{b.name}</span>
+                  {b.city && <span className="ml-2 text-[11px] text-gray-400">{b.city}</span>}
+                </span>
+              </button>
+            );
+
+            return (
+              <div className="overflow-y-auto max-h-[52vh] pr-1 space-y-5">
+                {/* ── Already stocked branches ── */}
+                {assignedBranches.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-semibold text-orange-700 uppercase tracking-wide">
+                        Already Stocked
+                      </span>
+                      <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                        {assignedBranches.length}
+                      </span>
+                      <div className="flex-1 h-px bg-orange-100" />
+                    </div>
+                    <div className="space-y-2">
+                      {assignedBranches.map(b => (
+                        <button
+                          key={b.id}
+                          onClick={() => setSelectedBranch(b)}
+                          className="w-full text-left px-4 py-3 border border-orange-200 rounded-xl bg-orange-50 hover:bg-orange-100 hover:border-orange-300 transition-all duration-150 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>
+                            <span className="text-sm font-medium text-gray-800">{b.name}</span>
+                            {b.city && <span className="ml-2 text-[11px] text-gray-400">{b.city}</span>}
+                          </span>
+                          <span className="text-[10px] text-orange-600 font-medium bg-orange-100 border border-orange-200 px-2 py-0.5 rounded-full">
+                            In Stock
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Not yet assigned branches ── */}
+                {unassignedBranches.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                        Not Yet Assigned
+                      </span>
+                      <span className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">
+                        {unassignedBranches.length}
+                      </span>
+                      <div className="flex-1 h-px bg-gray-100" />
+                    </div>
+                    <div className="space-y-2">
+                      {unassignedBranches.map(b => (
+                        <button
+                          key={b.id}
+                          onClick={() => setSelectedBranch(b)}
+                          className="w-full text-left px-4 py-3 border border-gray-200 rounded-xl bg-white hover:bg-orange-50 hover:border-orange-200 transition-all duration-150 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>
+                            <span className="text-sm font-medium text-gray-800">{b.name}</span>
+                            {b.city && <span className="ml-2 text-[11px] text-gray-400">{b.city}</span>}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-medium bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">
+                            New
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )
-          )}
+            );
+          })()}
         </div>
       ) : (
         <div>
@@ -443,20 +568,55 @@ export default function AddStockPopup({
             </div>
           )}
 
-          {/* Supplier — coming soon */}
-          <div className="mb-5 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl flex items-center gap-2">
-            <span className="text-[11px] text-gray-400">🔗</span>
-            <p className="text-[12px] text-gray-400">
-              <span className="font-medium text-gray-500">Supplier selection</span> will be available once the supplier management module is set up.
-            </p>
+          {/* Supplier selection */}
+          <div className="mb-5">
+            <label className="block text-[12px] text-gray-500 mb-1 flex items-center gap-1">
+              Supplier{" "}
+              <span className="text-[11px] text-gray-400 font-normal">(optional)</span>
+              <Tooltip
+                position="bottom"
+                text="Selecting a supplier here applies it to all variants of this product in the selected branch. All variants will share the same supplier."
+              />
+            </label>
+            {suppliersLoading ? (
+              <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-4xl bg-white text-[12px] text-gray-400">
+                <svg className="animate-spin w-3.5 h-3.5 text-orange-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Loading suppliers…
+              </div>
+            ) : suppliers.length === 0 ? (
+              <div className="flex items-center gap-2 px-3 py-2 border border-dashed border-gray-200 rounded-4xl bg-gray-50 text-[12px] text-gray-400">
+                <span>🔗</span>
+                <span>No suppliers assigned to this branch yet.</span>
+                <Tooltip
+                  position="bottom"
+                  text="To assign a supplier here, go to Supplier Management → select a supplier → edit and add this branch to their assigned branches."
+                />
+              </div>
+            ) : (
+              <Select
+                value={selectedSupplierId}
+                onChange={(e) => setSelectedSupplierId(e.target.value)}
+              >
+                <option value="">— No supplier —</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.type === "Company" ? (s.companyName || s.name) : s.name}
+                    {s.phone ? ` · ${s.phone}` : ""}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
 
           {/* Variant list */}
-          <div className="overflow-y-auto max-h-[44vh] pr-1 space-y-3">
+          <div className="space-y-3">
             {variants.map((v) => {
               const branchKey = selectedBranch?.id ?? "manager";
               const key = `${v.id}_${branchKey}`;
-              const bs  = getBS(key);
+              const bs = getBS(key);
               const qty = parseFloat(bs.stockQty) || 0;
 
               return (
@@ -472,13 +632,12 @@ export default function AddStockPopup({
                     <div className="flex flex-col items-end gap-1.5">
                       {/* Current stock badge — shown after branch is selected or for managers */}
                       {(selectedBranch || isManager) && (
-                        <span className={`text-[11px] font-medium px-2 py-1 rounded-full border ${
-                          (currentStock[v.variantId] ?? 0) === 0
-                            ? "bg-red-50 border-red-200 text-red-500"
-                            : (currentStock[v.variantId] ?? 0) <= 10
+                        <span className={`text-[11px] font-medium px-2 py-1 rounded-full border ${(currentStock[v.variantId] ?? 0) === 0
+                          ? "bg-red-50 border-red-200 text-red-500"
+                          : (currentStock[v.variantId] ?? 0) <= 10
                             ? "bg-orange-50 border-orange-200 text-orange-600"
                             : "bg-blue-50 border-blue-200 text-blue-600"
-                        }`}>
+                          }`}>
                           Current: {currentStock[v.variantId] ?? 0} {bs.stockUnit}
                         </span>
                       )}
@@ -578,26 +737,35 @@ export default function AddStockPopup({
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 mt-4 border-t border-gray-100">
-            {!isManager && (
+          <div className="flex flex-col gap-2 pt-4 mt-4 border-t border-gray-100">
+            <div className="flex items-center justify-end gap-3">
+              {!isManager && (
+                <button
+                  onClick={() => setSelectedBranch(null)}
+                  disabled={saving}
+                  className="px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer disabled:opacity-50"
+                >
+                  Back
+                </button>
+              )}
               <button
-                onClick={() => setSelectedBranch(null)}
-                disabled={saving}
-                className="px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer disabled:opacity-50"
+                onClick={handleSave}
+                disabled={saving || !hasAnyQty}
+                title={!hasAnyQty ? "Enter a stock quantity for at least one variant" : undefined}
+                className="px-6 py-2 text-sm bg-orange-500 text-white rounded-4xl hover:bg-orange-600 transition font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Back
+                {saving ? "Saving…" : "Add Stock"}
               </button>
+            </div>
+            {!hasAnyQty && !saving && (
+              <p className="text-[11px] text-gray-400 text-right">
+                Enter a stock quantity for at least one variant to save.
+              </p>
             )}
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-6 py-2 text-sm bg-orange-500 text-white rounded-4xl hover:bg-orange-600 transition font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              {saving ? "Saving…" : "Add Stock"}
-            </button>
           </div>
         </div>
       )}
+      </div>
     </ModalShell>
   );
 }
