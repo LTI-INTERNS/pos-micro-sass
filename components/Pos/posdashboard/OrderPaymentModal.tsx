@@ -30,6 +30,7 @@ export type PaymentSummary = {
   grandTotal: number; // netDue + cardTaxApplied
 
   customer?: {
+    customerId?: string;
     name: string;
     phoneNumber: string;
     email: string;
