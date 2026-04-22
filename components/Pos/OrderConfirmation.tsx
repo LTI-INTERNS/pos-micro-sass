@@ -53,9 +53,9 @@ export default function OrderConfirmation({
   const [emailSaved, setEmailSaved] = useState(false);
   const [note, setNote] = useState("");
 
-  const customerId = (payment.customer as any)?.customerId as string | undefined;
+  const customerId = payment.customer?.customerId;
 
-  const customerHasNoEmail = Boolean(customerId && !payment.customer?.email && !addedEmail);
+  const hasEmail = Boolean(payment.customer?.email || addedEmail);
 
   useEffect(() => {
     if (open) {
@@ -164,29 +164,25 @@ export default function OrderConfirmation({
               </div>
             }
             rightAction={
-              // Only show the email button when customer is linked but has no email.
-              // Once email is added (locally or saved to DB), button shows the saved address.
-              customerHasNoEmail || addedEmail ? (
-                addedEmail ? (
-                  <button
-                    onClick={() => setShowEmailPopup(true)}
-                    title={addedEmail}
-                    className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
-                  >
-                    <Mail size={16} />
-                    <span className="truncate max-w-[120px]">{addedEmail}</span>
-                    {emailSaved && <span className="text-green-400 text-[10px] font-semibold ml-1">✓ saved</span>}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setShowEmailPopup(true)}
-                    className="flex-1 h-12 rounded-xl border border-orange-400 text-orange-500 flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-orange-50"
-                  >
-                    <Mail size={16} />
-                    <span>Add Email</span>
-                  </button>
-                )
-              ) : undefined
+              hasEmail ? (
+                <button
+                  onClick={() => setShowEmailPopup(true)}
+                  title={addedEmail || payment.customer?.email || ""}
+                  className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
+                >
+                  <Mail size={16} />
+                  <span className="truncate max-w-[120px]">{addedEmail || payment.customer?.email}</span>
+                  {emailSaved && <span className="text-green-400 text-[10px] font-semibold ml-1">✓ saved</span>}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowEmailPopup(true)}
+                  className="flex-1 h-12 rounded-xl border border-orange-400 text-orange-500 flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-orange-50"
+                >
+                  <Mail size={16} />
+                  <span>Add Email</span>
+                </button>
+              )
             }
           />
           </div>
