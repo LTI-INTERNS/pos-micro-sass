@@ -3,16 +3,15 @@ import StatCard from '@/components/Admin/common/StatCard';
 const statCards = [
   {
     title: "New Branches",
-    value: "34",
+    value: "4",
     percentage: "+4.2%",
     trend: "up" as const,
     caption: "vs last month",
   },
   {
-    title: "Low Stock Branches",
-    value: "Colombo, Nugegoda",
+    title: "All Branches",
+    value: "13",
     percentage: "-1.5%",
-    trend: "down" as const,
   },
 ];
   
