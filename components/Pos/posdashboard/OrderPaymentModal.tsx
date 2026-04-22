@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Delete, Check, X } from "lucide-react";
 
 import DiscountPopup, { DiscountOption } from "@/components/Pos/posdashboard/DiscountPopup";
+import { apiClient } from "@/lib/api-client";
 
 export type PaymentSummary = {
   orderNo: string | number;
@@ -12,6 +13,7 @@ export type PaymentSummary = {
   currencyCode: string;
 
   baseAmount: number;
+  discountId?: string | null;
   discountPercent?: number;
   discountValue: number;
 
@@ -143,14 +145,35 @@ export default function OrderPaymentModal({
   // remember last card type for split label
   const [lastCardMethod, setLastCardMethod] = useState<"Visa" | "Master" | null>(null);
 
-  const discountOptions: DiscountOption[] = useMemo(
-    () => [
-      { id: "disc_broccoli_staff", label: "Broccoli Staff (on total)", percent: 50 },
-      { id: "disc_better_homes", label: "Better homes (on total)", percent: 50 },
-      { id: "disc_fly_dubai", label: "Fly Dubai (on total)", percent: 50 },
-    ],
-    []
-  );
+  // Live discounts fetched from the backend for this branch
+  const [discountOptions, setDiscountOptions] = useState<DiscountOption[]>([]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    apiClient
+      .get<{ success: boolean; data: Array<{ discountId: string; title: string; percentage: number; status: boolean; startDate: string; endDate: string }> }>("/discounts")
+      .then((res) => {
+        const now = Date.now();
+        const active = (res.data.data ?? []).filter(
+          (d) =>
+            d.status === true &&
+            new Date(d.startDate).getTime() <= now &&
+            new Date(d.endDate).getTime() >= now
+        );
+        setDiscountOptions(
+          active.map((d) => ({
+            id: d.discountId,
+            label: d.title,
+            percent: Number(d.percentage),
+          }))
+        );
+      })
+      .catch(() => {
+        // Non-fatal: discount popup will show empty; cashier can proceed without discount
+        setDiscountOptions([]);
+      });
+  }, [open]);
 
   // rounding helpers
   const round2 = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
@@ -167,6 +190,7 @@ export default function OrderPaymentModal({
     setActiveField(null);
 
     setSelectedDiscountId(null);
+    setDiscountOptions([]);
 
     setDiscountOpen(false);
     setHasPromptedDiscount(false);
@@ -244,14 +268,11 @@ export default function OrderPaymentModal({
   //  IMPORTANT: lock only when fully paid AND NOT in forceEditable mode
   const lockInputs = isFullyPaid && !forceEditable;
 
-  //  once card payment is added, lock card type + tax buttons until removed
   const lockCardConfig = cardPaid > EPS;
 
-  //  Disable methods based on who fully covered the bill
   const cashCoversBill = cashPaid > EPS && cardPaid <= EPS && remainingToPay <= 0;
   const cardCoversBill = cardPaid > EPS && remainingToPay <= 0;
 
-  //  Done auto-pulse every 1s while fully paid (works even after returning from confirmation)
   useEffect(() => {
     if (!open) return;
     if (!isFullyPaid) return;
@@ -319,7 +340,6 @@ export default function OrderPaymentModal({
     return nextRaw;
   }
 
-  //  when moving to card section, suggest total remaining with tax automatically
   useEffect(() => {
     if (!open) return;
     if (!isCard) return;
@@ -610,14 +630,11 @@ export default function OrderPaymentModal({
                   const isSelected = selectedMethod === pm.id;
 
                   const disableThis =
-                    //  If cash alone covered full bill → disable both card methods
                     (cashCoversBill && (pm.id === "Visa" || pm.id === "Master")) ||
-                    //  If any card method covered full bill → disable cash + the other card method
                     (cardCoversBill &&
                       (pm.id === "Cash" ||
                         ((pm.id === "Visa" || pm.id === "Master") &&
                           pm.id !== selectedMethod))) ||
-                    //  Once card payment added, can’t switch card types until removed
                     (lockCardConfig &&
                       (pm.id === "Visa" || pm.id === "Master") &&
                       pm.id !== selectedMethod);
@@ -783,6 +800,7 @@ export default function OrderPaymentModal({
                   currencyCode,
 
                   baseAmount,
+                  discountId: selectedDiscountId,
                   discountPercent: selectedDiscount?.percent,
                   discountValue,
 

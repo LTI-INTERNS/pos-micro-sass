@@ -54,6 +54,17 @@ export const supplierService = {
       .get<ApiResponse<BackendSupplier[]>>("/suppliers")
       .then((res) => (res.data.data ?? []).map(mapSupplier)),
 
+  // Fetch suppliers that are assigned to a specific branch.
+  // Uses the existing /suppliers endpoint and filters client-side via branchIds.
+  getByBranchId: (branchId: string): Promise<Supplier[]> =>
+    apiClient
+      .get<ApiResponse<BackendSupplier[]>>("/suppliers")
+      .then((res) =>
+        (res.data.data ?? [])
+          .map(mapSupplier)
+          .filter((s) => s.branchIds.includes(branchId))
+      ),
+
   getById: (id: string): Promise<Supplier> =>
     apiClient
       .get<ApiResponse<BackendSupplier>>(`/suppliers/${id}`)

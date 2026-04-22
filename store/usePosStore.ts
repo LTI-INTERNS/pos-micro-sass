@@ -5,12 +5,13 @@ export interface OrderItem {
     name: string;
     price: number;
     qty: number;
+    stockQty: number;
     imageUrl?: string;
 }
 
 interface PosState {
     orderItems: OrderItem[];
-    addItem: (item: { id: number | string; name: string; price: number; image?: string }) => void;
+    addItem: (item: { id: number | string; name: string; price: number; image?: string; stockQty?: number }) => void;
     increaseQty: (id: string) => void;
     decreaseQty: (id: string) => void;
     setQty: (id: string, qty: number) => void;
@@ -36,6 +37,7 @@ export const usePosStore = create<PosState>((set) => ({
                     name: item.name,
                     price: item.price,
                     qty: 1,
+                    stockQty: item.stockQty ?? 0,
                     imageUrl: item.image,
                 },
             ],
@@ -49,8 +51,16 @@ export const usePosStore = create<PosState>((set) => ({
             .map((it) => (it.id === id ? { ...it, qty: it.qty - 1 } : it))
             .filter((it) => it.qty > 0),
     })),
-    setQty: (id, qty) => set((state) => ({
-        orderItems: state.orderItems.map((it) => (it.id === id ? { ...it, qty } : it)),
-    })),
+    setQty: (id, qty) => set((state) => {
+        // qty ≤ 0 removes the item entirely (consistent with decreaseQty behaviour).
+        // Fractional values are truncated; anything below 1 is treated as a removal.
+        const safeQty = Math.trunc(qty);
+        if (safeQty <= 0) {
+            return { orderItems: state.orderItems.filter((it) => it.id !== id) };
+        }
+        return {
+            orderItems: state.orderItems.map((it) => (it.id === id ? { ...it, qty: safeQty } : it)),
+        };
+    }),
     clearCart: () => set({ orderItems: [] }),
 }));

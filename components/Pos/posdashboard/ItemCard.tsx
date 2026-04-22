@@ -16,20 +16,22 @@ type Item = {
 type Props = {
   item: Item;
   onClick: () => void;
+  disabled?: boolean;
 };
 
-export default function ItemCard({ item, onClick }: Props) {
+export default function ItemCard({ item, onClick, disabled = false }: Props) {
   const { currency, useCents } = useCurrency();
 
   const hasImage = Boolean(item.image);
 
   return (
     <div
-      onClick={onClick}
-      className={`cursor-pointer transition active:scale-95
+      onClick={disabled ? undefined : onClick}
+      className={`transition
+        ${disabled ? "opacity-45 cursor-not-allowed" : "cursor-pointer active:scale-95"}
         ${hasImage
-          ? "bg-white rounded-xl shadow-sm hover:shadow-md"
-          : "flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+          ? `bg-white rounded-xl shadow-sm ${disabled ? "" : "hover:shadow-md"}`
+          : `flex items-center justify-between p-3 border rounded-lg ${disabled ? "" : "hover:bg-gray-50"}`
         }`}
     >
       {/* IMAGE OR ICON */}

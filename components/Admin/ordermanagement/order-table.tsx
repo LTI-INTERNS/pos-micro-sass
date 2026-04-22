@@ -15,14 +15,36 @@ export default function OrdersTable({ orders, onView }: OrdersTableProps) {
 
   const orderColumns: Column<Order>[] = [
     {
-    key: "index",
-    label: "",
-    render: (_, index) => index + 1,
-  },
-    { key: "id", label: "Order ID" },
-    { key: "dateTime", label: "Date & Time" },
-    { key: "branch", label: "Branch" },
-    { key: "cashier", label: "Cashier" },
+      key: "index",
+      label: "",
+      render: (_, index) => index + 1,
+    },
+    {
+      key: "id",
+      label: "Order ID",
+      render: (row) => (
+        <span className="flex flex-col gap-0.5">
+          <span className="font-medium">{row.orderNumber}</span>
+          <span className="text-xs text-gray-400">{row.id}</span>
+        </span>
+      ),
+    },
+    {
+      key: "dateTime",
+      label: "Date & Time",
+      render: (row) => {
+        if (!row.dateTime) return "-";
+        const d = new Date(row.dateTime);
+        return (
+          <span className="whitespace-nowrap">
+            {d.toLocaleDateString()}{" "}
+            <span className="text-gray-400">{d.toLocaleTimeString()}</span>
+          </span>
+        );
+      },
+    },
+    { key: "branch",      label: "Branch"  },
+    { key: "cashier",     label: "Cashier" },
     { key: "paymenttype", label: "Payment" },
     {
       key: "totalamount",

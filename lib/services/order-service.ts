@@ -27,6 +27,17 @@ interface BackendResponse<T> {
     data:    T;
 }
 
+/** Shape returned by GET /sales — a paginated wrapper, not a plain array. */
+interface PaginatedOrdersResponse {
+    orders:     BackendOrder[];
+    pagination: {
+        total:      number;
+        page:       number;
+        limit:      number;
+        totalPages: number;
+    };
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /** Derive a human-readable payment type label from the payments array. */
@@ -55,9 +66,9 @@ function mapOrder(raw: BackendOrder): Order {
         name:  item.variantName
                  ? `${item.productName} – ${item.variantName}`
                  : item.productName,
-        qty:   item.quantity,
-        price: item.unitPrice,
-        total: item.total,
+        qty:   Number(item.quantity)  || 0,
+        price: Number(item.unitPrice) || 0,
+        total: Number(item.total)     || 0,
     }));
 
     return {
@@ -70,7 +81,7 @@ function mapOrder(raw: BackendOrder): Order {
         branch:      raw.branch?.name       ?? '—',
         cashier:     raw.cashier?.name      ?? '—',
         paymenttype: derivePaymentType(raw.payments),
-        totalamount: raw.totalAmount,
+        totalamount: Number(raw.totalAmount) || 0,
         status:      raw.orderStatus,
 
         // detail fields used by OrderBillModal
@@ -78,16 +89,16 @@ function mapOrder(raw: BackendOrder): Order {
         items:       items.length > 0 ? items : [],
         note:        raw.note,
 
-        // financial breakdown
-        subTotal:      raw.subTotal,
-        discountAmount: raw.discountAmount,
-        tax:           raw.tax,
-        serviceCharge: raw.serviceCharge,
+        // financial breakdown — all coerced from Prisma Decimal strings
+        subTotal:       Number(raw.subTotal)       || 0,
+        discountAmount: Number(raw.discountAmount) || 0,
+        tax:            Number(raw.tax)            || 0,
+        serviceCharge:  Number(raw.serviceCharge)  || 0,
 
         // payment detail
-        cashReceived,
-        changeToGive,
-        payments:    raw.payments ?? [],
+        cashReceived:  cashReceived !== null ? Number(cashReceived) || 0 : null,
+        changeToGive:  changeToGive !== null ? Number(changeToGive) || 0 : null,
+        payments:      raw.payments ?? [],
     };
 }
 
@@ -102,8 +113,8 @@ export const orderService = {
      */
     getAll: (params?: GetOrdersParams): Promise<Order[]> =>
         apiClient
-            .get<BackendResponse<BackendOrder[]>>('/sales', { params })
-            .then(res => (res.data.data ?? []).map(mapOrder)),
+            .get<BackendResponse<PaginatedOrdersResponse>>('/sales', { params })
+            .then(res => (res.data.data?.orders ?? []).map(mapOrder)),
 
     /**
      * GET /api/v1/sales/:orderId
