@@ -22,22 +22,22 @@ export type RecurringExpenses = {
 type Props = {
   RecurringExpenses: RecurringExpenses[];
   showBranch?: boolean;
-  onEdit?: (expense: RecurringExpenses) => void;
-  onDelete?: (expense: RecurringExpenses) => void;
+  selectedRecExpenseId?: string;
+  onSelectRecExpense?: (expense: RecurringExpenses | null) => void;
 };
 
 export default function RecurringExpensesTable({
   RecurringExpenses,
   showBranch = false,
-  onEdit,
-  onDelete,
+  selectedRecExpenseId,
+  onSelectRecExpense,
 }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<RecurringExpenses>[] = [
     {
       key: "index",
-      label: "#",
+      label: "",
       render: (_, index) => index + 1,
     },
     { key: "date", label: "Date" },
@@ -53,28 +53,6 @@ export default function RecurringExpensesTable({
     ...(showBranch
       ? [{ key: "branch" as keyof RecurringExpenses, label: "Branch" }]
       : []),
-    {
-      key: "actions",
-      label: "Actions",
-      render: (row) => (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => onEdit?.(row)}
-            className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium hover:bg-black/5"
-          >
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete?.(row)}
-            className="rounded-full border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -83,6 +61,8 @@ export default function RecurringExpensesTable({
       data={RecurringExpenses}
       columns={columns}
       emptyMessage="No recurring expenses found"
+      selectedRowId={selectedRecExpenseId}
+      onSelectRow={onSelectRecExpense}
     />
   );
 }

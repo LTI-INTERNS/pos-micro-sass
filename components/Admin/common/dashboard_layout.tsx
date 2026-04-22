@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Navbar from '@/components/Admin/common/navbar';
 import Sidebar from '@/components/Admin/common/sidebar';
+import StockAlertProvider from '@/components/Admin/notifications/StockAlertProvider';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -59,6 +60,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {children}
         </main>
       </div>
+
+      {/* Stock alert toasts — branch-wise, variant-level, bottom-right */}
+      <StockAlertProvider />
     </div>
   );
 };

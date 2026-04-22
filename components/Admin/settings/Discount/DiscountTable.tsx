@@ -2,16 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
-
-export type Discount = {
-  id: string;
-  title: string;
-  percentage: number;
-  createdDate: string;
-  endDate: string;
-  branch?: string;
-  status?: "Active" | "Expired";
-};
+import { Discount } from "@/types/discount"; // Imported from your types folder
 
 type Props = {
   discounts: Discount[];
@@ -32,20 +23,18 @@ export default function DiscountTable({
   onSelectRow,
 }: Props) {
   const { data: session } = useSession();
-  const role = session?.user?.role;
-  const branchName = session?.user?.branchName ?? "";
+  const role = session?.user?.role?.toUpperCase();
+  const userBranchId = session?.user?.branchId ?? "";
 
   const isManager = role === "MANAGER";
   const visibleDiscounts = isManager
-    ? discounts.filter(
-        (d) => !d.branch || d.branch === branchName
-      )
+    ? discounts.filter((d) => d.branchId === userBranchId)
     : discounts;
 
   const columns: Column<Discount>[] = [
      {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
     // { key: "id", label: "ID" },
@@ -55,12 +44,20 @@ export default function DiscountTable({
       label: "Discount (%)",
       render: (d) => `${d.percentage}%`,
     },
-    { key: "createdDate", label: "Created Date" },
-    { key: "endDate", label: "End Date" },
+    { 
+      key: "startDate", 
+      label: "Start Date", 
+      render: (d) => new Date(d.startDate).toLocaleDateString() 
+    },
+    { 
+      key: "endDate", 
+      label: "End Date",
+      render: (d) => new Date(d.endDate).toLocaleDateString() 
+    },
     {
-      key: "branch",
+      key: "branchId",
       label: "Branch",
-      render: (d) => d.branch || "All",
+      render: (d) => d.branch?.name || "Unknown",
     },
     {
       key: "status",
@@ -72,12 +69,12 @@ export default function DiscountTable({
         return (
           <span
             className={`px-3 py-1 rounded-full text-xs font-medium ${
-              expired
+              expired || !d.status
                 ? "bg-red-100 text-red-700"
                 : "bg-green-100 text-green-700"
             }`}
           >
-            {expired ? "Expired" : "Active"}
+            {expired || !d.status ? "Expired" : "Active"}
           </span>
         );
       },

@@ -30,9 +30,51 @@ export default function ItemGrid({ search, onAdd }: Props) {
     fetchProducts();
   }, []);
 
-  const filteredItems = items.filter((i) =>
-    i.name.toLowerCase().includes(search.toLowerCase())
-  );
+  // Global Barcode Scanner Hook
+  useEffect(() => {
+    let barcodeString = "";
+    let timeoutId: NodeJS.Timeout | null = null;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.key) return;
+
+      if (e.key === "Enter") {
+        if (barcodeString.length > 0) {
+          const matchedItem = items.find((item) => item.barcode === barcodeString);
+          if (matchedItem && matchedItem.availability) {
+            onAdd(matchedItem);
+          }
+          barcodeString = "";
+        }
+        return;
+      }
+
+      if (e.key.length === 1) {
+        barcodeString += e.key;
+        if (timeoutId) clearTimeout(timeoutId);
+        
+        // Barcode scanners usually type very fast (< 20ms per character).
+        // 50ms is a safe threshold for most scanners.
+        timeoutId = setTimeout(() => {
+          barcodeString = "";
+        }, 50);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [items, onAdd]);
+
+  const filteredItems = items.filter((i) => {
+    const term = search.toLowerCase();
+    return (
+      i.name.toLowerCase().includes(term) ||
+      (i.barcode && i.barcode.toLowerCase().includes(term))
+    );
+  });
 
   /* ── LOADING ── */
   if (loading) {
@@ -83,8 +125,12 @@ export default function ItemGrid({ search, onAdd }: Props) {
         {filteredItems.map((item) => (
           <div
             key={item.id}
-            onClick={() => onAdd(item)}
-            className="flex justify-between items-center p-3 border rounded cursor-pointer hover:bg-gray-50"
+            onClick={item.availability ? () => onAdd(item) : undefined}
+            className={`flex justify-between items-center p-3 border rounded transition ${
+              item.availability
+                ? "cursor-pointer hover:bg-gray-50"
+                : "opacity-45 cursor-not-allowed"
+            }`}
           >
             <span className="font-semibold text-gray-600">{item.name}</span>
             <span className="text-sm font-semibold text-gray-600">{item.price}</span>
@@ -98,7 +144,12 @@ export default function ItemGrid({ search, onAdd }: Props) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {filteredItems.map((item) => (
-        <ItemCard key={item.id} item={item} onClick={() => onAdd(item)} />
+        <ItemCard
+          key={item.id}
+          item={item}
+          disabled={!item.availability}
+          onClick={() => onAdd(item)}
+        />
       ))}
     </div>
   );

@@ -1,10 +1,12 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import Clock from "@/components/Landing/clock";
-import { Menu, History, Lock } from "lucide-react";
+import { Menu, History, Lock, ExternalLink } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -13,13 +15,8 @@ interface NavbarProps {
 
 const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
   const { storeInfo } = useStoreInfo();
+  const { posSettings } = usePosSettings();
 
-  /**
-   * Lock:
-   * - keeps branch-session cookie alive
-   * - clears cashier session only
-   * - redirects to switch user screen
-   */
   const handleLock = async () => {
     try {
       localStorage.setItem("isLocked", "true");
@@ -31,13 +28,7 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
     }
   };
 
-  /**
-   * Full logout:
-   * - clears lock flag
-   * - clears cashier session
-   * - clears branch-session cookie
-   * - redirects to login
-   */
+
   const handleLogout = async () => {
     try {
       localStorage.removeItem("isLocked");
@@ -109,6 +100,19 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
         >
           <History size={20} />
         </button>
+
+        {posSettings.customerDisplayEnabled && (
+          <Link
+            href="/customer-display"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Open customer display"
+            className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[13px] font-semibold text-orange-500 transition-all hover:bg-orange-100 hover:text-orange-600"
+          >
+            <ExternalLink size={14} />
+            Customer Display
+          </Link>
+        )}
 
         <button
           onClick={handleLock}

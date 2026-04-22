@@ -57,7 +57,7 @@ export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: 
   const columns: Column<Cashier>[] = [
      {
     key: "index",
-    label: "#",
+    label: "",
     render: (_, index) => index + 1,
   },
     {

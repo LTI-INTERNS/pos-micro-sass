@@ -9,7 +9,7 @@ export type RecurringExpenseApiItem = {
   description: string;
   amount: string | number;
   paymentType: string;
-  addedBy: string;
+  addedByName?: string | null;
   createdAt: string;
   branch?: {
     branchId: string;

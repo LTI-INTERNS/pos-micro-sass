@@ -1,17 +1,18 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import { discountService } from "@/lib/services/discountService";
 
 type DiscountValues = {
   title: string;
   percentage: string;
-  createdDate: string;
+  startDate: string;
   endDate: string;
-  branch: string;
+  branchId: string;
 };
 
 type FormErrors = Partial<Record<keyof DiscountValues, string>>;
@@ -19,96 +20,114 @@ type FormErrors = Partial<Record<keyof DiscountValues, string>>;
 type AddDiscountPopupProps = {
   open: boolean;
   onClose: () => void;
-  onSave: (values: DiscountValues) => void;
+  onSave: (values: DiscountValues) => Promise<void>;
 };
 
-const AddDiscountPopup = ({
-  open,
-  onClose,
-  onSave,
-}: AddDiscountPopupProps) => {
+const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
   const { data: session } = useSession();
-  const role = session?.user?.role;
-  const branchName = session?.user?.branchName ?? "";
+  const role = session?.user?.role?.toUpperCase();
+  const userBranchId = session?.user?.branchId ?? "";
+  
+  // THE FIX: Extracting the token properly here too
+  const token = (session as any)?.user?.backendToken;
 
   const canSelectBranch = role === "OWNER" || role === "ADMIN";
 
-  const [values, setValues] = React.useState<DiscountValues>({
+  const [branches, setBranches] = useState<{ label: string; value: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const [values, setValues] = useState<DiscountValues>({
     title: "",
     percentage: "",
-    createdDate: "",
+    startDate: "",
     endDate: "",
-    branch: canSelectBranch ? "All" : branchName,
+    branchId: canSelectBranch ? "All" : userBranchId,
   });
 
-  const [errors, setErrors] = React.useState<FormErrors>({});
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  // reset form when popup opens
-  React.useEffect(() => {
+  // Fetch branches when popup opens
+  useEffect(() => {
+    if (open && canSelectBranch && token) {
+      const fetchBranches = async () => {
+        try {
+          // Use the clean service method we just built
+          const data = await discountService.getBranches(token);
+          const branchOptions = data.map((b: any) => ({
+            label: b.name,
+            value: b.branchId,
+          }));
+          setBranches([{ label: "All Branches", value: "All" }, ...branchOptions]);
+        } catch (error) {
+          console.error("Failed to fetch branches", error);
+        }
+      };
+      fetchBranches();
+    }
+  }, [open, canSelectBranch, token]);
+
+  // Reset form when popup opens
+  useEffect(() => {
     if (!open) return;
     setValues({
       title: "",
       percentage: "",
-      createdDate: "",
+      startDate: "",
       endDate: "",
-      branch: canSelectBranch ? "All" : branchName,
+      branchId: canSelectBranch ? "All" : userBranchId,
     });
     setErrors({});
-  }, [open, canSelectBranch, branchName]);
+    setApiError(null);
+  }, [open, canSelectBranch, userBranchId]);
 
   const setField = (name: keyof DiscountValues, value: string) => {
     setValues((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+    setApiError(null);
   };
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
 
-    if (!values.title.trim()) {
-      newErrors.title = "Title is required";
-    } else if (values.title.trim().length < 3) {
-      newErrors.title = "Title must be at least 3 characters";
-    }
+    if (!values.title.trim()) newErrors.title = "Title is required";
+    else if (values.title.trim().length < 3) newErrors.title = "Title must be at least 3 characters";
 
-    if (!values.percentage.trim()) {
-      newErrors.percentage = "Percentage is required";
-    } else if (Number.isNaN(Number(values.percentage))) {
-      newErrors.percentage = "Percentage must be a number";
-    } else if (
-      Number(values.percentage) <= 0 ||
-      Number(values.percentage) > 100
-    ) {
+    if (!values.percentage.trim()) newErrors.percentage = "Percentage is required";
+    else if (Number.isNaN(Number(values.percentage))) newErrors.percentage = "Must be a number";
+    else if (Number(values.percentage) <= 0 || Number(values.percentage) > 100) {
       newErrors.percentage = "Percentage must be between 1 and 100";
     }
 
-    if (!values.createdDate) {
-      newErrors.createdDate = "Created date is required";
-    }
-
-    if (!values.endDate) {
-      newErrors.endDate = "End date is required";
-    } else if (
-      values.createdDate &&
-      new Date(values.endDate) < new Date(values.createdDate)
-    ) {
-      newErrors.endDate = "End date cannot be before created date";
+    if (!values.startDate) newErrors.startDate = "Start date is required";
+    
+    if (!values.endDate) newErrors.endDate = "End date is required";
+    else if (values.startDate && new Date(values.endDate) < new Date(values.startDate)) {
+      newErrors.endDate = "End date cannot be before start date";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateForm()) return;
-    onSave(values);
+    setLoading(true);
+    setApiError(null);
+    try {
+      await onSave(values);
+      onClose();
+    } catch (err: any) {
+      setApiError(err.message || "Failed to save discount. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     onClose();
     setErrors({});
+    setApiError(null);
   };
 
   return (
@@ -125,6 +144,8 @@ const AddDiscountPopup = ({
           handleSave();
         }}
       >
+        {apiError && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{apiError}</p>}
+
         <FormField
           label="Title"
           placeholder="Enter discount title"
@@ -132,9 +153,7 @@ const AddDiscountPopup = ({
           onChange={(v) => setField("title", v)}
           type="text"
         />
-        {errors.title && (
-          <p className="text-xs text-red-500 px-3">{errors.title}</p>
-        )}
+        {errors.title && <p className="text-xs text-red-500 px-3">{errors.title}</p>}
 
         <FormField
           label="Discount Percentage"
@@ -143,21 +162,15 @@ const AddDiscountPopup = ({
           onChange={(v) => setField("percentage", v)}
           type="number"
         />
-        {errors.percentage && (
-          <p className="text-xs text-red-500 px-3">{errors.percentage}</p>
-        )}
+        {errors.percentage && <p className="text-xs text-red-500 px-3">{errors.percentage}</p>}
 
         <FormField
-          label="Created Date"
-          value={values.createdDate}
-          onChange={(v) => setField("createdDate", v)}
+          label="Start Date"
+          value={values.startDate}
+          onChange={(v) => setField("startDate", v)}
           type="date"
         />
-        {errors.createdDate && (
-          <p className="text-xs text-red-500 px-3">
-            {errors.createdDate}
-          </p>
-        )}
+        {errors.startDate && <p className="text-xs text-red-500 px-3">{errors.startDate}</p>}
 
         <FormField
           label="End Date"
@@ -165,27 +178,36 @@ const AddDiscountPopup = ({
           onChange={(v) => setField("endDate", v)}
           type="date"
         />
-        {errors.endDate && (
-          <p className="text-xs text-red-500 px-3">{errors.endDate}</p>
-        )}
+        {errors.endDate && <p className="text-xs text-red-500 px-3">{errors.endDate}</p>}
 
-        {/* Branch: locked to manager's own branch; selectable for OWNER / ADMIN */}
         <div>
-          <FormField
-            label="Branch"
-            placeholder="Select branch"
-            value={values.branch}
-            onChange={(v) => canSelectBranch && setField("branch", v)}
-            type="dropdown"
-            disabled={!canSelectBranch}
-          />
-          {!canSelectBranch && (
-            <p className="text-xs text-gray-400 px-3 mt-1">
-              Discounts are applied to your branch only.
-            </p>
-          )}
-          {errors.branch && (
-            <p className="text-xs text-red-500 px-3">{errors.branch}</p>
+          {canSelectBranch ? (
+            <div className="flex flex-col space-y-1">
+               <label className="text-sm font-medium text-gray-700">Branch</label>
+               <select
+                 className="border rounded-md px-3 py-2 text-sm text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 value={values.branchId}
+                 onChange={(e) => setField("branchId", e.target.value)}
+               >
+                 {branches.map((b) => (
+                   <option key={b.value} value={b.value}>{b.label}</option>
+                 ))}
+               </select>
+            </div>
+          ) : (
+            <>
+              <FormField
+                label="Branch"
+                placeholder="Your Branch"
+                value="Your Assigned Branch"
+                onChange={() => {}}
+                type="text"
+                disabled={true}
+              />
+              <p className="text-xs text-gray-400 px-3 mt-1">
+                Discounts are applied to your branch only.
+              </p>
+            </>
           )}
         </div>
 
@@ -197,11 +219,13 @@ const AddDiscountPopup = ({
                   label: "Cancel",
                   onClick: handleCancel,
                   variant: "secondary",
+                  disabled: loading
                 },
                 {
-                  label: "Save Discount",
+                  label: loading ? "Saving..." : "Save Discount",
                   onClick: handleSave,
                   variant: "primary",
+                  disabled: loading
                 },
               ]}
             />

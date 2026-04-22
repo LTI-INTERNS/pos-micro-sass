@@ -1,13 +1,18 @@
 export interface Branch {
     id: string;
-    city: string;
     name: string;
+    city: string;
     phone: string;
-    address: string;
-    regno: number;
     email: string;
+    address: string;
+    regno: string; // <-- Change this to string
     password?: string;
 }
 
-export type CreateBranchInput = Omit<Branch, 'id'>;
-export type UpdateBranchInput = Partial<CreateBranchInput>;
+export interface CreateBranchInput {
+    // ... your existing fields
+}
+
+export interface UpdateBranchInput {
+    // ... your existing fields
+}

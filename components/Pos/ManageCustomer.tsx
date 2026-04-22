@@ -1,43 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import Buttons from "@/components/Admin/common/ActionButton";
 import SearchBar from "@/components/Admin/common/Search-bar";
-
-type Customer = {
-  id: number;
-  name: string;
-  phone: string;
-  email: string;
-};
+import { customerService } from "@/lib/services/customer-service";
+import type { Customer } from "@/types/customer.types";
 
 type Props = {
   onClose: () => void;
   onAddCustomer: () => void;
-  onCustomerSelected: (customer: Customer) => void; 
+  onCustomerSelected: (customer: Customer) => void;
 };
-
-const customers: Customer[] = [
-  {
-    id: 1,
-    name: "Kavindu Madushan",
-    phone: "083894771983",
-    email: "KavinduMadushan@mail.com",
-  },
-  {
-    id: 2,
-    name: "Manuga Dewhan",
-    phone: "081829748835",
-    email: "ManugaDewhan@mail.com",
-  },
-  {
-    id: 3,
-    name: "Malsha Ashen",
-    phone: "087837829837",
-    email: "MalshaAshen@mail.com",
-  },
-];
 
 const columns: Column<Customer>[] = [
   { key: "name", label: "CUSTOMER NAME" },
@@ -50,19 +25,48 @@ export default function ManageCustomer({
   onAddCustomer,
   onCustomerSelected,
 }: Props) {
+  const { data: session } = useSession();
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      const branchId = session?.user?.branchId;
+      if (!branchId) {
+        setError("No branch assigned to your account.");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await customerService.getAll(branchId);
+        setCustomers(data);
+      } catch {
+        setError("Failed to load customers.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session?.user) {
+      void run();
+    }
+  }, [session?.user, session?.user?.branchId]);
 
   const filteredCustomers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return [];
+    if (!q) return customers;
 
     return customers.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q) ||
+        (c.email ?? "").toLowerCase().includes(q) ||
         c.phone.includes(q)
     );
-  }, [search]);
+  }, [customers, search]);
 
   return (
     <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto">
@@ -76,8 +80,14 @@ export default function ManageCustomer({
         placeholder="Search by name, email or phone"
       />
 
-      {search.trim() !== "" && (
-        <div className="mt-6">
+      <div className="mt-6">
+        {loading ? (
+          <div className="py-6 text-center text-sm text-slate-500">
+            Loading customers...
+          </div>
+        ) : error ? (
+          <div className="py-6 text-center text-sm text-red-600">{error}</div>
+        ) : (
           <CommonTable
             columns={columns}
             data={filteredCustomers}
@@ -89,8 +99,8 @@ export default function ManageCustomer({
               onClose();
             }}
           />
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="flex justify-center gap-4 mt-8">
         <div className="flex justify-center gap-4 w-full max-w-md mx-auto">
