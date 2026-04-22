@@ -6,6 +6,7 @@ import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
 
 export type CustomerFormValues = {
+  customerId?: string;
   name: string;
   email?: string;
   promocard?: string;

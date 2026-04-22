@@ -16,7 +16,6 @@ type Props = {
   onClose: () => void;
 };
 
-/** ISO date string for N days ago, used as the startDate query param. */
 function daysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -31,6 +30,7 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
   const { currency, useCents } = useCurrency();
 
   const [allOrders, setAllOrders] = useState<Order[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState("");
   const [search, setSearch] = useState("");
@@ -38,7 +38,6 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
   const [detailsOpen, setDetailsOpen]     = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  // ── Fetch last 7 days of orders for this branch ────────────────────────
   useEffect(() => {
     if (!open || !branchId) return;
 
@@ -52,9 +51,13 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
         const data = await orderService.getAll({
           branchId,
           startDate: daysAgo(7),
+          limit: 100,
         });
 
-        if (!cancelled) setAllOrders(data);
+        if (!cancelled) {
+          setAllOrders(data);
+          setTotalCount(data.length);
+        }
       } catch {
         if (!cancelled) setFetchError("Failed to load orders.");
       } finally {
@@ -65,6 +68,16 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
     return () => { cancelled = true; };
   }, [open, branchId]);
 
+  useEffect(() => {
+    if (!open) {
+      setAllOrders([]);
+      setTotalCount(0);
+      setSearch("");
+      setFetchError("");
+      setSelectedOrder(null);
+      setDetailsOpen(false);
+    }
+  }, [open]);
   // ── Client-side search ─────────────────────────────────────────────────
   const filteredOrders = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -72,11 +85,11 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
     return allOrders.filter(
       (o) =>
         o.orderNumber.toLowerCase().includes(q) ||
-        (o.cashier ?? "").toLowerCase().includes(q)
+        (o.cashier ?? "").toLowerCase().includes(q) ||
+        (o.customer ?? "").toLowerCase().includes(q)
     );
   }, [search, allOrders]);
 
-  // ── Table columns ──────────────────────────────────────────────────────
   const columns: Column<Order>[] = [
     {
       key:    "orderNumber",
@@ -89,6 +102,7 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
         row.dateTime ? new Date(row.dateTime).toLocaleString() : "-",
     },
     { key: "cashier",     label: "Cashier"  },
+    { key: "customer",    label: "Customer" },
     { key: "paymenttype", label: "Payment"  },
     {
       key:    "totalamount",
@@ -136,7 +150,7 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by order number or cashier…"
+            placeholder="Search by order number, cashier, or customer…"
             showFilter={false}
           />
 
@@ -149,14 +163,23 @@ export default function PreviousOrdersModal({ open, onClose }: Props) {
               Loading orders…
             </div>
           ) : (
-            <div className="max-h-[400px] overflow-y-auto">
-              <CommonTable
-                data={filteredOrders}
-                columns={columns}
-                emptyMessage="No orders found in the last 7 days"
-                onSelectRow={handleSelectRow}
-              />
-            </div>
+            <>
+              <div className="max-h-[400px] overflow-y-auto">
+                <CommonTable
+                  data={filteredOrders}
+                  columns={columns}
+                  emptyMessage="No orders found in the last 7 days"
+                  onSelectRow={handleSelectRow}
+                />
+              </div>
+              {totalCount > 0 && (
+                <p className="text-xs text-gray-400 text-right pt-1">
+                  {search.trim()
+                    ? `Showing ${filteredOrders.length} of ${totalCount} orders`
+                    : `${totalCount} order${totalCount !== 1 ? "s" : ""} in the last 7 days`}
+                </p>
+              )}
+            </>
           )}
         </div>
       </ModalShell>

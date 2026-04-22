@@ -92,6 +92,14 @@ export const customerService = {
             .then(res => mapCustomer(res.data.data)),
 
     /**
+     * PATCH /api/v1/customers/:customerId (email only)
+     */
+    updateEmail: (customerId: string, email: string): Promise<Customer> =>
+        apiClient
+            .patch<BackendResponse<BackendCustomer>>(`/customers/${customerId}`, { email })
+            .then(res => mapCustomer(res.data.data)),
+
+    /**
      * DELETE /api/v1/customers/:customerId  (soft-delete)
      */
     remove: (customerId: string): Promise<void> =>

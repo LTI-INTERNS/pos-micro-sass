@@ -89,41 +89,52 @@ export function useReceiptPrinter(order: ReceiptOrderData) {
 
   const handlePrint = useCallback(() => {
     const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
 
-    printWindow.document.open();
-    printWindow.document.write(buildHTML());
-    printWindow.document.close();
+    // window.open returns null when blocked by a popup blocker.
+    if (!printWindow) {
+      alert(
+        "Print receipt: your browser blocked the print window.\n" +
+        "Please allow pop-ups for this site and try again."
+      );
+      return;
+    }
 
+    const html = buildHTML();
+
+    // IMPORTANT: assign onload BEFORE document.close().
+    // For a blank window, document.close() fires the load event synchronously,
+    // so any handler assigned afterward is called too late and print() never runs.
     printWindow.onload = () => {
       const images = printWindow.document.images;
       let loaded = 0;
 
-      if (images.length === 0) {
+      const doPrint = () => {
         printWindow.print();
         printWindow.close();
+      };
+
+      if (images.length === 0) {
+        doPrint();
         return;
       }
 
-      for (const img of images) {
+      for (const img of Array.from(images)) {
         if (img.complete) {
           loaded++;
         } else {
           img.onload = img.onerror = () => {
             loaded++;
-            if (loaded === images.length) {
-              printWindow.print();
-              printWindow.close();
-            }
+            if (loaded === images.length) doPrint();
           };
         }
       }
 
-      if (loaded === images.length) {
-        printWindow.print();
-        printWindow.close();
-      }
+      if (loaded === images.length) doPrint();
     };
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close(); 
   }, [buildHTML]);
 
   const handleEmail = useCallback(() => {

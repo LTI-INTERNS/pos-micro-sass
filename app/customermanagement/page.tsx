@@ -99,6 +99,7 @@ export default function CustomersPage() {
     start,
     end,
     searchKeys: ["id", "name", "email", "phone", "promoCard"],
+    dateKey:    "createdAt",
     filters:    {},
   });
 

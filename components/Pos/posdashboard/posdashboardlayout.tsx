@@ -3,19 +3,19 @@
 import { useState } from 'react';
 import PosNavbar from '@/components/Pos/posdashboard/PosNav';
 import PreviousOrdersModal from '@/components/Pos/posdashboard/PreviousOrdersModal';
+import StockAlertProvider from '@/components/Admin/notifications/StockAlertProvider';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [ordersOpen, setOrdersOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <PosNavbar
-        toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        toggleSidebar={() => {/* sidebar not yet implemented */}}
         onOpenOrders={() => setOrdersOpen(true)}
       />
 
@@ -27,6 +27,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         open={ordersOpen}
         onClose={() => setOrdersOpen(false)}
       />
+
+      {/* Stock alert toasts — branch-wise, variant-level, bottom-right */}
+      <StockAlertProvider />
     </div>
   );
 };
