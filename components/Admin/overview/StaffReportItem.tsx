@@ -1,13 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { MapPin } from "lucide-react";
 
 type StaffReportItemProps = {
   name:       string;
   cashierNo:  string;
+  imgUrl?:     string | null;
+  branchName?: string;
   revenue:    number;
   orderCount: number;
+  showBranch?: boolean;
 };
 
 function avatarColor(name: string): string {
@@ -27,8 +32,11 @@ function avatarColor(name: string): string {
 export default function StaffReportItem({
   name,
   cashierNo,
+  imgUrl,
+  branchName,
   revenue,
   orderCount,
+  showBranch = false,
 }: StaffReportItemProps) {
   const { currency, useCents } = useCurrency();
 
@@ -43,14 +51,33 @@ export default function StaffReportItem({
     <div className="flex items-center justify-between py-3 border-b last:border-b-0">
       {/* Avatar + name */}
       <div className="flex items-center gap-3">
-        <div
-          className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColor(name)}`}
-        >
-          {initials}
-        </div>
+        {imgUrl ? (
+          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 relative">
+            <Image
+              src={imgUrl}
+              alt={name}
+              fill
+              className="object-cover"
+            />
+          </div>
+        ) : (
+          <div
+            className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${avatarColor(name)}`}
+          >
+            {initials}
+          </div>
+        )}
         <div>
           <p className="text-sm font-medium text-gray-800">{name}</p>
-          <p className="text-xs text-gray-400">#{cashierNo}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-xs text-gray-400">#{cashierNo}</p>
+            {showBranch && branchName && (
+              <span className="inline-flex items-center gap-0.5 text-xs text-orange-500 font-medium">
+                <MapPin className="w-3 h-3" />
+                {branchName}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
