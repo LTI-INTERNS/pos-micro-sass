@@ -8,7 +8,8 @@ import PopupActions from "@/components/Admin/common/PopupActions";
 export type EditField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "textarea" | "select" | "image";
+  // THE FIX: Added "password" to the allowed types!
+  type?: "text" | "number" | "textarea" | "select" | "image" | "password";
   readOnly?: boolean;
   options?: { label: string; value: string }[];
 };
@@ -19,7 +20,6 @@ type Props<T extends object> = {
   initialValues: T | null;
   fields: EditField[];
   onClose: () => void;
-  // THE FIX: Added an optional validate prop so any page can pass its own rules
   validate?: (values: T) => Record<string, string>; 
   onSave: (values: T) => void;
 };
@@ -147,7 +147,6 @@ export default function EditEntityModal<T extends object>({
 }: Props<T>) {
   const [values, setValues] = useState<T | null>(null);
   
-  // THE FIX: Added local error state
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -161,19 +160,17 @@ export default function EditEntityModal<T extends object>({
 
   const handleChange = (name: string, value: string) => {
     setValues((prev) => ({ ...prev!, [name]: value } as T));
-    // Clear the error for this specific field when the user starts typing
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
-  // THE FIX: Added save handler to run validation before saving
   const handleSaveClick = () => {
     if (validate) {
       const validationErrors = validate(values);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
-        return; // Stop the save process if there are errors
+        return; 
       }
     }
     onSave(values);
@@ -245,6 +242,7 @@ export default function EditEntityModal<T extends object>({
                 ) : (
                   <input
                     id={fieldId}
+                    // This will now properly render type="password" and mask the text!
                     type={field.type || "text"}
                     value={String(values[field.name as keyof T] ?? "")}
                     readOnly={field.readOnly}
@@ -254,7 +252,6 @@ export default function EditEntityModal<T extends object>({
                   />
                 )}
                 
-                {/* THE FIX: Render the error message right below the input field if it exists */}
                 {errors[field.name] && (
                   <p className="text-xs text-red-500 mt-1 px-3">{errors[field.name]}</p>
                 )}
@@ -268,7 +265,6 @@ export default function EditEntityModal<T extends object>({
             <PopupActions
               actions={[
                 { label: "Cancel", variant: "secondary", onClick: onClose },
-                // THE FIX: Point this to handleSaveClick instead of onSave directly
                 { label: "Save Changes", variant: "primary", onClick: handleSaveClick },
               ]}
             />

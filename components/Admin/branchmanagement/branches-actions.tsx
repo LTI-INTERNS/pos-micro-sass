@@ -36,7 +36,8 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
       label: "Email", 
       readOnly: isAdmin && !isOwner 
     },
-    { name: "password", label: "Password" },
+    // THE FIX: Defined this specifically as a password type so it masks characters
+    { name: "password", label: "New Password", type: "password" },
   ];
 
   return (
@@ -104,24 +105,32 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
       )}
 
       {selectedBranch && editPopupOpen && (
-        <EditEntityModal<Branch>
+        <EditEntityModal<any> // Used <any> here since we are injecting "password" which might not be strictly typed in your Branch interface
           open={editPopupOpen}
           title="Edit Branch"
           initialValues={selectedBranch}
           fields={editFields}
           onClose={() => setEditPopupOpen(false)}
           
-          // THE FIX: Pass our custom validation rules here!
           validate={(values) => {
             const errors: Record<string, string> = {};
             
-            // Check if Registration Number contains at least one letter AND one number
+            // Check Registration Number
             if (
               values.regno && 
               values.regno.trim() !== "" && 
               (!/[a-zA-Z]/.test(values.regno) || !/\d/.test(values.regno))
             ) {
               errors.regno = "Registration Number must contain at least one letter and one number";
+            }
+
+            // THE FIX: Validate Password ONLY if the user typed something into the box
+            if (values.password && values.password.trim() !== "") {
+              if (values.password.length < 8) {
+                errors.password = "Password must be at least 8 characters";
+              } else if (!/[a-zA-Z]/.test(values.password) || !/\d/.test(values.password)) {
+                errors.password = "Password must contain at least one letter and one number";
+              }
             }
 
             return errors;
