@@ -171,7 +171,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
     }
 
     function handlePay() {
-      if (total <= 0) {
+      if (subtotal <= 0) {
         alert("Please add items to proceed with payment.");
         return;
       }
@@ -295,7 +295,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
                     </span>
                   </div>
 
-                  <div className="flex justify-between font-bold text-orange-600 text-[16px]">
+                  <div className="flex justify-between font-bold text-orange-600 text-[16px] pt-1">
                     <span>Total</span>
                     <span>{formatter.format(total)}</span>
                   </div>

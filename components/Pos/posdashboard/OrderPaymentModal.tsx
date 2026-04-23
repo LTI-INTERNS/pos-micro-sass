@@ -17,19 +17,20 @@ export type PaymentSummary = {
   discountPercent?: number;
   discountValue: number;
 
-  cashPaid: number; // cash paid (gross)
-  cardPaid: number; // card paid (gross, including tax)
+  cashPaid: number;
+  cardPaid: number;
 
   cardTaxRate: number;
-  cardTax: number; // computed from cardPaid split OR remaining
+  cardTax: number;
 
-  totalPaid: number; // cashPaid + cardPaid (gross)
-  remainingToPay: number; // remaining NET amount (excluding card tax)
-  changeToGive: number; // only for pure-cash flow
+  totalPaid: number;
+  remainingToPay: number;
+  changeToGive: number;
 
-  grandTotal: number; // netDue + cardTaxApplied
+  grandTotal: number;
 
   customer?: {
+    customerId?: string;
     name: string;
     phoneNumber: string;
     email: string;
@@ -42,15 +43,16 @@ type Props = {
 
   orderNo: string | number;
 
-  tipAmount: number; // kept for compatibility, NOT used
-  totalAmount: number; // Base amount
+  tipAmount: number;
+  totalAmount: number;
 
   currencyCode?: string;
 
   onDone?: (summary: PaymentSummary) => void;
 
-  // when coming back from confirmation, allow editing even if fully paid
   forceEditable?: boolean;
+
+  preSelectedDiscountId?: string | null;
 };
 
 type ActiveField = "amount" | null;
@@ -112,6 +114,7 @@ export default function OrderPaymentModal({
   currencyCode = "LKR",
   onDone,
   forceEditable = false,
+  preSelectedDiscountId = null,
 }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
 
@@ -130,32 +133,28 @@ export default function OrderPaymentModal({
   const [discountOpen, setDiscountOpen] = useState(false);
   const [selectedDiscountId, setSelectedDiscountId] = useState<string | null>(null);
 
-  // Auto-open discount popup once per modal open
   const [hasPromptedDiscount, setHasPromptedDiscount] = useState(false);
 
-  // animation when value is auto-corrected
   const [amountNudge, setAmountNudge] = useState(false);
 
-  // Remaining glow pulse (no bounce)
   const [remainingNudge, setRemainingNudge] = useState(false);
 
-  // Done button pulse
   const [donePulse, setDonePulse] = useState(false);
 
-  // remember last card type for split label
   const [lastCardMethod, setLastCardMethod] = useState<"Visa" | "Master" | null>(null);
 
-  // Live discounts fetched from the backend for this branch
   const [discountOptions, setDiscountOptions] = useState<DiscountOption[]>([]);
+  const [discountsLoading, setDiscountsLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
+    setDiscountsLoading(true);
     apiClient
-      .get<{ success: boolean; data: Array<{ discountId: string; title: string; percentage: number; status: boolean; startDate: string; endDate: string }> }>("/discounts")
+      .get<Array<{ discountId: string; title: string; percentage: number; status: boolean; startDate: string; endDate: string }>>("/discounts")
       .then((res) => {
         const now = Date.now();
-        const active = (res.data.data ?? []).filter(
+        const active = (Array.isArray(res.data) ? res.data : []).filter(
           (d) =>
             d.status === true &&
             new Date(d.startDate).getTime() <= now &&
@@ -170,12 +169,11 @@ export default function OrderPaymentModal({
         );
       })
       .catch(() => {
-        // Non-fatal: discount popup will show empty; cashier can proceed without discount
         setDiscountOptions([]);
-      });
+      })
+      .finally(() => setDiscountsLoading(false));
   }, [open]);
 
-  // rounding helpers
   const round2 = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
   const EPS = 0.005;
 
@@ -189,7 +187,7 @@ export default function OrderPaymentModal({
     setAmountFocused(false);
     setActiveField(null);
 
-    setSelectedDiscountId(null);
+    setSelectedDiscountId(preSelectedDiscountId ?? null);
     setDiscountOptions([]);
 
     setDiscountOpen(false);
@@ -204,20 +202,20 @@ export default function OrderPaymentModal({
     inputRef.current?.blur();
   }
 
-  // Discount prompt only when opening
   useEffect(() => {
     if (!open) return;
 
     if (!hasPromptedDiscount) {
-      setDiscountOpen(true);
+      if (!preSelectedDiscountId) {
+        setDiscountOpen(true);
+      }
       setHasPromptedDiscount(true);
     }
-  }, [open, hasPromptedDiscount]);
+  }, [open, hasPromptedDiscount, preSelectedDiscountId]);
 
   const isCard = selectedMethod === "Visa" || selectedMethod === "Master";
   const showCardPercentages = isCard;
 
-  // When switching to Cash, clear draft focus (keep your behavior)
   useEffect(() => {
     if (selectedMethod === "Cash") {
       setAmountDraft("");
@@ -265,7 +263,6 @@ export default function OrderPaymentModal({
 
   const isFullyPaid = remainingToPay <= 0;
 
-  //  IMPORTANT: lock only when fully paid AND NOT in forceEditable mode
   const lockInputs = isFullyPaid && !forceEditable;
 
   const lockCardConfig = cardPaid > EPS;
@@ -309,8 +306,7 @@ export default function OrderPaymentModal({
     return remainingNet < 0 ? -remainingNet : 0;
   }, [cardInvolved, remainingNet]);
 
-  const showRemainingToPay =
-    remainingToPay > 0 && (Boolean(selectedDiscount) || (cashPaid > 0 && cashPaid < baseAmount));
+  const showRemainingToPay = remainingToPay > 0;
 
   const showCurrencyInAmount = amountFocused;
 
@@ -377,7 +373,6 @@ export default function OrderPaymentModal({
         return;
       }
 
-      //  ensure they can’t pay less than suggested
       if (n < maxAllowed) {
         setAmountDraft(maxAllowed.toFixed(2));
 
@@ -476,7 +471,6 @@ export default function OrderPaymentModal({
 
             <button
               onClick={() => {
-                // X resets + closes
                 resetAll();
                 onClose();
               }}
@@ -833,6 +827,7 @@ export default function OrderPaymentModal({
       <DiscountPopup
         open={discountOpen}
         options={discountOptions}
+        loading={discountsLoading}
         value={selectedDiscountId}
         onClose={() => setDiscountOpen(false)}
         onApply={(selectedId) => {

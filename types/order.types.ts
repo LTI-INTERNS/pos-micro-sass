@@ -82,7 +82,6 @@ export interface BackendOrder {
 
 // ── Frontend-normalised Order (consumed by page & components) ─────────────────
 
-/** OrderItem shape expected by OrderBillModal */
 export interface OrderItem {
     name:  string;
     qty:   number;
@@ -90,32 +89,26 @@ export interface OrderItem {
     total: number;
 }
 
-/** Top-level Order shape consumed by ordermanagement/page.tsx */
 export interface Order {
-    // identifiers
-    id:          string;        // orderId
+    id:          string
     orderNumber: string;
 
-    // display fields (match page.tsx column keys)
-    dateTime:    string;        // createdAt ISO string
-    branch:      string;        // branch.name
-    cashier:     string;        // cashier.name
-    paymenttype: string;        // derived from payments[0].paymentType
-    totalamount: number;        // totalAmount
+    dateTime:    string;
+    branch:      string;
+    cashier:     string;
+    paymenttype: string;
+    totalamount: number;
     status:      OrderStatus;
 
-    // detail fields (used by OrderBillModal)
-    customer:     string;       // customer.name | 'Walk-in Customer'
-    items:        OrderItem[];  // mapped from orderItems
+    customer:     string;
+    items:        OrderItem[];
     note:         string | null;
 
-    // financial breakdown
     subTotal:      number;
     discountAmount: number;
     tax:           number;
     serviceCharge: number;
 
-    // payment detail (for receipt rendering)
     cashReceived:  number | null;
     changeToGive:  number | null;
     payments:      OrderPaymentRecord[];
@@ -134,7 +127,7 @@ export interface OrderStats {
 
 export interface GetOrdersParams {
     branchId?:  string;
-    startDate?: string;   // ISO date string
+    startDate?: string;
     endDate?:   string;
     status?:    OrderStatus;
     page?:      number;
@@ -146,27 +139,24 @@ export interface GetOrdersParams {
 export interface CreateOrderItemInput {
     variantId: string;
     quantity:  number;
-    // unitPrice is intentionally omitted — the backend derives price from
-    // BranchVariant.sellingPriceOverride / variant.sellingPrice to prevent tampering.
+
 }
 
 export interface CreatePaymentInput {
-    method:        BasicPaymentMethod;
-    // amount is sent for UI reference; the backend always uses its own computed totalAmount.
+    method:        BasicPaymentMethod | 'SPLIT';
     amount:        number;
     cashReceived?: number;
     changeToGive?: number;
     transactionId?: string;
-    // paymentType is intentionally omitted — the backend derives it from method.
+    cashAmount?:   number;
+    cardAmount?:   number;
 }
 
 export interface CreateOrderInput {
-    // branchId and cashierId are intentionally omitted — the backend reads
-    // them from the verified JWT (req.user) and never trusts the request body.
     customerId?:    string;
     discountId?:    string;
     note?:          string;
-    customerEmail?: string;   // walk-in email entered at POS confirmation screen
+    customerEmail?: string;
     items:          CreateOrderItemInput[];
     payment:        CreatePaymentInput;
 }

@@ -11,10 +11,19 @@ export type { Cashier, CashierResponse, CreateCashierInput, UpdateCashierInput }
 
 
 // ── Stats type ────────────────────────────────────────────────────────────────
+export interface CashierRevenueByCashier {
+    cashierId:  string;
+    cashierNo:  string;
+    name:       string;
+    revenue:    number;
+    orderCount: number;
+}
 
 export interface CashierStats {
     total:        { value: number; pctChange: number };
     newThisMonth: { value: number; pctChange: number };
+    totalRevenue:   { value: number; pctChange: number };
+    revenueByMonth: CashierRevenueByCashier[];
 }
 
 // ── Backend getAll response shape ─────────────────────────────────────────────
