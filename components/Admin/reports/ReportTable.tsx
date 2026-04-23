@@ -109,6 +109,7 @@ export default function ReportTable({
   if (activeTab === "expenses") {
     const filtered = filterRows<ExpenseRow>(expensesData, search, ["date", "category", "description", "approvedBy"]);
     return (
+    <div className="mb-4 max-h-120 overflow-y-auto">  
       <CommonTable<ExpenseRow>
         title="Expense Records"
         data={filtered}
@@ -117,12 +118,14 @@ export default function ReportTable({
         selectedRowId={selectedExpense?.id}
         onSelectRow={onSelectExpense}
       />
+    </div>  
     );
   }
 
   if (activeTab === "products") {
     const filtered = filterRows<ProductRow>(PRODUCTS_DATA, search, ["sku", "name", "category"]);
     return (
+    <div className="mb-4 max-h-120 overflow-y-auto">
       <CommonTable<ProductRow>
         title="Top Products"
         data={filtered}
@@ -131,11 +134,13 @@ export default function ReportTable({
         selectedRowId={selectedProduct?.id}
         onSelectRow={onSelectProduct}
       />
+    </div>    
     );
   }
 
   const filtered = filterRows<SaleRow>(salesData, search, ["date", "invoiceId", "customer", "paymentMethod", "status"]);
   return (
+  <div className="mb-4 max-h-120 overflow-y-auto"> 
     <CommonTable<SaleRow>
       title="Sales Transactions"
       data={filtered}
@@ -144,5 +149,6 @@ export default function ReportTable({
       selectedRowId={selectedSale?.id}
       onSelectRow={onSelectSale}
     />
+  </div>   
   );
 }
