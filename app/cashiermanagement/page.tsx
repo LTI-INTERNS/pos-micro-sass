@@ -63,14 +63,24 @@ export default function CashierManagementPage() {
     try {
       setLoadingData(true);
       setFetchError("");
-      const data = await cashierService.getAll();
-      setCashiers(data);
+      const [data, stats] = await Promise.all([
+        cashierService.getAll(),
+        cashierService.getStats(canSeeAllBranches ? undefined : branchId).catch(() => null),
+      ]);
+      const revenueMap = new Map(
+        (stats?.revenueByMonth ?? []).map((r) => [r.cashierId, r.revenue])
+      );
+      const merged = data.map((c) => ({
+        ...c,
+        totalRevenue: revenueMap.get(c.id) ?? 0,
+      }));
+      setCashiers(merged);
     } catch {
       setFetchError("Failed to load cashiers. Please try again.");
     } finally {
       setLoadingData(false);
     }
-  }, []);
+  }, [canSeeAllBranches, branchId]);
 
   useEffect(() => { fetchCashiers(); }, [fetchCashiers]);
 

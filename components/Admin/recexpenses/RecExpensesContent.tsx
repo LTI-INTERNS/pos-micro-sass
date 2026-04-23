@@ -282,9 +282,7 @@ export default function RecurringExpensesContent() {
     }
   };
 
-  if (status === "loading" || pageLoading) {
-    return <div className="w-full p-4">Loading recurring expenses...</div>;
-  }
+  const isLoading = status === "loading";
 
   return (
     <div className="w-full space-y-5">
@@ -375,12 +373,18 @@ export default function RecurringExpensesContent() {
         />
       </div>
 
-      <RecurringExpensesTable
-        RecurringExpenses={filteredRecurringExpenses}
-        showBranch={showBranchColumn}
-        selectedRecExpenseId={selectedRecExpense?.id}
-        onSelectRecExpense={setSelectedRecExpense}
-      />
+      {isLoading ? (
+          <div className="bg-white border rounded-lg p-6 text-center text-gray-500">
+            Loading recurring expenses...
+          </div>
+        ) : (
+          <RecurringExpensesTable
+            RecurringExpenses={filteredRecurringExpenses}
+            showBranch={showBranchColumn}
+            selectedRecExpenseId={selectedRecExpense?.id}
+            onSelectRecExpense={setSelectedRecExpense}
+          />
+        )}
 
       <AddRecExpensesPopup
         open={showRecExpensePopup}
