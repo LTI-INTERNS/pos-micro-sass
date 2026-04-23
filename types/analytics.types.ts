@@ -68,6 +68,8 @@ export interface StaffPerformanceRow {
     cashierId:  string;
     cashierNo:  string;
     name:       string;
+    imgUrl:     string | null;
+    branchName: string;
     revenue:    number;
     orderCount: number;
 }
