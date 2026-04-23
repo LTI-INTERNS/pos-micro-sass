@@ -16,6 +16,8 @@ import type {
     OverviewStats,
     TopSellingProduct,
     StaffPerformanceRow,
+    SalesChartData,
+    SalesReportRow,
 } from '@/types/analytics.types';
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -98,4 +100,28 @@ export const overviewAnalyticsService = {
             })
             .then(res => res.data.data)
             .catch((): StaffPerformanceRow[] => []),
+    /**
+     * GET /api/v1/analytics/sales-chart
+     * Top-product revenue series for the Sales line chart.
+     */
+    getSalesChart: (range?: DateRangeParams, topN = 5): Promise<SalesChartData> =>
+        apiClient
+            .get<BackendEnvelope<SalesChartData>>('/analytics/sales-chart', {
+                params: { ...toParams(range), topN },
+            })
+            .then(res => res.data.data)
+            .catch((): SalesChartData => ({ days: [], series: [] })),
+
+    /**
+     * GET /api/v1/analytics/sales-report
+     * Daily total revenue for the Sales Report bar chart.
+     */
+    getSalesReport: (range?: DateRangeParams): Promise<SalesReportRow[]> =>
+        apiClient
+            .get<BackendEnvelope<SalesReportRow[]>>('/analytics/sales-report', {
+                params: toParams(range),
+            })
+            .then(res => res.data.data)
+            .catch((): SalesReportRow[] => []),
+
 };
