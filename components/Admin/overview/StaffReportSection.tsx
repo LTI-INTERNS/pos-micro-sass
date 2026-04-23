@@ -42,7 +42,7 @@ export default function StaffReportSection({ dateRange }: Props) {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-semibold text-black">Staff wise report</h3>
         <button
-          onClick={() => router.push("/staffmanagement")}
+          onClick={() => router.push("/cashiermanagement")}
           className="text-sm text-orange-500 font-medium hover:underline cursor-pointer"
         >
           View All
@@ -61,8 +61,11 @@ export default function StaffReportSection({ dateRange }: Props) {
             key={staff.cashierId}
             name={staff.name}
             cashierNo={staff.cashierNo}
+            imgUrl={staff.imgUrl}
+            branchName={staff.branchName}
             revenue={staff.revenue}
             orderCount={staff.orderCount}
+            showBranch={canSeeAllBranches}
           />
         ))
       )}
