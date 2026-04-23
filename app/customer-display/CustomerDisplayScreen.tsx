@@ -10,28 +10,7 @@ import { useImage } from "@/lib/context/ImageContext";
 import Image from "next/image";
 import { Delete, CheckCircle, Clock, MonitorOff } from "lucide-react";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
-
-// ── Dummy Customers ─────────────────────────────────────────────
-const customers = [
-  { id: 1, name: "Kavindu Madushan", phone: "083894771983", email: "KavinduMadushan@mail.com" },
-  { id: 2, name: "Manuga Dewhan",    phone: "081829748835", email: "ManugaDewhan@mail.com" },
-  { id: 3, name: "Malsha Ashen",     phone: "0773760818",   email: "MalshaAshen@mail.com" },
-];
-
-function findCustomerByPhone(phone: string): CustomerFormValues | null {
-  const found = customers.find((c) => c.phone === phone.trim());
-  if (!found) return null;
-  
-  // UPDATED: Changed 'phoneNumber' to 'phoneNumber1' and added 'activeState' 
-  // to match the CustomerFormValues type definition exactly.
-  return { 
-    name: found.name, 
-    phoneNumber1: found.phone, 
-    email: found.email,
-    activeState: true 
-  };
-}
-
+import { customerService } from "@/lib/services/customer-service";
 function fmt(currency: string, amount: number) {
   return `${currency} ${(Number.isFinite(amount) ? amount : 0).toFixed(2)}`;
 }
@@ -46,6 +25,7 @@ export default function CustomerDisplayScreen() {
   const [screen, setScreen] = useState<Screen>("dialpad");
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [customer, setCustomer] = useState<CustomerFormValues | null>(null);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [subtotal, setSubtotal] = useState(0);
@@ -140,15 +120,33 @@ export default function CustomerDisplayScreen() {
   };
   const handleBackspace = () => { setError(""); setPhone((p) => p.slice(0, -1)); };
   const handleClear = () => { setError(""); setPhone(""); };
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (phone.length < 7) { setError("Enter a valid phone number"); return; }
-    const found = findCustomerByPhone(phone);
-    if (found) {
-      setCustomer(found);
-      setScreen("customer");
-      send({ type: "CUSTOMER_SELECTED", customer: found });
-    } else {
-      setError("No customer found with this number.");
+    
+    setLoading(true);
+    setError("");
+    
+    try {
+      const results = await customerService.search(phone.trim());
+      if (results && results.length > 0) {
+        const raw = results[0];
+        const found: CustomerFormValues = {
+          customerId: raw.id,
+          name: raw.name,
+          phoneNumber1: raw.phone,
+          email: raw.email ?? "",
+          activeState: raw.activeState
+        };
+        setCustomer(found);
+        setScreen("customer");
+        send({ type: "CUSTOMER_SELECTED", customer: found });
+      } else {
+        setError("No customer found with this number.");
+      }
+    } catch (err) {
+      setError("Error checking customer details.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -171,7 +169,7 @@ export default function CustomerDisplayScreen() {
           <>
             {screen === "dialpad" && (
               <DialpadScreen
-                phone={phone} error={error}
+                phone={phone} error={error} loading={loading}
                 onKey={handleKey} onBackspace={handleBackspace}
                 onClear={handleClear} onConfirm={handleConfirm}
               />
@@ -215,8 +213,8 @@ function DisabledScreen() {
 }
 
 // ── Dialpad Screen ───────────────────────────────────────────
-function DialpadScreen({ phone, error, onKey, onBackspace, onClear, onConfirm }: {
-  phone: string; error: string;
+function DialpadScreen({ phone, error, loading, onKey, onBackspace, onClear, onConfirm }: {
+  phone: string; error: string; loading: boolean;
   onKey: (k: string) => void; onBackspace: () => void;
   onClear: () => void; onConfirm: () => void;
 }) {
@@ -244,12 +242,12 @@ function DialpadScreen({ phone, error, onKey, onBackspace, onClear, onConfirm }:
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <button onClick={onClear} className="py-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-sm font-semibold border border-white/10">Clear</button>
-        <button onClick={onConfirm} disabled={phone.length < 7}
+        <button onClick={onClear} disabled={loading} className="py-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all text-sm font-semibold border border-white/10 disabled:opacity-50">Clear</button>
+        <button onClick={onConfirm} disabled={phone.length < 7 || loading}
           className="py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 active:scale-95 transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
-          Confirm
+          {loading ? "Checking..." : "Confirm"}
         </button>
-        <button onClick={onBackspace} className="py-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all flex items-center justify-center border border-white/10">
+        <button onClick={onBackspace} disabled={loading} className="py-3 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 transition-all flex items-center justify-center border border-white/10 disabled:opacity-50">
           <Delete size={18} />
         </button>
       </div>
@@ -383,17 +381,6 @@ function PaymentSuccessScreen({ customer, summary, currency }: {
   summary: PaymentSummary | null;
   currency: string;
 }) {
-  const c = summary?.currencyCode ?? currency;
-  const rows: { label: string; value: string; highlight?: boolean; dim?: boolean }[] = summary ? [
-    { label: "Base Amount", value: fmt(c, summary.baseAmount) },
-    ...(summary.discountValue > 0 ? [{ label: `Discount (${summary.discountPercent ?? 0}%)`, value: `- ${fmt(c, summary.discountValue)}`, dim: true }] : []),
-    ...(summary.cashPaid > 0 ? [{ label: "Cash Paid", value: fmt(c, summary.cashPaid) }] : []),
-    ...(summary.cardTax > 0 ? [{ label: `Card Tax (${Math.round(summary.cardTaxRate * 100)}%)`, value: fmt(c, summary.cardTax), dim: true }] : []),
-    ...(summary.cardPaid > 0 ? [{ label: "Card Paid", value: fmt(c, summary.cardPaid) }] : []),
-    { label: "Grand Total", value: fmt(c, summary.grandTotal), highlight: true },
-    ...(summary.changeToGive > 0 ? [{ label: "Change", value: fmt(c, summary.changeToGive), highlight: true }] : []),
-  ] : [];
-
   return (
     <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 text-white shadow-2xl">
       <div className="flex flex-col items-center mb-6">
@@ -410,20 +397,9 @@ function PaymentSuccessScreen({ customer, summary, currency }: {
           </div>
           <div>
             <p className="font-semibold text-sm">{customer.name}</p>
-            {/* UPDATED: Changed .phoneNumber to .phoneNumber1 */}
             <p className="text-white/60 text-xs">{customer.phoneNumber1}</p>
             <p className="text-white/60 text-xs">{customer.email}</p>
           </div>
-        </div>
-      )}
-      {summary && (
-        <div className="space-y-3">
-          {rows.map((row, i) => (
-            <div key={i} className={`flex justify-between text-sm ${row.highlight ? "font-bold text-orange-400 text-base" : row.dim ? "text-white/50" : "text-white/80"}`}>
-              <span>{row.label}</span>
-              <span>{row.value}</span>
-            </div>
-          ))}
         </div>
       )}
       <div className="text-center mt-6 space-y-1">
