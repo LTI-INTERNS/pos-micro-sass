@@ -173,10 +173,18 @@ export default function OrderSummaryContent<TItem extends CommonOrderItem>({
               <span>PAYMENT METHOD</span>
               <span className="text-black">{payment.paymentMethod}</span>
             </div>
-            <div className="flex justify-between text-slate-500">
-              <span>CASH PAID</span>
-              <span className="text-black">{c} {n(payment.cashPaid).toFixed(2)}</span>
-            </div>
+            {n(payment.cashPaid) > 0 && (
+              <div className="flex justify-between text-slate-500">
+                <span>CASH PAID</span>
+                <span className="text-black">{c} {n(payment.cashPaid).toFixed(2)}</span>
+              </div>
+            )}
+            {n(payment.cardPaid) > 0 && (
+              <div className="flex justify-between text-slate-500">
+                <span>CARD PAID</span>
+                <span className="text-black">{c} {n(payment.cardPaid).toFixed(2)}</span>
+              </div>
+            )}
             {n(payment.cardPaid) === 0 && n(payment.changeToGive) > 0 && (
               <div className="flex justify-between text-slate-500">
                 <span>CHANGE TO GIVE</span>
