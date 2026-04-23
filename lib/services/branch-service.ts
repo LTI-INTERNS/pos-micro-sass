@@ -13,6 +13,7 @@ interface BackendBranch {
     // Account for both property names just in case the backend maps it differently
     registrationNumber?: string; 
     regno?: string;
+    createdAt: string;
 }
 
 interface ApiResponse<T> {
@@ -30,6 +31,7 @@ const mapBranch = (b: BackendBranch): Branch => ({
     address: b.address,
     // THE FIX: Take the string exactly as it is without trying to run Number() on it.
     regno:   b.registrationNumber || b.regno || '', 
+    createdAt: b.createdAt,
 });
 
 export const branchService = {
