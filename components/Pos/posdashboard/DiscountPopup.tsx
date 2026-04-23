@@ -11,6 +11,7 @@ export type DiscountOption = {
 type Props = {
   open: boolean;
   options: DiscountOption[];
+  loading?: boolean;
   value?: string | null;
   onClose: () => void;
   onApply: (selectedId: string | null) => void;
@@ -20,6 +21,7 @@ type Props = {
 export default function DiscountPopup({
   open,
   options,
+  loading = false,
   value = null,
   onClose,
   onApply,
@@ -74,19 +76,34 @@ export default function DiscountPopup({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-5">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {groups.map((opt) => (
-              <DiscountRow
-                key={opt.id}
-                option={opt}
-                selected={selected === opt.id}
-                onSelect={() =>
-                  setSelected((prev) => (prev === opt.id ? null : opt.id))
-                }
-              />
-            ))}
-          </div>
+        <div className="px-6 py-5 min-h-[120px]">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-3">
+              <div className="h-8 w-8 rounded-full border-2 border-orange-200 border-t-orange-500 animate-spin" />
+              <p className="text-sm text-slate-400">Loading discounts…</p>
+            </div>
+          ) : groups.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
+              <div className="h-12 w-12 rounded-full bg-slate-100 grid place-items-center">
+                <span className="text-2xl">🏷️</span>
+              </div>
+              <p className="text-sm font-semibold text-slate-700 mt-1">No active discounts</p>
+              <p className="text-xs text-slate-400">There are no discounts available for your branch right now.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {groups.map((opt) => (
+                <DiscountRow
+                  key={opt.id}
+                  option={opt}
+                  selected={selected === opt.id}
+                  onSelect={() =>
+                    setSelected((prev) => (prev === opt.id ? null : opt.id))
+                  }
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -102,8 +119,9 @@ export default function DiscountPopup({
 
             <button
               onClick={() => onApply(selected)}
+              disabled={loading}
               className="w-[200px] rounded-full bg-orange-500
-                         text-white font-semibold py-3 hover:bg-orange-600 cursor-pointer"
+                         text-white font-semibold py-3 hover:bg-orange-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Apply
             </button>
