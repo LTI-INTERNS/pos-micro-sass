@@ -73,3 +73,22 @@ export interface StaffPerformanceRow {
     revenue:    number;
     orderCount: number;
 }
+
+// ── Chart types ───────────────────────────────────────────────────────────────
+
+export interface SalesChartSeries {
+    variantId: string;
+    name:      string;
+    data:      number[];
+}
+
+export interface SalesChartData {
+    days:   string[];          // ISO date strings e.g. "2024-03-15"
+    series: SalesChartSeries[];
+}
+
+export interface SalesReportRow {
+    day:        string;        // ISO date string
+    revenue:    number;
+    orderCount: number;
+}
