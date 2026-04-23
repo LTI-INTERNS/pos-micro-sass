@@ -8,9 +8,11 @@ type BranchDetailsProps = {
   userRole?: string;
   initial?: {
     name: string;
+    city: string;
     email: string;
     phone: string;
     address: string;
+    regNo: string;
   };
   onSave?: (data: any) => Promise<void> | void;
 };
@@ -21,9 +23,11 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
 
   const [details, setDetails] = React.useState({
     name: initial?.name ?? "",
+    city: initial?.city ?? "",
     email: initial?.email ?? "",
     phone: initial?.phone ?? "",
     address: initial?.address ?? "",
+    regNo: initial?.regNo ?? "",
   });
 
   // Manager cannot change branch email
@@ -31,6 +35,7 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
 
   const editFields: EditField[] = [
     { name: "name", label: "Branch Name" },
+    { name: "city", label: "City" },
     { 
       name: "email", 
       label: "Email", 
@@ -38,6 +43,7 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
     },
     { name: "phone", label: "Phone" },
     { name: "address", label: "Address" },
+    { name: "regNo", label: "Registration No." },
   ];
 
   const handleSave = async (updatedValues: any) => {
@@ -58,9 +64,11 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
 
           <div className="px-6 flex-1 overflow-auto min-h-0">
             <SettingsRow label="Branch Name" value={details.name} />
+            <SettingsRow label="City" value={details.city} />
             <SettingsRow label="Email" value={details.email} />
             <SettingsRow label="Phone" value={details.phone} />
             <SettingsRow label="Address" value={details.address} />
+            <SettingsRow label="Registration No." value={details.regNo} />
           </div>
 
           <div className="px-6 py-2">

@@ -81,9 +81,11 @@ export default function SettingPage() {
               userRole={userRole}
               initial={{
                 name: "Colombo Branch",
+                city: "Colombo",
                 email: "branch@gmail.com",
                 phone: "+94 77 987 6543",
                 address: "No 15, High Street, Colombo",
+                regNo: "BR12345",
               }}
               onSave={(data) => console.log("SAVE BRANCH", data)}
             />
