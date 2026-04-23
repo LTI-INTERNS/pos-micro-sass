@@ -82,7 +82,6 @@ export default function OrderConfirmation({
       return;
     }
 
-    // If a real customer is linked and has no email, save to DB immediately
     if (customerId) {
       setEmailSaving(true);
       setEmailError("");
