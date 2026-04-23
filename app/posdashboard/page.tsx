@@ -432,7 +432,7 @@ const Page = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
-            <ItemGrid search={search} onAdd={handleAddItem} />
+            <ItemGrid search={search} onSearchChange={setSearch} onAdd={handleAddItem} />
           </div>
         </div>
 
