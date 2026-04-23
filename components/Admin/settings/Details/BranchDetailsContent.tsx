@@ -3,10 +3,12 @@
 import * as React from "react";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
+import { branchService } from "@/lib/services/branch-service";
 
 type BranchDetailsProps = {
   userRole?: string;
   initial?: {
+    id: string;
     name: string;
     city: string;
     email: string;
@@ -22,34 +24,66 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
   const normalizedRole = userRole?.toLowerCase();
 
   const [details, setDetails] = React.useState({
-    name: initial?.name ?? "",
-    city: initial?.city ?? "",
-    email: initial?.email ?? "",
-    phone: initial?.phone ?? "",
-    address: initial?.address ?? "",
-    regNo: initial?.regNo ?? "",
+    name: "", city: "", email: "", phone: "", address: "", regNo: "",
   });
 
-  // Manager cannot change branch email
+  // Password State
+  const [passwords, setPasswords] = React.useState({
+    currentPassword: "", newPassword: "", confirmPassword: ""
+  });
+
+  // Sync state when real data arrives
+  React.useEffect(() => {
+    if (initial) {
+      setDetails({
+        name: initial.name || "",
+        city: initial.city || "",
+        email: initial.email || "",
+        phone: initial.phone || "",
+        address: initial.address || "",
+        regNo: initial.regNo || "",
+      });
+    }
+  }, [initial]);
+
   const isEmailDisabled = normalizedRole === "manager";
 
   const editFields: EditField[] = [
     { name: "name", label: "Branch Name" },
     { name: "city", label: "City" },
-    { 
-      name: "email", 
-      label: "Email", 
-      readOnly: isEmailDisabled 
-    },
+    { name: "email", label: "Email", readOnly: isEmailDisabled },
     { name: "phone", label: "Phone" },
     { name: "address", label: "Address" },
     { name: "regNo", label: "Registration No." },
   ];
 
   const handleSave = async (updatedValues: any) => {
-    setDetails(updatedValues);
-    if (onSave) await onSave(updatedValues);
-    setModalOpen(false);
+    try {
+      if (onSave) await onSave(updatedValues);
+      setDetails(updatedValues);
+      setModalOpen(false);
+      alert("Branch details updated successfully!");
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to update branch details.");
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!passwords.currentPassword) return alert("Current password is required");
+    if (!passwords.newPassword) return alert("New password is required");
+    if (passwords.newPassword.length < 8) return alert("New password must be at least 8 characters");
+    if (passwords.newPassword !== passwords.confirmPassword) return alert("New passwords do not match");
+
+    try {
+      await branchService.changePassword({
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword
+      });
+      alert("Password changed successfully!");
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to change password.");
+    }
   };
 
   return (
@@ -89,9 +123,24 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
           </div>
           
           <div className="px-6 flex-1 overflow-auto min-h-0">
-            <PasswordRow label="Current Password" placeholder="Enter Current Password" />
-            <PasswordRow label="New Password" placeholder="Enter New Password" />
-            <PasswordRow label="Confirm Password" placeholder="Enter Confirm Password" />
+            <PasswordRow 
+              label="Current Password" 
+              placeholder="Enter Current Password" 
+              value={passwords.currentPassword}
+              onChange={(v) => setPasswords(p => ({ ...p, currentPassword: v }))}
+            />
+            <PasswordRow 
+              label="New Password" 
+              placeholder="Enter New Password" 
+              value={passwords.newPassword}
+              onChange={(v) => setPasswords(p => ({ ...p, newPassword: v }))}
+            />
+            <PasswordRow 
+              label="Confirm Password" 
+              placeholder="Enter Confirm Password" 
+              value={passwords.confirmPassword}
+              onChange={(v) => setPasswords(p => ({ ...p, confirmPassword: v }))}
+            />
           </div>
           
           <div className="px-6 py-2">
@@ -100,7 +149,7 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
               variant="outline"
               fullWidth={false}
               className="w-[220px]"
-              onClick={() => alert("Branch password change request sent.")}
+              onClick={handlePasswordChange}
             />
           </div>
         </section>
@@ -112,6 +161,17 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         initialValues={details}
         fields={editFields}
         onClose={() => setModalOpen(false)}
+        validate={(values: any) => {
+          const errors: Record<string, string> = {};
+          if (
+            values.regNo && 
+            values.regNo.trim() !== "" && 
+            (!/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo))
+          ) {
+            errors.regNo = "Registration Number must contain at least one letter and one number";
+          }
+          return errors;
+        }}
         onSave={handleSave}
       />
     </div>
@@ -127,7 +187,7 @@ function SettingsRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PasswordRow({ label, placeholder }: { label: string; placeholder: string }) {
+function PasswordRow({ label, placeholder, value, onChange }: { label: string; placeholder: string; value: string; onChange: (v: string) => void }) {
   return (
     <div className="grid grid-cols-12 items-center py-4 border-b border-gray-100 last:border-0">
       <div className="col-span-12 sm:col-span-4 text-sm font-semibold text-gray-900 mb-3 sm:mb-0">
@@ -137,6 +197,8 @@ function PasswordRow({ label, placeholder }: { label: string; placeholder: strin
         <input
           type="password"
           placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-full border border-gray-200 px-6 py-2.5 text-sm text-gray-700 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-orange-200"
         />
       </div>

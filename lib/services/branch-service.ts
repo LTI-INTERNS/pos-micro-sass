@@ -59,4 +59,14 @@ export const branchService = {
         apiClient
             .delete(`/branches/${id}`)
             .then(res => res.data),
+
+    getMyBranch: (): Promise<Branch> =>
+        apiClient
+            .get<ApiResponse<BackendBranch>>('/branches/me')
+            .then(res => mapBranch(res.data.data)),
+    
+    changePassword: (data: any): Promise<void> =>
+        apiClient
+            .put('/branches/me/password', data)
+            .then(res => res.data),
 };
