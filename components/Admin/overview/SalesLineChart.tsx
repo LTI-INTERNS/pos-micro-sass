@@ -113,7 +113,7 @@ export default function SalesLineChart({ dateRange }: Props) {
                 fontSize: '12px',
                 color: '#f9fafb',
               }}
-              formatter={(value: number | undefined, _key: string, entry) => {
+              formatter={(value: number | undefined, _key: string | undefined, entry) => {
                 const series = chartData.series.find(s => s.variantId === entry.dataKey);
                 const label  = series ? shortName(series.name, 28) : String(entry.dataKey ?? _key);
                 return [formatCurrency(Number(value ?? 0), currency, useCents), label] as [string, string];
