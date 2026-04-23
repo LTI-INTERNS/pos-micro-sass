@@ -19,6 +19,8 @@ type Props<T extends object> = {
   initialValues: T | null;
   fields: EditField[];
   onClose: () => void;
+  // THE FIX: Added an optional validate prop so any page can pass its own rules
+  validate?: (values: T) => Record<string, string>; 
   onSave: (values: T) => void;
 };
 
@@ -140,13 +142,18 @@ export default function EditEntityModal<T extends object>({
   initialValues,
   fields,
   onClose,
+  validate,
   onSave,
 }: Props<T>) {
   const [values, setValues] = useState<T | null>(null);
+  
+  // THE FIX: Added local error state
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open && initialValues) {
       setValues(initialValues);
+      setErrors({}); // Clear errors when modal opens
     }
   }, [open, initialValues]);
 
@@ -154,6 +161,22 @@ export default function EditEntityModal<T extends object>({
 
   const handleChange = (name: string, value: string) => {
     setValues((prev) => ({ ...prev!, [name]: value } as T));
+    // Clear the error for this specific field when the user starts typing
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  // THE FIX: Added save handler to run validation before saving
+  const handleSaveClick = () => {
+    if (validate) {
+      const validationErrors = validate(values);
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return; // Stop the save process if there are errors
+      }
+    }
+    onSave(values);
   };
 
   return (
@@ -167,7 +190,6 @@ export default function EditEntityModal<T extends object>({
         {fields.map((field) => {
           const fieldId = `edit-field-${field.name}`;
           
-          // Shared styles for disabled vs active state
           const inputBaseClass = "w-full border px-4 py-2 outline-none transition-all duration-200";
           const stateClass = field.readOnly 
             ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed select-none" 
@@ -231,6 +253,11 @@ export default function EditEntityModal<T extends object>({
                     className={`${inputBaseClass} rounded-full placeholder:text-gray-300 ${stateClass}`}
                   />
                 )}
+                
+                {/* THE FIX: Render the error message right below the input field if it exists */}
+                {errors[field.name] && (
+                  <p className="text-xs text-red-500 mt-1 px-3">{errors[field.name]}</p>
+                )}
               </div>
             </div>
           );
@@ -241,7 +268,8 @@ export default function EditEntityModal<T extends object>({
             <PopupActions
               actions={[
                 { label: "Cancel", variant: "secondary", onClick: onClose },
-                { label: "Save Changes", variant: "primary", onClick: () => onSave(values) },
+                // THE FIX: Point this to handleSaveClick instead of onSave directly
+                { label: "Save Changes", variant: "primary", onClick: handleSaveClick },
               ]}
             />
           </div>

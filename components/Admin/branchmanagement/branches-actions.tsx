@@ -30,7 +30,6 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
     { name: "city", label: "City" },
     { name: "phone", label: "Phone" },
     { name: "address", label: "Address" },
-    // THE FIX: Changed type from "number" to "text" so you can type letters!
     { name: "regno", label: "Reg No", type: "text" }, 
     { 
       name: "email", 
@@ -111,6 +110,23 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
           initialValues={selectedBranch}
           fields={editFields}
           onClose={() => setEditPopupOpen(false)}
+          
+          // THE FIX: Pass our custom validation rules here!
+          validate={(values) => {
+            const errors: Record<string, string> = {};
+            
+            // Check if Registration Number contains at least one letter AND one number
+            if (
+              values.regno && 
+              values.regno.trim() !== "" && 
+              (!/[a-zA-Z]/.test(values.regno) || !/\d/.test(values.regno))
+            ) {
+              errors.regno = "Registration Number must contain at least one letter and one number";
+            }
+
+            return errors;
+          }}
+
           onSave={(updatedBranch) => {
             onEdit?.(updatedBranch);
             setEditPopupOpen(false);
