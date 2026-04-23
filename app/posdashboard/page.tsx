@@ -468,6 +468,9 @@ const Page = () => {
               }
               setQty(id, qty);
             }}
+            onStockExceeded={(name, stockQty, attemptedQty) => {
+              triggerNegativeStockAlert(name, stockQty, attemptedQty);
+            }}
             onCancel={() => {
               clearCart();
               hardResetPaymentFlow();
