@@ -22,7 +22,7 @@ export default function SupplierTable({
   const columns: Column<Supplier>[] = [
     {
       key: "index",
-      label: "#",
+      label: "",
       render: (_, index) => index + 1,
     },
     { key: "type", label: "Type" },
