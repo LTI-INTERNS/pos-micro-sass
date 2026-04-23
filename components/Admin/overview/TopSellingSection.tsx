@@ -11,9 +11,10 @@ type Props = { dateRange?: DateRangeParams };
 export default function TopSellingSection({ dateRange }: Props) {
   const { data: session, status } = useSession();
 
-  const role              = session?.user?.role     ?? "";
-  const branchId          = session?.user?.branchId ?? "";
-  const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
+  const role     = session?.user?.role     ?? "";
+  const branchId = session?.user?.branchId ?? "";
+
+  const isCompanyWide = role === "OWNER" || role === "ADMIN";
 
   const [items,   setItems]   = useState<TopSellingProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,7 @@ export default function TopSellingSection({ dateRange }: Props) {
 
     const params: DateRangeParams = {
       ...dateRange,
-      branchId: canSeeAllBranches ? dateRange?.branchId : branchId,
+      branchId: isCompanyWide ? dateRange?.branchId : branchId,
     };
 
     overviewAnalyticsService
@@ -33,12 +34,16 @@ export default function TopSellingSection({ dateRange }: Props) {
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [status, branchId, canSeeAllBranches, dateRange]);
+  }, [status, branchId, isCompanyWide, dateRange]);
+
+  const sectionTitle = isCompanyWide
+    ? "Top selling items · All branches"
+    : "Top selling items";
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-semibold text-black">Top selling items</h3>
+        <h3 className="text-sm font-semibold text-black">{sectionTitle}</h3>
         <button className="text-sm text-orange-500 font-medium hover:underline">
           View All
         </button>
@@ -57,7 +62,6 @@ export default function TopSellingSection({ dateRange }: Props) {
           <TopSellingItem
             key={item.variantId}
             name={item.name}
-            // Pass null explicitly when image is empty — avoids Next.js Image crash
             image={item.image && item.image.trim() !== "" ? item.image : null}
             price={item.revenue}
             percentage={
