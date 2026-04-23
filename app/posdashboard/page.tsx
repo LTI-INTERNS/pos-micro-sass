@@ -111,10 +111,6 @@ function OrderCompletePopup({
           <h2 className="mt-5 text-2xl font-semibold text-black">Order Completed!</h2>
           <p className="text-sm text-slate-500 mt-1">Order {orderNo}</p>
 
-          <div className="my-6 h-px bg-slate-200" />
-
-          <p className="text-slate-500">The order has been successfully completed.</p>
-
           <div className="mt-7 flex justify-center gap-3">
             {receiptData && (
               <button
