@@ -271,7 +271,9 @@ export default function ExpensesContent() {
     <div className="w-full space-y-5">
       
 
-      <StatCardGrid expenses={filteredExpenses} />
+      <StatCardGrid expenses={expenses} />
+      {/* <StatCardGrid expenses={filteredExpenses} /> */}
+
 
       <DateRangePicker
         startDate={start}

@@ -288,7 +288,8 @@ export default function RecurringExpensesContent() {
     <div className="w-full space-y-5">
       
 
-      <StatCardGrid recurringexpenses={filteredRecurringExpenses} />
+      {/* <StatCardGrid recurringexpenses={filteredRecurringExpenses} /> */}
+      <StatCardGrid recurringexpenses={recurringExpenses} />
 
       <DateRangePicker
         startDate={start}
