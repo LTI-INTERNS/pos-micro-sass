@@ -111,10 +111,6 @@ function OrderCompletePopup({
           <h2 className="mt-5 text-2xl font-semibold text-black">Order Completed!</h2>
           <p className="text-sm text-slate-500 mt-1">Order {orderNo}</p>
 
-          <div className="my-6 h-px bg-slate-200" />
-
-          <p className="text-slate-500">The order has been successfully completed.</p>
-
           <div className="mt-7 flex justify-center gap-3">
             {receiptData && (
               <button
@@ -303,13 +299,40 @@ const Page = () => {
 
         const hasCash = paymentSummary.cashPaid > 0;
         const hasCard = paymentSummary.cardPaid > 0;
+        const isSplit = hasCash && hasCard;
 
-        const method: "CASH" | "CARD" =
-          paymentSummary.cashPaid >= paymentSummary.cardPaid ? "CASH" : "CARD";
+        const transactionId = hasCard ? `POS-${Date.now()}` : undefined;
 
-        const transactionId = hasCard
-          ? `POS-${Date.now()}`
-          : undefined;
+        // Build payment payload based on method
+        let paymentPayload: CreateOrderInput["payment"];
+
+        if (isSplit) {
+          // Split: both cash and card were used
+          paymentPayload = {
+            method:       "SPLIT",
+            amount:       paymentSummary.grandTotal,
+            cashAmount:   paymentSummary.cashPaid,
+            cardAmount:   paymentSummary.cardPaid,
+            cashReceived: paymentSummary.cashPaid,
+            changeToGive: 0,
+            transactionId: transactionId!,
+          };
+        } else if (hasCard) {
+          // Pure card
+          paymentPayload = {
+            method:        "CARD",
+            amount:        paymentSummary.grandTotal,
+            transactionId: transactionId!,
+          };
+        } else {
+          // Pure cash
+          paymentPayload = {
+            method:       "CASH",
+            amount:       paymentSummary.grandTotal,
+            cashReceived: paymentSummary.cashPaid,
+            changeToGive: paymentSummary.changeToGive,
+          };
+        }
 
         const effectiveEmail = email?.trim() || selectedCustomer?.email || null;
 
@@ -321,17 +344,8 @@ const Page = () => {
           items: orderItems.map((it) => ({
             variantId: it.id,
             quantity:  it.qty,
-            // unitPrice omitted — backend reads from BranchVariant
           })),
-          payment: {
-            method,
-            amount: paymentSummary.grandTotal,
-            ...(hasCash && {
-              cashReceived: paymentSummary.cashPaid,
-              changeToGive: paymentSummary.changeToGive,
-            }),
-            ...(transactionId && { transactionId }),
-          },
+          payment: paymentPayload,
         };
 
         const order = await orderService.create(payload);

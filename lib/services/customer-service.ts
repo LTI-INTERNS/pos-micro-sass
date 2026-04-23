@@ -96,7 +96,7 @@ export const customerService = {
      */
     updateEmail: (customerId: string, email: string): Promise<Customer> =>
         apiClient
-            .patch<BackendResponse<BackendCustomer>>(`/customers/${customerId}`, { email })
+            .patch<BackendResponse<BackendCustomer>>(`/customers/${customerId}/email`, { email })
             .then(res => mapCustomer(res.data.data)),
 
     /**
