@@ -52,6 +52,9 @@ type Props = {
 
   // when coming back from confirmation, allow editing even if fully paid
   forceEditable?: boolean;
+
+  // discount pre-selected from the order panel before reaching payment
+  preSelectedDiscountId?: string | null;
 };
 
 type ActiveField = "amount" | null;
@@ -113,6 +116,7 @@ export default function OrderPaymentModal({
   currencyCode = "LKR",
   onDone,
   forceEditable = false,
+  preSelectedDiscountId = null,
 }: Props) {
   const [selectedMethod, setSelectedMethod] = useState<string>("Cash");
 
@@ -148,15 +152,17 @@ export default function OrderPaymentModal({
 
   // Live discounts fetched from the backend for this branch
   const [discountOptions, setDiscountOptions] = useState<DiscountOption[]>([]);
+  const [discountsLoading, setDiscountsLoading] = useState(false);
 
   useEffect(() => {
     if (!open) return;
 
+    setDiscountsLoading(true);
     apiClient
-      .get<{ success: boolean; data: Array<{ discountId: string; title: string; percentage: number; status: boolean; startDate: string; endDate: string }> }>("/discounts")
+      .get<Array<{ discountId: string; title: string; percentage: number; status: boolean; startDate: string; endDate: string }>>("/discounts")
       .then((res) => {
         const now = Date.now();
-        const active = (res.data.data ?? []).filter(
+        const active = (Array.isArray(res.data) ? res.data : []).filter(
           (d) =>
             d.status === true &&
             new Date(d.startDate).getTime() <= now &&
@@ -173,7 +179,8 @@ export default function OrderPaymentModal({
       .catch(() => {
         // Non-fatal: discount popup will show empty; cashier can proceed without discount
         setDiscountOptions([]);
-      });
+      })
+      .finally(() => setDiscountsLoading(false));
   }, [open]);
 
   // rounding helpers
@@ -190,7 +197,7 @@ export default function OrderPaymentModal({
     setAmountFocused(false);
     setActiveField(null);
 
-    setSelectedDiscountId(null);
+    setSelectedDiscountId(preSelectedDiscountId ?? null);
     setDiscountOptions([]);
 
     setDiscountOpen(false);
@@ -205,15 +212,18 @@ export default function OrderPaymentModal({
     inputRef.current?.blur();
   }
 
-  // Discount prompt only when opening
+  // Discount prompt only when opening (skip if cashier already picked one in the order panel)
   useEffect(() => {
     if (!open) return;
 
     if (!hasPromptedDiscount) {
-      setDiscountOpen(true);
+      // Only auto-open discount popup if no discount was pre-selected in the order panel
+      if (!preSelectedDiscountId) {
+        setDiscountOpen(true);
+      }
       setHasPromptedDiscount(true);
     }
-  }, [open, hasPromptedDiscount]);
+  }, [open, hasPromptedDiscount, preSelectedDiscountId]);
 
   const isCard = selectedMethod === "Visa" || selectedMethod === "Master";
   const showCardPercentages = isCard;
@@ -834,6 +844,7 @@ export default function OrderPaymentModal({
       <DiscountPopup
         open={discountOpen}
         options={discountOptions}
+        loading={discountsLoading}
         value={selectedDiscountId}
         onClose={() => setDiscountOpen(false)}
         onApply={(selectedId) => {
