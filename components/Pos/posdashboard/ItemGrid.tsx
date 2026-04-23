@@ -69,7 +69,13 @@ export default function ItemGrid({ search, onAdd }: Props) {
   }, [items, onAdd]);
 
   const filteredItems = items.filter((i) => {
-    const term = search.toLowerCase();
+    const term = search.trim().toLowerCase();
+
+    // No search — only show available products in the default view
+    if (!term) return i.availability;
+
+    // Active search — show all products that match by name or barcode
+    // (so the cashier can look up any product, even unavailable ones)
     return (
       i.name.toLowerCase().includes(term) ||
       (i.barcode && i.barcode.toLowerCase().includes(term))
