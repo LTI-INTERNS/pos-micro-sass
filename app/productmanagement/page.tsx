@@ -741,14 +741,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangePicker
-          startDate={start}
-          endDate={end}
-          onChange={(s, e) => {
-            setStart(s);
-            setEnd(e);
-          }}
-        />
+
         <StatCardGrid
           userRole={userRole}
           allProductsCount={managerStats.allProductsCount}
@@ -770,6 +763,14 @@ export default function DashboardPage() {
           newProductsCount={ownerAdminStats.newProductsCount}
           newProductsTrend={ownerAdminStats.newProductsTrend}
           newProductsPercentage={ownerAdminStats.newProductsPercentage}
+        />
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
         />
 
         <div className="relative w-full">
