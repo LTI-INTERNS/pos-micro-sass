@@ -37,3 +37,58 @@ export interface StaffPerformance {
     amount: number;
     subAmount: number;
 }
+
+// ── New: date-range-aware overview types ──────────────────────────────────────
+
+export interface DateRangeParams {
+    startDate?: string;
+    endDate?:   string;
+    branchId?:  string;
+}
+
+export interface OverviewStats {
+    totalRevenue:   { value: number; pctChange: number };
+    totalOrders:    { value: number; pctChange: number };
+    totalCustomers: { value: number; newInPeriod: number; pctChange: number };
+    totalExpenses:  { value: number; pctChange: number };
+    lowStockCount:  number;
+}
+
+export interface TopSellingProduct {
+    variantId:  string;
+    name:       string;
+    image:      string;
+    revenue:    number;
+    orderCount: number;
+    pctChange:  number;
+    trend:      'up' | 'down';
+}
+
+export interface StaffPerformanceRow {
+    cashierId:  string;
+    cashierNo:  string;
+    name:       string;
+    imgUrl:     string | null;
+    branchName: string;
+    revenue:    number;
+    orderCount: number;
+}
+
+// ── Chart types ───────────────────────────────────────────────────────────────
+
+export interface SalesChartSeries {
+    variantId: string;
+    name:      string;
+    data:      number[];
+}
+
+export interface SalesChartData {
+    days:   string[];          // ISO date strings e.g. "2024-03-15"
+    series: SalesChartSeries[];
+}
+
+export interface SalesReportRow {
+    day:        string;        // ISO date string
+    revenue:    number;
+    orderCount: number;
+}
