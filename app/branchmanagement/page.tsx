@@ -125,7 +125,7 @@ export default function BranchesPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <StatCardGrid />
+        <StatCardGrid branches={allBranches} />
 
         <div className="relative">
           <SearchBar

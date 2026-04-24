@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
@@ -62,7 +62,7 @@ function toPopupProduct(p: Product) {
       ...(v as unknown as Record<string, unknown>), // preserves real variantId from the backend spread
       id: i + 1,
       sku: v.sku,
-      barcode: "",
+      barcode: v.barcode || "",
       imageUrl: v.imageUrl || "",
       basePrice: String(v.price),
       sellingPrice: String(v.price),
@@ -126,7 +126,7 @@ export default function DashboardPage() {
   const { filters: urlFilters, setFilter } = useUrlFilters();
 
   const search = urlFilters.search || "";
-  const setSearch = (val: string) => setFilter("search", val);
+  const setSearch = useCallback((val: string) => setFilter("search", val), [setFilter]);
   const filterOpen = !!urlFilters.filterOpen;
   const setFilterOpen = (val: boolean) => setFilter("filterOpen", val ? "true" : null);
 
@@ -305,47 +305,47 @@ export default function DashboardPage() {
   }, [canUseBranchFilter, enrichedProducts, selectedBranch]);
 
   // Global Barcode Scanner Hook for Product Management
+  const barcodeBuffer = useRef("");
+  const scanTimeout = useRef<NodeJS.Timeout | null>(null);
+  const setSearchRef = useRef(setSearch);
+
   useEffect(() => {
-    let barcodeString = "";
-    let timeoutId: NodeJS.Timeout | null = null;
+    setSearchRef.current = setSearch;
+  }, [setSearch]);
 
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+      if (!e.key) return;
 
+      // Barcode scanners usually end with "Enter"
       if (e.key === "Enter") {
-        if (barcodeString.length > 0) {
-          const matchedItem = branchFilteredProducts.find((p) =>
-            p.variants?.some((v: any) => v.barcode === barcodeString)
-          );
-          if (matchedItem) {
-            setSearch(barcodeString);
-          }
-          barcodeString = "";
+        if (barcodeBuffer.current.length > 0) {
+          setSearchRef.current(barcodeBuffer.current);
+          barcodeBuffer.current = "";
+          if (scanTimeout.current) clearTimeout(scanTimeout.current);
         }
         return;
       }
 
+      // We only care about character keys (don't block inputs)
       if (e.key.length === 1) {
-        barcodeString += e.key;
-        if (timeoutId) clearTimeout(timeoutId);
+        // Collect everything. If focused on search bar, the browser will also type it.
+        // If not focused, our buffer will hold it and "Enter" will submit it.
+        barcodeBuffer.current += e.key;
 
-        timeoutId = setTimeout(() => {
-          barcodeString = "";
-        }, 50);
+        if (scanTimeout.current) clearTimeout(scanTimeout.current);
+        scanTimeout.current = setTimeout(() => {
+          barcodeBuffer.current = "";
+        }, 200); // 200ms debounce
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      if (timeoutId) clearTimeout(timeoutId);
+      if (scanTimeout.current) clearTimeout(scanTimeout.current);
     };
-  }, [branchFilteredProducts, setSearch]);
+  }, []); // Permanent listener
 
   const tableFilters = useMemo(() => {
     // Branch filtering is handled separately against stocked branch records.
@@ -712,6 +712,7 @@ export default function DashboardPage() {
   const editInitialData =
     editOpen && baseSelectedProduct
       ? {
+        id: baseSelectedProduct.id,
         name: baseSelectedProduct.name,
         categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
         brand: baseSelectedProduct.brand || "",
@@ -724,7 +725,7 @@ export default function DashboardPage() {
         variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
           id: i + 1,
           sku: v.sku,
-          barcode: "",
+          barcode: v.barcode || "",
           imageUrl: v.imageUrl || "",
           basePrice: String(v.price),
           sellingPrice: String(v.price),
@@ -741,14 +742,7 @@ export default function DashboardPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6">
-        <DateRangePicker
-          startDate={start}
-          endDate={end}
-          onChange={(s, e) => {
-            setStart(s);
-            setEnd(e);
-          }}
-        />
+
         <StatCardGrid
           userRole={userRole}
           allProductsCount={managerStats.allProductsCount}
@@ -771,12 +765,21 @@ export default function DashboardPage() {
           newProductsTrend={ownerAdminStats.newProductsTrend}
           newProductsPercentage={ownerAdminStats.newProductsPercentage}
         />
+        <DateRangePicker
+          startDate={start}
+          endDate={end}
+          onChange={(s, e) => {
+            setStart(s);
+            setEnd(e);
+          }}
+        />
 
         <div className="relative w-full">
           <SearchBar
             value={search}
             onChange={setSearch}
             placeholder="Search products..."
+            debounceMs={300}
             showFilter
             filterLabel="Filter"
             onFilter={() => setFilterOpen(true)}

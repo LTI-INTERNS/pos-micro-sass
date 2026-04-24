@@ -138,8 +138,8 @@ export function Step1VariantSelect({
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const isSel    = selectedIds.has(p.id);
-                const isAdded  = !!p.alreadyAdded;
+                const isSel = selectedIds.has(p.id);
+                const isAdded = !!p.alreadyAdded;
                 return (
                   <tr
                     key={p.id}
@@ -518,6 +518,9 @@ export function Step3({
   selectedVariantIds,
   onToggleVariant,
   selectedProductCount,
+  barcodeErrors,
+  setBarcodeErrors,
+  currentProductId,
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
@@ -527,6 +530,9 @@ export function Step3({
   selectedVariantIds: Set<number>;
   onToggleVariant: (id: number) => void;
   selectedProductCount: number;
+  barcodeErrors: Record<number, string>;
+  setBarcodeErrors: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  currentProductId?: string;
 }) {
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
   const { currency } = useCurrency();
@@ -680,7 +686,55 @@ export function Step3({
       });
     }
 
+    setBarcodeErrors((prev) => {
+      if (!prev[variant.id]) return prev;
+      const next = { ...prev };
+      delete next[variant.id];
+      return next;
+    });
+
     updateVariant(variant.id, patch);
+  };
+
+  const handleBarcodeBlur = async (variant: ProductVariant, rawValue: string) => {
+    const barcode = rawValue.trim();
+    if (!barcode) {
+      setBarcodeErrors(prev => {
+        if (!prev[variant.id]) return prev;
+        const next = { ...prev };
+        delete next[variant.id];
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const result = await productService.checkBarcode(barcode);
+      if (result.exists && result.productId) {
+        if (!currentProductId || currentProductId !== result.productId) {
+          setBarcodeErrors(prev => ({
+            ...prev,
+            [variant.id]: `Barcode already in use by product: "${result.productName}". Edit that product to add variants.`
+          }));
+        } else {
+          setBarcodeErrors(prev => {
+            if (!prev[variant.id]) return prev;
+            const next = { ...prev };
+            delete next[variant.id];
+            return next;
+          });
+        }
+      } else {
+        setBarcodeErrors(prev => {
+          if (!prev[variant.id]) return prev;
+          const next = { ...prev };
+          delete next[variant.id];
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error("Barcode check failed", err);
+    }
   };
 
   const [variantImages, setVariantImages] = React.useState<Record<number, string>>({});
@@ -715,7 +769,7 @@ export function Step3({
             <button
               type="button"
               onClick={() => handleAutoGenerateSku(v)}
-              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-100"
+              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 cursor-pointer px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-100"
               title="Auto-generate SKU"
             >
               ✦ Auto-generate
@@ -731,13 +785,34 @@ export function Step3({
           </p>
         </FieldWrap>
         <FieldWrap>
-          <Label>Barcode</Label>
+          <div className="flex justify-between items-end mb-1.5">
+            <Label className="mb-0">Barcode</Label>
+            {state.variants.length > 1 && v.id !== state.variants[0].id && (
+              <button
+                type="button"
+                onClick={() => {
+                  const firstBarcode = state.variants[0].barcode;
+                  if (firstBarcode) {
+                    handleBarcodeChange(v, firstBarcode);
+                    handleBarcodeBlur(v, firstBarcode);
+                  }
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition cursor-pointer"
+              >
+                ✦ Copy from first
+              </button>
+            )}
+          </div>
           <Input
             placeholder="1234567890"
             value={v.barcode}
             onChange={(e) => handleBarcodeChange(v, e.target.value)}
+            onBlur={(e) => handleBarcodeBlur(v, e.target.value)}
           />
-          {parsedBarcodeDetails[v.id] && (
+          {barcodeErrors[v.id] && (
+            <p className="mt-1 text-[10px] text-red-500 font-semibold">{barcodeErrors[v.id]}</p>
+          )}
+          {parsedBarcodeDetails[v.id] && !barcodeErrors[v.id] && (
             <p className="mt-1 text-[10px] text-orange-600">
               Embedded barcode detected ({parsedBarcodeDetails[v.id].scheme}) - item code {parsedBarcodeDetails[v.id].itemCode}, price {parsedBarcodeDetails[v.id].embeddedPrice}
             </p>

@@ -7,6 +7,7 @@ export interface Branch {
     address: string;
     regno: string; // <-- Change this to string
     password?: string;
+    createdAt?: string;
 }
 
 export interface CreateBranchInput {

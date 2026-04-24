@@ -9,7 +9,8 @@ import { uploadService, type UploadFolder } from "@/lib/services/upload-service"
 export type EditField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "textarea" | "select" | "image";
+  // THE FIX: Added "password" to the allowed types!
+  type?: "text" | "number" | "textarea" | "select" | "image" | "password";
   readOnly?: boolean;
   options?: { label: string; value: string }[];
   uploadFolder?: UploadFolder;
@@ -21,6 +22,7 @@ type Props<T extends object> = {
   initialValues: T | null;
   fields: EditField[];
   onClose: () => void;
+  validate?: (values: T) => Record<string, string>; 
   onSave: (values: T) => void;
 };
 
@@ -184,6 +186,7 @@ export default function EditEntityModal<T extends object>({
   initialValues,
   fields,
   onClose,
+  validate,
   onSave,
 }: Props<T>) {
   const [values, setValues] = useState<T | null>(null);
@@ -200,6 +203,20 @@ export default function EditEntityModal<T extends object>({
 
   const handleChange = (name: string, value: string) => {
     setValues((prev) => ({ ...prev!, [name]: value } as T));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const handleSaveClick = () => {
+    if (validate) {
+      const validationErrors = validate(values);
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return; 
+      }
+    }
+    onSave(values);
   };
 
   return (
@@ -212,7 +229,6 @@ export default function EditEntityModal<T extends object>({
       <div className="space-y-4">
         {fields.map((field) => {
           const fieldId = `edit-field-${field.name}`;
-
           const inputBaseClass = "w-full border px-4 py-2 outline-none transition-all duration-200";
           const stateClass = field.readOnly
             ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed select-none"
@@ -270,6 +286,7 @@ export default function EditEntityModal<T extends object>({
                 ) : (
                   <input
                     id={fieldId}
+                    // This will now properly render type="password" and mask the text!
                     type={field.type || "text"}
                     value={String(values[field.name as keyof T] ?? "")}
                     readOnly={field.readOnly}
@@ -277,6 +294,10 @@ export default function EditEntityModal<T extends object>({
                     onChange={(e) => handleChange(field.name, e.target.value)}
                     className={`${inputBaseClass} rounded-full placeholder:text-gray-300 ${stateClass}`}
                   />
+                )}
+                
+                {errors[field.name] && (
+                  <p className="text-xs text-red-500 mt-1 px-3">{errors[field.name]}</p>
                 )}
               </div>
             </div>

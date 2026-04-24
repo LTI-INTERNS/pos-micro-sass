@@ -13,6 +13,7 @@ interface BackendBranch {
     // Account for both property names just in case the backend maps it differently
     registrationNumber?: string; 
     regno?: string;
+    createdAt: string;
 }
 
 interface ApiResponse<T> {
@@ -30,6 +31,7 @@ const mapBranch = (b: BackendBranch): Branch => ({
     address: b.address,
     // THE FIX: Take the string exactly as it is without trying to run Number() on it.
     regno:   b.registrationNumber || b.regno || '', 
+    createdAt: b.createdAt,
 });
 
 export const branchService = {
@@ -56,5 +58,15 @@ export const branchService = {
     delete: (id: string): Promise<void> =>
         apiClient
             .delete(`/branches/${id}`)
+            .then(res => res.data),
+
+    getMyBranch: (): Promise<Branch> =>
+        apiClient
+            .get<ApiResponse<BackendBranch>>('/branches/me')
+            .then(res => mapBranch(res.data.data)),
+    
+    changePassword: (data: any): Promise<void> =>
+        apiClient
+            .put('/branches/me/password', data)
             .then(res => res.data),
 };

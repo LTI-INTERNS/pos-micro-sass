@@ -265,9 +265,7 @@ export default function ExpensesContent() {
     }
   };
 
-  if (status === "loading" || pageLoading) {
-    return <div className="w-full p-4">Loading expenses...</div>;
-  }
+  const isLoading = status === "loading";
 
   return (
     <div className="w-full space-y-5">
@@ -356,12 +354,18 @@ export default function ExpensesContent() {
         />
       </div>
 
-      <ExpensesTable
-        Expenses={filteredExpenses}
-        showBranch={showBranchColumn}
-        selectedExpenseId={selectedExpense?.id }
-        onSelectExpense={setSelectedExpense}
-      />
+      {isLoading ? (
+          <div className="bg-white border rounded-lg p-6 text-center text-gray-500">
+            Loading table data...
+          </div>
+        ) : (
+          <ExpensesTable
+            Expenses={filteredExpenses}
+            showBranch={showBranchColumn}
+            selectedExpenseId={selectedExpense?.id }
+            onSelectExpense={setSelectedExpense}
+          />
+        )}
 
       <AddExpensesPopup
         open={showExpensePopup}
