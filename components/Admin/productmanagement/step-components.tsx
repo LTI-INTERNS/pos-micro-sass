@@ -34,6 +34,7 @@ import {
 } from "./ui-components";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { productService } from "@/lib/services/product-service";
 import { uploadService } from "@/lib/services/upload-service";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
@@ -155,7 +156,6 @@ export function Step1VariantSelect({
                   >
                     <td className="px-4 py-3">
                       {isAdded ? (
-                        /* Locked checkbox visual */
                         <span className="inline-flex items-center justify-center w-4 h-4 rounded border-2 border-gray-200 bg-gray-100 flex-shrink-0">
                           <svg className="w-2.5 h-2.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
@@ -737,12 +737,13 @@ export function Step3({
     }
   };
 
+  // ── Variant image state — local preview + Cloudinary upload ────────────────
   const [variantImages, setVariantImages] = React.useState<Record<number, string>>({});
   const [variantImageUploading, setVariantImageUploading] = React.useState<Record<number, boolean>>({});
 
   const handleVariantImage = async (id: number, file: File | null) => {
     if (!file || !ALLOWED_IMAGE_TYPES.includes(file.type) || file.size / (1024 * 1024) > MAX_IMAGE_SIZE_MB) return;
-    // Show local preview immediately
+    // Show local preview immediately while uploading
     const previewUrl = URL.createObjectURL(file);
     setVariantImages((prev) => ({ ...prev, [id]: previewUrl }));
     setVariantImageUploading((prev) => ({ ...prev, [id]: true }));
@@ -751,7 +752,7 @@ export function Step3({
       setVariantImages((prev) => ({ ...prev, [id]: url }));
       update(id, "imageUrl", url);
     } catch {
-      // Remove preview on failure
+      // Revert preview on failure
       setVariantImages((prev) => { const n = { ...prev }; delete n[id]; return n; });
       update(id, "imageUrl", "");
     } finally {
