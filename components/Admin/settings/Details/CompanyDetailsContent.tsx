@@ -145,6 +145,7 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
               { code: "+61", len: 9 },
               { code: "+65", len: 8 },
               { code: "+60", len: 10 },
+              { code: "0",   len: 9 }, // Local format without country code, assuming it should be 9 digits for Sri Lanka
             ];
 
             // Find which country code the typed number starts with
