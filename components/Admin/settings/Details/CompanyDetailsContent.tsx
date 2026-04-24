@@ -152,7 +152,7 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
             const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
 
             if (!matchedConfig) {
-              errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, or +60)";
+              errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
             } else {
               // Slice off the country code to isolate the actual phone digits
               const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
