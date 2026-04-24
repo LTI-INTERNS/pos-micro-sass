@@ -6,6 +6,9 @@ import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
+// 1. Add this import at the top
+import { branchService, Branch } from "@/lib/services/branch-service";
+
 // Contents
 import DiscountContent from "@/components/Admin/settings/Discount/DiscountContent";
 import PersonalContent from "@/components/Admin/settings/PersonalDetails/PersonalContent";
@@ -21,6 +24,9 @@ export default function SettingPage() {
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
+  // 2. Inside your SettingPage component, add this state:
+  const [managerBranch, setManagerBranch] = useState<Branch | null>(null);
+
   const userRole = session?.user?.role?.toLowerCase() || "";
 
   // Sync the logo from the database context to the local state
@@ -29,6 +35,15 @@ export default function SettingPage() {
       setCompanyLogoUrl(storeInfo.logoUrl);
     }
   }, [storeInfo]);
+
+  // 3. Fetch the data inside a useEffect
+  useEffect(() => {
+    if (userRole === "manager") {
+      branchService.getMyBranch()
+        .then(setManagerBranch)
+        .catch(err => console.error("Failed to load manager branch", err));
+    }
+  }, [userRole]);
 
   // Define TABS
   const TABS = useMemo(() => {
@@ -76,16 +91,23 @@ export default function SettingPage() {
               logoUrl={companyLogoUrl}
               onSave={(data) => console.log("SAVE COMPANY", data)}
             />
+          // 4. Update the <BranchDetailsForm /> inside the return statement to pass the real data:
           ) : userRole === "manager" ? (
             <BranchDetailsForm
               userRole={userRole}
               initial={{
-                name: "Colombo Branch",
-                email: "branch@gmail.com",
-                phone: "+94 77 987 6543",
-                address: "No 15, High Street, Colombo",
+                id: managerBranch?.id || "",
+                name: managerBranch?.name || "",
+                city: managerBranch?.city || "",
+                email: managerBranch?.email || "",
+                phone: managerBranch?.phone || "",
+                address: managerBranch?.address || "",
+                regNo: managerBranch?.regno || "",
               }}
-              onSave={(data) => console.log("SAVE BRANCH", data)}
+              onSave={async (data) => {
+                const updated = await branchService.update('me', data);
+                setManagerBranch(updated);
+              }}
             />
           ) : null
         )}

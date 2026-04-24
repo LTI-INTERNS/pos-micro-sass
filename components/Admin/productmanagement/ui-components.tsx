@@ -4,9 +4,9 @@ import * as React from "react";
 
 // ─── Basic form elements ──────────────────────────────────────────────────────
 
-export function Label({ children, required }: { children: React.ReactNode; required?: boolean }) {
+export function Label({ children, required, className }: { children: React.ReactNode; required?: boolean; className?: string }) {
   return (
-    <label className="block text-[12px] text-gray-500 mb-1">
+    <label className={`block text-[12px] text-gray-500 mb-1 ${className || ""}`}>
       {children}
       {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>

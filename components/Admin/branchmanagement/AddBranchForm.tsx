@@ -74,9 +74,12 @@ export default function AddBranchForm({
     if (!values.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) newErrors.email = "Please enter a valid email address";
 
-    // THE FIX: Ensure Registration Number contains at least one letter (if they typed something)
-    if (values.registrationNumber.trim() && !/[a-zA-Z]/.test(values.registrationNumber)) {
-      newErrors.registrationNumber = "Registration Number must contain at least one letter";
+    // Ensure Registration Number contains at least one letter AND at least one number
+    if (
+      values.registrationNumber.trim() && 
+      (!/[a-zA-Z]/.test(values.registrationNumber) || !/\d/.test(values.registrationNumber))
+    ) {
+      newErrors.registrationNumber = "Registration Number must contain at least one letter and one number";
     }
 
     if (!values.password) newErrors.password = "Password is required";
