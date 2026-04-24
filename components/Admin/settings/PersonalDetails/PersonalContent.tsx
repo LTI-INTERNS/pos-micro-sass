@@ -16,7 +16,7 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
   const [personalDetails, setPersonalDetails] = React.useState({
     name: "",
     email: "",
-    phone: "", 
+    phone: "",     
   });
 
   const [passwords, setPasswords] = React.useState({
@@ -46,22 +46,15 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
   }, [token]);
 
   const handleSaveDetails = async (values: any) => {
-    // 1. Frontend Phone Validation (if field exists)
-    if (userRole !== "owner" && values.phone) {
-        if (!/^\d{10}$/.test(values.phone)) {
-            return alert("Phone number must be exactly 10 digits.");
-        }
-    }
-
+    // Note: We moved the phone validation into the `validate` prop of the modal below
+    // so it shows up as nice red text instead of an alert!
     try {
       const updatedData = await updatePersonalDetails(values, token);
       setPersonalDetails((prev) => ({ ...prev, ...updatedData }));
       setModalOpen(false);
       alert("Details updated successfully!");
     } catch (error: any) {
-      // Alert the specific error from backend (Duplicate email/phone)
       alert(error.message || "Failed to update details"); 
-      // We don't re-throw the error here, so the "Console Error" won't appear
     }
   };
 
@@ -144,6 +137,37 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
         initialValues={personalDetails}
         fields={editFields}
         onClose={() => setModalOpen(false)}
+        
+        // THE FIX: Added the validate prop for Email and Phone!
+        validate={(values) => {
+          const errors: Record<string, string> = {};
+          
+          if (!values.name?.trim()) {
+            errors.name = "Name is required";
+          }
+
+          // Validate Email
+          if (values.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(values.email.trim())) {
+              errors.email = "Please enter a valid email address";
+            }
+          } else {
+            errors.email = "Email is required";
+          }
+
+          // Validate Phone (Only if the user role isn't 'owner' since owners don't have this field)
+          if (userRole !== "owner") {
+            if (!values.phone?.trim()) {
+              errors.phone = "Phone number is required";
+            } else if (!/^\d{10}$/.test(values.phone.trim().replace(/\s/g, ''))) {
+              // Removes spaces before testing to ensure accurate length checks
+              errors.phone = "Phone number must be exactly 10 digits";
+            }
+          }
+
+          return errors;
+        }}
         onSave={handleSaveDetails}
       />
     </div>
