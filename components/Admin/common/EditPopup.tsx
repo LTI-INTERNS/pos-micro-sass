@@ -8,8 +8,9 @@ import PopupActions from "@/components/Admin/common/PopupActions";
 export type EditField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "textarea" | "select" | "image";
+  type?: "text" | "number" | "textarea" | "select" | "image" | "password" | "tel";
   readOnly?: boolean;
+  prefix?: string; 
   options?: { label: string; value: string }[];
 };
 
@@ -19,7 +20,8 @@ type Props<T extends object> = {
   initialValues: T | null;
   fields: EditField[];
   onClose: () => void;
-  onSave: (values: T) => void;
+  validate?: (values: T) => Record<string, string>; 
+  onSave: (values: T) => Promise<void> | void;
 };
 
 // ── Image upload field ────────────────────────────────────────────────────────
@@ -140,13 +142,16 @@ export default function EditEntityModal<T extends object>({
   initialValues,
   fields,
   onClose,
+  validate,
   onSave,
 }: Props<T>) {
   const [values, setValues] = useState<T | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open && initialValues) {
       setValues(initialValues);
+      setErrors({});
     }
   }, [open, initialValues]);
 
@@ -154,20 +159,29 @@ export default function EditEntityModal<T extends object>({
 
   const handleChange = (name: string, value: string) => {
     setValues((prev) => ({ ...prev!, [name]: value } as T));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  // THE FIX: Made this async and await the onSave so errors are caught smoothly!
+  const handleSaveClick = async () => {
+    if (validate) {
+      const validationErrors = validate(values);
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return; 
+      }
+    }
+    await onSave(values);
   };
 
   return (
-    <ModalShell
-      open={open}
-      title={title}
-      onClose={onClose}
-      widthClassName="w-[760px] max-w-[90vw]"
-    >
+    <ModalShell open={open} title={title} onClose={onClose} widthClassName="w-[760px] max-w-[90vw]">
       <div className="space-y-4">
         {fields.map((field) => {
           const fieldId = `edit-field-${field.name}`;
           
-          // Shared styles for disabled vs active state
           const inputBaseClass = "w-full border px-4 py-2 outline-none transition-all duration-200";
           const stateClass = field.readOnly 
             ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed select-none" 
@@ -187,10 +201,7 @@ export default function EditEntityModal<T extends object>({
 
           return (
             <div key={field.name} className="grid grid-cols-12 gap-2">
-              <label
-                htmlFor={fieldId}
-                className="col-span-4 text-sm text-gray-500 font-medium pt-2"
-              >
+              <label htmlFor={fieldId} className="col-span-4 text-sm text-gray-500 font-medium pt-2">
                 {field.label}
               </label>
 
@@ -215,11 +226,30 @@ export default function EditEntityModal<T extends object>({
                   >
                     <option value="">Select {field.label}</option>
                     {field.options?.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
+                ) : field.prefix ? (
+                  <div className={`flex items-center overflow-hidden ${inputBaseClass} rounded-full p-0 focus-within:border-orange-300 focus-within:ring-1 focus-within:ring-orange-100 ${stateClass}`}>
+                    <span className="px-4 py-2.5 bg-gray-50 text-gray-500 border-r border-gray-200 select-none font-medium text-sm">
+                      {field.prefix}
+                    </span>
+                    <input
+                      id={fieldId}
+                      type={field.type === "tel" ? "text" : field.type || "text"}
+                      value={String(values[field.name as keyof T] ?? "").startsWith(field.prefix) 
+                        ? String(values[field.name as keyof T] ?? "").slice(field.prefix.length) 
+                        : String(values[field.name as keyof T] ?? "")}
+                      readOnly={field.readOnly}
+                      placeholder={field.label}
+                      onChange={(e) => {
+                        let newVal = e.target.value;
+                        if (field.type === 'tel') newVal = newVal.replace(/\D/g, ''); 
+                        handleChange(field.name, field.prefix! + newVal); 
+                      }}
+                      className="w-full px-4 py-2.5 outline-none bg-transparent placeholder:text-gray-300 text-sm"
+                    />
+                  </div>
                 ) : (
                   <input
                     id={fieldId}
@@ -231,6 +261,10 @@ export default function EditEntityModal<T extends object>({
                     className={`${inputBaseClass} rounded-full placeholder:text-gray-300 ${stateClass}`}
                   />
                 )}
+                
+                {errors[field.name] && (
+                  <p className="text-xs text-red-500 mt-1 px-3">{errors[field.name]}</p>
+                )}
               </div>
             </div>
           );
@@ -241,7 +275,7 @@ export default function EditEntityModal<T extends object>({
             <PopupActions
               actions={[
                 { label: "Cancel", variant: "secondary", onClick: onClose },
-                { label: "Save Changes", variant: "primary", onClick: () => onSave(values) },
+                { label: "Save Changes", variant: "primary", onClick: handleSaveClick },
               ]}
             />
           </div>

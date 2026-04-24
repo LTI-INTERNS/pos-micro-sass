@@ -1,79 +1,130 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
+  CartesianGrid,
   ResponsiveContainer,
 } from 'recharts';
-import { analyticsService } from '@/lib/services';
-import { useEffect, useState } from 'react';
+import { overviewAnalyticsService } from '@/lib/services/analytics-service';
+import { useCurrency } from '@/lib/context/CurrencyContext';
+import { formatCurrency } from '@/lib/context/formatCurrency';
+import type { DateRangeParams, SalesReportRow } from '@/types/analytics.types';
 
-type SalesBarData = {
-  hour: string;
-  value: number;
-};
+// Format ISO date "2024-03-15" → "Mar 15"
+function fmtDay(iso: string): string {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
 
-export default function SalesBarChart() {
-  const [data, setData] = useState<SalesBarData[]>([]);
+type Props = { dateRange?: DateRangeParams };
+
+export default function SalesBarChart({ dateRange }: Props) {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const { currency, useCents }    = useCurrency();
+
+  const role     = session?.user?.role ?? '';
+  const branchId = session?.user?.branchId ?? '';
+  const isCompanyWide = role === 'OWNER' || role === 'ADMIN';
+
+  const [rows,    setRows]    = useState<SalesReportRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    analyticsService.getSalesBar().then(setData);
-  }, []);
-  const router = useRouter();
+    if (status !== 'authenticated') return;
+    setLoading(true);
+
+    const params: DateRangeParams = {
+      ...dateRange,
+      branchId: isCompanyWide ? dateRange?.branchId : branchId,
+    };
+
+    overviewAnalyticsService
+      .getSalesReport(params)
+      .then(setRows)
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [status, branchId, isCompanyWide, dateRange]);
+
+  const rechartsData = rows.map(r => ({
+    day:        fmtDay(r.day),
+    revenue:    r.revenue,
+    orderCount: r.orderCount,
+  }));
+
+  const isEmpty = !loading && rows.length === 0;
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-sm font-semibold text-black">Sales report</h3>
+        <div>
+          <h3 className="text-sm font-semibold text-black">Sales report</h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {isCompanyWide ? 'All branches · daily revenue' : 'Your branch · daily revenue'}
+          </p>
+        </div>
         <button
           className="text-sm text-orange-500 font-medium hover:underline cursor-pointer"
-          onClick={() => router.push('/reports')}>
+          onClick={() => router.push('/reports')}
+        >
           View All
         </button>
       </div>
 
-
-      <ResponsiveContainer width="100%" height={250}>
-        <BarChart
-          data={data}
-          margin={{
-            top: 10,
-            right: 10,
-            left: 0,
-            bottom: 10,
-          }}
-        >
-          <XAxis
-            dataKey="hour"
-            interval={0}
-            angle={-90}
-            textAnchor="end"
-            height={50}
-            tickMargin={27}
-            tick={{ fontSize: 14 }}
-          />
-
-          <YAxis tick={{ fontSize: 14 }} />
-
-          <Tooltip
-            contentStyle={{
-              backgroundColor: '#000',
-              border: 'none',
-              borderRadius: '8px',
-            }}
-          />
-
-          <Bar
-            dataKey="value"
-            fill="#93c5fd"
-            radius={[4, 4, 0, 0]}
-          />
-        </BarChart>
-      </ResponsiveContainer>
+      {loading ? (
+        <div className="h-[250px] flex items-center justify-center text-sm text-gray-400 animate-pulse">
+          Loading…
+        </div>
+      ) : isEmpty ? (
+        <div className="h-[250px] flex items-center justify-center text-sm text-gray-400">
+          No sales data for this period.
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={rechartsData} margin={{ top: 5, right: 10, left: 0, bottom: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+              angle={-45}
+              textAnchor="end"
+              height={50}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v) => formatCurrency(v, currency, useCents)}
+              width={70}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#1f2937',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '12px',
+                color: '#f9fafb',
+              }}
+              formatter={(value: number | undefined, key: string | undefined) => {
+                const v = value ?? 0;
+                if (key === 'revenue')    return [formatCurrency(v, currency, useCents), 'Revenue'] as [string, string];
+                if (key === 'orderCount') return [String(v), 'Orders'] as [string, string];
+                return [String(v), key ?? 'Value'] as [string, string];
+              }}
+            />
+            <Bar dataKey="revenue" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={36} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

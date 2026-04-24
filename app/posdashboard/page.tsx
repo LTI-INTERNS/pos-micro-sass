@@ -432,7 +432,7 @@ const Page = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
-            <ItemGrid search={search} onAdd={handleAddItem} />
+            <ItemGrid search={search} onSearchChange={setSearch} onAdd={handleAddItem} />
           </div>
         </div>
 
@@ -467,6 +467,9 @@ const Page = () => {
                 }
               }
               setQty(id, qty);
+            }}
+            onStockExceeded={(name, stockQty, attemptedQty) => {
+              triggerNegativeStockAlert(name, stockQty, attemptedQty);
             }}
             onCancel={() => {
               clearCart();
