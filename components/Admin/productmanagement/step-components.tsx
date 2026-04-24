@@ -34,6 +34,7 @@ import {
 } from "./ui-components";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { uploadService } from "@/lib/services/upload-service";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
@@ -683,11 +684,25 @@ export function Step3({
   };
 
   const [variantImages, setVariantImages] = React.useState<Record<number, string>>({});
-  const handleVariantImage = (id: number, file: File | null) => {
+  const [variantImageUploading, setVariantImageUploading] = React.useState<Record<number, boolean>>({});
+
+  const handleVariantImage = async (id: number, file: File | null) => {
     if (!file || !ALLOWED_IMAGE_TYPES.includes(file.type) || file.size / (1024 * 1024) > MAX_IMAGE_SIZE_MB) return;
-    const url = URL.createObjectURL(file);
-    setVariantImages((prev) => ({ ...prev, [id]: url }));
-    update(id, "imageUrl", url);
+    // Show local preview immediately
+    const previewUrl = URL.createObjectURL(file);
+    setVariantImages((prev) => ({ ...prev, [id]: previewUrl }));
+    setVariantImageUploading((prev) => ({ ...prev, [id]: true }));
+    try {
+      const { url } = await uploadService.upload(file, "products");
+      setVariantImages((prev) => ({ ...prev, [id]: url }));
+      update(id, "imageUrl", url);
+    } catch {
+      // Remove preview on failure
+      setVariantImages((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      update(id, "imageUrl", "");
+    } finally {
+      setVariantImageUploading((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    }
   };
 
   // ── Render pure JSX instead of a Component to prevent input focus loss ─────
@@ -782,9 +797,16 @@ export function Step3({
         <input
           type="file"
           accept="image/jpeg,image/png"
+          disabled={!!variantImageUploading[v.id]}
           onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
-          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer"
+          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         />
+        {variantImageUploading[v.id] && (
+          <p className="mt-1 text-[11px] text-orange-500 flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+            Uploading to Cloudinary…
+          </p>
+        )}
         {/* Show newly-picked image OR existing DB image */}
         {(variantImages[v.id] || v.imageUrl) && (
           <div className="relative mt-2 h-20 w-20 group">
