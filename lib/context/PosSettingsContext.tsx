@@ -1,6 +1,16 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  ReactNode,
+} from "react";
+import { settingsService } from "@/lib/services/settings-service";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 type PosSettings = {
   customerDisplayEnabled: boolean;
@@ -10,10 +20,13 @@ type PosSettings = {
 
 type PosSettingsContextType = {
   posSettings: PosSettings;
+  /** Optimistic in-memory update — called by the settings form after saving. */
   setPosSettings: (settings: Partial<PosSettings>) => void;
+  /** Manually re-fetch from the DB right now. */
+  refreshSettings: () => void;
 };
 
-const STORAGE_KEY = "pos_settings";
+// ── Defaults ──────────────────────────────────────────────────────────────────
 
 const DEFAULTS: PosSettings = {
   customerDisplayEnabled: false,
@@ -21,60 +34,69 @@ const DEFAULTS: PosSettings = {
   negativeStockAlertsEnabled: false,
 };
 
-function loadFromStorage(): PosSettings {
-  if (typeof window === "undefined") return DEFAULTS;
+/**
+ * How often the client re-fetches settings from the database.
+ * 30 s gives near-real-time cross-browser propagation.
+ */
+const POLL_INTERVAL_MS = 30_000;
 
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEFAULTS;
-
-    return {
-      ...DEFAULTS,           
-      ...JSON.parse(raw),   
-    };
-  } catch {
-    return DEFAULTS;
-  }
-}
+// ── Context ───────────────────────────────────────────────────────────────────
 
 const PosSettingsContext = createContext<PosSettingsContextType>({
   posSettings: DEFAULTS,
   setPosSettings: () => {},
+  refreshSettings: () => {},
 });
+
+// ── Provider ──────────────────────────────────────────────────────────────────
 
 export function PosSettingsProvider({ children }: { children: ReactNode }) {
   const [posSettings, setPosSettingsState] = useState<PosSettings>(DEFAULTS);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  /** Pull current values from the DB and merge them into state. */
+  const fetchFromDb = async () => {
+    try {
+      const s = await settingsService.get();
+      if (!s) return;
+      setPosSettingsState({
+        customerDisplayEnabled:     s.cusDisplay,
+        lowStockNotificationsEnabled: s.lowStock,
+        negativeStockAlertsEnabled:  s.negativeStock,
+      });
+    } catch {
+      // Non-fatal — keep the last-known values
+    }
+  };
 
   useEffect(() => {
-    setPosSettingsState(loadFromStorage());
-  }, []);
+    // 1. Fetch immediately on mount (no localStorage, always fresh from DB)
+    fetchFromDb();
 
-  useEffect(() => {
-    const onStorage = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY) return;
-      setPosSettingsState(loadFromStorage());
+    // 2. Poll every 30 s to pick up admin changes made in another browser
+    intervalRef.current = setInterval(fetchFromDb, POLL_INTERVAL_MS);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
-
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** Optimistic update so the admin settings page feels instant. */
   const setPosSettings = (settings: Partial<PosSettings>) => {
-    setPosSettingsState((prev) => {
-      const next = { ...prev, ...settings };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {}
-      return next;
-    });
+    setPosSettingsState((prev) => ({ ...prev, ...settings }));
   };
 
   return (
-    <PosSettingsContext.Provider value={{ posSettings, setPosSettings }}>
+    <PosSettingsContext.Provider
+      value={{ posSettings, setPosSettings, refreshSettings: fetchFromDb }}
+    >
       {children}
     </PosSettingsContext.Provider>
   );
 }
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function usePosSettings() {
   return useContext(PosSettingsContext);

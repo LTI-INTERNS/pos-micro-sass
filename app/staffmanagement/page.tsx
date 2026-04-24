@@ -140,6 +140,11 @@ export default function StaffManagementPage() {
   });
 
   const adminColumns: Column<AdminTableRow>[] = [
+        {
+      key: "index",
+      label: "",
+      render: (_, index) => index + 1,
+    },
     { key: "name", label: "Name" },
     { key: "staffNo", label: "Staff No" },
     {
@@ -163,6 +168,11 @@ export default function StaffManagementPage() {
   ];
 
   const managerColumns: Column<ManagerTableRow>[] = [
+        {
+      key: "index",
+      label: "",
+      render: (_, index) => index + 1,
+    },
     { key: "name", label: "Name" },
     { key: "staffNo", label: "Staff No" },
     { key: "branchName", label: "Branch" },

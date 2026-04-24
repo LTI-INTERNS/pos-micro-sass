@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ItemCard from "@/components/Pos/posdashboard/ItemCard";
 import { posService, PosProduct } from "@/lib/services/pos-service";
 import { Package, RefreshCw } from "lucide-react";
 
 type Props = {
   search: string;
+  onSearchChange?: (val: string) => void;
   onAdd: (item: PosProduct) => void;
 };
 
-export default function ItemGrid({ search, onAdd }: Props) {
+export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
   const [items, setItems] = useState<PosProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,33 +31,54 @@ export default function ItemGrid({ search, onAdd }: Props) {
     fetchProducts();
   }, []);
 
-  // Global Barcode Scanner Hook
-  useEffect(() => {
-    let barcodeString = "";
-    let timeoutId: NodeJS.Timeout | null = null;
+  const barcodeRef = useRef("");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Keep references to constantly changing props/state so the event listener doesn't have to detach
+  const itemsRef = useRef(items);
+  const onAddRef = useRef(onAdd);
+  const onSearchChangeRef = useRef(onSearchChange);
+
+  useEffect(() => {
+    itemsRef.current = items;
+    onAddRef.current = onAdd;
+    onSearchChangeRef.current = onSearchChange;
+  }, [items, onAdd, onSearchChange]);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if event comes from an input/textarea (so it doesn't double-trigger if typing in search)
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        // Wait, if it IS an input, we STILL want the barcode scanner to work? 
+        // No, if the search input is focused, the barcode scanner types into it, triggering onChange.
+        // BUT the enter block will fire. We need the enter block to still match the items!
+      }
+
       if (!e.key) return;
 
       if (e.key === "Enter") {
-        if (barcodeString.length > 0) {
-          const matchedItem = items.find((item) => item.barcode === barcodeString);
-          if (matchedItem && matchedItem.availability) {
-            onAdd(matchedItem);
+        if (barcodeRef.current.length > 0) {
+          const scanned = barcodeRef.current;
+          barcodeRef.current = "";
+          
+          const allMatches = itemsRef.current.filter((item) => item.barcode === scanned);
+          
+          if (allMatches.length === 1 && allMatches[0].availability) {
+            onAddRef.current(allMatches[0]);
+            if (onSearchChangeRef.current) onSearchChangeRef.current(""); 
+          } else {
+            if (onSearchChangeRef.current) onSearchChangeRef.current(scanned);
           }
-          barcodeString = "";
         }
         return;
       }
 
       if (e.key.length === 1) {
-        barcodeString += e.key;
-        if (timeoutId) clearTimeout(timeoutId);
+        barcodeRef.current += e.key;
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         
-        // Barcode scanners usually type very fast (< 20ms per character).
-        // 50ms is a safe threshold for most scanners.
-        timeoutId = setTimeout(() => {
-          barcodeString = "";
+        timeoutRef.current = setTimeout(() => {
+          barcodeRef.current = "";
         }, 50);
       }
     };
@@ -64,12 +86,18 @@ export default function ItemGrid({ search, onAdd }: Props) {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      if (timeoutId) clearTimeout(timeoutId);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [items, onAdd]);
+  }, []);
 
   const filteredItems = items.filter((i) => {
-    const term = search.toLowerCase();
+    const term = search.trim().toLowerCase();
+
+    // No search — only show available products in the default view
+    if (!term) return i.availability;
+
+    // Active search — show all products that match by name or barcode
+    // (so the cashier can look up any product, even unavailable ones)
     return (
       i.name.toLowerCase().includes(term) ||
       (i.barcode && i.barcode.toLowerCase().includes(term))
