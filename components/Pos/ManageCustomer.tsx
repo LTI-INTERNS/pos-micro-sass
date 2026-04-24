@@ -33,16 +33,11 @@ export default function ManageCustomer({
 
   useEffect(() => {
     const run = async () => {
-      const branchId = session?.user?.branchId;
-      if (!branchId) {
-        setError("No branch assigned to your account.");
-        return;
-      }
-
       setLoading(true);
       setError(null);
       try {
-        const data = await customerService.getAll(branchId);
+        // No branchId passed → returns all customers across the company
+        const data = await customerService.getAll();
         setCustomers(data);
       } catch {
         setError("Failed to load customers.");
@@ -54,7 +49,7 @@ export default function ManageCustomer({
     if (session?.user) {
       void run();
     }
-  }, [session?.user, session?.user?.branchId]);
+  }, [session?.user]);
 
   const filteredCustomers = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -69,24 +64,39 @@ export default function ManageCustomer({
   }, [customers, search]);
 
   return (
-    <div className="bg-white rounded-2xl p-6 w-full max-w-4xl mx-auto">
-      <h2 className="text-xl font-semibold text-slate-900 mb-6">
-        Manage customer
-      </h2>
+    <div className="
+      bg-white rounded-2xl
+      w-full max-w-3xl
+      mx-auto
+      flex flex-col
+      max-h-[90vh] sm:max-h-[85vh]
+      overflow-hidden
+      shadow-xl
+    ">
+      {/* Header */}
+      <div className="px-4 sm:px-6 pt-5 pb-4 shrink-0">
+        <h2 className="text-lg sm:text-xl font-semibold text-slate-900">
+          Manage customer
+        </h2>
+      </div>
 
-      <SearchBar
-        value={search}
-        onChange={setSearch}
-        placeholder="Search by name, email or phone"
-      />
+      {/* Search */}
+      <div className="px-4 sm:px-6 shrink-0">
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by name, email or phone"
+        />
+      </div>
 
-      <div className="mt-6">
+      {/* Table — scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 mt-4 min-h-0">
         {loading ? (
-          <div className="py-6 text-center text-sm text-slate-500">
+          <div className="py-12 text-center text-sm text-slate-500">
             Loading customers...
           </div>
         ) : error ? (
-          <div className="py-6 text-center text-sm text-red-600">{error}</div>
+          <div className="py-12 text-center text-sm text-red-600">{error}</div>
         ) : (
           <CommonTable
             columns={columns}
@@ -102,10 +112,20 @@ export default function ManageCustomer({
         )}
       </div>
 
-      <div className="flex justify-center gap-4 mt-8">
-        <div className="flex justify-center gap-4 w-full max-w-md mx-auto">
-                <Buttons onClick={onClose} label="Cancel" className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50 transition-all active:scale-90"/>
-                <Buttons onClick={onAddCustomer} label="New Customer" variant="primary" className="flex-1 px-8 py-3 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-90"/>
+      {/* Footer buttons */}
+      <div className="px-4 sm:px-6 py-4 shrink-0 border-t border-slate-100">
+        <div className="flex gap-3 w-full max-w-sm mx-auto">
+          <Buttons
+            onClick={onClose}
+            label="Cancel"
+            className="flex-1 px-6 py-2.5 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50 transition-all active:scale-95"
+          />
+          <Buttons
+            onClick={onAddCustomer}
+            label="New Customer"
+            variant="primary"
+            className="flex-1 px-6 py-2.5 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-95"
+          />
         </div>
       </div>
     </div>
