@@ -43,6 +43,7 @@ export default function AddProductPopup({
   const [selectedProductIds, setSelectedProductIds] = React.useState<Set<number | string>>(new Set());
   const [selectedOptionIds, setSelectedOptionIds] = React.useState<Set<number>>(new Set());
   const [selectedVariantIds, setSelectedVariantIds] = React.useState<Set<number>>(new Set());
+  const [barcodeErrors, setBarcodeErrors] = React.useState<Record<number, string>>({});
 
   const isManagerVariantMode = userRole === "manager" && isAddVariantMode;
   const isManagerEditMode = userRole === "manager" && !!initialData && !isAddVariantMode;
@@ -199,6 +200,9 @@ export default function AddProductPopup({
     if (step === 1 && isManagerVariantMode && selectedProductIds.size === 1 && selectedOptionIds.size === 0)
       return "Please select at least one option.";
     if (step === 2) {
+      if (Object.keys(barcodeErrors).length > 0)
+        return "Please fix all barcode errors before continuing.";
+
       if (isManagerVariantMode && selectedProductIds.size === 1 && selectedVariantIds.size === 0)
         return "Please select at least one variant.";
       if (!isManagerVariantMode && !isManagerEditMode) {
@@ -239,6 +243,9 @@ export default function AddProductPopup({
   const handleBack = () => { if (step > 0) setStep((s) => s - 1); };
 
   const handleSave = () => {
+    const err = validateStep();
+    if (err) { alert(err); return; }
+
     if (isManagerVariantMode) {
       // Catalog mode: pass the full selected ExistingProduct objects back
       // so the parent can call the stock API with real variantIds.
@@ -336,6 +343,9 @@ export default function AddProductPopup({
               selectedVariantIds={selectedVariantIds}
               onToggleVariant={toggleVariant}
               selectedProductCount={selectedProductIds.size}
+              barcodeErrors={barcodeErrors}
+              setBarcodeErrors={setBarcodeErrors}
+              currentProductId={initialData?.id as string}
             />
           )}
         </div>

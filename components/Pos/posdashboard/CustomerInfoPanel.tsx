@@ -28,6 +28,7 @@ export type OrderItem = {
   name: string;
   price: number;
   qty: number;
+  stockQty?: number;   // available stock from the branch variant
   imageUrl?: string;
 };
 
@@ -38,6 +39,8 @@ type Props = {
   onInc?: (id: string) => void;
   onDec?: (id: string) => void;
   onSetQty?: (id: string, qty: number) => void;
+  /** Called when the cashier tries to set a qty that exceeds available stock. */
+  onStockExceeded?: (name: string, stockQty: number, attemptedQty: number) => void;
   onCancel?: () => void;
   onPay?: (summary: {
     subtotal: number;
@@ -56,6 +59,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
       onInc,
       onDec,
       onSetQty,
+      onStockExceeded,
       onCancel,
       onPay,
       onPaymentDone,
@@ -157,6 +161,18 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
 
     function commitQty(id: string, raw: string) {
       const qty = raw.trim() === "" ? 1 : clampPositiveInt(Number(raw));
+
+      // Find the item to check its available stock
+      const item = items.find((it) => it.id === id);
+      const stock = item?.stockQty ?? Infinity;
+
+      if (qty > stock) {
+        // Revert the draft back to the last valid qty and alert the cashier
+        setQtyDraft((p) => ({ ...p, [id]: String(item?.qty ?? 1) }));
+        onStockExceeded?.(item?.name ?? "", stock === Infinity ? 0 : stock, qty);
+        return;
+      }
+
       setQtyDraft((p) => ({ ...p, [id]: String(qty) }));
       onSetQty?.(id, qty);
     }
@@ -257,17 +273,25 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
 
                         <input
                           value={qtyDraft[it.id] ?? String(it.qty)}
-                          onChange={(e) =>
-                            setQtyDraft((p) => ({
-                              ...p,
-                              [it.id]: e.target.value.replace(/\D/g, ""),
-                            }))
-                          }
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, "");
+                            setQtyDraft((p) => ({ ...p, [it.id]: raw }));
+                          }}
                           onBlur={() =>
                             commitQty(it.id, qtyDraft[it.id] ?? "")
                           }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              (e.target as HTMLInputElement).blur();
+                            }
+                          }}
                           inputMode="numeric"
-                          className="h-11 w-14 rounded-xl border border-slate-200 bg-white text-center font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-orange-200"
+                          className={`h-11 w-14 rounded-xl border bg-white text-center font-semibold text-slate-900 outline-none focus:ring-2 transition-colors ${
+                            it.stockQty !== undefined &&
+                            Number(qtyDraft[it.id] ?? it.qty) > it.stockQty
+                              ? "border-red-400 text-red-600 focus:ring-red-200"
+                              : "border-slate-200 focus:ring-orange-200"
+                          }`}
                         />
 
                         <button

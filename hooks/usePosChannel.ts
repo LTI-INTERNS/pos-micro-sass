@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { CustomerFormValues } from "@/components/Admin/common/AddCustomerModal";
 import { OrderItem } from "@/components/Pos/posdashboard/CustomerInfoPanel";
 import { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
@@ -33,9 +33,9 @@ export function usePosChannel(onMessage: (msg: PosMessage) => void) {
     return () => channel.close();
   }, []);
 
-  const send = (msg: PosMessage) => {
+  const send = useCallback((msg: PosMessage) => {
     channelRef.current?.postMessage(msg);
-  };
+  }, []);
 
   return { send };
 }
