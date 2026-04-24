@@ -8,9 +8,9 @@ import PopupActions from "@/components/Admin/common/PopupActions";
 export type EditField = {
   name: string;
   label: string;
-  // THE FIX: Added "password" to the allowed types!
-  type?: "text" | "number" | "textarea" | "select" | "image" | "password";
+  type?: "text" | "number" | "textarea" | "select" | "image" | "password" | "tel";
   readOnly?: boolean;
+  prefix?: string; 
   options?: { label: string; value: string }[];
 };
 
@@ -21,7 +21,7 @@ type Props<T extends object> = {
   fields: EditField[];
   onClose: () => void;
   validate?: (values: T) => Record<string, string>; 
-  onSave: (values: T) => void;
+  onSave: (values: T) => Promise<void> | void;
 };
 
 // ── Image upload field ────────────────────────────────────────────────────────
@@ -146,13 +146,12 @@ export default function EditEntityModal<T extends object>({
   onSave,
 }: Props<T>) {
   const [values, setValues] = useState<T | null>(null);
-  
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (open && initialValues) {
       setValues(initialValues);
-      setErrors({}); // Clear errors when modal opens
+      setErrors({});
     }
   }, [open, initialValues]);
 
@@ -165,7 +164,8 @@ export default function EditEntityModal<T extends object>({
     }
   };
 
-  const handleSaveClick = () => {
+  // THE FIX: Made this async and await the onSave so errors are caught smoothly!
+  const handleSaveClick = async () => {
     if (validate) {
       const validationErrors = validate(values);
       if (Object.keys(validationErrors).length > 0) {
@@ -173,16 +173,11 @@ export default function EditEntityModal<T extends object>({
         return; 
       }
     }
-    onSave(values);
+    await onSave(values);
   };
 
   return (
-    <ModalShell
-      open={open}
-      title={title}
-      onClose={onClose}
-      widthClassName="w-[760px] max-w-[90vw]"
-    >
+    <ModalShell open={open} title={title} onClose={onClose} widthClassName="w-[760px] max-w-[90vw]">
       <div className="space-y-4">
         {fields.map((field) => {
           const fieldId = `edit-field-${field.name}`;
@@ -206,10 +201,7 @@ export default function EditEntityModal<T extends object>({
 
           return (
             <div key={field.name} className="grid grid-cols-12 gap-2">
-              <label
-                htmlFor={fieldId}
-                className="col-span-4 text-sm text-gray-500 font-medium pt-2"
-              >
+              <label htmlFor={fieldId} className="col-span-4 text-sm text-gray-500 font-medium pt-2">
                 {field.label}
               </label>
 
@@ -234,15 +226,33 @@ export default function EditEntityModal<T extends object>({
                   >
                     <option value="">Select {field.label}</option>
                     {field.options?.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
+                ) : field.prefix ? (
+                  <div className={`flex items-center overflow-hidden ${inputBaseClass} rounded-full p-0 focus-within:border-orange-300 focus-within:ring-1 focus-within:ring-orange-100 ${stateClass}`}>
+                    <span className="px-4 py-2.5 bg-gray-50 text-gray-500 border-r border-gray-200 select-none font-medium text-sm">
+                      {field.prefix}
+                    </span>
+                    <input
+                      id={fieldId}
+                      type={field.type === "tel" ? "text" : field.type || "text"}
+                      value={String(values[field.name as keyof T] ?? "").startsWith(field.prefix) 
+                        ? String(values[field.name as keyof T] ?? "").slice(field.prefix.length) 
+                        : String(values[field.name as keyof T] ?? "")}
+                      readOnly={field.readOnly}
+                      placeholder={field.label}
+                      onChange={(e) => {
+                        let newVal = e.target.value;
+                        if (field.type === 'tel') newVal = newVal.replace(/\D/g, ''); 
+                        handleChange(field.name, field.prefix! + newVal); 
+                      }}
+                      className="w-full px-4 py-2.5 outline-none bg-transparent placeholder:text-gray-300 text-sm"
+                    />
+                  </div>
                 ) : (
                   <input
                     id={fieldId}
-                    // This will now properly render type="password" and mask the text!
                     type={field.type || "text"}
                     value={String(values[field.name as keyof T] ?? "")}
                     readOnly={field.readOnly}
