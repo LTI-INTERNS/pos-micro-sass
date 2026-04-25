@@ -4,14 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import { uploadService, type UploadFolder } from "@/lib/services/upload-service";
 
 export type EditField = {
   name: string;
   label: string;
-  // THE FIX: Added "password" to the allowed types!
-  type?: "text" | "number" | "textarea" | "select" | "image" | "password";
+  type?: "text" | "number" | "textarea" | "select" | "image" | "password" | "tel";
   readOnly?: boolean;
+  prefix?: string; 
   options?: { label: string; value: string }[];
+  uploadFolder?: UploadFolder;
 };
 
 type Props<T extends object> = {
@@ -21,7 +23,7 @@ type Props<T extends object> = {
   fields: EditField[];
   onClose: () => void;
   validate?: (values: T) => Record<string, string>; 
-  onSave: (values: T) => void;
+  onSave: (values: T) => Promise<void> | void;
 };
 
 // ── Image upload field ────────────────────────────────────────────────────────
@@ -29,30 +31,49 @@ function ImageUploadField({
   value,
   name,
   label,
+  uploadFolder = "products",
   onChange,
+  onUploadingChange,
 }: {
   value: string;
   name: string;
   label: string;
+  uploadFolder?: UploadFolder;
   onChange: (name: string, value: string) => void;
+  onUploadingChange: (uploading: boolean) => void;
 }) {
   const inputId = `image-upload-${name}`;
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string>(value ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   useEffect(() => {
     setPreview(value ?? "");
   }, [value]);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      setPreview(dataUrl);
-      onChange(name, dataUrl);
-    };
-    reader.readAsDataURL(file);
+
+    // Show local preview immediately
+    const localUrl = URL.createObjectURL(file);
+    setPreview(localUrl);
+    setUploadError("");
+    setUploading(true);
+    onUploadingChange(true);
+
+    try {
+      const { url } = await uploadService.upload(file, uploadFolder);
+      setPreview(url);
+      onChange(name, url);
+    } catch {
+      setUploadError("Image upload failed. Please try again.");
+      setPreview(value ?? "");
+      onChange(name, value ?? "");
+    } finally {
+      setUploading(false);
+      onUploadingChange(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -63,6 +84,7 @@ function ImageUploadField({
 
   const handleRemove = () => {
     setPreview("");
+    setUploadError("");
     onChange(name, "");
     if (inputRef.current) inputRef.current.value = "";
   };
@@ -76,60 +98,85 @@ function ImageUploadField({
         {label}
       </label>
 
-      <div className="col-span-8 flex items-center gap-4">
-        <div className="shrink-0">
-          {preview ? (
-            <Image
-              src={preview}
-              alt="Avatar preview"
-              width={64}
-              height={64}
-              className="w-16 h-16 rounded-full object-cover border border-gray-200"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-orange-100 border border-dashed border-orange-300 flex items-center justify-center text-orange-400 text-xs font-medium">
-              No photo
-            </div>
+      <div className="col-span-8 space-y-2">
+        <div className="flex items-center gap-4">
+          <div className="shrink-0">
+            {preview ? (
+              <Image
+                src={preview}
+                alt="Avatar preview"
+                width={64}
+                height={64}
+                unoptimized
+                className="w-16 h-16 rounded-full object-cover border border-gray-200"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-orange-100 border border-dashed border-orange-300 flex items-center justify-center text-orange-400 text-xs font-medium">
+                No photo
+              </div>
+            )}
+          </div>
+
+          <div
+            role="button"
+            tabIndex={uploading ? -1 : 0}
+            aria-label={`Upload ${label}`}
+            aria-disabled={uploading}
+            className={`flex-1 border border-dashed rounded-xl px-4 py-3 text-center transition-colors ${
+              uploading
+                ? "opacity-60 cursor-not-allowed border-gray-200"
+                : "cursor-pointer border-gray-200 hover:border-orange-300 hover:bg-orange-50"
+            }`}
+            onClick={() => { if (!uploading) inputRef.current?.click(); }}
+            onKeyDown={(e) => {
+              if (!uploading && (e.key === "Enter" || e.key === " "))
+                inputRef.current?.click();
+            }}
+            onDrop={handleDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
+            <p className="text-xs text-gray-400">
+              {uploading ? (
+                <span className="text-orange-500 font-medium flex items-center justify-center gap-1.5">
+                  <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+                  Uploading…
+                </span>
+              ) : (
+                <>
+                  Drag & drop or{" "}
+                  <span className="text-orange-500 font-medium">browse</span>
+                </>
+              )}
+            </p>
+            <p className="text-[10px] text-gray-300 mt-0.5">JPG, PNG, WEBP · max 5 MB</p>
+          </div>
+
+          <input
+            ref={inputRef}
+            id={inputId}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFile(file);
+            }}
+          />
+
+          {preview && !uploading && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              className="text-xs text-red-400 hover:text-red-600 shrink-0"
+            >
+              Remove
+            </button>
           )}
         </div>
 
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label={`Upload ${label}`}
-          className="flex-1 border border-dashed border-gray-200 rounded-xl px-4 py-3 text-center cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-colors"
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") inputRef.current?.click(); }}
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-        >
-          <p className="text-xs text-gray-400">
-            Drag & drop or{" "}
-            <span className="text-orange-500 font-medium">browse</span>
-          </p>
-          <p className="text-[10px] text-gray-300 mt-0.5">JPG, PNG, WEBP · max 2 MB</p>
-        </div>
-
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleFile(file);
-          }}
-        />
-
-        {preview && (
-          <button
-            type="button"
-            onClick={handleRemove}
-            className="text-xs text-red-400 hover:text-red-600 shrink-0"
-          >
-            Remove
-          </button>
+        {uploadError && (
+          <p className="text-xs text-red-500 px-1">{uploadError}</p>
         )}
       </div>
     </div>
@@ -146,13 +193,14 @@ export default function EditEntityModal<T extends object>({
   onSave,
 }: Props<T>) {
   const [values, setValues] = useState<T | null>(null);
-  
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [imageUploading, setImageUploading] = useState(false);
 
   useEffect(() => {
     if (open && initialValues) {
       setValues(initialValues);
-      setErrors({}); // Clear errors when modal opens
+      setErrors({});
+      setImageUploading(false);
     }
   }, [open, initialValues]);
 
@@ -165,31 +213,26 @@ export default function EditEntityModal<T extends object>({
     }
   };
 
-  const handleSaveClick = () => {
+  // THE FIX: Made this async and await the onSave so errors are caught smoothly!
+  const handleSaveClick = async () => {
     if (validate) {
       const validationErrors = validate(values);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
-        return; 
+        return;
       }
     }
-    onSave(values);
+    await onSave(values);
   };
 
   return (
-    <ModalShell
-      open={open}
-      title={title}
-      onClose={onClose}
-      widthClassName="w-[760px] max-w-[90vw]"
-    >
+    <ModalShell open={open} title={title} onClose={onClose} widthClassName="w-[760px] max-w-[90vw]">
       <div className="space-y-4">
         {fields.map((field) => {
           const fieldId = `edit-field-${field.name}`;
-          
           const inputBaseClass = "w-full border px-4 py-2 outline-none transition-all duration-200";
-          const stateClass = field.readOnly 
-            ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed select-none" 
+          const stateClass = field.readOnly
+            ? "bg-gray-50 text-gray-400 border-gray-100 cursor-not-allowed select-none"
             : "bg-white text-gray-600 border-gray-200 focus:border-orange-300 focus:ring-1 focus:ring-orange-100";
 
           if (field.type === "image") {
@@ -198,18 +241,17 @@ export default function EditEntityModal<T extends object>({
                 key={field.name}
                 name={field.name}
                 label={field.label}
+                uploadFolder={field.uploadFolder}
                 value={String(values[field.name as keyof T] ?? "")}
                 onChange={handleChange}
+                onUploadingChange={setImageUploading}
               />
             );
           }
 
           return (
             <div key={field.name} className="grid grid-cols-12 gap-2">
-              <label
-                htmlFor={fieldId}
-                className="col-span-4 text-sm text-gray-500 font-medium pt-2"
-              >
+              <label htmlFor={fieldId} className="col-span-4 text-sm text-gray-500 font-medium pt-2">
                 {field.label}
               </label>
 
@@ -234,15 +276,33 @@ export default function EditEntityModal<T extends object>({
                   >
                     <option value="">Select {field.label}</option>
                     {field.options?.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                      <option key={option.value} value={option.value}>{option.label}</option>
                     ))}
                   </select>
+                ) : field.prefix ? (
+                  <div className={`flex items-center overflow-hidden ${inputBaseClass} rounded-full p-0 focus-within:border-orange-300 focus-within:ring-1 focus-within:ring-orange-100 ${stateClass}`}>
+                    <span className="px-4 py-2.5 bg-gray-50 text-gray-500 border-r border-gray-200 select-none font-medium text-sm">
+                      {field.prefix}
+                    </span>
+                    <input
+                      id={fieldId}
+                      type={field.type === "tel" ? "text" : field.type || "text"}
+                      value={String(values[field.name as keyof T] ?? "").startsWith(field.prefix) 
+                        ? String(values[field.name as keyof T] ?? "").slice(field.prefix.length) 
+                        : String(values[field.name as keyof T] ?? "")}
+                      readOnly={field.readOnly}
+                      placeholder={field.label}
+                      onChange={(e) => {
+                        let newVal = e.target.value;
+                        if (field.type === 'tel') newVal = newVal.replace(/\D/g, ''); 
+                        handleChange(field.name, field.prefix! + newVal); 
+                      }}
+                      className="w-full px-4 py-2.5 outline-none bg-transparent placeholder:text-gray-300 text-sm"
+                    />
+                  </div>
                 ) : (
                   <input
                     id={fieldId}
-                    // This will now properly render type="password" and mask the text!
                     type={field.type || "text"}
                     value={String(values[field.name as keyof T] ?? "")}
                     readOnly={field.readOnly}
@@ -251,7 +311,7 @@ export default function EditEntityModal<T extends object>({
                     className={`${inputBaseClass} rounded-full placeholder:text-gray-300 ${stateClass}`}
                   />
                 )}
-                
+
                 {errors[field.name] && (
                   <p className="text-xs text-red-500 mt-1 px-3">{errors[field.name]}</p>
                 )}
@@ -265,7 +325,12 @@ export default function EditEntityModal<T extends object>({
             <PopupActions
               actions={[
                 { label: "Cancel", variant: "secondary", onClick: onClose },
-                { label: "Save Changes", variant: "primary", onClick: handleSaveClick },
+                {
+                  label: imageUploading ? "Uploading…" : "Save Changes",
+                  variant: "primary",
+                  onClick: handleSaveClick,
+                  disabled: imageUploading,
+                },
               ]}
             />
           </div>

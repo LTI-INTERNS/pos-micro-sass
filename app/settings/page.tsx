@@ -6,8 +6,8 @@ import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 
-// 1. Add this import at the top
 import { branchService, Branch } from "@/lib/services/branch-service";
+import { companyService, CompanyDetails } from "@/lib/services/company-service";
 
 // Contents
 import DiscountContent from "@/components/Admin/settings/Discount/DiscountContent";
@@ -19,33 +19,34 @@ import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSet
 
 export default function SettingPage() {
   const { data: session, status } = useSession();
-  const { storeInfo } = useStoreInfo(); // Get data from your database context
+  const { storeInfo } = useStoreInfo(); 
   
   const [activeTab, setActiveTab] = useState<string>("personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
-  // 2. Inside your SettingPage component, add this state:
   const [managerBranch, setManagerBranch] = useState<Branch | null>(null);
+  const [ownerCompany, setOwnerCompany] = useState<CompanyDetails | null>(null);
 
   const userRole = session?.user?.role?.toLowerCase() || "";
 
-  // Sync the logo from the database context to the local state
   useEffect(() => {
     if (storeInfo?.logoUrl) {
       setCompanyLogoUrl(storeInfo.logoUrl);
     }
   }, [storeInfo]);
 
-  // 3. Fetch the data inside a useEffect
   useEffect(() => {
     if (userRole === "manager") {
       branchService.getMyBranch()
         .then(setManagerBranch)
         .catch(err => console.error("Failed to load manager branch", err));
+    } else if (userRole === "owner" || userRole === "admin" || userRole === "superadmin") {
+      companyService.getMyCompany()
+        .then(setOwnerCompany)
+        .catch(err => console.error("Failed to load company", err));
     }
   }, [userRole]);
 
-  // Define TABS
   const TABS = useMemo(() => {
     const tabs = [
       { id: "personalDetails", label: "Personal Details", shortLabel: "Personal" },
@@ -79,19 +80,26 @@ export default function SettingPage() {
         )}
 
         {activeTab === "companyDetails" && (
-          (userRole === "owner" || userRole === "superadmin") ? (
+          (userRole === "owner" || userRole === "superadmin" || userRole === "admin") ? (
             <CompanyDetailsContent
               initial={{
-                name: storeInfo?.storeName || "ABC Pvt Ltd",
-                regNo: "PV12345",
-                email: "abc@gmail.com",
-                phone: "+94 77 123 4567",
-                address: "No 10, Main Street, Colombo",
+                name: ownerCompany?.name || "",
+                regNo: ownerCompany?.regNo || "",
+                email: ownerCompany?.email || "",
+                phone: ownerCompany?.phone || "",
+                address: ownerCompany?.address || "",
               }}
               logoUrl={companyLogoUrl}
-              onSave={(data) => console.log("SAVE COMPANY", data)}
+              onSave={async (data) => {
+                // THE FIX: Catch the AxiosError here and throw a standard string Error
+                try {
+                  const updated = await companyService.updateMyCompany(data);
+                  setOwnerCompany(updated);
+                } catch (err: any) {
+                  throw new Error(err.response?.data?.message || "Failed to update company");
+                }
+              }}
             />
-          // 4. Update the <BranchDetailsForm /> inside the return statement to pass the real data:
           ) : userRole === "manager" ? (
             <BranchDetailsForm
               userRole={userRole}
@@ -105,8 +113,13 @@ export default function SettingPage() {
                 regNo: managerBranch?.regno || "",
               }}
               onSave={async (data) => {
-                const updated = await branchService.update('me', data);
-                setManagerBranch(updated);
+                // THE FIX: Catch the AxiosError here as well
+                try {
+                  const updated = await branchService.update('me', data);
+                  setManagerBranch(updated);
+                } catch (err: any) {
+                  throw new Error(err.response?.data?.message || "Failed to update branch");
+                }
               }}
             />
           ) : null

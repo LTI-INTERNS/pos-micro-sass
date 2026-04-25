@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
+import LogoUploadSection from "@/components/Admin/settings/Details/LogoUploadSection";
 
 type CompanyDetails = {
   name: string;
@@ -11,7 +12,7 @@ type CompanyDetails = {
   email: string;
   phone: string;
   address: string;
-  logoUrl: string; // The modal uses this field name for the image upload
+  logoUrl?: string; 
 };
 
 type CompanyDetailsProps = {
@@ -23,36 +24,52 @@ type CompanyDetailsProps = {
 export default function CompanyDetailsContent({ initial, logoUrl, onSave }: CompanyDetailsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // 1. Initialize local state
   const [details, setDetails] = useState<CompanyDetails>({
     ...initial,
     logoUrl: logoUrl || "",
   });
 
-  // 2. SYNC EFFECT: Updates the view automatically when database data arrives
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(logoUrl ?? null);
   useEffect(() => {
     setDetails({
       ...initial,
       logoUrl: logoUrl || "",
     });
+    setCurrentLogoUrl(logoUrl ?? null);
   }, [initial, logoUrl]);
 
-  // 3. Define fields for the generic EditEntityModal
+  const handleLogoChange = async (newLogoUrl: string | null) => {
+    setCurrentLogoUrl(newLogoUrl);
+    setDetails((prev) => ({ ...prev, logoUrl: newLogoUrl || "" }));
+    if (onSave) {
+      try {
+        await onSave({ ...details, logoUrl: newLogoUrl || "" });
+      } catch (error: any) {
+        alert(error.message || "Failed to save logo.");
+      }
+    }
+  };
+
   const editFields: EditField[] = [
     { name: "name", label: "Company Name" },
     { name: "regNo", label: "Registration No" },
     { name: "email", label: "Email", type: "text" },
-    { name: "phone", label: "Phone" },
+    // THE FIX: Removed the 'prefix' lock so the user can type the full number including the + code
+    { name: "phone", label: "Phone", type: "tel" },
     { name: "address", label: "Address", type: "textarea" },
-    { name: "logoUrl", label: "Company Logo", type: "image" },
   ];
 
   const handleSave = async (updatedValues: CompanyDetails) => {
-    if (onSave) {
-      await onSave(updatedValues);
+    try {
+      if (onSave) {
+        await onSave({ ...updatedValues, logoUrl: currentLogoUrl || "" });
+      }
+      setDetails({ ...updatedValues, logoUrl: currentLogoUrl || "" });
+      setIsModalOpen(false);
+      alert("Company details updated successfully!");
+    } catch (error: any) {
+      alert(error.message || "Failed to update company details.");
     }
-    setDetails(updatedValues);
-    setIsModalOpen(false);
   };
 
   return (
@@ -60,7 +77,6 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
       <section className="bg-white rounded-xl border border-gray-100 flex flex-col p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Company Details</h2>
         
-        {/* Requirement 1: Gray-900 Bold Text Display (Read-Only) */}
         <div className="space-y-0">
           <SettingsRow label="Company Name" value={details.name} />
           <SettingsRow label="Registration No" value={details.regNo || "N/A"} />
@@ -68,18 +84,17 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
           <SettingsRow label="Phone" value={details.phone} />
           <SettingsRow label="Address" value={details.address} />
           
-          {/* Requirement 2: Display current logo from database */}
           <div className="grid grid-cols-12 items-center py-4 border-b border-gray-100">
             <div className="col-span-4 text-sm font-semibold text-gray-900">Company Logo</div>
             <div className="col-span-8">
-              {details.logoUrl ? (
+              {currentLogoUrl ? (
                 <div className="relative w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
                   <Image 
-                    src={details.logoUrl} 
+                    src={currentLogoUrl} 
                     alt="Company Logo" 
                     fill 
                     className="object-contain p-1"
-                    unoptimized // Helps render base64 or external S3 URLs without strict config
+                    unoptimized 
                   />
                 </div>
               ) : (
@@ -91,7 +106,6 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
           </div>
         </div>
 
-        {/* Requirement 3: Only "Edit Details" button is visible here */}
         <div className="pt-6">
           <ActionButton
             label="Edit Details"
@@ -103,23 +117,87 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
         </div>
       </section>
 
-      {/* Requirements 4, 5 & 6: Generic Modal for Editing */}
+      <LogoUploadSection
+        currentLogoUrl={currentLogoUrl}
+        onLogoChange={handleLogoChange}
+        folder="companies"
+        title="Company Logo"
+        description="Upload or replace your company logo. PNG, JPG, or SVG — max 5 MB."
+      />
+
       <EditEntityModal
         open={isModalOpen}
         title="Edit Company Details"
         initialValues={details}
         fields={editFields}
         onClose={() => setIsModalOpen(false)}
+        
+        validate={(values) => {
+          const errors: Record<string, string> = {};
+          
+          if (!values.name?.trim()) errors.name = "Company name is required";
+          
+          if (values.regNo) {
+            if (!/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo)) {
+              errors.regNo = "Registration Number must contain at least one letter and one number";
+            }
+          } else {
+             errors.regNo = "Registration Number is required";
+          }
+
+          if (values.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(values.email.trim())) {
+                errors.email = "Please enter a valid email address";
+            }
+          } else {
+            errors.email = "Email is required";
+          }
+
+          // THE FIX: Dynamic Prefix Validation
+          if (values.phone) {
+            // Remove any spaces the user might have typed so we can accurately count digits
+            const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
+
+            const allowedPrefixes = [
+              { code: "+94", len: 9 },
+              { code: "+1",  len: 10 },
+              { code: "+44", len: 10 },
+              { code: "+91", len: 10 },
+              { code: "+61", len: 9 },
+              { code: "+65", len: 8 },
+              { code: "+60", len: 10 },
+              { code: "0",   len: 9 }, // Local format without country code, assuming it should be 9 digits for Sri Lanka
+            ];
+
+            // Find which country code the typed number starts with
+            const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
+
+            if (!matchedConfig) {
+              errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
+            } else {
+              // Slice off the country code to isolate the actual phone digits
+              const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
+              
+              // Ensure the remainder is ONLY numbers and exactly the required length
+              if (!/^\d+$/.test(numberPart) || numberPart.length !== matchedConfig.len) {
+                errors.phone = `For ${matchedConfig.code}, the number must be exactly ${matchedConfig.len} digits long.`;
+              }
+            }
+          } else {
+            errors.phone = "Phone number is required";
+          }
+
+          if (!values.address?.trim()) errors.address = "Address is required";
+
+          return errors;
+        }}
         onSave={handleSave}
       />
     </div>
   );
 }
 
-/**
- * Helper component for Requirement 1 
- * Renders label and value in Gray-900 Bold
- */
 function SettingsRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid grid-cols-12 items-center py-4 border-b border-gray-100">
