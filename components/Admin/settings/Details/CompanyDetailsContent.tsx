@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
+import LogoUploadSection from "@/components/Admin/settings/Details/LogoUploadSection";
 
 type CompanyDetails = {
   name: string;
@@ -28,12 +29,26 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
     logoUrl: logoUrl || "",
   });
 
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(logoUrl ?? null);
   useEffect(() => {
     setDetails({
       ...initial,
       logoUrl: logoUrl || "",
     });
+    setCurrentLogoUrl(logoUrl ?? null);
   }, [initial, logoUrl]);
+
+  const handleLogoChange = async (newLogoUrl: string | null) => {
+    setCurrentLogoUrl(newLogoUrl);
+    setDetails((prev) => ({ ...prev, logoUrl: newLogoUrl || "" }));
+    if (onSave) {
+      try {
+        await onSave({ ...details, logoUrl: newLogoUrl || "" });
+      } catch (error: any) {
+        alert(error.message || "Failed to save logo.");
+      }
+    }
+  };
 
   const editFields: EditField[] = [
     { name: "name", label: "Company Name" },
@@ -42,15 +57,14 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
     // THE FIX: Removed the 'prefix' lock so the user can type the full number including the + code
     { name: "phone", label: "Phone", type: "tel" },
     { name: "address", label: "Address", type: "textarea" },
-    { name: "logoUrl", label: "Company Logo", type: "image" },
   ];
 
   const handleSave = async (updatedValues: CompanyDetails) => {
     try {
       if (onSave) {
-        await onSave(updatedValues);
+        await onSave({ ...updatedValues, logoUrl: currentLogoUrl || "" });
       }
-      setDetails(updatedValues);
+      setDetails({ ...updatedValues, logoUrl: currentLogoUrl || "" });
       setIsModalOpen(false);
       alert("Company details updated successfully!");
     } catch (error: any) {
@@ -73,10 +87,10 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
           <div className="grid grid-cols-12 items-center py-4 border-b border-gray-100">
             <div className="col-span-4 text-sm font-semibold text-gray-900">Company Logo</div>
             <div className="col-span-8">
-              {details.logoUrl ? (
+              {currentLogoUrl ? (
                 <div className="relative w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
                   <Image 
-                    src={details.logoUrl} 
+                    src={currentLogoUrl} 
                     alt="Company Logo" 
                     fill 
                     className="object-contain p-1"
@@ -102,6 +116,14 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
           />
         </div>
       </section>
+
+      <LogoUploadSection
+        currentLogoUrl={currentLogoUrl}
+        onLogoChange={handleLogoChange}
+        folder="companies"
+        title="Company Logo"
+        description="Upload or replace your company logo. PNG, JPG, or SVG — max 5 MB."
+      />
 
       <EditEntityModal
         open={isModalOpen}
