@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
+import { notificationService } from "@/lib/services/notification-service";
 import { useNotifications } from "@/lib/context/NotificationsContext";
 import { getCategoriesByBusinessType } from "@/components/Admin/productmanagement/Productcategorydata";
 import {
@@ -14,6 +15,7 @@ import {
 } from "./types";
 import { StepBar } from "./ui-components";
 import { Step1, Step1VariantSelect, Step2, Step3 } from "./step-components";
+import SuccessPopup from "@/components/Admin/common/SuccessPopup";
 
 export type { ExistingProduct } from "./types";
 
@@ -36,9 +38,12 @@ export default function AddProductPopup({
   catalogLoading = false,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
+  const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [state, setState] = React.useState<ProductState>(emptyState());
+  const [submitting, setSubmitting] = React.useState(false);
   const categories = getCategoriesByBusinessType(businessTypeId);
+
 
   const [selectedProductIds, setSelectedProductIds] = React.useState<Set<number | string>>(new Set());
   const [selectedOptionIds, setSelectedOptionIds] = React.useState<Set<number>>(new Set());
@@ -242,7 +247,7 @@ export default function AddProductPopup({
   const handleNext = () => { const err = validateStep(); if (err) { alert(err); return; } if (step < STEPS.length - 1) setStep((s) => s + 1); };
   const handleBack = () => { if (step > 0) setStep((s) => s - 1); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const err = validateStep();
     if (err) { alert(err); return; }
 
@@ -269,25 +274,62 @@ export default function AddProductPopup({
       finalState = state;
     }
 
+    // ── Manager submitting a brand-new product for approval ──────────────────
+    if (userRole === "manager" && !isManagerEditMode && !isManagerVariantMode) {
+      setSubmitting(true);
+      try {
+        await notificationService.submit({
+          name:        finalState.name.trim(),
+          categoryId:  finalState.categoryId,
+          brand:       finalState.brand       || undefined,
+          description: finalState.description || undefined,
+          options:     finalState.options.map((o) => ({
+            name:   o.name,
+            values: o.values,
+          })),
+          variants: finalState.variants.map((v) => ({
+            sku:          v.sku,
+            barcode:      v.barcode   || undefined,
+            imageUrl:     v.imageUrl  || undefined,
+            basePrice:    v.basePrice,
+            sellingPrice: v.sellingPrice,
+            sellUnit:     v.sellUnit,
+            optionValues: v.optionValues,
+          })),
+        });
+        setShowSuccessPopup(true);
+      } catch {
+        addNotification({
+          type: "error",
+          message: "Failed to submit for approval. Please try again.",
+        });
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // ── Manager editing (adding new variants to existing product) ─────────────
     if (userRole === "manager" && managerAddedNewItems) {
       addNotification({
         type: "approval_pending",
         message: `New items request from ${branchName} — "${finalState.name.trim()}" awaiting approval`,
         productApproval: {
-          id: Date.now(),
-          productName: finalState.name.trim(),
-          price: Number(finalState.variants[0]?.sellingPrice ?? 0),
-          discount: 0,
-          tax: 0,
-          stock: 0,
-          unit: finalState.variants[0]?.sellUnit ?? "each",
-          imageUrl: finalState.variants[0]?.imageUrl ?? "",
-          branchId,
+          notifId:      `local-${Date.now()}`,
+          id:           `local-${Date.now()}`,
+          productName:  finalState.name.trim(),
+          price:        Number(finalState.variants[0]?.sellingPrice ?? 0),
+          discount:     0,
+          tax:          0,
+          stock:        0,
+          unit:         finalState.variants[0]?.sellUnit ?? "each",
+          imageUrl:     finalState.variants[0]?.imageUrl ?? "",
+          branchId:     String(branchId),
           branchName,
           branchManager,
-          submittedBy: branchManager,
-          submittedAt: new Date().toISOString(),
-          status: "pending",
+          submittedBy:  branchManager,
+          submittedAt:  new Date().toISOString(),
+          status:       "pending",
         },
       });
     }
@@ -307,7 +349,8 @@ export default function AddProductPopup({
           : "Add Product";
 
   return (
-    <ModalShell open={open} title={modalTitle} onClose={onClose} widthClassName="w-[860px] max-w-[95vw]">
+    <>
+      <ModalShell open={open && !showSuccessPopup} title={modalTitle} onClose={onClose} widthClassName="w-[860px] max-w-[95vw]">
       <form onSubmit={(e) => { e.preventDefault(); if (step === STEPS.length - 1) { handleSave(); } else { handleNext(); } }}>
         <StepBar current={step} onGo={goStep} />
 
@@ -354,6 +397,7 @@ export default function AddProductPopup({
           <button
             type="button"
             onClick={handleBack}
+            disabled={submitting}
             className={`px-6 py-2 text-sm border border-gray-200 rounded-4xl text-gray-600 hover:bg-gray-50 transition font-medium cursor-pointer ${step === 0 ? "invisible" : ""}`}
           >
             Back
@@ -361,12 +405,26 @@ export default function AddProductPopup({
           <button
             type="button"
             onClick={step === STEPS.length - 1 ? handleSave : handleNext}
-            className="px-6 py-2 text-sm rounded-4xl transition font-medium cursor-pointer bg-orange-500 hover:bg-orange-600 text-white"
+            disabled={submitting}
+            className="px-6 py-2 text-sm rounded-4xl transition font-medium cursor-pointer bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
           >
+            {submitting && (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            )}
             {step === STEPS.length - 1 ? saveLabel : "Continue"}
           </button>
         </div>
       </form>
     </ModalShell>
+    <SuccessPopup
+      open={showSuccessPopup}
+      title="Approval Request Submitted!"
+      subText={`"${state.name.trim()}" has been submitted for approval. The admin/owner will review it shortly.`}
+      onClose={() => {
+        setShowSuccessPopup(false);
+        onClose();
+      }}
+    />
+    </>
   );
 }
