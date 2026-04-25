@@ -9,7 +9,7 @@ export type { Notification, NotificationType };
 type Props = {
   notifications: Notification[];
   onClose: () => void;
-  onMarkAsRead?: (id: number) => void;
+  onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
   onOpenMessage?: (n: Notification) => void;
 };
@@ -26,11 +26,11 @@ const typeConfig: Record<
     text: "text-blue-500",
   },
   success: {
-    dot: "bg-green-400",
-    bar: "bg-green-500",
-    label: "SUCCESS",
-    bg: "hover:bg-green-50",
-    text: "text-green-600",
+    dot: "bg-emerald-500",
+    bar: "bg-emerald-500",
+    label: "APPROVED",
+    bg: "hover:bg-emerald-50",
+    text: "text-emerald-600",
   },
   warning: {
     dot: "bg-amber-400",
@@ -40,11 +40,11 @@ const typeConfig: Record<
     text: "text-amber-500",
   },
   error: {
-    dot: "bg-red-400",
-    bar: "bg-red-500",
-    label: "ERROR",
-    bg: "hover:bg-red-50",
-    text: "text-red-500",
+    dot: "bg-rose-500",
+    bar: "bg-rose-500",
+    label: "REJECTED",
+    bg: "hover:bg-rose-50",
+    text: "text-rose-600",
   },
   approval_pending: {
     dot: "bg-orange-500",
@@ -149,9 +149,8 @@ export default function NotificationPanel({
                   onMarkAsRead?.(n.id);
                   onOpenMessage?.(n);
                 }}
-                className={`w-full text-left relative transition-all px-5 py-3.5 cursor-pointer ${cfg.bg} ${
-                  !n.read ? "bg-orange-50/30" : ""
-                } ${idx < notifications.length - 1 ? "border-b border-gray-100" : ""}`}
+                className={`w-full text-left relative transition-all px-5 py-3.5 cursor-pointer ${cfg.bg} ${!n.read ? "bg-orange-50/30" : ""
+                  } ${idx < notifications.length - 1 ? "border-b border-gray-100" : ""}`}
               >
                 <div
                   className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-r-full ${cfg.bar}`}
