@@ -194,7 +194,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       address:        data.address,
       contactNumber:  data.contact,
       email:          data.email,
-      logoUrl:        "",             // upload not yet implemented
+      logoUrl:        data.logoUrl ?? "",
       businessTypeId: data.businessTypeId,
       subId:          data.subId,
     });
