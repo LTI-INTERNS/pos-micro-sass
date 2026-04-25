@@ -14,8 +14,11 @@ type Props = {
   open: boolean;
   data: ProductApprovalData | null;
   onClose: () => void;
-  onApprove: (productId: number) => void;
-  onReject: (productId: number, reason: string) => void;
+  onApprove: (productId: string) => void;
+  onReject: (productId: string, reason: string) => void;
+  /** Shows a spinner on action buttons while API call is in flight */
+  loading?: boolean;
+  userRole?: "admin" | "owner" | "manager";
 };
 
 type DataWarnings = {
@@ -68,9 +71,9 @@ function validateProductData(data: ProductApprovalData): DataWarnings {
   else if (data.stock < 0)
     w.stock = "Stock cannot be negative.";
 
-  if (!data.branchName?.trim())   w.branchName    = "Branch name is missing.";
+  if (!data.branchName?.trim()) w.branchName = "Branch name is missing.";
   if (!data.branchManager?.trim()) w.branchManager = "Branch manager name is missing.";
-  if (!data.submittedBy?.trim())  w.submittedBy   = "Submitted-by field is missing.";
+  if (!data.submittedBy?.trim()) w.submittedBy = "Submitted-by field is missing.";
 
   if (!data.submittedAt?.trim()) {
     w.submittedAt = "Submission timestamp is missing.";
@@ -129,12 +132,12 @@ function AuditRow({ label, value }: { label: string; value?: string }) {
 }
 
 export default function ProductApprovalModal({
-  open, data, onClose, onApprove, onReject,
+  open, data, onClose, onApprove, onReject, loading = false, userRole = "admin"
 }: Props) {
   const { currency } = useCurrency();
 
-  const [rejecting,   setRejecting]   = React.useState(false);
-  const [reason,      setReason]      = React.useState("");
+  const [rejecting, setRejecting] = React.useState(false);
+  const [reason, setReason] = React.useState("");
   const [reasonError, setReasonError] = React.useState("");
 
   React.useEffect(() => {
@@ -166,20 +169,20 @@ export default function ProductApprovalModal({
     onReject(data.id, reason.trim());
   };
 
-  const priceDisplay    = typeof data.price    === "number" && isFinite(data.price)
+  const priceDisplay = typeof data.price === "number" && isFinite(data.price)
     ? formatCurrency(data.price, currency) : "—";
   const discountDisplay = typeof data.discount === "number" && isFinite(data.discount)
     ? `${data.discount}%` : "—";
-  const taxDisplay      = typeof data.tax      === "number" && isFinite(data.tax)
+  const taxDisplay = typeof data.tax === "number" && isFinite(data.tax)
     ? `${data.tax}%` : "—";
-  const stockDisplay    = typeof data.stock    === "number" && isFinite(data.stock)
+  const stockDisplay = typeof data.stock === "number" && isFinite(data.stock)
     ? `${data.stock}${data.unit ? ` ${data.unit}` : " units"}` : "—";
 
   const reviewedAtDisplay = data.reviewedAt
     ? new Date(data.reviewedAt).toLocaleString([], {
-        year: "numeric", month: "short", day: "numeric",
-        hour: "2-digit", minute: "2-digit",
-      })
+      year: "numeric", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    })
     : undefined;
 
   const submittedAtDisplay = (() => {
@@ -198,22 +201,25 @@ export default function ProductApprovalModal({
         <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
         <div>
           <p className="text-xs font-semibold text-green-700">This product has been approved</p>
-          {data.approvedBy && (
-            <p className="text-[10px] text-green-500 mt-0.5">By {data.approvedBy}</p>
-          )}
+          <p className="text-[10px] text-green-500 mt-0.5">
+            By {data.reviewerName || data.approvedBy || "Admin"} ({data.reviewerRole || "Administrator"})
+          </p>
         </div>
       </div>
     ) : data.status === "rejected" ? (
-      <div className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200">
+      <div className="flex flex-col gap-1 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 shadow-sm">
         <div className="flex items-center gap-2">
           <XCircle size={16} className="text-red-500 flex-shrink-0" />
           <p className="text-xs font-semibold text-red-700">This product was rejected</p>
         </div>
-        {data.rejectedBy && (
-          <p className="text-[10px] text-red-400 pl-6">By {data.rejectedBy}</p>
-        )}
+        <p className="text-[10px] text-red-400 pl-6">
+          By {data.reviewerName || data.rejectedBy || "Admin"} ({data.reviewerRole || "Administrator"})
+        </p>
         {data.rejectionReason && (
-          <p className="text-xs text-red-500 pl-6">Reason: {data.rejectionReason}</p>
+          <div className="mt-1 pl-6">
+            <p className="text-[11px] font-medium text-red-800">Reason:</p>
+            <p className="text-[11px] text-red-600 italic">"{data.rejectionReason}"</p>
+          </div>
         )}
       </div>
     ) : null;
@@ -363,18 +369,78 @@ export default function ProductApprovalModal({
             />
           </div>
 
-          {isAlreadyActioned && (data.approvedBy || data.rejectedBy || reviewedAtDisplay) && (
-            <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 space-y-1">
+          {isAlreadyActioned && (data.reviewerName || data.approvedBy || data.rejectedBy || reviewedAtDisplay) && (
+            <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-3 space-y-1 shadow-inner">
               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-2">
                 Audit Trail
               </p>
-              <AuditRow label="Submitted by"  value={data.submittedBy} />
-              <AuditRow label="Submitted at"  value={submittedAtDisplay} />
-              <AuditRow label="Approved by"   value={data.approvedBy} />
-              <AuditRow label="Rejected by"   value={data.rejectedBy} />
-              <AuditRow label="Reviewed at"   value={reviewedAtDisplay} />
+              <AuditRow label="Submitted by" value={data.submittedBy} />
+              <AuditRow label="Submitted at" value={submittedAtDisplay} />
+              <AuditRow 
+                label={data.status === "approved" ? "Approved by" : "Rejected by"} 
+                value={`${data.reviewerName || data.approvedBy || data.rejectedBy || "Unknown"} (${data.reviewerRole || "Staff"})`} 
+              />
+              <AuditRow label="Reviewed at" value={reviewedAtDisplay} />
             </div>
           )}
+
+          {/* New Sections for Brand, Description, and Variants */}
+          <div className="space-y-4">
+             {(data.brand || data.description) && (
+               <div className="grid grid-cols-2 gap-3">
+                 {data.brand && (
+                   <div className="px-3 py-2 rounded-xl bg-blue-50/50 border border-blue-100">
+                     <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest mb-0.5">Brand</p>
+                     <p className="text-xs font-semibold text-gray-800">{data.brand}</p>
+                   </div>
+                 )}
+                 {data.category && (
+                   <div className="px-3 py-2 rounded-xl bg-purple-50/50 border border-purple-100">
+                     <p className="text-[9px] text-purple-400 font-bold uppercase tracking-widest mb-0.5">Category</p>
+                     <p className="text-xs font-semibold text-gray-800">{data.category}</p>
+                   </div>
+                 )}
+               </div>
+             )}
+
+             {data.description && (
+               <div className="px-3 py-2 rounded-xl bg-gray-50 border border-gray-100">
+                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mb-1">Description</p>
+                 <p className="text-xs text-gray-600 leading-relaxed">{data.description}</p>
+               </div>
+             )}
+
+             {data.variants && data.variants.length > 0 && (
+               <div className="space-y-2">
+                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest px-1">
+                   Variants ({data.variants.length})
+                 </p>
+                 <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                   {data.variants.map((v, i) => (
+                     <div key={i} className="flex items-center justify-between p-2.5 rounded-xl border border-gray-100 bg-white shadow-sm hover:border-orange-200 transition-colors">
+                       <div className="flex-1 min-w-0">
+                         <div className="flex items-center gap-2">
+                            <p className="text-[11px] font-bold text-gray-800 truncate">{v.sku}</p>
+                            {v.barcode && <span className="text-[9px] text-gray-400 bg-gray-100 px-1 rounded">#{v.barcode}</span>}
+                         </div>
+                         <div className="flex flex-wrap gap-1 mt-1">
+                           {v.optionValues?.map((ov: any, idx: number) => (
+                             <span key={idx} className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-md font-medium">
+                               {ov.optionName}: {ov.value}
+                             </span>
+                           ))}
+                         </div>
+                       </div>
+                       <div className="text-right ml-3">
+                         <p className="text-[11px] font-bold text-orange-600">{formatCurrency(Number(v.sellingPrice), currency)}</p>
+                         <p className="text-[9px] text-gray-400">{v.sellUnit}</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
+          </div>
 
           {rejecting && !isAlreadyActioned && (
             <div className="space-y-1.5">
@@ -406,7 +472,7 @@ export default function ProductApprovalModal({
           )}
         </div>
 
-        {!isAlreadyActioned ? (
+        {!isAlreadyActioned && userRole !== "manager" ? (
           <div className="px-6 py-4 border-t border-gray-100 space-y-3">
             {hasWarnings && !rejecting && (
               <p className="text-[11px] text-amber-600 text-center flex items-center justify-center gap-1">
@@ -419,14 +485,19 @@ export default function ProductApprovalModal({
                 <>
                   <button
                     type="button" onClick={() => setRejecting(true)}
-                    className="flex-1 py-2.5 rounded-full border border-red-300 bg-white text-red-500 text-sm font-semibold hover:bg-red-50 transition-all active:scale-95 cursor-pointer"
+                    disabled={loading}
+                    className="flex-1 py-2.5 rounded-full border border-orange-300 bg-white text-orange-500 text-sm font-semibold hover:bg-orange-50 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Reject
                   </button>
                   <button
                     type="button" onClick={handleApprove}
-                    className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition-all active:scale-95 cursor-pointer shadow-md shadow-orange-200"
+                    disabled={loading}
+                    className="flex-1 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-semibold hover:brightness-110 transition-all active:scale-95 cursor-pointer shadow-md shadow-orange-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
+                    {loading ? (
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : null}
                     Approve
                   </button>
                 </>
@@ -435,14 +506,19 @@ export default function ProductApprovalModal({
                   <button
                     type="button"
                     onClick={() => { setRejecting(false); setReason(""); setReasonError(""); }}
-                    className="flex-1 py-2.5 rounded-full border border-gray-200 bg-white text-gray-600 text-sm font-semibold hover:bg-gray-50 transition-all active:scale-95 cursor-pointer"
+                    disabled={loading}
+                    className="flex-1 py-2.5 rounded-full border border-orange-200 bg-white text-orange-600 text-sm font-semibold hover:bg-orange-50 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="button" onClick={handleRejectConfirm}
-                    className="flex-1 py-2.5 rounded-full bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all active:scale-95 cursor-pointer"
+                    disabled={loading}
+                    className="flex-1 py-2.5 rounded-full bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition-all active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
+                    {loading ? (
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : null}
                     Confirm Reject
                   </button>
                 </>
@@ -453,7 +529,7 @@ export default function ProductApprovalModal({
           <div className="px-6 py-4 border-t border-gray-100">
             <button
               type="button" onClick={onClose}
-              className="w-full py-2.5 rounded-full bg-gray-100 text-gray-600 text-sm font-semibold hover:bg-gray-200 transition-all active:scale-95 cursor-pointer"
+              className="w-full py-2.5 rounded-full bg-orange-100 text-orange-600 text-sm font-semibold hover:bg-orange-200 transition-all active:scale-95 cursor-pointer"
             >
               Close
             </button>
