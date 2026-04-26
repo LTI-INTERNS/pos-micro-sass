@@ -20,6 +20,7 @@ export type ProductVariant = {
 };
 
 export type ProductState = {
+  id?: string;
   name: string;
   categoryId: string;
   brand: string;

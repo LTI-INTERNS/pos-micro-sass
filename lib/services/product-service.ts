@@ -159,6 +159,11 @@ export const productService = {
             .get<ApiResponse<Product[]>>('/products', { params: { catalog: true } })
             .then(res => (res.data?.data ?? []).map(mapProduct)),
 
+    checkBarcode: (barcode: string): Promise<{ exists: boolean, productId?: string, productName?: string }> =>
+        apiClient
+            .get<ApiResponse<{ exists: boolean, productId?: string, productName?: string }>>('/products/check-barcode', { params: { barcode } })
+            .then(res => res.data.data),
+
     getById: (id: string): Promise<Product> =>
         apiClient
             .get<ApiResponse<Product>>(`/products/${id}`)

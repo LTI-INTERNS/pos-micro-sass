@@ -34,6 +34,8 @@ import {
 } from "./ui-components";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import { productService } from "@/lib/services/product-service";
+import { uploadService } from "@/lib/services/upload-service";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
@@ -137,8 +139,8 @@ export function Step1VariantSelect({
             </thead>
             <tbody>
               {filtered.map((p) => {
-                const isSel    = selectedIds.has(p.id);
-                const isAdded  = !!p.alreadyAdded;
+                const isSel = selectedIds.has(p.id);
+                const isAdded = !!p.alreadyAdded;
                 return (
                   <tr
                     key={p.id}
@@ -154,7 +156,6 @@ export function Step1VariantSelect({
                   >
                     <td className="px-4 py-3">
                       {isAdded ? (
-                        /* Locked checkbox visual */
                         <span className="inline-flex items-center justify-center w-4 h-4 rounded border-2 border-gray-200 bg-gray-100 flex-shrink-0">
                           <svg className="w-2.5 h-2.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
@@ -517,6 +518,9 @@ export function Step3({
   selectedVariantIds,
   onToggleVariant,
   selectedProductCount,
+  barcodeErrors,
+  setBarcodeErrors,
+  currentProductId,
 }: {
   state: ProductState;
   onChange: (patch: Partial<ProductState>) => void;
@@ -526,6 +530,9 @@ export function Step3({
   selectedVariantIds: Set<number>;
   onToggleVariant: (id: number) => void;
   selectedProductCount: number;
+  barcodeErrors: Record<number, string>;
+  setBarcodeErrors: React.Dispatch<React.SetStateAction<Record<number, string>>>;
+  currentProductId?: string;
 }) {
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
   const { currency } = useCurrency();
@@ -679,15 +686,78 @@ export function Step3({
       });
     }
 
+    setBarcodeErrors((prev) => {
+      if (!prev[variant.id]) return prev;
+      const next = { ...prev };
+      delete next[variant.id];
+      return next;
+    });
+
     updateVariant(variant.id, patch);
   };
 
+  const handleBarcodeBlur = async (variant: ProductVariant, rawValue: string) => {
+    const barcode = rawValue.trim();
+    if (!barcode) {
+      setBarcodeErrors(prev => {
+        if (!prev[variant.id]) return prev;
+        const next = { ...prev };
+        delete next[variant.id];
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const result = await productService.checkBarcode(barcode);
+      if (result.exists && result.productId) {
+        if (!currentProductId || currentProductId !== result.productId) {
+          setBarcodeErrors(prev => ({
+            ...prev,
+            [variant.id]: `Barcode already in use by product: "${result.productName}". Edit that product to add variants.`
+          }));
+        } else {
+          setBarcodeErrors(prev => {
+            if (!prev[variant.id]) return prev;
+            const next = { ...prev };
+            delete next[variant.id];
+            return next;
+          });
+        }
+      } else {
+        setBarcodeErrors(prev => {
+          if (!prev[variant.id]) return prev;
+          const next = { ...prev };
+          delete next[variant.id];
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error("Barcode check failed", err);
+    }
+  };
+
+  // ── Variant image state — local preview + Cloudinary upload ────────────────
   const [variantImages, setVariantImages] = React.useState<Record<number, string>>({});
-  const handleVariantImage = (id: number, file: File | null) => {
+  const [variantImageUploading, setVariantImageUploading] = React.useState<Record<number, boolean>>({});
+
+  const handleVariantImage = async (id: number, file: File | null) => {
     if (!file || !ALLOWED_IMAGE_TYPES.includes(file.type) || file.size / (1024 * 1024) > MAX_IMAGE_SIZE_MB) return;
-    const url = URL.createObjectURL(file);
-    setVariantImages((prev) => ({ ...prev, [id]: url }));
-    update(id, "imageUrl", url);
+    // Show local preview immediately while uploading
+    const previewUrl = URL.createObjectURL(file);
+    setVariantImages((prev) => ({ ...prev, [id]: previewUrl }));
+    setVariantImageUploading((prev) => ({ ...prev, [id]: true }));
+    try {
+      const { url } = await uploadService.upload(file, "products");
+      setVariantImages((prev) => ({ ...prev, [id]: url }));
+      update(id, "imageUrl", url);
+    } catch {
+      // Revert preview on failure
+      setVariantImages((prev) => { const n = { ...prev }; delete n[id]; return n; });
+      update(id, "imageUrl", "");
+    } finally {
+      setVariantImageUploading((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    }
   };
 
   // ── Render pure JSX instead of a Component to prevent input focus loss ─────
@@ -700,7 +770,7 @@ export function Step3({
             <button
               type="button"
               onClick={() => handleAutoGenerateSku(v)}
-              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-100"
+              className="inline-flex items-center gap-1 rounded-full border border-orange-200 bg-orange-50 cursor-pointer px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-100"
               title="Auto-generate SKU"
             >
               ✦ Auto-generate
@@ -716,13 +786,34 @@ export function Step3({
           </p>
         </FieldWrap>
         <FieldWrap>
-          <Label>Barcode</Label>
+          <div className="flex justify-between items-end mb-1.5">
+            <Label className="mb-0">Barcode</Label>
+            {state.variants.length > 1 && v.id !== state.variants[0].id && (
+              <button
+                type="button"
+                onClick={() => {
+                  const firstBarcode = state.variants[0].barcode;
+                  if (firstBarcode) {
+                    handleBarcodeChange(v, firstBarcode);
+                    handleBarcodeBlur(v, firstBarcode);
+                  }
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-orange-600 transition cursor-pointer"
+              >
+                ✦ Copy from first
+              </button>
+            )}
+          </div>
           <Input
             placeholder="1234567890"
             value={v.barcode}
             onChange={(e) => handleBarcodeChange(v, e.target.value)}
+            onBlur={(e) => handleBarcodeBlur(v, e.target.value)}
           />
-          {parsedBarcodeDetails[v.id] && (
+          {barcodeErrors[v.id] && (
+            <p className="mt-1 text-[10px] text-red-500 font-semibold">{barcodeErrors[v.id]}</p>
+          )}
+          {parsedBarcodeDetails[v.id] && !barcodeErrors[v.id] && (
             <p className="mt-1 text-[10px] text-orange-600">
               Embedded barcode detected ({parsedBarcodeDetails[v.id].scheme}) - item code {parsedBarcodeDetails[v.id].itemCode}, price {parsedBarcodeDetails[v.id].embeddedPrice}
             </p>
@@ -782,9 +873,16 @@ export function Step3({
         <input
           type="file"
           accept="image/jpeg,image/png"
+          disabled={!!variantImageUploading[v.id]}
           onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
-          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer"
+          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         />
+        {variantImageUploading[v.id] && (
+          <p className="mt-1 text-[11px] text-orange-500 flex items-center gap-1.5">
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+            Uploading to Cloudinary…
+          </p>
+        )}
         {/* Show newly-picked image OR existing DB image */}
         {(variantImages[v.id] || v.imageUrl) && (
           <div className="relative mt-2 h-20 w-20 group">

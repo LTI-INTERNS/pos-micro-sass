@@ -1,24 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { settingsService } from "@/lib/services/settings-service";
 import { useStockAlerts } from "./useStockAlerts";
 import StockAlertToast from "./StockAlertToast";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 /**
- * Drop this anywhere inside a layout.
- * It reads the lowStock setting from the DB, then conditionally
- * renders the stock-alert toasts.
+ * Reads lowStockNotificationsEnabled from PosSettingsContext (which already
+ * polls the DB every 30 s) — no duplicate fetch needed here.
  */
 export default function StockAlertProvider() {
-  const [lowStockEnabled, setLowStockEnabled] = useState(false);
-
-  useEffect(() => {
-    settingsService
-      .get()
-      .then((s) => setLowStockEnabled(s?.lowStock ?? false))
-      .catch(() => {}); // silent — feature just stays disabled
-  }, []);
+  const { posSettings } = usePosSettings();
+  const lowStockEnabled = posSettings.lowStockNotificationsEnabled ?? false;
 
   const { toasts, dismiss } = useStockAlerts(lowStockEnabled);
 

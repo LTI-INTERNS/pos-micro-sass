@@ -19,7 +19,7 @@ export default function ManageCustomersPopup({
   const [showAdd, setShowAdd] = useState(false);
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       {showManage && (
         <ManageCustomer
           onClose={onClose}
@@ -28,7 +28,6 @@ export default function ManageCustomersPopup({
             setShowAdd(true);
           }}
           onCustomerSelected={(customer: Customer) => {
-            
             onCustomerSelected({
               customerId: customer.id,
               name: customer.name,
