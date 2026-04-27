@@ -16,6 +16,7 @@ import {
 import { StepBar } from "./ui-components";
 import { Step1, Step1VariantSelect, Step2, Step3 } from "./step-components";
 import SuccessPopup from "@/components/Admin/common/SuccessPopup";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 export type { ExistingProduct } from "./types";
 
@@ -38,6 +39,8 @@ export default function AddProductPopup({
   catalogLoading = false,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
+  const { posSettings } = usePosSettings();
+  const productImageRequired = posSettings.productImageRequired;
   const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [state, setState] = React.useState<ProductState>(emptyState());
@@ -237,6 +240,7 @@ export default function AddProductPopup({
           if (!v.sku.trim()) return "All variants must have a SKU.";
           if (!v.basePrice) return "All variants must have a base price.";
           if (!v.sellingPrice) return "All variants must have a selling price.";
+          if (productImageRequired && !v.imageUrl) return "All variants must have an image.";
           const optionError = validateVariantOptions(v);
           if (optionError) return optionError;
         }
@@ -252,6 +256,7 @@ export default function AddProductPopup({
           if (!v.sku.trim()) return "New variants must have a SKU.";
           if (!v.basePrice) return "New variants must have a base price.";
           if (!v.sellingPrice) return "New variants must have a selling price.";
+          if (productImageRequired && !v.imageUrl) return "All variants must have an image.";
           const optionError = validateVariantOptions(v);
           if (optionError) return optionError;
         }
