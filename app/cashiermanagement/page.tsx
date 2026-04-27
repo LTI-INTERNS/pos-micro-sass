@@ -196,12 +196,15 @@ export default function CashierManagementPage() {
       cashierNo: updatedFields.cashierNo,
       name:      updatedFields.name,
       email:     updatedFields.email,
+      ...(updatedFields.imgUrl !== undefined
+        ? { imgUrl: updatedFields.imgUrl ?? "" }
+        : {}),
     };
 
     cashierService
       .update(selectedCashier.id, payload)
       .then((updated) => {
-        setCashiers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+        setCashiers((prev) => prev.map((c) => (c.id === updated.id ? { ...updated, totalRevenue: c.totalRevenue } : c)));
         setSelectedCashier(updated);
         setEditPopupOpen(false);
       })
@@ -237,7 +240,7 @@ export default function CashierManagementPage() {
   const removeFilter    = (key: string) => setFilters((prev) => ({ ...prev, [key]: "" }));
 
   const editFields: EditField[] = [
-    { name: "imgUrl", label: "Profile Photo", type: "image" },
+    { name: "imgUrl", label: "Profile Photo", type: "image", uploadFolder: "cashiers" },
     { name: "name", label: "Name" },
     { name: "cashierNo", label: "Cashier No" },
     { name: "email", label: "Email" },
@@ -335,7 +338,7 @@ export default function CashierManagementPage() {
           onClose={() => { setAddOpen(false); fetchCashiers(); }}
         />
 
-        {/* DeactivateCashierPopup — expects TableCashier, no loading prop */}
+        {/* DeactivateCashierPopup */}
         <DeactivateCashierPopup
           isOpen={deactivatePopupOpen}
           onClose={() => { setDeactivatePopupOpen(false); setActionError(""); }}

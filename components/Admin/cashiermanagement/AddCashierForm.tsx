@@ -8,6 +8,7 @@ import PopupActions from "@/components/Admin/common/PopupActions";
 import ImageUploader from "@/components/Admin/common/ImageUploader";
 import { cashierService } from "@/lib/services/cashier-service";
 import { branchService } from "@/lib/services/branch-service";
+import { uploadService } from "@/lib/services/upload-service";
 import type { Branch } from "@/types/branch.types";
 
 type FormValues = {
@@ -59,6 +60,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(null);
+  const [imageUploading, setImageUploading]   = React.useState(false);
 
   const emptyForm = (): FormValues => ({
     name:     "",
@@ -79,6 +81,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
     if (!isOpen) return;
     setFormValues(emptyForm());
     setProfileImageUrl(null);
+    setImageUploading(false);
     setErrors({});
     setSaveError("");
     setBranchRetry(0);
@@ -146,6 +149,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
   const resetForm = () => {
     setFormValues(emptyForm());
     setProfileImageUrl(null);
+    setImageUploading(false);
     setErrors({});
     setSaveError("");
   };
@@ -213,10 +217,23 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
         {/* Profile Image */}
         <ImageUploader
           shape="circle"
-          label="Avatar"
+          label={imageUploading ? "Uploading…" : "Avatar"}
           hint="Cashier profile image"
           value={profileImageUrl}
-          onChange={(url) => setProfileImageUrl(url)}
+          disabled={imageUploading}
+          onChange={async (previewUrl, file) => {
+            setProfileImageUrl(previewUrl);
+            setImageUploading(true);
+            try {
+              const { url } = await uploadService.upload(file, "cashiers");
+              setProfileImageUrl(url);
+            } catch {
+              setSaveError("Image upload failed. Please try again.");
+              setProfileImageUrl(null);
+            } finally {
+              setImageUploading(false);
+            }
+          }}
         />
 
         <FormField
@@ -317,7 +334,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
                   label: saving ? "Saving…" : "Save",
                   onClick: handleSave,
                   variant: "primary",
-                  disabled: saving,
+                  disabled: saving || imageUploading,
                 },
               ]}
             />

@@ -157,9 +157,9 @@ export default function DashboardPage() {
   }, [activeBranchId]);
 
   useEffect(() => {
-    if (sessionStatus !== "authenticated" || !sessionCompanyId) return;
-    branchService.getAll().then(setBranches);
-  }, [sessionStatus, sessionCompanyId]);
+    if (sessionStatus !== "authenticated" || !sessionCompanyId || !canUseBranchFilter) return;
+    branchService.getAll().then(setBranches).catch((err) => console.error("Failed to load branches:", err));
+  }, [sessionStatus, sessionCompanyId, canUseBranchFilter]);
 
   useEffect(() => {
     if (sessionStatus !== "authenticated" || !sessionCompanyId) return;
@@ -704,10 +704,16 @@ export default function DashboardPage() {
     });
   };
 
-  const reloadProducts = async () => {
+  const reloadProducts = useCallback(async () => {
     const refreshed = await productService.getAll(activeBranchId ? { branchId: activeBranchId } : undefined);
     setProducts(refreshed);
-  };
+  }, [activeBranchId]);
+
+  useEffect(() => {
+    const handleRefresh = () => reloadProducts();
+    window.addEventListener("product-data-refresh", handleRefresh);
+    return () => window.removeEventListener("product-data-refresh", handleRefresh);
+  }, [reloadProducts]);
 
   const editInitialData =
     editOpen && baseSelectedProduct
@@ -948,6 +954,8 @@ export default function DashboardPage() {
                   })
                 );
               }
+              // Notify other components (like product table) to refresh
+              window.dispatchEvent(new CustomEvent("product-data-refresh"));
             } catch (error: unknown) {
               console.error("Failed to delete product:", error);
               alert("Failed to delete product.");
