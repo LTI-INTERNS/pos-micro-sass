@@ -37,6 +37,7 @@ import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 import { productService } from "@/lib/services/product-service";
 import { uploadService } from "@/lib/services/upload-service";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
@@ -538,6 +539,8 @@ export function Step3({
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
   const { currency } = useCurrency();
   const { addNotification } = useNotifications();
+  const { posSettings } = usePosSettings();
+  const productImageRequired = posSettings.productImageRequired;
   const [parsedBarcodeDetails, setParsedBarcodeDetails] = React.useState<
     Record<number, { scheme: string; itemCode: string; embeddedPrice: string }>
   >({});
@@ -904,49 +907,51 @@ export function Step3({
           </div>
         </FieldWrap>
       )}
-      <FieldWrap>
-        <Label>Variant image</Label>
-        <input
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          disabled={!!variantImageUploading[v.id]}
-          onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
-          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-        <p className="mt-1.5 text-[10px] text-gray-400">
-          Supported formats: <strong>JPEG, PNG, WebP</strong>. Max size: <strong>{MAX_IMAGE_SIZE_MB}MB</strong>.
-        </p>
-        {variantImageUploading[v.id] && (
-          <p className="mt-1 text-[11px] text-orange-500 flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
-            Uploading to Cloudinary…
+      {productImageRequired && (
+        <FieldWrap>
+          <Label required={productImageRequired}>Variant image</Label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={!!variantImageUploading[v.id]}
+            onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <p className="mt-1.5 text-[10px] text-gray-400">
+            Supported formats: <strong>JPEG, PNG, WebP</strong>. Max size: <strong>{MAX_IMAGE_SIZE_MB}MB</strong>.
           </p>
-        )}
-        {/* Show newly-picked image OR existing DB image */}
-        {(variantImages[v.id] || v.imageUrl) && (
-          <div className="relative mt-2 h-20 w-20 group">
-            <Image
-              src={variantImages[v.id] || v.imageUrl!}
-              alt="Preview"
-              fill
-              className="rounded-lg object-cover border border-gray-200"
-              sizes="80px"
-            />
-            {/* Label: "Current" when showing DB image, "New" when showing local pick */}
-            <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-semibold text-white bg-black/40 rounded-b-lg py-0.5 pointer-events-none">
-              {variantImages[v.id] ? "New" : "Current"}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
-                update(v.id, "imageUrl", "");
-              }}
-              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black opacity-0 group-hover:opacity-100 transition"
-            >✕</button>
-          </div>
-        )}
-      </FieldWrap>
+          {variantImageUploading[v.id] && (
+            <p className="mt-1 text-[11px] text-orange-500 flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+              Uploading to Cloudinary…
+            </p>
+          )}
+          {/* Show newly-picked image OR existing DB image */}
+          {(variantImages[v.id] || v.imageUrl) && (
+            <div className="relative mt-2 h-20 w-20 group">
+              <Image
+                src={variantImages[v.id] || v.imageUrl!}
+                alt="Preview"
+                fill
+                className="rounded-lg object-cover border border-gray-200"
+                sizes="80px"
+              />
+              {/* Label: "Current" when showing DB image, "New" when showing local pick */}
+              <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-semibold text-white bg-black/40 rounded-b-lg py-0.5 pointer-events-none">
+                {variantImages[v.id] ? "New" : "Current"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
+                  update(v.id, "imageUrl", "");
+                }}
+                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black opacity-0 group-hover:opacity-100 transition"
+              >✕</button>
+            </div>
+          )}
+        </FieldWrap>
+      )}
     </>
   );
 
