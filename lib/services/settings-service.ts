@@ -21,6 +21,7 @@ export type SystemSettings = {
   posTheme: string;
   posImgUrl: string | null;
   posImgPublicId: string | null;
+  productImage: boolean;
 };
 
 /**
