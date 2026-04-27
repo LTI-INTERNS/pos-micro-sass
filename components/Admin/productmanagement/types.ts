@@ -64,7 +64,7 @@ export const STEPS = ["Product info", "Options", "Variants"];
 export const OPTION_NAMES = ["Weight", "Size", "Volume", "Colour", "Flavour", "Pack Size"];
 export const SELL_UNITS = ["Each", "kg", "g", "mg", "l", "ml", "m", "inch", "Cube"];
 export const MAX_IMAGE_SIZE_MB = 5;
-export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 export const NEW_ID_PREFIX = 9_000_000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
