@@ -20,6 +20,7 @@ export type SystemSettings = {
   customerDetails: boolean;
   posTheme: string;
   posImgUrl: string | null;
+  posImgPublicId: string | null;
 };
 
 /**
