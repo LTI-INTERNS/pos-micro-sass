@@ -23,6 +23,7 @@ import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNega
 import { branchService, productService, Branch, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 // ── Shared local interfaces ───────────────────────────────────────────────────
 
@@ -862,7 +863,7 @@ export default function DashboardPage() {
         />
 
         {isLoading ? (
-          <div className="p-8 text-center text-slate-500">Loading products...</div>
+          <LoadingState message="Loading products..." className="py-24" />
         ) : (
           <ProductsTable
             products={managerVariantFilteredProducts as Product[]}
