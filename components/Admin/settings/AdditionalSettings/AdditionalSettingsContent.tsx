@@ -111,6 +111,7 @@ export default function AdditionalSettingsContent() {
 
         // System image
         setSystemImageUrl(s.posImgUrl ?? null);
+        setSystemImageId(s.posImgPublicId ?? null);
       })
       .catch((err) => {
         console.error("[Settings] Failed to load settings:", err);
@@ -157,6 +158,7 @@ export default function AdditionalSettingsContent() {
         taxNumber: receiptSettings.taxNumber,
         customerDetails: receiptSettings.showCustomerDetails,
         posImgUrl: systemImageUrl,
+        posImgPublicId: systemImageId,
       });
 
       // Sync receipt context after save
