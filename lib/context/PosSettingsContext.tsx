@@ -16,6 +16,7 @@ type PosSettings = {
   customerDisplayEnabled: boolean;
   lowStockNotificationsEnabled?: boolean;
   negativeStockAlertsEnabled?: boolean;
+  productImageRequired?: boolean;
 };
 
 type PosSettingsContextType = {
@@ -32,6 +33,7 @@ const DEFAULTS: PosSettings = {
   customerDisplayEnabled: false,
   lowStockNotificationsEnabled: false,
   negativeStockAlertsEnabled: false,
+  productImageRequired: false,
 };
 
 /**
@@ -63,6 +65,7 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
         customerDisplayEnabled:     s.cusDisplay,
         lowStockNotificationsEnabled: s.lowStock,
         negativeStockAlertsEnabled:  s.negativeStock,
+        productImageRequired:        s.productImage,
       });
     } catch {
       // Non-fatal — keep the last-known values
