@@ -46,8 +46,6 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
   }, [token]);
 
   const handleSaveDetails = async (values: any) => {
-    // Note: We moved the phone validation into the `validate` prop of the modal below
-    // so it shows up as nice red text instead of an alert!
     try {
       const updatedData = await updatePersonalDetails(values, token);
       setPersonalDetails((prev) => ({ ...prev, ...updatedData }));
@@ -92,7 +90,8 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
   ];
 
   if (userRole !== "owner") {
-    editFields.push({ name: "phone", label: "Phone" });
+    // Added type: "tel" to match your Company Details component behavior
+    editFields.push({ name: "phone", label: "Phone", type: "tel" });
   }
 
   if (isLoading) return <div className="p-4 text-sm text-gray-500">Loading details...</div>;
@@ -138,7 +137,6 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
         fields={editFields}
         onClose={() => setModalOpen(false)}
         
-        // THE FIX: Added the validate prop for Email and Phone!
         validate={(values) => {
           const errors: Record<string, string> = {};
           
@@ -156,13 +154,33 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
             errors.email = "Email is required";
           }
 
-          // Validate Phone (Only if the user role isn't 'owner' since owners don't have this field)
+          // Validate Phone (Only if the user role isn't 'owner')
           if (userRole !== "owner") {
-            if (!values.phone?.trim()) {
+            if (values.phone) {
+              const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
+              const allowedPrefixes = [
+                { code: "+94", len: 9 },
+                { code: "+1",  len: 10 },
+                { code: "+44", len: 10 },
+                { code: "+91", len: 10 },
+                { code: "+61", len: 9 },
+                { code: "+65", len: 8 },
+                { code: "+60", len: 10 },
+                { code: "0",   len: 9 },
+              ];
+
+              const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
+
+              if (!matchedConfig) {
+                errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
+              } else {
+                const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
+                if (!/^\d+$/.test(numberPart) || numberPart.length !== matchedConfig.len) {
+                  errors.phone = `For ${matchedConfig.code}, the number must be exactly ${matchedConfig.len} digits long.`;
+                }
+              }
+            } else {
               errors.phone = "Phone number is required";
-            } else if (!/^\d{10}$/.test(values.phone.trim().replace(/\s/g, ''))) {
-              // Removes spaces before testing to ensure accurate length checks
-              errors.phone = "Phone number must be exactly 10 digits";
             }
           }
 
