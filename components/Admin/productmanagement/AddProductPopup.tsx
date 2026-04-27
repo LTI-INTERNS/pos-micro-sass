@@ -55,33 +55,50 @@ export default function AddProductPopup({
 
   const modalTitle = isManagerVariantMode ? "Add Product from Company Catalog" : initialData ? "Edit Product" : "Add New Product";
 
-  React.useEffect(() => {
-    if (!open) return;
-    setStep(0);
-    setSelectedProductIds(new Set());
-    setSelectedOptionIds(new Set());
-    setSelectedVariantIds(new Set());
+  const lastInitId = React.useRef<string | number | undefined>(undefined);
+  const wasOpen = React.useRef(false);
 
-    if (initialData) {
-      if (isManagerEditMode && companyProduct) {
-        // companyProduct supplied: diff against initialData to show only items not yet in branch
-        const branchOptionNames = new Set(initialData.options.map((o) => o.name));
-        const branchVariantSkus = new Set(initialData.variants.map((v) => v.sku));
-        const availableOptions = (companyProduct.options ?? []).filter((o) => !branchOptionNames.has(o.name));
-        const availableVariants = (companyProduct.variants ?? []).filter((v) => !branchVariantSkus.has(v.sku));
-        setState({ ...initialData, options: availableOptions, variants: availableVariants });
-        setSelectedOptionIds(new Set(availableOptions.map((o) => o.id)));
-        setSelectedVariantIds(new Set(availableVariants.map((v) => v.id)));
-      } else if (isManagerEditMode && !companyProduct) {
-        // No companyProduct: load all options/variants from initialData and pre-select all
-        setState(initialData);
-        setSelectedOptionIds(new Set(initialData.options.map((o) => o.id)));
-        setSelectedVariantIds(new Set(initialData.variants.map((v) => v.id)));
+  React.useEffect(() => {
+    if (!open) {
+      wasOpen.current = false;
+      lastInitId.current = undefined;
+      return;
+    }
+
+    // Only initialize if we just opened OR the product ID changed
+    const isNewOpening = !wasOpen.current;
+    const isDifferentProduct = initialData?.id !== lastInitId.current;
+
+    if (isNewOpening || isDifferentProduct) {
+      setStep(0);
+      setSelectedProductIds(new Set());
+      setSelectedOptionIds(new Set());
+      setSelectedVariantIds(new Set());
+
+      if (initialData) {
+        if (isManagerEditMode && companyProduct) {
+          // companyProduct supplied: diff against initialData to show only items not yet in branch
+          const branchOptionNames = new Set(initialData.options.map((o) => o.name));
+          const branchVariantSkus = new Set(initialData.variants.map((v) => v.sku));
+          const availableOptions = (companyProduct.options ?? []).filter((o) => !branchOptionNames.has(o.name));
+          const availableVariants = (companyProduct.variants ?? []).filter((v) => !branchVariantSkus.has(v.sku));
+          setState({ ...initialData, options: availableOptions, variants: availableVariants });
+          setSelectedOptionIds(new Set(availableOptions.map((o) => o.id)));
+          setSelectedVariantIds(new Set(availableVariants.map((v) => v.id)));
+        } else if (isManagerEditMode && !companyProduct) {
+          // No companyProduct: load all options/variants from initialData and pre-select all
+          setState(initialData);
+          setSelectedOptionIds(new Set(initialData.options.map((o) => o.id)));
+          setSelectedVariantIds(new Set(initialData.variants.map((v) => v.id)));
+        } else {
+          setState(initialData);
+        }
       } else {
-        setState(initialData);
+        setState(emptyState());
       }
-    } else {
-      setState(emptyState());
+
+      wasOpen.current = true;
+      lastInitId.current = initialData?.id;
     }
   }, [open, initialData, isManagerEditMode, companyProduct]);
 
