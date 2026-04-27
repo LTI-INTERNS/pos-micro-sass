@@ -49,6 +49,7 @@ export default function AdditionalSettingsContent() {
     lowStockNotifications: false,
     negativeStockAlerts: false,
     weightEmbeddedBarcodes: false,
+    productImage: false,
   });
 
   const [country, setCountry] = useState("LK");
@@ -71,6 +72,7 @@ export default function AdditionalSettingsContent() {
           lowStockNotifications: s.lowStock,
           negativeStockAlerts: s.negativeStock,
           weightEmbeddedBarcodes: s.weightBarcode,
+          productImage: s.productImage,
         });
 
         // Sync to POS context
@@ -127,6 +129,7 @@ export default function AdditionalSettingsContent() {
     if (featureId === "customerDisplays") setPosSettings({ customerDisplayEnabled: value });
     if (featureId === "lowStockNotifications") setPosSettings({ lowStockNotificationsEnabled: value });
     if (featureId === "negativeStockAlerts") setPosSettings({ negativeStockAlertsEnabled: value });
+    if (featureId === "productImage") setPosSettings({ productImageRequired: value });
   };
 
   // ─── Save ────────────────────────────────────────────────────────────────────
@@ -148,6 +151,7 @@ export default function AdditionalSettingsContent() {
         lowStock: features.lowStockNotifications,
         negativeStock: features.negativeStockAlerts,
         weightBarcode: features.weightEmbeddedBarcodes,
+        productImage: features.productImage,
         country,
         currency,
         useCents,
