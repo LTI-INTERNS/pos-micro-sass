@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Upload, Check, ExternalLink } from "lucide-react";
 import { useImage } from "@/lib/context/ImageContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { uploadService } from "@/lib/services/upload-service";
+import { Loader2 } from "lucide-react";
 
 const PRESET_IMAGES = [
   { id: "bg1", url: "/backgrounds/mount.png", label: "Background 1" },
@@ -42,16 +44,24 @@ export default function SystemImageSection({
   };
 
   const [selectedId, setSelectedId] = useState<string | null>(
-    getInitialSelectedId
+    getInitialSelectedId()
   );
 
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(
-    backgroundImage &&
-      !PRESET_IMAGES.find((img) => img.url === backgroundImage) &&
-      backgroundImage !== DEFAULT_IMAGE_URL
-      ? backgroundImage
-      : customImageUrl
+    customImageUrl || (backgroundImage && !PRESET_IMAGES.find(img => img.url === backgroundImage) ? backgroundImage : null)
   );
+
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Sync state when props change (e.g. after loading from API)
+  useEffect(() => {
+    if (currentImageId) {
+      setSelectedId(currentImageId);
+    }
+    if (customImageUrl) {
+      setUploadedUrl(customImageUrl);
+    }
+  }, [currentImageId, customImageUrl]);
 
   const handleSelect = (id: string, url: string) => {
     setSelectedId(id);
@@ -60,22 +70,32 @@ export default function SystemImageSection({
     setBackgroundImage(url);
   };
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const url = ev.target?.result as string;
-      setUploadedUrl(url);
+    setIsUploading(true);
+    try {
+      const result = await uploadService.upload(file, "pos");
+      setUploadedUrl(result.url);
       setSelectedId("custom");
-      onImageChange("custom", url);
-      setBackgroundImage(url);
-    };
-    reader.readAsDataURL(file);
+      onImageChange(result.publicId, result.url);
+      setBackgroundImage(result.url);
+    } catch (error: any) {
+      console.error("Upload failed:", error);
+      alert(error.message || "Failed to upload image");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const isSelected = (id: string) => selectedId === id;
+  const isSelected = (id: string) => {
+    if (id === "custom") {
+      // It's "custom" if selectedId is not null and not a preset ID
+      return selectedId !== null && !PRESET_IMAGES.some(img => img.id === selectedId);
+    }
+    return selectedId === id;
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -155,6 +175,7 @@ export default function SystemImageSection({
         {/* Upload Button */}
         <button
           type="button"
+          disabled={isUploading}
           onClick={() => fileInputRef.current?.click()}
           className={`relative group cursor-pointer rounded-xl overflow-hidden aspect-video border-2 border-dashed
             transition-all duration-200 focus:outline-none flex items-center justify-center
@@ -162,9 +183,14 @@ export default function SystemImageSection({
               isSelected("custom")
                 ? "border-orange-500 bg-orange-50 ring-2 ring-orange-200"
                 : "border-orange-400 bg-orange-50/60 hover:bg-orange-50 hover:border-orange-500"
-            }`}
+            } ${isUploading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          {uploadedUrl && isSelected("custom") ? (
+          {isUploading ? (
+            <div className="flex flex-col items-center justify-center gap-2 text-orange-500">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="text-[10px] font-medium">Uploading...</span>
+            </div>
+          ) : uploadedUrl && isSelected("custom") ? (
             <>
               <Image
                 src={uploadedUrl}
@@ -172,7 +198,13 @@ export default function SystemImageSection({
                 fill
                 className="object-cover w-full h-full"
               />
-              <div className="absolute top-2 right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center shadow">
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex flex-col items-center gap-1 text-white">
+                  <Upload className="w-4 h-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Change Image</span>
+                </div>
+              </div>
+              <div className="absolute top-2 right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center shadow z-10">
                 <Check className="w-4 h-4 text-white" strokeWidth={3} />
               </div>
             </>
