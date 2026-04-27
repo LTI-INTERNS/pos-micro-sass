@@ -5,6 +5,7 @@ import Image from "next/image";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import LogoUploadSection from "@/components/Admin/settings/Details/LogoUploadSection";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 type CompanyDetails = {
   name: string;
@@ -71,6 +72,10 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
       alert(error.message || "Failed to update company details.");
     }
   };
+
+  if (!initial || !initial.name) {
+    return <LoadingState message="Loading company details..." />;
+  }
 
   return (
     <div className="w-full flex flex-col gap-4">
