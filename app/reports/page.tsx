@@ -39,8 +39,8 @@ export default function ReportsPage() {
   const [search,    setSearch]    = useState("");
   const [chartTab,  setChartTab]  = useState("sales-trends");
   const [tableTab,  setTableTab]  = useState<TableTab>("sales");
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date("2026-01-20"));
-  const [endDate,   setEndDate]   = useState<Date | undefined>(new Date("2026-01-28"));
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate,   setEndDate]   = useState<Date | undefined>();
 
   const [selectedSale,    setSelectedSale]    = useState<SaleRow    | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(null);

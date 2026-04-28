@@ -5,9 +5,10 @@ export interface Branch {
     phone: string;
     email: string;
     address: string;
-    regno: string; // <-- Change this to string
+    regno: string;
     password?: string;
     createdAt?: string;
+    deletedAt?: string | null;
 }
 
 export interface CreateBranchInput {
