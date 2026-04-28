@@ -69,5 +69,15 @@ export const discountService = {
     });
     if (!res.ok) throw new Error("Failed to fetch branches");
     return res.json();
+  },
+  async toggleStatus(id: string, status: boolean, token?: string) {
+    const res = await fetch(`${API_BASE_URL}/${id}/status`, {
+      method: "PATCH",
+      headers: getHeaders(token),
+      credentials: "include",
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error("Failed to toggle discount status");
+    return res.json();
   }
-};
+};

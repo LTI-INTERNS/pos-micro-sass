@@ -1,37 +1,83 @@
-import StatCard from '@/components/Admin/common/StatCard';
-import { calcStatSummary } from '@/lib/utils/statCardUtils';
+"use client";
 
-type ProfitItem = {
-  date: string;
-  profit: number;
-  [key: string]: unknown;
-};
+import StatCard from "@/components/Admin/common/StatCard";
+import type { ProfitSummary } from "@/types/analytics.types";
+
+function formatPct(pct: number): string {
+  return (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
+}
 
 type Props = {
-  profits?: ProfitItem[];
+  summary?: ProfitSummary;
+  loading?: boolean;
 };
 
-export default function ProfitStatCardGrid({ profits = [] }: Props) {
-  const { total, totalTrend } = calcStatSummary(profits, "date", "profit");
+export default function ProfitStatCardGrid({ summary, loading = false }: Props) {
+  if (loading || !summary) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        {["Total Revenue", "Total COGS", "Gross Profit", "Avg Margin"].map((title) => (
+          <StatCard
+            key={title}
+            title={title}
+            value="—"
+            percentage=""
+            trend="up"
+            caption="vs previous period"
+            showDetailButton={false}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const cards = [
+    {
+      title:   "Total Revenue",
+      amount:  summary.totalRevenue.value,
+      pct:     summary.totalRevenue.pctChange,
+      caption: "vs previous period",
+    },
+    {
+      title:   "Total COGS",
+      amount:  summary.totalCogs.value,
+      pct:     summary.totalCogs.pctChange,
+      // Higher COGS is bad, so invert the trend colour
+      invert:  true,
+      caption: "cost of goods sold",
+    },
+    {
+      title:   "Gross Profit",
+      amount:  summary.grossProfit.value,
+      pct:     summary.grossProfit.pctChange,
+      caption: "vs previous period",
+    },
+    {
+      title:   "Avg Margin",
+      value:   summary.avgMarginPct.value.toFixed(1) + "%",
+      pct:     summary.avgMarginPct.pctChange,
+      caption: "vs previous period",
+    },
+  ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <StatCard
-        title="Total Profit"
-        amount={total}
-        percentage={totalTrend.label}
-        trend={totalTrend.trend}
-        caption="from previous 30 days"
-        showDetailButton={false}
-      />
-      <StatCard
-        title="Total Profit"
-        amount={total}
-        percentage={totalTrend.label}
-        trend={totalTrend.trend}
-        caption="from Last Day"
-        showDetailButton={false}
-      />
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      {cards.map((card) => {
+        const raw   = card.invert ? -card.pct! : card.pct!;
+        const trend = raw >= 0 ? "up" : "down";
+
+        return (
+          <StatCard
+            key={card.title}
+            title={card.title}
+            {...(card.amount !== undefined ? { amount: card.amount } : { value: card.value })}
+            percentage={formatPct(card.pct!)}
+            trend={trend}
+            caption={card.caption}
+            showDetailButton={false}
+          />
+        );
+      })}
     </div>
   );
 }

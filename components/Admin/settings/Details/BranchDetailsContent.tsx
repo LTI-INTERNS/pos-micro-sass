@@ -4,6 +4,7 @@ import * as React from "react";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import { branchService } from "@/lib/services/branch-service";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 type BranchDetailsProps = {
   userRole?: string;
@@ -41,6 +42,7 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         email: initial.email || "",
         phone: initial.phone || "",
         address: initial.address || "",
+        // Display EMPTY correctly if it comes from DB, otherwise standard
         regNo: initial.regNo || "",
       });
     }
@@ -52,8 +54,8 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
     { name: "name", label: "Branch Name" },
     { name: "city", label: "City" },
     { name: "email", label: "Email", readOnly: isEmailDisabled },
-    { name: "phone", label: "Phone" },
-    { name: "address", label: "Address" },
+    { name: "phone", label: "Phone", type: "tel" },
+    { name: "address", label: "Address", type: "textarea" },
     { name: "regNo", label: "Registration No." },
   ];
 
@@ -64,7 +66,9 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
       setModalOpen(false);
       alert("Branch details updated successfully!");
     } catch (error: any) {
-      alert(error.response?.data?.message || "Failed to update branch details.");
+      // THE FIX: Directly read error.message (instead of error.response.data) 
+      // since page.tsx already extracted the clean string!
+      alert(error.message || "Failed to update branch details.");
     }
   };
 
@@ -85,6 +89,10 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
       alert(error.response?.data?.message || "Failed to change password.");
     }
   };
+
+  if (!initial || !initial.id) {
+    return <LoadingState message="Loading branch details..." />;
+  }
 
   return (
     <div className="w-full h-full flex flex-col gap-4">
@@ -131,7 +139,7 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
             />
             <PasswordRow 
               label="New Password" 
-              placeholder="Enter New Password" 
+              placeholder="Enter New Password (min 8 characters)" 
               value={passwords.newPassword}
               onChange={(v) => setPasswords(p => ({ ...p, newPassword: v }))}
             />
@@ -163,13 +171,62 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         onClose={() => setModalOpen(false)}
         validate={(values: any) => {
           const errors: Record<string, string> = {};
-          if (
-            values.regNo && 
-            values.regNo.trim() !== "" && 
-            (!/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo))
-          ) {
-            errors.regNo = "Registration Number must contain at least one letter and one number";
+          
+          // Basic fields validation
+          if (!values.name?.trim()) errors.name = "Branch name is required";
+          if (!values.city?.trim()) errors.city = "City is required";
+          if (!values.address?.trim()) errors.address = "Address is required";
+
+          // Email validation
+          if (values.email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(values.email.trim())) {
+                errors.email = "Please enter a valid email address";
+            }
+          } else {
+            errors.email = "Email is required";
           }
+
+          // THE FIX: Strict Registration Validation (handling "EMPTY" grace period)
+          if (values.regNo) {
+            // If they are modifying "EMPTY", they MUST enter a valid alphanumeric value
+            if (values.regNo === "EMPTY" || !/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo)) {
+              errors.regNo = "Registration Number must contain at least one letter and one number";
+            }
+          } else {
+            errors.regNo = "Registration Number is required";
+          }
+
+          // THE FIX: Phone Validation ported directly from Company logic
+          if (values.phone) {
+            const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
+
+            const allowedPrefixes = [
+              { code: "+94", len: 9 },
+              { code: "+1",  len: 10 },
+              { code: "+44", len: 10 },
+              { code: "+91", len: 10 },
+              { code: "+61", len: 9 },
+              { code: "+65", len: 8 },
+              { code: "+60", len: 10 },
+              { code: "0",   len: 9 }, 
+            ];
+
+            const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
+
+            if (!matchedConfig) {
+              errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
+            } else {
+              const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
+              
+              if (!/^\d+$/.test(numberPart) || numberPart.length !== matchedConfig.len) {
+                errors.phone = `For ${matchedConfig.code}, the number must be exactly ${matchedConfig.len} digits long.`;
+              }
+            }
+          } else {
+            errors.phone = "Phone number is required";
+          }
+
           return errors;
         }}
         onSave={handleSave}

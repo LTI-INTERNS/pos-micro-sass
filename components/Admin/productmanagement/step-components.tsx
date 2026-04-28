@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { useNotifications } from "@/lib/context/NotificationsContext";
 import { getCategoriesByBusinessType, BusinessTypeId } from "./Productcategorydata";
 import {
   ProductState,
@@ -36,6 +37,7 @@ import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
 import { productService } from "@/lib/services/product-service";
 import { uploadService } from "@/lib/services/upload-service";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
@@ -536,6 +538,9 @@ export function Step3({
 }) {
   const isMultiSelect = isManagerVariantMode && selectedProductCount > 1;
   const { currency } = useCurrency();
+  const { addNotification } = useNotifications();
+  const { posSettings } = usePosSettings();
+  const productImageRequired = posSettings.productImageRequired;
   const [parsedBarcodeDetails, setParsedBarcodeDetails] = React.useState<
     Record<number, { scheme: string; itemCode: string; embeddedPrice: string }>
   >({});
@@ -742,7 +747,24 @@ export function Step3({
   const [variantImageUploading, setVariantImageUploading] = React.useState<Record<number, boolean>>({});
 
   const handleVariantImage = async (id: number, file: File | null) => {
-    if (!file || !ALLOWED_IMAGE_TYPES.includes(file.type) || file.size / (1024 * 1024) > MAX_IMAGE_SIZE_MB) return;
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      addNotification({
+        type: "error",
+        message: "Invalid file type. Please use JPEG, PNG, or WebP.",
+      });
+      return;
+    }
+
+    if (file.size / (1024 * 1024) > MAX_IMAGE_SIZE_MB) {
+      addNotification({
+        type: "error",
+        message: `File too large. Maximum size allowed is ${MAX_IMAGE_SIZE_MB}MB.`,
+      });
+      return;
+    }
+
     // Show local preview immediately while uploading
     const previewUrl = URL.createObjectURL(file);
     setVariantImages((prev) => ({ ...prev, [id]: previewUrl }));
@@ -839,75 +861,97 @@ export function Step3({
       {activeOptions.length > 0 && (
         <FieldWrap>
           <Label required>Option mapping</Label>
-          <div className="space-y-3">
-            {activeOptions.map((option) => {
-              const currentValue = getVariantOptionValue(v, option.name);
+          <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <Select
+              value=""
+              onChange={(e) => {
+                const parts = e.target.value.split(":::");
+                if (parts.length === 2) {
+                  updateVariantOptionValue(v.id, parts[0], parts[1]);
+                }
+              }}
+            >
+              <option value="">Select a value…</option>
+              {activeOptions.map((option) => (
+                <optgroup key={option.name} label={option.name}>
+                  {option.values.map((value) => (
+                    <option key={value} value={`${option.name}:::${value}`}>
+                      {value}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </Select>
 
-              return (
-                <div key={`${v.id}-${option.name}`} className="rounded-xl border border-gray-200 bg-white p-3">
-                  <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                      {option.name}
-                    </span>
-                    <span className="text-[10px] font-medium text-orange-500">Required</span>
-                  </div>
-                  <Select
-                    value={currentValue}
-                    onChange={(e) => updateVariantOptionValue(v.id, option.name, e.target.value)}
+            {v.optionValues.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {v.optionValues.map((ov) => (
+                  <div
+                    key={ov.optionName}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-[11px] font-medium animate-in fade-in zoom-in duration-200"
                   >
-                    <option value="">Select value…</option>
-                    {option.values.map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-              );
-            })}
+                    <span className="text-gray-400 font-normal uppercase tracking-wider text-[9px]">{ov.optionName}</span>
+                    <span className="w-1 h-1 rounded-full bg-orange-300" />
+                    <span>{ov.value}</span>
+                    <button
+                      type="button"
+                      onClick={() => updateVariantOptionValue(v.id, ov.optionName, "")}
+                      className="ml-1 hover:text-red-500 transition-colors cursor-pointer text-[10px]"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </FieldWrap>
       )}
-      <FieldWrap>
-        <Label>Variant image</Label>
-        <input
-          type="file"
-          accept="image/jpeg,image/png"
-          disabled={!!variantImageUploading[v.id]}
-          onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
-          className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        />
-        {variantImageUploading[v.id] && (
-          <p className="mt-1 text-[11px] text-orange-500 flex items-center gap-1.5">
-            <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
-            Uploading to Cloudinary…
+      {productImageRequired && (
+        <FieldWrap>
+          <Label required={productImageRequired}>Variant image</Label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={!!variantImageUploading[v.id]}
+            onChange={(e) => handleVariantImage(v.id, e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-500 file:mr-3 file:rounded-full file:border-0 file:bg-orange-50 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-orange-600 hover:file:bg-orange-100 hover:file:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <p className="mt-1.5 text-[10px] text-gray-400">
+            Supported formats: <strong>JPEG, PNG, WebP</strong>. Max size: <strong>{MAX_IMAGE_SIZE_MB}MB</strong>.
           </p>
-        )}
-        {/* Show newly-picked image OR existing DB image */}
-        {(variantImages[v.id] || v.imageUrl) && (
-          <div className="relative mt-2 h-20 w-20 group">
-            <Image
-              src={variantImages[v.id] || v.imageUrl!}
-              alt="Preview"
-              fill
-              className="rounded-lg object-cover border border-gray-200"
-              sizes="80px"
-            />
-            {/* Label: "Current" when showing DB image, "New" when showing local pick */}
-            <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-semibold text-white bg-black/40 rounded-b-lg py-0.5 pointer-events-none">
-              {variantImages[v.id] ? "New" : "Current"}
-            </span>
-            <button
-              type="button"
-              onClick={() => {
-                setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
-                update(v.id, "imageUrl", "");
-              }}
-              className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black opacity-0 group-hover:opacity-100 transition"
-            >✕</button>
-          </div>
-        )}
-      </FieldWrap>
+          {variantImageUploading[v.id] && (
+            <p className="mt-1 text-[11px] text-orange-500 flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+              Uploading to Cloudinary…
+            </p>
+          )}
+          {/* Show newly-picked image OR existing DB image */}
+          {(variantImages[v.id] || v.imageUrl) && (
+            <div className="relative mt-2 h-20 w-20 group">
+              <Image
+                src={variantImages[v.id] || v.imageUrl!}
+                alt="Preview"
+                fill
+                className="rounded-lg object-cover border border-gray-200"
+                sizes="80px"
+              />
+              {/* Label: "Current" when showing DB image, "New" when showing local pick */}
+              <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] font-semibold text-white bg-black/40 rounded-b-lg py-0.5 pointer-events-none">
+                {variantImages[v.id] ? "New" : "Current"}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setVariantImages((p) => { const n = { ...p }; delete n[v.id]; return n; });
+                  update(v.id, "imageUrl", "");
+                }}
+                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-black/70 text-white flex items-center justify-center text-[10px] hover:bg-black opacity-0 group-hover:opacity-100 transition"
+              >✕</button>
+            </div>
+          )}
+        </FieldWrap>
+      )}
     </>
   );
 
