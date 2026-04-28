@@ -92,12 +92,11 @@ export default function SettingPage() {
               }}
               logoUrl={companyLogoUrl}
               onSave={async (data) => {
-                // THE FIX: Catch the AxiosError here and throw a standard string Error
                 try {
                   const updated = await companyService.updateMyCompany(data);
                   setOwnerCompany(updated);
                 } catch (err: any) {
-                  throw new Error(err.response?.data?.message || "Failed to update company");
+                  throw new Error(err.response?.data?.message || err.message || "Failed to update company");
                 }
               }}
             />
@@ -114,12 +113,21 @@ export default function SettingPage() {
                 regNo: managerBranch?.regno || "",
               }}
               onSave={async (data) => {
-                // THE FIX: Catch the AxiosError here as well
                 try {
-                  const updated = await branchService.update('me', data);
+                  // THE FIX: Correctly map 'regNo' to 'registrationNumber' so the backend receives it!
+                  const payload = {
+                    name: data.name,
+                    city: data.city,
+                    email: data.email,
+                    phone: data.phone,
+                    address: data.address,
+                    registrationNumber: data.regNo,
+                  };
+                  const updated = await branchService.update('me', payload);
                   setManagerBranch(updated);
                 } catch (err: any) {
-                  throw new Error(err.response?.data?.message || "Failed to update branch");
+                  // Standardize the error string so it triggers a clean alert
+                  throw new Error(err.response?.data?.message || err.message || "Failed to update branch");
                 }
               }}
             />
