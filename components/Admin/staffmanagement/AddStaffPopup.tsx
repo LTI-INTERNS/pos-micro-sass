@@ -423,10 +423,10 @@ export default function AddStaffPopup({
       open={isOpen}
       title="Add New Staff"
       onClose={onClose}
-      widthClassName="w-[820px] max-w-[95vw]"
+      widthClassName="w-[820px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden"
     >
       <div className="px-6 py-5">
-        <div className="flex min-h-[620px] flex-col gap-4">
+        <div className="flex min-h-0 flex-col gap-4">
           {saveError && (
             <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               {saveError}
