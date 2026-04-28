@@ -47,9 +47,9 @@ export default function AddBranchForm({
   const [errors, setErrors] = React.useState<FormErrors>({});
 
   const setField = (name: keyof FormValues, next: string) => {
-    // THE FIX: Only strip letters from the Phone Number. Leave Registration Number alone!
+    // THE FIX: Allow digits, spaces, and the '+' sign for country codes
     if (name === "phoneNumber") {
-      next = next.replace(/\D/g, ""); 
+      next = next.replace(/[^\d+\s]/g, ""); 
     }
 
     setValues((prev) => ({ ...prev, [name]: next }));
@@ -66,8 +66,34 @@ export default function AddBranchForm({
 
     if (!values.city.trim()) newErrors.city = "City is required";
 
-    if (!values.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
-    else if (!/^\d{10}$/.test(values.phoneNumber.replace(/\D/g, ""))) newErrors.phoneNumber = "Phone number must be exactly 10 digits";
+    // THE FIX: Dynamic Prefix Validation (Matches CompanyDetailsContent.tsx)
+    if (values.phoneNumber.trim()) {
+      const phoneWithoutSpaces = values.phoneNumber.replace(/\s+/g, "");
+
+      const allowedPrefixes = [
+        { code: "+94", len: 9 },
+        { code: "+1",  len: 10 },
+        { code: "+44", len: 10 },
+        { code: "+91", len: 10 },
+        { code: "+61", len: 9 },
+        { code: "+65", len: 8 },
+        { code: "+60", len: 10 },
+        { code: "0",   len: 9 },
+      ];
+
+      const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
+
+      if (!matchedConfig) {
+        newErrors.phoneNumber = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
+      } else {
+        const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
+        if (!/^\d+$/.test(numberPart) || numberPart.length !== matchedConfig.len) {
+          newErrors.phoneNumber = `For ${matchedConfig.code}, the number must be exactly ${matchedConfig.len} digits long.`;
+        }
+      }
+    } else {
+      newErrors.phoneNumber = "Phone number is required";
+    }
 
     if (!values.address.trim()) newErrors.address = "Address is required";
 
@@ -128,20 +154,6 @@ export default function AddBranchForm({
       widthClassName="w-[700px] max-w-[92vw]"
     >
       <form className="space-y-0.5 mt-[-10px]">
-        {/* <div className="space-y-1">
-          <label className="text-[12px] text-gray-500">ID</label>
-          <input
-            type="text"
-            value={values.branchId}
-            disabled
-            className="
-                        w-full rounded-full border border-gray-200 px-4 py-2 outline-none
-                        bg-gray-100 text-gray-400 cursor-not-allowed
-                        placeholder:text-gray-300
-                    "
-          />
-        </div> */}
-
         <div>
           <FormField
             label="Name"
