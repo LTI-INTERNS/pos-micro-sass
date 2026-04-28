@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import StatCard from "@/components/Admin/common/StatCard";
 import { cashierService, type CashierStats } from "@/lib/services/cashier-service";
+import { queryKeys } from "@/lib/query-keys";
 
 function formatPct(pct: number): string {
   return (pct >= 0 ? "+" : "") + pct + "%";
@@ -15,19 +16,18 @@ export default function CashierStatCardGrid() {
   const branchId = session?.user?.branchId ?? "";
 
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
+  const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
 
-  const [stats, setStats]     = useState<CashierStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    setLoading(true);
-    cashierService
-      .getStats(canSeeAllBranches ? undefined : branchId)
-      .then(setStats)
-      .catch(() => setStats(null))
-      .finally(() => setLoading(false));
-  }, [status, branchId, canSeeAllBranches]);
+  const statsQuery = useQuery<CashierStats>({
+    queryKey: queryKeys.cashiers.stats(effectiveBranchId),
+    queryFn: () => cashierService.getStats(effectiveBranchId),
+    enabled: status === "authenticated",
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+  const stats = statsQuery.data ?? null;
+  const loading = statsQuery.isLoading;
 
   const newVal   = loading ? "—" : String(stats?.newThisMonth.value ?? 0);
   const totalVal = loading ? "—" : String(stats?.total.value        ?? 0);
