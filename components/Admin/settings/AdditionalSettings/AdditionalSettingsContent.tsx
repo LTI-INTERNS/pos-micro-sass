@@ -12,6 +12,7 @@ import SuccessPopup from "@/components/Admin/common/SuccessPopup";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
 import { useReceiptSettings } from "@/lib/context/ReceiptSettingsContext";
 import { settingsService } from "@/lib/services/settings-service";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 type LocalReceiptSettings = {
   headerText: string;
@@ -48,6 +49,7 @@ export default function AdditionalSettingsContent() {
     lowStockNotifications: false,
     negativeStockAlerts: false,
     weightEmbeddedBarcodes: false,
+    productImage: false,
   });
 
   const [country, setCountry] = useState("LK");
@@ -70,6 +72,7 @@ export default function AdditionalSettingsContent() {
           lowStockNotifications: s.lowStock,
           negativeStockAlerts: s.negativeStock,
           weightEmbeddedBarcodes: s.weightBarcode,
+          productImage: s.productImage,
         });
 
         // Sync to POS context
@@ -111,6 +114,7 @@ export default function AdditionalSettingsContent() {
 
         // System image
         setSystemImageUrl(s.posImgUrl ?? null);
+        setSystemImageId(s.posImgPublicId ?? null);
       })
       .catch((err) => {
         console.error("[Settings] Failed to load settings:", err);
@@ -125,6 +129,7 @@ export default function AdditionalSettingsContent() {
     if (featureId === "customerDisplays") setPosSettings({ customerDisplayEnabled: value });
     if (featureId === "lowStockNotifications") setPosSettings({ lowStockNotificationsEnabled: value });
     if (featureId === "negativeStockAlerts") setPosSettings({ negativeStockAlertsEnabled: value });
+    if (featureId === "productImage") setPosSettings({ productImageRequired: value });
   };
 
   // ─── Save ────────────────────────────────────────────────────────────────────
@@ -146,6 +151,7 @@ export default function AdditionalSettingsContent() {
         lowStock: features.lowStockNotifications,
         negativeStock: features.negativeStockAlerts,
         weightBarcode: features.weightEmbeddedBarcodes,
+        productImage: features.productImage,
         country,
         currency,
         useCents,
@@ -157,6 +163,7 @@ export default function AdditionalSettingsContent() {
         taxNumber: receiptSettings.taxNumber,
         customerDetails: receiptSettings.showCustomerDetails,
         posImgUrl: systemImageUrl,
+        posImgPublicId: systemImageId,
       });
 
       // Sync receipt context after save
@@ -181,15 +188,7 @@ export default function AdditionalSettingsContent() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-sm text-gray-400">
-        <svg className="animate-spin w-5 h-5 mr-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-        </svg>
-        Loading settings…
-      </div>
-    );
+    return <LoadingState message="Loading settings…" />;
   }
 
   return (

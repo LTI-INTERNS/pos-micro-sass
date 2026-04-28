@@ -16,6 +16,7 @@ import SubscriptionPlanCards from "@/components/Admin/settings/subscriptionplan/
 import CompanyDetailsContent from "@/components/Admin/settings/Details/CompanyDetailsContent";
 import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetailsContent";
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 export default function SettingPage() {
   const { data: session, status } = useSession();
@@ -64,7 +65,7 @@ export default function SettingPage() {
     return tabs;
   }, [userRole]);
 
-  if (status === "loading") return <DashboardLayout><div>Loading...</div></DashboardLayout>;
+  if (status === "loading") return <DashboardLayout><LoadingState message="Loading session..." /></DashboardLayout>;
 
   return (
     <DashboardLayout>
