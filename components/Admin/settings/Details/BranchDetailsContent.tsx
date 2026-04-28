@@ -4,6 +4,7 @@ import * as React from "react";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import { branchService } from "@/lib/services/branch-service";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 type BranchDetailsProps = {
   userRole?: string;
@@ -88,6 +89,10 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
       alert(error.response?.data?.message || "Failed to change password.");
     }
   };
+
+  if (!initial || !initial.id) {
+    return <LoadingState message="Loading branch details..." />;
+  }
 
   return (
     <div className="w-full h-full flex flex-col gap-4">

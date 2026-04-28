@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import { fetchPersonalDetails, updatePersonalDetails, updatePassword } from "@/lib/services/user-service";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 export default function PersonalContent({ userRole }: { userRole: string; userId?: string }) {
   const { data: session } = useSession();
@@ -94,7 +95,7 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
     editFields.push({ name: "phone", label: "Phone", type: "tel" });
   }
 
-  if (isLoading) return <div className="p-4 text-sm text-gray-500">Loading details...</div>;
+  if (isLoading) return <LoadingState message="Loading details..." />;
 
   return (
     <div className="w-full h-full flex flex-col gap-2">

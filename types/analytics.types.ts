@@ -92,3 +92,48 @@ export interface SalesReportRow {
     revenue:    number;
     orderCount: number;
 }
+
+// ── Profit report types ───────────────────────────────────────────────────────
+
+/** One row in the profit table — maps to one completed order */
+export interface ProfitRow {
+    orderId:        string;
+    orderNumber:    string;
+    date:           string;           // ISO datetime string
+    branchName:     string;
+    paymentMethod:  'CASH' | 'CARD' | 'SPLIT';
+    revenue:        number;           // Order.subTotal (pre-discount selling price)
+    discountAmount: number;           // Order-level discount applied
+    cogs:           number;           // Σ(basePriceAtSale × quantity) across items
+    grossProfit:    number;           // revenue − cogs − discountAmount
+    marginPct:      number;           // (grossProfit / revenue) × 100
+}
+
+export interface ProfitStatValue {
+    value:     number;
+    pctChange: number;              // vs equal prior period
+}
+
+export interface ProfitSummary {
+    totalRevenue: ProfitStatValue;
+    totalCogs:    ProfitStatValue;
+    grossProfit:  ProfitStatValue;
+    avgMarginPct: ProfitStatValue;
+}
+
+export interface ProfitPagination {
+    total:      number;
+    page:       number;
+    limit:      number;
+    totalPages: number;
+}
+
+export interface ProfitReportResponse {
+    rows:       ProfitRow[];
+    summary:    ProfitSummary;
+    pagination: ProfitPagination;
+}
+export interface ProfitBranchOption {
+    id:   string;
+    name: string;
+}

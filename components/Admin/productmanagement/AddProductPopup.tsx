@@ -16,6 +16,7 @@ import {
 import { StepBar } from "./ui-components";
 import { Step1, Step1VariantSelect, Step2, Step3 } from "./step-components";
 import SuccessPopup from "@/components/Admin/common/SuccessPopup";
+import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 export type { ExistingProduct } from "./types";
 
@@ -38,6 +39,8 @@ export default function AddProductPopup({
   catalogLoading = false,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
+  const { posSettings } = usePosSettings();
+  const productImageRequired = posSettings.productImageRequired;
   const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [state, setState] = React.useState<ProductState>(emptyState());
@@ -55,33 +58,50 @@ export default function AddProductPopup({
 
   const modalTitle = isManagerVariantMode ? "Add Product from Company Catalog" : initialData ? "Edit Product" : "Add New Product";
 
-  React.useEffect(() => {
-    if (!open) return;
-    setStep(0);
-    setSelectedProductIds(new Set());
-    setSelectedOptionIds(new Set());
-    setSelectedVariantIds(new Set());
+  const lastInitId = React.useRef<string | number | undefined>(undefined);
+  const wasOpen = React.useRef(false);
 
-    if (initialData) {
-      if (isManagerEditMode && companyProduct) {
-        // companyProduct supplied: diff against initialData to show only items not yet in branch
-        const branchOptionNames = new Set(initialData.options.map((o) => o.name));
-        const branchVariantSkus = new Set(initialData.variants.map((v) => v.sku));
-        const availableOptions = (companyProduct.options ?? []).filter((o) => !branchOptionNames.has(o.name));
-        const availableVariants = (companyProduct.variants ?? []).filter((v) => !branchVariantSkus.has(v.sku));
-        setState({ ...initialData, options: availableOptions, variants: availableVariants });
-        setSelectedOptionIds(new Set(availableOptions.map((o) => o.id)));
-        setSelectedVariantIds(new Set(availableVariants.map((v) => v.id)));
-      } else if (isManagerEditMode && !companyProduct) {
-        // No companyProduct: load all options/variants from initialData and pre-select all
-        setState(initialData);
-        setSelectedOptionIds(new Set(initialData.options.map((o) => o.id)));
-        setSelectedVariantIds(new Set(initialData.variants.map((v) => v.id)));
+  React.useEffect(() => {
+    if (!open) {
+      wasOpen.current = false;
+      lastInitId.current = undefined;
+      return;
+    }
+
+    // Only initialize if we just opened OR the product ID changed
+    const isNewOpening = !wasOpen.current;
+    const isDifferentProduct = initialData?.id !== lastInitId.current;
+
+    if (isNewOpening || isDifferentProduct) {
+      setStep(0);
+      setSelectedProductIds(new Set());
+      setSelectedOptionIds(new Set());
+      setSelectedVariantIds(new Set());
+
+      if (initialData) {
+        if (isManagerEditMode && companyProduct) {
+          // companyProduct supplied: diff against initialData to show only items not yet in branch
+          const branchOptionNames = new Set(initialData.options.map((o) => o.name));
+          const branchVariantSkus = new Set(initialData.variants.map((v) => v.sku));
+          const availableOptions = (companyProduct.options ?? []).filter((o) => !branchOptionNames.has(o.name));
+          const availableVariants = (companyProduct.variants ?? []).filter((v) => !branchVariantSkus.has(v.sku));
+          setState({ ...initialData, options: availableOptions, variants: availableVariants });
+          setSelectedOptionIds(new Set(availableOptions.map((o) => o.id)));
+          setSelectedVariantIds(new Set(availableVariants.map((v) => v.id)));
+        } else if (isManagerEditMode && !companyProduct) {
+          // No companyProduct: load all options/variants from initialData and pre-select all
+          setState(initialData);
+          setSelectedOptionIds(new Set(initialData.options.map((o) => o.id)));
+          setSelectedVariantIds(new Set(initialData.variants.map((v) => v.id)));
+        } else {
+          setState(initialData);
+        }
       } else {
-        setState(initialData);
+        setState(emptyState());
       }
-    } else {
-      setState(emptyState());
+
+      wasOpen.current = true;
+      lastInitId.current = initialData?.id;
     }
   }, [open, initialData, isManagerEditMode, companyProduct]);
 
@@ -220,6 +240,7 @@ export default function AddProductPopup({
           if (!v.sku.trim()) return "All variants must have a SKU.";
           if (!v.basePrice) return "All variants must have a base price.";
           if (!v.sellingPrice) return "All variants must have a selling price.";
+          if (productImageRequired && !v.imageUrl) return "All variants must have an image.";
           const optionError = validateVariantOptions(v);
           if (optionError) return optionError;
         }
@@ -235,6 +256,7 @@ export default function AddProductPopup({
           if (!v.sku.trim()) return "New variants must have a SKU.";
           if (!v.basePrice) return "New variants must have a base price.";
           if (!v.sellingPrice) return "New variants must have a selling price.";
+          if (productImageRequired && !v.imageUrl) return "All variants must have an image.";
           const optionError = validateVariantOptions(v);
           if (optionError) return optionError;
         }

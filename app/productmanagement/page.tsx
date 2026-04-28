@@ -23,6 +23,7 @@ import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNega
 import { branchService, productService, Branch, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 // ── Shared local interfaces ───────────────────────────────────────────────────
 
@@ -146,6 +147,13 @@ export default function DashboardPage() {
   const sessionStatus = status;
   const sessionCompanyId = session?.user?.companyId ?? "";
 
+  const lastSyncProductRef = useRef<Product | null>(null);
+
+  const reloadProducts = useCallback(async () => {
+    const refreshed = await productService.getAll(activeBranchId ? { branchId: activeBranchId } : undefined);
+    setProducts(refreshed);
+  }, [activeBranchId]);
+
   useEffect(() => {
     setSelectedProduct(null);
     setViewOpen(false);
@@ -184,6 +192,40 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [sessionStatus, sessionCompanyId, activeBranchId]);
+  
+  // ── Sync selectedProduct when product list updates (prevents stale data) ───────
+  useEffect(() => {
+    if (selectedProduct) {
+      const updated = products.find(p => p.id === selectedProduct.id);
+      // Only trigger an update if the underlying data reference has changed (e.g. background refresh)
+      // or if we're initializing for the first time.
+      if (updated && updated !== lastSyncProductRef.current) {
+        lastSyncProductRef.current = updated;
+        // Preserve the _selectedVariantSku tag if it exists (used in manager view for row highlighting)
+        const tag = (selectedProduct as TaggedProduct)._selectedVariantSku;
+        if (tag) {
+          setSelectedProduct({ ...updated, _selectedVariantSku: tag } as Product);
+        } else {
+          setSelectedProduct(updated);
+        }
+      }
+    } else {
+      lastSyncProductRef.current = null;
+    }
+  }, [products, selectedProduct]);
+
+  // ── Background Polling: refresh product data every 20s if tab is visible ───────
+  useEffect(() => {
+    if (sessionStatus !== "authenticated") return;
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        reloadProducts();
+      }
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [sessionStatus, reloadProducts]);
 
   // Fetch full company catalog when the "Add from Catalog" popup opens.
   // Uses ?catalog=true to bypass the branch filter so managers see everything.
@@ -395,6 +437,18 @@ export default function DashboardPage() {
         })()
         : tableFilters,
   });
+
+  const filterFields = useMemo(() => {
+    return canUseBranchFilter ? [
+      { name: "branch", placeholder: "Branch", options: branchFilterOptions },
+      { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
+      { name: "numberOfVariants", placeholder: "Number of Variants", options: getFilterOptions(enrichedProducts, "numberOfVariants") },
+    ] : [
+      { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
+      { name: "availability", placeholder: "Availability", options: managerAvailabilityOptions },
+      { name: "lowStockStatus", placeholder: "Stock", options: managerStockOptions },
+    ];
+  }, [canUseBranchFilter, branchFilterOptions, enrichedProducts]);
 
   const managerVariantFilteredProducts = useMemo(() => {
     if (userRole !== "manager") {
@@ -672,9 +726,9 @@ export default function DashboardPage() {
     setAddVariantOpen(false);
   };
 
-  const baseSelectedProduct: Product | null = selectedProduct
-    ? getBaseProduct(selectedProduct)
-    : null;
+  const baseSelectedProduct = useMemo(() => 
+    selectedProduct ? getBaseProduct(selectedProduct) : null
+  , [selectedProduct]);
 
   const handleVariantAvailabilityChange = (
     productId: string,
@@ -704,10 +758,6 @@ export default function DashboardPage() {
     });
   };
 
-  const reloadProducts = useCallback(async () => {
-    const refreshed = await productService.getAll(activeBranchId ? { branchId: activeBranchId } : undefined);
-    setProducts(refreshed);
-  }, [activeBranchId]);
 
   useEffect(() => {
     const handleRefresh = () => reloadProducts();
@@ -715,31 +765,31 @@ export default function DashboardPage() {
     return () => window.removeEventListener("product-data-refresh", handleRefresh);
   }, [reloadProducts]);
 
-  const editInitialData =
-    editOpen && baseSelectedProduct
-      ? {
-        id: baseSelectedProduct.id,
-        name: baseSelectedProduct.name,
-        categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
-        brand: baseSelectedProduct.brand || "",
-        description: baseSelectedProduct.description || "",
-        options: (baseSelectedProduct.options ?? []).map((opt) => ({
-          id: opt.id,
-          name: opt.name,
-          values: opt.values,
-        })),
-        variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
-          id: i + 1,
-          sku: v.sku,
-          barcode: v.barcode || "",
-          imageUrl: v.imageUrl || "",
-          basePrice: String(v.price),
-          sellingPrice: String(v.price),
-          sellUnit: "Each",
-          optionValues: v.optionValues ?? [],
-        })),
-      }
-      : null;
+  const editInitialData = useMemo(() => {
+    if (!editOpen || !baseSelectedProduct) return null;
+    return {
+      id: baseSelectedProduct.id,
+      name: baseSelectedProduct.name,
+      categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
+      brand: baseSelectedProduct.brand || "",
+      description: baseSelectedProduct.description || "",
+      options: (baseSelectedProduct.options ?? []).map((opt) => ({
+        id: opt.id,
+        name: opt.name,
+        values: opt.values,
+      })),
+      variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
+        id: i + 1,
+        sku: v.sku,
+        barcode: v.barcode || "",
+        imageUrl: v.imageUrl || "",
+        basePrice: String(v.price),
+        sellingPrice: String(v.price),
+        sellUnit: "Each",
+        optionValues: v.optionValues ?? [],
+      })),
+    };
+  }, [editOpen, baseSelectedProduct]);
 
   const companyProductData: ExistingProduct | null = null;
 
@@ -798,17 +848,7 @@ export default function DashboardPage() {
             onClose={() => setFilterOpen(false)}
             onApply={handleFilterApply}
             closeOnApply={false}
-            fields={
-              canUseBranchFilter ? [
-                { name: "branch", placeholder: "Branch", options: branchFilterOptions },
-                { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
-                { name: "numberOfVariants", placeholder: "Number of Variants", options: getFilterOptions(enrichedProducts, "numberOfVariants") },
-              ] : [
-                { name: "category", placeholder: "Category", options: getFilterOptions(enrichedProducts, "category") },
-                { name: "availability", placeholder: "Availability", options: managerAvailabilityOptions },
-                { name: "lowStockStatus", placeholder: "Stock", options: managerStockOptions },
-              ]
-            }
+            fields={filterFields}
           />
         </div>
 
@@ -823,7 +863,7 @@ export default function DashboardPage() {
         />
 
         {isLoading ? (
-          <div className="p-8 text-center text-slate-500">Loading products...</div>
+          <LoadingState message="Loading products..." className="py-24" />
         ) : (
           <ProductsTable
             products={managerVariantFilteredProducts as Product[]}

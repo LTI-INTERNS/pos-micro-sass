@@ -21,6 +21,7 @@ type FeaturesSectionProps = {
     lowStockNotifications: boolean;
     negativeStockAlerts: boolean;
     weightEmbeddedBarcodes: boolean;
+    productImage: boolean;
   };
   onToggle: (featureId: string, value: boolean) => void;
 };
@@ -61,6 +62,15 @@ const FEATURES: Feature[] = [
     description: "Allow to scan barcodes with embedded weight.",
     tooltip:
       "Supports GS1 DataBar and EAN-13 price-embedded formats. The scanner extracts the weight from the barcode and automatically calculates the line-item price using the per-unit rate.",
+    learnMoreUrl: "#",
+  },
+  {
+    id: "productImage",
+    icon: <ShoppingBag className="w-6 h-6 text-gray-500" />,
+    title: "Product images",
+    description: "Enable or disable product image requirements for inventory management.",
+    tooltip:
+      "When enabled, uploading a product image is mandatory during step 3 of the product addition process. If disabled, the image upload field is hidden to simplify the workflow.",
     learnMoreUrl: "#",
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -9,8 +9,10 @@ import ActionButton from "@/components/Admin/common/ActionButton";
 import DiscountTable from "@/components/Admin/settings/Discount/DiscountTable";
 import AddDiscountPopup from "@/components/Admin/settings/Discount/AddDiscountPopup";
 import DeletePopup from "@/components/Admin/common/Deletepopup";
+import DeactivateDiscountPopup from "@/components/Admin/settings/Discount/DeactivateDiscountPopup";
 import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 import { Discount } from "@/types/discount";
 import { discountService } from "@/lib/services/discountService";
@@ -30,29 +32,43 @@ export default function DiscountContent() {
   const [showFilter, setShowFilter] = useState(false);
   const [showAddDiscount, setShowAddDiscount] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deactivateOpen, setDeactivateOpen] = useState(false);
   const [selectedDiscount, setSelectedDiscount] = useState<Discount | null>(null);
 
-  const [filters, setFilters] = useState<{ status?: string }>({});
+  const [filters, setFilters] = useState<{ status?: string; branch?: string }>({});
   const filterLabels: Record<string, string> = {
     active: "Active",
     expired: "Expired",
   };
 
-  const fetchDiscounts = useCallback(async () => {
-    if (!token) return; // Don't fetch if token isn't loaded yet
+  const userRole = session?.user?.role?.toUpperCase() || "";
+  const isAdminOrOwner = userRole === "ADMIN" || userRole === "OWNER";
+
+  // Derive unique branches from the current discounts data
+  const branchOptions = useMemo(() => {
+    if (!isAdminOrOwner) return [];
+    const branches = Array.from(new Set(discounts.map(d => d.branch?.name).filter(Boolean)));
+    return branches.sort().map(name => ({ label: name!, value: name! }));
+  }, [discounts, isAdminOrOwner]);
+
+  const fetchDiscounts = useCallback(async (isInitial = false) => {
+    if (!token) return;
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
       const data = await discountService.getDiscounts(token);
       setDiscounts(data);
     } catch (error) {
       console.error("Error fetching discounts:", error);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
   }, [token]);
 
   useEffect(() => {
-    fetchDiscounts();
+    fetchDiscounts(true);
+    // Poll every 10 seconds to keep the manager view updated in real-time
+    const interval = setInterval(() => fetchDiscounts(), 10000);
+    return () => clearInterval(interval);
   }, [fetchDiscounts]);
 
   const handleSaveDiscount = async (values: any) => {
@@ -70,11 +86,32 @@ export default function DiscountContent() {
     if (!selectedDiscount) return;
     try {
       await discountService.deleteDiscount(selectedDiscount.discountId, token);
+      setDiscounts((prev) => prev.filter((d) => d.discountId !== selectedDiscount.discountId));
       setSelectedDiscount(null);
       setDeleteOpen(false);
-      await fetchDiscounts();
     } catch (error) {
       console.error("Error deleting discount:", error);
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!selectedDiscount) return;
+    try {
+      const newStatus = !selectedDiscount.status;
+      // Optimistic update
+      setDiscounts((prev) => 
+        prev.map((d) => d.discountId === selectedDiscount.discountId ? { ...d, status: newStatus } : d)
+      );
+      
+      await discountService.toggleStatus(selectedDiscount.discountId, newStatus, token);
+      setDeactivateOpen(false);
+      
+      // Refresh in background to ensure sync with server
+      await fetchDiscounts();
+    } catch (error) {
+      console.error("Error toggling discount status:", error);
+      // Revert on error
+      await fetchDiscounts();
     }
   };
 
@@ -89,11 +126,17 @@ export default function DiscountContent() {
   });
 
   const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
-    if (!filters.status) return true;
+    // Status filter
+    if (filters.status) {
+      const expired = new Date(d.endDate) < new Date();
+      if (filters.status === "active" && (expired || !d.status)) return false;
+      if (filters.status === "expired" && (!expired && d.status)) return false;
+    }
 
-    const expired = new Date(d.endDate) < new Date();
-    if (filters.status === "active") return !expired && d.status;
-    if (filters.status === "expired") return expired || !d.status;
+    // Branch filter (only for Admin/Owner)
+    if (isAdminOrOwner && filters.branch && d.branch?.name !== filters.branch) {
+      return false;
+    }
 
     return true;
   });
@@ -104,7 +147,7 @@ export default function DiscountContent() {
     setFilters((prev) => ({ ...prev, [key]: "" }));
   };
 
-  if (loading) return <div className="p-4 text-sm text-gray-500">Loading discounts...</div>;
+  if (loading) return <LoadingState message="Loading discounts..." />;
 
   return (
     <div className="w-full space-y-5">
@@ -134,6 +177,7 @@ export default function DiscountContent() {
           filters={{
             ...filters,
             status: filters.status ? filterLabels[filters.status] : "",
+            branch: filters.branch || "",
           }}
           onRemove={removeFilter}
         />
@@ -154,11 +198,24 @@ export default function DiscountContent() {
                 { label: "Expired", value: "expired" },
               ],
             },
+            ...(isAdminOrOwner ? [
+              {
+                name: "branch",
+                placeholder: "Branch",
+                options: branchOptions,
+              },
+            ] : []),
           ]}
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <ActionButton
+          label="Activate / Deactivate Discount"
+          variant="outline"
+          disabled={!selectedDiscount}
+          onClick={() => setDeactivateOpen(true)}
+        />
         <ActionButton
           label="Delete Discount"
           variant="outline"
@@ -184,6 +241,13 @@ export default function DiscountContent() {
         onSave={handleSaveDiscount}
       />
 
+      <DeactivateDiscountPopup
+        isOpen={deactivateOpen}
+        onClose={() => setDeactivateOpen(false)}
+        discount={selectedDiscount ?? undefined}
+        onConfirm={handleToggleStatus}
+      />
+
       {selectedDiscount && (
         <DeletePopup
           isOpen={deleteOpen}
@@ -204,4 +268,4 @@ export default function DiscountContent() {
       )}
     </div>
   );
-}
+}

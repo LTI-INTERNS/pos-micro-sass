@@ -18,6 +18,8 @@ import type {
     StaffPerformanceRow,
     SalesChartData,
     SalesReportRow,
+    ProfitReportResponse,
+    ProfitBranchOption,
 } from '@/types/analytics.types';
 
 // ── Helper ────────────────────────────────────────────────────────────────────
@@ -123,5 +125,43 @@ export const overviewAnalyticsService = {
             })
             .then(res => res.data.data)
             .catch((): SalesReportRow[] => []),
+
+    /**
+     * GET /api/v1/analytics/profit-report/branches
+     * Branches that have completed orders in the selected date window.
+     */
+    getProfitReportBranches: (range?: DateRangeParams): Promise<ProfitBranchOption[]> =>
+        apiClient
+            .get<BackendEnvelope<ProfitBranchOption[]>>('/analytics/profit-report/branches', {
+                params: toParams(range),
+            })
+            .then(res => res.data.data)
+            .catch((): ProfitBranchOption[] => []),
+
+    /**
+     * GET /api/v1/analytics/profit-report
+
+     * Per-order profit rows + aggregated summary (revenue, COGS, gross profit, margin).
+     */
+    getProfitReport: (
+        range?: DateRangeParams,
+        page   = 1,
+        limit  = 50,
+    ): Promise<ProfitReportResponse> =>
+        apiClient
+            .get<BackendEnvelope<ProfitReportResponse>>('/analytics/profit-report', {
+                params: { ...toParams(range), page, limit },
+            })
+            .then(res => res.data.data)
+            .catch((): ProfitReportResponse => ({
+                rows:       [],
+                summary: {
+                    totalRevenue: { value: 0, pctChange: 0 },
+                    totalCogs:    { value: 0, pctChange: 0 },
+                    grossProfit:  { value: 0, pctChange: 0 },
+                    avgMarginPct: { value: 0, pctChange: 0 },
+                },
+                pagination: { total: 0, page: 1, limit: 50, totalPages: 0 },
+            })),
 
 };

@@ -286,6 +286,11 @@ export default function RecurringExpensesContent() {
 
   return (
     <div className="w-full space-y-5">
+      
+
+      {/* <StatCardGrid recurringexpenses={filteredRecurringExpenses} /> */}
+      <StatCardGrid recurringexpenses={recurringExpenses} />
+
       <DateRangePicker
         startDate={start}
         endDate={end}
@@ -294,8 +299,6 @@ export default function RecurringExpensesContent() {
           setEnd(e);
         }}
       />
-
-      <StatCardGrid recurringexpenses={filteredRecurringExpenses} />
 
       <div className="relative">
         <SearchBar
