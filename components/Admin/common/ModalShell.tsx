@@ -7,7 +7,7 @@ type ModalShellProps = {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
-  widthClassName?: string; 
+  widthClassName?: string;
 };
 
 export default function ModalShell({
@@ -19,9 +19,11 @@ export default function ModalShell({
 }: ModalShellProps) {
   React.useEffect(() => {
     if (!open) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
+
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [open, onClose]);
@@ -29,20 +31,25 @@ export default function ModalShell({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* backdrop */}
-      <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px]" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/20 backdrop-blur-[1px]"
+        onClick={onClose}
+      />
 
       {/* card */}
-      <div className={`relative rounded-2xl bg-white shadow-xl ${widthClassName}`}>
+      <div
+        className={`relative flex max-h-[90vh] flex-col overflow-hidden rounded-2xl bg-white shadow-xl ${widthClassName}`}
+      >
         {/* header */}
-        <div className="flex items-center justify-between border-b px-6 py-4">
+        <div className="shrink-0 flex items-center justify-between border-b px-6 py-4">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-2 text-gray-500 hover:bg-gray-100 cursor-pointer"
+            className="cursor-pointer rounded-full p-2 text-gray-500 hover:bg-gray-100"
             aria-label="Close"
           >
             ✕
@@ -50,7 +57,9 @@ export default function ModalShell({
         </div>
 
         {/* body */}
-        <div className="px-6 py-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {children}
+        </div>
       </div>
     </div>
   );
