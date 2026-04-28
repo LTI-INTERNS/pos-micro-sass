@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup, { type SelectField } from "@/components/Admin/common/FilterPopup";
@@ -14,6 +15,7 @@ import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import { cashierService } from "@/lib/services/cashier-service";
 import CashierStatCardGrid from "@/components/Admin/cashiermanagement/cashierStatCardGrid";
+import { queryKeys } from "@/lib/query-keys";
 import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.types";
 
 function toTableCashier(c: ApiCashier): TableCashier {
@@ -31,15 +33,13 @@ function toTableCashier(c: ApiCashier): TableCashier {
 }
 
 export default function CashierManagementPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const role     = session?.user?.role   ?? "";
   const branchId = session?.user?.branchId ?? "";
+  const queryClient = useQueryClient();
 
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
-
-  const [cashiers, setCashiers]       = useState<ApiCashier[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [fetchError, setFetchError]   = useState("");
+  const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
 
   const [query, setQuery]             = useState("");
   const [filterOpen, setFilterOpen]   = useState(false);
@@ -50,7 +50,7 @@ export default function CashierManagementPage() {
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen]         = useState(false);
   const [editPopupOpen, setEditPopupOpen]             = useState(false);
-  const [actionLoading, setActionLoading]             = useState(false);
+  const [, setActionLoading]                          = useState(false);
   const [actionError, setActionError]                 = useState("");
 
   const [filters, setFilters] = useState<Record<string, string>>({
@@ -59,30 +59,31 @@ export default function CashierManagementPage() {
     branch:       "",
   });
 
-  const fetchCashiers = useCallback(async () => {
-    try {
-      setLoadingData(true);
-      setFetchError("");
+  const cashiersQuery = useQuery({
+    queryKey: queryKeys.cashiers.list(effectiveBranchId),
+    queryFn: async () => {
       const [data, stats] = await Promise.all([
         cashierService.getAll(),
-        cashierService.getStats(canSeeAllBranches ? undefined : branchId).catch(() => null),
+        cashierService.getStats(effectiveBranchId).catch(() => null),
       ]);
       const revenueMap = new Map(
         (stats?.revenueByMonth ?? []).map((r) => [r.cashierId, r.revenue])
       );
-      const merged = data.map((c) => ({
+      return data.map((c) => ({
         ...c,
         totalRevenue: revenueMap.get(c.id) ?? 0,
       }));
-      setCashiers(merged);
-    } catch {
-      setFetchError("Failed to load cashiers. Please try again.");
-    } finally {
-      setLoadingData(false);
-    }
-  }, [canSeeAllBranches, branchId]);
-
-  useEffect(() => { fetchCashiers(); }, [fetchCashiers]);
+    },
+    enabled: status === "authenticated",
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+  const cashiers = useMemo(() => cashiersQuery.data ?? [], [cashiersQuery.data]);
+  const loadingData = cashiersQuery.isLoading;
+  const fetchError = cashiersQuery.isError
+    ? "Failed to load cashiers. Please try again."
+    : "";
 
   useEffect(() => {
     if (!canSeeAllBranches) setFilters((prev) => ({ ...prev, branch: "" }));
@@ -160,9 +161,12 @@ export default function CashierManagementPage() {
     setActionLoading(true);
     setActionError("");
     try {
-      const updated = await cashierService.toggleStatus(selectedCashier.id, !selectedCashier.activeStatus);
-      setCashiers((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-      setSelectedCashier(updated);
+      await cashierService.toggleStatus(selectedCashier.id, !selectedCashier.activeStatus);
+      setSelectedCashier(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.list(effectiveBranchId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
+      ]);
       setDeactivatePopupOpen(false);
     } catch {
       setActionError("Failed to update cashier status. Please try again.");
@@ -177,8 +181,11 @@ export default function CashierManagementPage() {
     setActionError("");
     try {
       await cashierService.remove(selectedCashier.id);
-      setCashiers((prev) => prev.filter((c) => c.id !== selectedCashier.id));
       setSelectedCashier(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.list(effectiveBranchId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
+      ]);
       setDeletePopupOpen(false);
     } catch {
       setActionError("Failed to delete cashier. Please try again.");
@@ -203,9 +210,12 @@ export default function CashierManagementPage() {
 
     cashierService
       .update(selectedCashier.id, payload)
-      .then((updated) => {
-        setCashiers((prev) => prev.map((c) => (c.id === updated.id ? { ...updated, totalRevenue: c.totalRevenue } : c)));
-        setSelectedCashier(updated);
+      .then(async () => {
+        setSelectedCashier(null);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.list(effectiveBranchId) }),
+          queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
+        ]);
         setEditPopupOpen(false);
       })
       .catch(() => setActionError("Failed to update cashier. Please try again."))
@@ -320,7 +330,7 @@ export default function CashierManagementPage() {
         ) : fetchError ? (
           <div className="py-10 text-center text-red-400 text-sm">
             {fetchError}
-            <button className="ml-3 underline hover:text-red-300" onClick={fetchCashiers}>
+            <button className="ml-3 underline hover:text-red-300" onClick={() => void cashiersQuery.refetch()}>
               Retry
             </button>
           </div>
@@ -335,7 +345,14 @@ export default function CashierManagementPage() {
         {/* AddCashierForm — refetch after close to pick up the new record */}
         <AddCashierForm
           isOpen={addOpen}
-          onClose={() => { setAddOpen(false); fetchCashiers(); }}
+          onClose={() => { setAddOpen(false); }}
+          onSaved={async () => {
+            setAddOpen(false);
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.list(effectiveBranchId) }),
+              queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
+            ]);
+          }}
         />
 
         {/* DeactivateCashierPopup */}
