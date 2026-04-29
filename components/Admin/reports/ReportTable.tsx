@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -7,15 +7,13 @@ import { productService, Product } from "@/lib/services";
 import { orderService } from "@/lib/services/order-service";
 import type { Order } from "@/types/order.types";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
-import type { SaleRow, ExpenseRow, ProductRow } from "@/app/reports/reportsMockData";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import type { SaleRow, ExpenseRow, ProductRow } from "@/types/report.type";
 
 type Props = {
   activeTab: string;
   search: string;
-  salesData: SaleRow[];
-  expensesData: ExpenseRow[];
   selectedSale: SaleRow | null;
   selectedExpense: ExpenseRow | null;
   selectedProduct: ProductRow | null;
@@ -42,6 +40,40 @@ const mapExpense = (item: ExpenseApiItem): ExpenseRow => ({
   branch: item.branch?.name ?? "",
 });
 
+function formatOrderItems(items: Order["items"]): string {
+  if (!items || items.length === 0) return "-";
+  return items.map((i) => `${i.qty}x ${i.name}`).join("\n");
+}
+
+async function enrichOrdersWithItems(orders: Order[], maxConcurrency = 6) {
+  const results: Order[] = new Array(orders.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < orders.length) {
+      const index = cursor++;
+      const order = orders[index];
+
+      if (order.items && order.items.length > 0) {
+        results[index] = order;
+        continue;
+      }
+
+      try {
+        results[index] = await orderService.getById(order.id);
+      } catch {
+        results[index] = order;
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(maxConcurrency, orders.length) }, worker)
+  );
+
+  return results;
+}
+
 
 
 const mapOrderToSaleRow = (order: Order): SaleRow => ({
@@ -49,10 +81,10 @@ const mapOrderToSaleRow = (order: Order): SaleRow => ({
   date: order.dateTime
     ? new Date(order.dateTime).toISOString().split("T")[0]
     : "",
-  invoiceId: order.orderNumber ?? "—",
-  customer: order.customer ?? "Walk-in Customer",
-  items: order.items?.length ?? 0,
-  paymentMethod: order.paymenttype ?? "—",
+  invoiceId: order.orderNumber ?? "Unknown",
+  customer: order.customer ?? "Unknown Customer",
+  items: formatOrderItems(order.items),
+  paymentMethod: order.paymenttype ?? "Unknown",
   status:
     order.status === "COMPLETED"
       ? "Completed"
@@ -60,7 +92,7 @@ const mapOrderToSaleRow = (order: Order): SaleRow => ({
       ? "Refunded"
       : "Pending",
   amount: Number(order.totalamount ?? 0),
-  branch: order.branch ?? "—",
+  branch: order.branch ?? "Unknown",
 });
 
 
@@ -109,9 +141,9 @@ function mapProductToReportRow(product: Product): ProductReportRow {
   return {
     id: String(product.id),
     name: product.name ?? "",
-    category: product.category ?? "—",
-    brand: product.brand ?? "—",
-    sku: allSkus || "—",
+    category: product.category ?? "Unknown",
+    brand: product.brand ?? "Unknown",
+    sku: allSkus || "Unknown",
     variants: variants.length,
     basePrice: basePrices.length ? Math.min(...basePrices) : 0,
     sellingPrice: sellingPrices.length ? Math.min(...sellingPrices) : 0,
@@ -119,7 +151,7 @@ function mapProductToReportRow(product: Product): ProductReportRow {
     stockStatus,
     createdAt: product.createdAt
       ? new Date(product.createdAt).toISOString().split("T")[0]
-      : "—",
+      : "Unknown",
   };
 }
 
@@ -128,8 +160,6 @@ function mapProductToReportRow(product: Product): ProductReportRow {
 export default function ReportTable({
   activeTab,
   search,
-  salesData,
-  expensesData,
   selectedSale,
   onSelectSale,
   selectedExpense,
@@ -148,15 +178,30 @@ export default function ReportTable({
     if (activeTab !== "sales" || status !== "authenticated") return;
 
     setSalesLoading(true);
+    let cancelled = false;
 
     orderService
-      .getAll({ page: 1, limit: 1000 }) // 🔥 FIX: fetch full dataset
-      .then((data) => setRealSales(data.map(mapOrderToSaleRow)))
-      .catch(() => setRealSales([]))
-      .finally(() => setSalesLoading(false));
+      .getAll({ page: 1, limit: 1000 }) // ðŸ”¥ FIX: fetch full dataset
+      .then(async (data) => {
+        const enriched = await enrichOrdersWithItems(data);
+        if (cancelled) return;
+        setRealSales(enriched.map(mapOrderToSaleRow));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRealSales([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setSalesLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeTab, status]);
 
-  const finalSalesData = realSales.length > 0 ? realSales : salesData;
+  const finalSalesData = realSales;
 
   
   const [realExpenses, setRealExpenses] = useState<ExpenseRow[]>([]);
@@ -170,8 +215,7 @@ export default function ReportTable({
       .catch(() => setRealExpenses([]));
   }, [status, session]);
 
-  const finalExpensesData =
-    realExpenses.length > 0 ? realExpenses : expensesData;
+  const finalExpensesData = realExpenses;
 
  
   const [productReportRows, setProductReportRows] = useState<ProductReportRow[]>([]);
@@ -196,7 +240,15 @@ export default function ReportTable({
     { key: "date", label: "Date" },
     { key: "invoiceId", label: "Invoice ID" },
     { key: "customer", label: "Customer" },
-    { key: "items", label: "Items", align: "center" },
+    {
+      key: "items",
+      label: "Items",
+      render: (row) => (
+        <div className="max-w-105 whitespace-pre-line wrap-break-word text-xs text-slate-700">
+          {row.items}
+        </div>
+      ),
+    },
     { key: "paymentMethod", label: "Payment Method" },
     {
       key: "status",
@@ -283,7 +335,7 @@ const PRODUCT_COLS: Column<ProductReportRow>[] = [
     if (salesLoading) {
       return (
         <div className="mb-4 p-8 text-center text-slate-500 text-sm">
-          Loading sales…
+          Loading sales....
         </div>
       );
     }
@@ -291,7 +343,7 @@ const PRODUCT_COLS: Column<ProductReportRow>[] = [
     const filtered = filterRows(
       finalSalesData,
       search,
-      ["date", "invoiceId", "customer", "paymentMethod", "status"]
+      ["date", "invoiceId", "customer", "items", "paymentMethod", "status"]
     );
 
     return (
@@ -333,7 +385,7 @@ const PRODUCT_COLS: Column<ProductReportRow>[] = [
     if (productsLoading) {
       return (
         <div className="mb-4 p-8 text-center text-slate-500 text-sm">
-          Loading products…
+          Loading products....
         </div>
       );
     }

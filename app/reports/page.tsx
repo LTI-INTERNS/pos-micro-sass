@@ -9,12 +9,12 @@ import ReportStatCardGrid from "@/components/Admin/reports/ReportStatCardGrid";
 import ReportChart from "@/components/Admin/reports/ReportChart";
 import ReportActionsBar from "@/components/Admin/reports/ReportActionsBar";
 import ReportTable from "@/components/Admin/reports/ReportTable";
+import type { SaleRow, ExpenseRow, ProductRow } from "@/types/report.type";
 import type { ExportColumn } from "@/components/Admin/reports/exportUtils";
 import {
   SALES_DATA,    SALE_COLUMNS,
   EXPENSES_DATA, EXPENSE_COLUMNS,
   PRODUCTS_DATA, PRODUCT_COLUMNS,
-  type SaleRow, type ExpenseRow, type ProductRow,
 } from "@/app/reports/reportsMockData";
 
 type UserRole = "superadmin" | "admin" | "manager";
@@ -132,9 +132,13 @@ export default function ReportsPage() {
           <ReportChart
             activeTab={chartTab}
             onTabChange={setChartTab}
+            dateRange={startDate && endDate ? {
+              startDate: startDate.toISOString().split('T')[0],
+              endDate: endDate.toISOString().split('T')[0],
+            } : undefined}
           />
 
-          <div className="w-full lg:w-[280px] shrink-0">
+          <div className="w-full lg:w-70 shrink-0">
             <ExportReportPanel
               data={exportConfig.data}
               filename={exportConfig.filename}
@@ -165,8 +169,6 @@ export default function ReportsPage() {
         <ReportTable
           activeTab={tableTab}
           search={search}
-          salesData={salesData}
-          expensesData={expensesData}
           selectedSale={selectedSale}       onSelectSale={setSelectedSale}
           selectedExpense={selectedExpense} onSelectExpense={setSelectedExpense}
           selectedProduct={selectedProduct} onSelectProduct={setSelectedProduct}

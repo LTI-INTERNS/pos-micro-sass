@@ -75,7 +75,7 @@ export default function ExportReportPanel<T extends RowData>({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] flex flex-col p-6 gap-5 min-w-[260px] w-full">
+    <div className="bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] flex flex-col p-6 gap-5 min-w-65 w-full">
 
       {/* ── Title ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
