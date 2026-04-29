@@ -19,7 +19,6 @@ export default function BranchesPage() {
   const [showFilter, setShowFilter] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
-  // Fetch all branches on mount
   useEffect(() => {
     branchService.getAll().then(setAllBranches).catch(err => console.error("Failed to fetch branches", err));
   }, []);
@@ -53,10 +52,18 @@ export default function BranchesPage() {
     filters,
   });
 
-  // --- NEW: Handle Adding Branch ---
-  // Inside your BranchesPage component:
-
   const handleAddBranch = async (values: Record<string, string>) => {
+    // --- NEW: Local Frontend Validation against currently loaded branches ---
+    if (allBranches.some(b => b.phone === values.phoneNumber)) {
+      return alert("Phone number is already registered");
+    }
+    if (allBranches.some(b => b.email === values.email)) {
+      return alert("Email is already registered");
+    }
+    if (allBranches.some(b => b.regno === values.registrationNumber)) {
+      return alert("Registration number is already registered");
+    }
+
     try {
       const payload = {
         name: values.name,
@@ -71,7 +78,6 @@ export default function BranchesPage() {
       const newBranch = await branchService.create(payload as any);
       setAllBranches((prev) => [...prev, newBranch]);
     } catch (error: any) {
-      // THE FIX: Pull the exact message from our backend!
       if (error.response && error.response.data && error.response.data.message) {
         alert(error.response.data.message);
       } else {
@@ -82,6 +88,18 @@ export default function BranchesPage() {
 
   const handleEditBranch = async (updatedBranch: Branch) => {
     if (!selectedBranch) return;
+
+    // --- NEW: Local Frontend Validation against currently loaded branches (ignoring itself) ---
+    if (allBranches.some(b => b.id !== selectedBranch.id && b.phone === updatedBranch.phone)) {
+      return alert("Phone number is already registered");
+    }
+    if (allBranches.some(b => b.id !== selectedBranch.id && b.email === updatedBranch.email)) {
+      return alert("Email is already registered");
+    }
+    if (allBranches.some(b => b.id !== selectedBranch.id && b.regno === updatedBranch.regno)) {
+      return alert("Registration number is already registered");
+    }
+
     try {
       const payload: any = {
         name: updatedBranch.name,
@@ -100,7 +118,6 @@ export default function BranchesPage() {
       setAllBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       setSelectedBranch(updated);
     } catch (error: any) {
-      // THE FIX: Pull the exact message from our backend!
       if (error.response && error.response.data && error.response.data.message) {
         alert(error.response.data.message);
       } else {
@@ -109,7 +126,6 @@ export default function BranchesPage() {
     }
   };
 
-  // --- NEW: Handle Deleting Branch ---
   const handleDeleteBranch = async () => {
     if (!selectedBranch) return;
     try {
