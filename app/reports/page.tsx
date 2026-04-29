@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import DateRangeBar from "@/components/Admin/common/DateRangeBar";
@@ -41,6 +41,14 @@ export default function ReportsPage() {
   const [tableTab,  setTableTab]  = useState<TableTab>("sales");
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate,   setEndDate]   = useState<Date | undefined>();
+
+  const statDateRange = useMemo(() => {
+    if (!startDate || !endDate) return undefined;
+    return {
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: endDate.toISOString().split("T")[0],
+    };
+  }, [startDate, endDate]);
 
   const [selectedSale,    setSelectedSale]    = useState<SaleRow    | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<ExpenseRow | null>(null);
@@ -117,6 +125,7 @@ export default function ReportsPage() {
           sales={salesData}
           expenses={expensesData}
           transactionCount={salesData.length}
+          dateRange={statDateRange}
         />
 
         <DateRangeBar

@@ -5,89 +5,117 @@ import { useSession } from "next-auth/react";
 
 import StatCard from "@/components/Admin/common/StatCard";
 import { calcStatSummary } from "@/lib/utils/statCardUtils";
-import type { SaleRow, ExpenseRow } from "@/app/reports/reportsMockData";
-import { expenseApi, ExpenseApiItem } from "@/lib/api/expenses";
+import { overviewAnalyticsService } from "@/lib/services/analytics-service";
+import type { DateRangeParams, OverviewStats } from "@/types/analytics.types";
 
-// ✅ map API → ExpenseRow (same as table)
-const mapExpense = (item: ExpenseApiItem): ExpenseRow => ({
-  id: item.expensesId,
-  date: item.date ? new Date(item.date).toISOString().split("T")[0] : "",
-  category: item.category?.category ?? "",
-  description: item.description ?? "",
-  approvedBy: item.addedByName ?? "",
-  amount: Number(item.amount ?? 0),
-  branch: item.branch?.name ?? "",
-});
+type AmountRow = { date: string; amount: number };
 
 type Props = {
-  sales?: SaleRow[];
-  expenses?: ExpenseRow[]; // fallback only
-  transactionCount?: number;
+  sales?: AmountRow[];
+  expenses?: AmountRow[]; // fallback only (used when API is unavailable)
+  transactionCount?: number; // fallback only (used when API is unavailable)
+  dateRange?: DateRangeParams;
 };
+
+function pctLabel(pct: number): string {
+  const sign = pct > 0 ? "+" : "";
+  return `${sign}${pct.toFixed(1)}%`;
+}
+
+function trendFromPct(pct: number): "up" | "down" | "neutral" {
+  if (pct > 0) return "up";
+  if (pct < 0) return "down";
+  return "neutral";
+}
 
 export default function ReportStatCardGrid({
   sales = [],
   expenses = [],
   transactionCount = 0,
+  dateRange,
 }: Props) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
 
-  // ✅ real expenses state
-  const [realExpenses, setRealExpenses] = useState<ExpenseRow[]>([]);
+  const [stats, setStats] = useState<OverviewStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
-  // 🔹 fetch real expenses
   useEffect(() => {
     if (status !== "authenticated") return;
 
-    expenseApi
-      .getExpenses(session)
-      .then((rows) => setRealExpenses(rows.map(mapExpense)))
-      .catch(() => setRealExpenses([]));
-  }, [status]);
+    let cancelled = false;
+    setLoadingStats(true);
 
-  // ✅ use real data if available
-  const finalExpenses = realExpenses.length > 0 ? realExpenses : expenses;
+    overviewAnalyticsService
+      .getOverviewStats(dateRange)
+      .then((next) => {
+        if (cancelled) return;
+        setStats(next);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setStats(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLoadingStats(false);
+      });
 
-  // ✅ stats calculation (same logic, but now real data)
-  const salesStats   = calcStatSummary(sales, "date", "amount");
-  const expenseStats = calcStatSummary(finalExpenses, "date", "amount");
+    return () => {
+      cancelled = true;
+    };
+  }, [status, dateRange]);
 
-  const netProfit = salesStats.total - expenseStats.total;
+  const fallbackSalesStats = calcStatSummary(sales, "date", "amount");
+  const fallbackExpenseStats = calcStatSummary(expenses, "date", "amount");
 
-  // 🔥 better trend for profit
-  const netProfitTrend =
-    netProfit >= 0
-      ? { label: "+0.0%", trend: "up" as const }
-      : { label: "-0.0%", trend: "down" as const };
+  const totalSalesAmount = stats?.totalRevenue.value ?? fallbackSalesStats.total;
+  const totalExpensesAmount =
+    stats?.totalExpenses.value ?? fallbackExpenseStats.total;
+  const netProfitAmount = totalSalesAmount - totalExpensesAmount;
 
   const statCards = [
     {
       title: "Total Sales",
-      amount: salesStats.total,
-      percentage: salesStats.totalTrend.label,
-      trend: salesStats.totalTrend.trend,
-      caption: "from previous 30 days",
+      amount: loadingStats ? undefined : totalSalesAmount,
+      value: loadingStats ? "…" : undefined,
+      percentage: stats
+        ? pctLabel(stats.totalRevenue.pctChange)
+        : fallbackSalesStats.totalTrend.label,
+      trend: stats
+        ? trendFromPct(stats.totalRevenue.pctChange)
+        : fallbackSalesStats.totalTrend.trend,
+      caption: "vs previous period",
     },
     {
       title: "Total Expenses",
-      amount: expenseStats.total,
-      percentage: expenseStats.totalTrend.label,
-      trend: expenseStats.totalTrend.trend,
-      caption: "from previous 30 days",
+      amount: loadingStats ? undefined : totalExpensesAmount,
+      value: loadingStats ? "…" : undefined,
+      percentage: stats
+        ? pctLabel(stats.totalExpenses.pctChange)
+        : fallbackExpenseStats.totalTrend.label,
+      trend: stats
+        ? trendFromPct(stats.totalExpenses.pctChange)
+        : fallbackExpenseStats.totalTrend.trend,
+      caption: "vs previous period",
     },
     {
       title: "Net Profit",
-      amount: netProfit,
-      percentage: netProfitTrend.label,
-      trend: netProfitTrend.trend,
-      caption: "from previous 30 days",
+      amount: loadingStats ? undefined : netProfitAmount,
+      value: loadingStats ? "…" : undefined,
+      percentage: stats ? "N/A" : "+0.0%",
+      trend: "neutral" as const,
+      caption: stats ? "computed" : "from previous 30 days",
     },
     {
       title: "Transactions Count",
-      value: String(transactionCount),
-      percentage: "+0.0%",
-      trend: "up" as const,
-      caption: "total in dataset",
+      value: loadingStats
+        ? "…"
+        : String(stats?.totalOrders.value ?? transactionCount),
+      percentage: stats ? pctLabel(stats.totalOrders.pctChange) : "+0.0%",
+      trend: stats
+        ? trendFromPct(stats.totalOrders.pctChange)
+        : ("neutral" as const),
+      caption: stats ? "vs previous period" : "total in dataset",
     },
   ];
 
