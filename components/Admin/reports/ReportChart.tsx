@@ -193,7 +193,7 @@ export default function ReportChart({ activeTab, onTabChange, dateRange }: Props
   const config = getChartConfig();
 
   return (
-    <div className="flex-1 bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] p-6 flex flex-col gap-4">
+    <div id="report-chart-capture" className="flex-1 bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] p-6 flex flex-col gap-4">
       <TabSelector
         tabs={CHART_TABS}
         activeTab={activeTab}
