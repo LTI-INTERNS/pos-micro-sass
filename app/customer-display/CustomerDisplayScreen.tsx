@@ -143,7 +143,7 @@ export default function CustomerDisplayScreen() {
       } else {
         setError("No customer found with this number.");
       }
-    } catch (err) {
+    } catch {
       setError("Error checking customer details.");
     } finally {
       setLoading(false);
@@ -376,7 +376,7 @@ function PaymentPreviewScreen({ customer, summary, currency }: {
 }
 
 // ── Payment Success Screen ────────────────────────────────────
-function PaymentSuccessScreen({ customer, summary, currency }: {
+function PaymentSuccessScreen({ customer, summary }: {
   customer: CustomerFormValues | null;
   summary: PaymentSummary | null;
   currency: string;

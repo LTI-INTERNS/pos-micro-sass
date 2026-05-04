@@ -25,9 +25,10 @@ type FormErrors = Partial<Record<keyof FormValues, string>>;
 type AddCashierFormProps = {
   isOpen: boolean;
   onClose: () => void;
+  onSaved?: () => void;
 };
 
-export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
+export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps) {
   const { data: session } = useSession();
   const role       = session?.user?.role       ?? "";
   const branchId   = session?.user?.branchId   ?? "";
@@ -172,7 +173,7 @@ export function AddCashierForm({ isOpen, onClose }: AddCashierFormProps) {
         ...(profileImageUrl ? { imgUrl: profileImageUrl } : {}),
       });
       resetForm();
-      onClose();
+      onSaved?.();
     } catch (err: unknown) {
       // Surface specific backend error messages when available
       const message =

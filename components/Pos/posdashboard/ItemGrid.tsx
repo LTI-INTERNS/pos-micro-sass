@@ -90,19 +90,27 @@ export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
     };
   }, []);
 
-  const filteredItems = items.filter((i) => {
-    const term = search.trim().toLowerCase();
+  const filteredItems = items
+    .filter((i) => {
+      const term = search.trim().toLowerCase();
 
-    // No search — only show available products in the default view
-    if (!term) return i.availability;
+      // No search — only show available products in the default view
+      if (!term) return i.availability;
 
-    // Active search — show all products that match by name or barcode
-    // (so the cashier can look up any product, even unavailable ones)
-    return (
-      i.name.toLowerCase().includes(term) ||
-      (i.barcode && i.barcode.toLowerCase().includes(term))
-    );
-  });
+      // Active search — show all products that match by name or barcode
+      // (so the cashier can look up any product, even unavailable ones)
+      return (
+        i.name.toLowerCase().includes(term) ||
+        (i.barcode && i.barcode.toLowerCase().includes(term))
+      );
+    })
+    .sort((a, b) => {
+      const aHasImg = !!(a.image && a.image.trim());
+      const bHasImg = !!(b.image && b.image.trim());
+      if (aHasImg && !bHasImg) return -1;
+      if (!aHasImg && bHasImg) return 1;
+      return 0;
+    });
 
   /* ── LOADING ── */
   if (loading) {
@@ -142,31 +150,6 @@ export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
     );
   }
 
-  const hasAnyImage = filteredItems.some(
-    (i) => i.image && i.image.trim() !== ""
-  );
-
-  /* ── LIST VIEW (no images) ── */
-  if (!hasAnyImage) {
-    return (
-      <div className="space-y-2">
-        {filteredItems.map((item) => (
-          <div
-            key={item.id}
-            onClick={item.availability ? () => onAdd(item) : undefined}
-            className={`flex justify-between items-center p-3 border rounded transition ${
-              item.availability
-                ? "cursor-pointer hover:bg-gray-50"
-                : "opacity-45 cursor-not-allowed"
-            }`}
-          >
-            <span className="font-semibold text-gray-600">{item.name}</span>
-            <span className="text-sm font-semibold text-gray-600">{item.price}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   /* ── GRID VIEW (with images) ── */
   return (
