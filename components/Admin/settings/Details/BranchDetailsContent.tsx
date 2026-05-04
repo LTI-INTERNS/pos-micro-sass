@@ -42,7 +42,6 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         email: initial.email || "",
         phone: initial.phone || "",
         address: initial.address || "",
-        // Display EMPTY correctly if it comes from DB, otherwise standard
         regNo: initial.regNo || "",
       });
     }
@@ -66,8 +65,6 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
       setModalOpen(false);
       alert("Branch details updated successfully!");
     } catch (error: any) {
-      // THE FIX: Directly read error.message (instead of error.response.data) 
-      // since page.tsx already extracted the clean string!
       alert(error.message || "Failed to update branch details.");
     }
   };
@@ -110,7 +107,10 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
             <SettingsRow label="Email" value={details.email} />
             <SettingsRow label="Phone" value={details.phone} />
             <SettingsRow label="Address" value={details.address} />
-            <SettingsRow label="Registration No." value={details.regNo} />
+            {/* THE FIX: Conditionally render Registration Number only if it exists and isn't "EMPTY" */}
+            {details.regNo && details.regNo.trim() !== "" && details.regNo !== "EMPTY" && (
+              <SettingsRow label="Registration No." value={details.regNo} />
+            )}
           </div>
 
           <div className="px-6 py-2">
@@ -187,17 +187,14 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
             errors.email = "Email is required";
           }
 
-          // THE FIX: Strict Registration Validation (handling "EMPTY" grace period)
-          if (values.regNo) {
-            // If they are modifying "EMPTY", they MUST enter a valid alphanumeric value
-            if (values.regNo === "EMPTY" || !/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo)) {
+          // THE FIX: Registration is now Optional, but still validated IF provided
+          if (values.regNo && values.regNo.trim() !== "" && values.regNo !== "EMPTY") {
+            if (!/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo)) {
               errors.regNo = "Registration Number must contain at least one letter and one number";
             }
-          } else {
-            errors.regNo = "Registration Number is required";
           }
 
-          // THE FIX: Phone Validation ported directly from Company logic
+          // Phone Validation
           if (values.phone) {
             const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
 
