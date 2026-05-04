@@ -11,7 +11,11 @@ import FilterChips from "@/components/Admin/common/FilterChips";
 import { useSession } from "next-auth/react";
 import { supplierService } from "@/lib/services/supplier-service";
 import { branchService } from "@/lib/services/branch-service";
-import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from "@/types/supplier.types";
+import type {
+  Supplier,
+  CreateSupplierInput,
+  UpdateSupplierInput,
+} from "@/types/supplier.types";
 import type { Branch } from "@/types/branch.types";
 
 type UserRole = "owner" | "admin" | "manager";
@@ -52,15 +56,21 @@ export default function SupplierPage() {
 
     const load = async () => {
       try {
-        const [supplierData, branchData] = await Promise.all([
-          supplierService.getAll(),
-          branchService.getAll(),
-        ]);
+        const supplierData = await supplierService.getAll();
 
         if (ignore) return;
 
         setSuppliersList(supplierData);
-        setBranches(branchData);
+
+        if (canManageSuppliers) {
+          const branchData = await branchService.getAll();
+
+          if (ignore) return;
+
+          setBranches(branchData);
+        } else {
+          setBranches([]);
+        }
       } catch (error) {
         console.error("Failed to load suppliers:", error);
       }
@@ -71,11 +81,36 @@ export default function SupplierPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [canManageSuppliers]);
 
-  const branchFilteredSuppliers = canViewAllSuppliers
-    ? suppliersList
-    : suppliersList.filter((s) => s.branches.includes(branchName));
+  const branchFilteredSuppliers = useMemo(() => {
+    return canViewAllSuppliers
+      ? suppliersList
+      : suppliersList.filter((s) => s.branches.includes(branchName));
+  }, [canViewAllSuppliers, suppliersList, branchName]);
+
+  const coverAreaOptions = useMemo(() => {
+    const uniqueCoverAreas = new Map<string, string>();
+
+    branchFilteredSuppliers.forEach((supplier) => {
+      const coverArea = supplier.coverarea?.trim();
+
+      if (!coverArea) return;
+
+      const key = coverArea.toLowerCase();
+
+      if (!uniqueCoverAreas.has(key)) {
+        uniqueCoverAreas.set(key, coverArea);
+      }
+    });
+
+    return Array.from(uniqueCoverAreas.values())
+      .sort((a, b) => a.localeCompare(b))
+      .map((coverArea) => ({
+        label: coverArea,
+        value: coverArea,
+      }));
+  }, [branchFilteredSuppliers]);
 
   const removeFilter = (key: string) => {
     if (isManager && key === "coverarea") return;
@@ -100,11 +135,7 @@ export default function SupplierPage() {
           {
             name: "coverarea",
             placeholder: "Select cover area",
-            options: [
-              { label: "Western Province", value: "Western Province" },
-              { label: "Central Province", value: "Central Province" },
-              { label: "Southern Province", value: "Southern Province" },
-            ],
+            options: coverAreaOptions,
           },
         ]
       : []),
@@ -124,9 +155,8 @@ export default function SupplierPage() {
       const matchesCoverArea =
         isManager ||
         !filters.coverarea ||
-        s.coverarea
-          .toLowerCase()
-          .includes(filters.coverarea.toLowerCase().trim());
+        s.coverarea?.trim().toLowerCase() ===
+          filters.coverarea.trim().toLowerCase();
 
       const nameToSearch = `${s.name} ${s.companyName ?? ""}`.toLowerCase();
       const matchesSearch = nameToSearch.includes(search.toLowerCase().trim());
@@ -135,26 +165,28 @@ export default function SupplierPage() {
     });
   }, [filters, search, branchFilteredSuppliers, isManager]);
 
- const handleAddSupplier = async (payload: CreateSupplierInput) => {
-  try {
-    console.log("ADDING SUPPLIER PAYLOAD:", payload);
+  const handleAddSupplier = async (payload: CreateSupplierInput) => {
+    try {
+      const created = await supplierService.create(payload);
+      setSuppliersList((prev) => [created, ...prev]);
+    } catch (error: any) {
+      console.error("ADD SUPPLIER FULL ERROR:", error);
+      console.error("ADD SUPPLIER RESPONSE:", error?.response);
+      console.error("ADD SUPPLIER RESPONSE DATA:", error?.response?.data);
+      throw error;
+    }
+  };
 
-    const created = await supplierService.create(payload);
-    setSuppliersList((prev) => [created, ...prev]);
-  } catch (error: any) {
-    console.error("ADD SUPPLIER FULL ERROR:", error);
-    console.error("ADD SUPPLIER RESPONSE:", error?.response);
-    console.error("ADD SUPPLIER RESPONSE DATA:", error?.response?.data);
-    throw error;
-  }
-};
-
-  const handleEditSupplier = async (supplierId: string, payload: UpdateSupplierInput) => {
+  const handleEditSupplier = async (
+    supplierId: string,
+    payload: UpdateSupplierInput
+  ) => {
     const updated = await supplierService.update(supplierId, payload);
 
     setSuppliersList((prev) =>
       prev.map((supplier) => (supplier.id === updated.id ? updated : supplier))
     );
+
     setSelectedSupplier(updated);
   };
 

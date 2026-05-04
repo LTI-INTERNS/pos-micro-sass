@@ -84,7 +84,9 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
         
         <div className="space-y-0">
           <SettingsRow label="Company Name" value={details.name} />
-          <SettingsRow label="Registration No" value={details.regNo || "N/A"} />
+          {details.regNo && details.regNo.trim() !== "" && details.regNo !== "EMPTY" && (
+              <SettingsRow label="Registration No." value={details.regNo} />
+            )}
           <SettingsRow label="Email" value={details.email} />
           <SettingsRow label="Phone" value={details.phone} />
           <SettingsRow label="Address" value={details.address} />
@@ -142,12 +144,10 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
           
           if (!values.name?.trim()) errors.name = "Company name is required";
           
-          if (values.regNo) {
+          if (values.regNo && values.regNo.trim() !== "" && values.regNo !== "EMPTY") {
             if (!/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo)) {
               errors.regNo = "Registration Number must contain at least one letter and one number";
             }
-          } else {
-             errors.regNo = "Registration Number is required";
           }
 
           if (values.email) {

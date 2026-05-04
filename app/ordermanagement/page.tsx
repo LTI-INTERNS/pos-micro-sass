@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import StatCardGrid from "@/components/Admin/ordermanagement/orderStarCardGrid";
@@ -12,6 +13,7 @@ import OrderBillModal from "@/components/Admin/ordermanagement/orderReceiptPrevi
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { orderService } from "@/lib/services";
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
+import { queryKeys } from "@/lib/query-keys";
 import type { Order } from "@/types/order.types";
 
 // ── Role gate ─────────────────────────────────────────────────────────────────
@@ -46,11 +48,6 @@ export default function OrderManagementPage() {
 
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
 
-  // ── Data state ──────────────────────────────────────────────────────────
-  const [allOrders, setAllOrders]   = useState<Order[]>([]);
-  const [isLoading, setIsLoading]   = useState(true);
-  const [fetchError, setFetchError] = useState("");
-
   // ── UI state ────────────────────────────────────────────────────────────
   const [start, setStart]                 = useState<Date | undefined>();
   const [end, setEnd]                     = useState<Date | undefined>();
@@ -65,31 +62,33 @@ export default function OrderManagementPage() {
     status?: string;
   }>({});
 
-  const fetchOrders = useCallback(async () => {
-    if (!isAllowedRole(role)) return;
-
-    try {
-      setIsLoading(true);
-      setFetchError("");
-
-      const data = await orderService.getAll({
-        ...(!canSeeAllBranches && { branchId }),
-        ...(start && { startDate: start.toISOString().split("T")[0] }),
-        ...(end   && { endDate:   end.toISOString().split("T")[0]   }),
+  const startDate = start ? start.toISOString().split("T")[0] : undefined;
+  const endDate = end ? end.toISOString().split("T")[0] : undefined;
+  const effectiveBranchId = !canSeeAllBranches ? branchId : undefined;
+  const ordersQuery = useQuery({
+    queryKey: queryKeys.orders.list({
+      branchId: effectiveBranchId,
+      startDate,
+      endDate,
+      canSeeAllBranches,
+    }),
+    queryFn: () =>
+      orderService.getAll({
+        ...(effectiveBranchId && { branchId: effectiveBranchId }),
+        ...(startDate && { startDate }),
+        ...(endDate && { endDate }),
         limit: 500,
-      });
-
-      setAllOrders(data);
-    } catch {
-      setFetchError("Failed to load orders. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [role, branchId, canSeeAllBranches, start, end]);
-
-  useEffect(() => {
-    if (sessionStatus !== "loading") fetchOrders();
-  }, [fetchOrders, sessionStatus]);
+      }),
+    enabled: sessionStatus === "authenticated" && isAllowedRole(role),
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+  const allOrders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
+  const isLoading = ordersQuery.isLoading;
+  const fetchError = ordersQuery.isError
+    ? "Failed to load orders. Please try again."
+    : "";
 
   useEffect(() => {
     if (!canSeeAllBranches) {
@@ -184,7 +183,7 @@ export default function OrderManagementPage() {
             <span>{fetchError}</span>
             <button
               type="button"
-              onClick={fetchOrders}
+              onClick={() => void ordersQuery.refetch()}
               className="ml-4 rounded bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
             >
               Retry

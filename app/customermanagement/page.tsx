@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -13,6 +14,7 @@ import StatCardGrid from "@/components/Admin/customermanagement/customerStarGrid
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import { customerService } from "@/lib/services/customer-service";
+import { queryKeys } from "@/lib/query-keys";
 import type { Customer } from "@/types/customer.types";
 
 const ALLOWED_ROLES = ["OWNER", "ADMIN", "MANAGER"] as const;
@@ -27,10 +29,7 @@ export default function CustomersPage() {
   const role     = session?.user?.role     ?? "";
   const branchId = session?.user?.branchId ?? "";
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
-
-  const [customers, setCustomers]   = useState<Customer[]>([]);
-  const [isLoading, setIsLoading]   = useState(true);
-  const [fetchError, setFetchError] = useState("");
+  const queryClient = useQueryClient();
 
   const [start, setStart]                       = useState<Date | undefined>();
   const [end, setEnd]                           = useState<Date | undefined>();
@@ -39,23 +38,20 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filters, setFilters]                   = useState<{ points?: string; branch?: string; status?: string }>({});
 
-  const fetchCustomers = useCallback(async () => {
-    if (!isAllowedRole(role)) return;
-    try {
-      setIsLoading(true);
-      setFetchError("");
-      const data = await customerService.getAll(canSeeAllBranches ? undefined : branchId);
-      setCustomers(data);
-    } catch {
-      setFetchError("Failed to load customers. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [role, branchId, canSeeAllBranches]);
-
-  useEffect(() => {
-    if (status === "authenticated") fetchCustomers();
-  }, [status, fetchCustomers]);
+  const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
+  const customersQuery = useQuery({
+    queryKey: queryKeys.customers.list(effectiveBranchId),
+    queryFn: () => customerService.getAll(effectiveBranchId),
+    enabled: status === "authenticated" && isAllowedRole(role),
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+  const customers = useMemo(() => customersQuery.data ?? [], [customersQuery.data]);
+  const isLoading = customersQuery.isLoading;
+  const fetchError = customersQuery.isError
+    ? "Failed to load customers. Please try again."
+    : "";
 
   const branchOptions = useMemo(
     () =>
@@ -123,15 +119,15 @@ export default function CustomersPage() {
 
   const handleDeleteCustomer = () => {
     if (!selectedCustomer) return;
-    setCustomers((prev) => prev.filter((c) => c.id !== selectedCustomer.id));
     setSelectedCustomer(null);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(effectiveBranchId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.customers.stats(effectiveBranchId) });
   };
 
   const handleEditCustomer = (updatedCustomer: Customer) => {
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === updatedCustomer.id ? updatedCustomer : c))
-    );
     setSelectedCustomer(updatedCustomer);
+    void queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(effectiveBranchId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.customers.stats(effectiveBranchId) });
   };
 
   if (status === "loading") {
@@ -198,7 +194,10 @@ export default function CustomersPage() {
 
         <CustomerActionsBar
           selectedCustomer={selectedCustomer}
-          onAdd={(newCustomer) => setCustomers((prev) => [newCustomer, ...prev])}
+          onAdd={() => {
+            void queryClient.invalidateQueries({ queryKey: queryKeys.customers.list(effectiveBranchId) });
+            void queryClient.invalidateQueries({ queryKey: queryKeys.customers.stats(effectiveBranchId) });
+          }}
           onDelete={handleDeleteCustomer}
           onEdit={handleEditCustomer}
         />

@@ -314,7 +314,7 @@ export default function EditStaffPopup({
       open={isOpen}
       title="Edit Staff"
       onClose={onClose}
-      widthClassName="w-[820px] max-w-[95vw] max-h-[90vh] overflow-y-auto"
+      widthClassName="w-[820px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden"
     >
       <div className="space-y-4">
         {adminEditLocked && (

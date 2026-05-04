@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import StatCard from "@/components/Admin/common/StatCard";
 import { orderService } from "@/lib/services";
+import { queryKeys } from "@/lib/query-keys";
 import type { OrderStats } from "@/types/order.types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,20 +30,18 @@ export default function OrderStatCardGrid() {
    * MANAGER        → branchId   → backend scopes to their branch.
    */
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
+  const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
 
-  const [stats, setStats]     = useState<OrderStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-
-    setLoading(true);
-    orderService
-      .getStats(canSeeAllBranches ? undefined : branchId)
-      .then(setStats)
-      .catch(() => setStats(null))
-      .finally(() => setLoading(false));
-  }, [status, branchId, canSeeAllBranches]);
+  const statsQuery = useQuery<OrderStats>({
+    queryKey: queryKeys.orders.stats(effectiveBranchId),
+    queryFn: () => orderService.getStats(effectiveBranchId),
+    enabled: status === "authenticated",
+    refetchInterval: 30000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+  });
+  const stats = statsQuery.data ?? null;
+  const loading = statsQuery.isLoading;
 
   // Derive display values — show "—" while loading, "0" on error
   const val = (n?: number) => (loading ? "—" : String(n ?? 0));

@@ -6,6 +6,7 @@ import {
   useCSVExport,
   usePDFExport,
   type ExportColumn,
+  type PDFSection,
   type PDFOptions,
   type RowData,
 } from "@/components/Admin/reports/exportUtils";
@@ -24,6 +25,9 @@ type Props<T extends RowData> = {
   filename?: string;
   columns?: ExportColumn[];
   pdfOptions?: PDFOptions;
+  getData?: () => Promise<T[]> | T[];
+  chartCaptureIds?: string[];
+  summaryBuilder?: (rows: T[]) => { title?: string; lines: string[] } | null;
   onGenerate?: (format: ExportFormat, includes: string[]) => void;
 };
 
@@ -38,6 +42,9 @@ export default function ExportReportPanel<T extends RowData>({
   filename = "report",
   columns,
   pdfOptions,
+  getData,
+  chartCaptureIds,
+  summaryBuilder,
   onGenerate,
 }: Props<T>) {
   const [format, setFormat]     = useState<ExportFormat>("pdf");
@@ -57,15 +64,59 @@ export default function ExportReportPanel<T extends RowData>({
     );
 
   const handleGenerate = async () => {
-    if (!data?.length) return;
     setLoading(true);
     try {
       const selected = includes.filter((o) => o.checked).map((o) => o.id);
+      const includeRaw = selected.includes("rawData");
+
+      const rows = await Promise.resolve(getData ? getData() : data);
+      if (!rows?.length && includeRaw) return;
 
       if (format === "csv") {
-        exportCSV(data, filename, columns);
+        if (!includeRaw) {
+          alert('CSV export requires "Raw Data" to be selected.');
+          return;
+        }
+        exportCSV(rows, filename, columns);
       } else {
-        await exportPDF(data, filename, columns, pdfOptions);
+        const sections: PDFSection[] = [];
+
+        if (selected.includes("summary")) {
+          const summary = summaryBuilder?.(rows) ?? defaultSummary(rows);
+          if (summary && summary.lines.length) {
+            sections.push({
+              kind: "text",
+              title: summary.title ?? "Summary",
+              lines: summary.lines,
+            });
+          }
+        }
+
+        if (selected.includes("charts") && chartCaptureIds?.length) {
+          try {
+            const html2canvasModule = await import("html2canvas");
+            const html2canvas = html2canvasModule.default;
+
+            for (const id of chartCaptureIds) {
+              const el = document.getElementById(id);
+              if (!el) continue;
+              const canvas = await html2canvas(el, {
+                backgroundColor: "#ffffff",
+                scale: 2,
+                useCORS: true,
+              });
+              sections.push({
+                kind: "image",
+                title: "Charts",
+                dataUrl: canvas.toDataURL("image/png"),
+              });
+            }
+          } catch (e) {
+            console.error("[ExportReportPanel] Failed to capture charts:", e);
+          }
+        }
+
+        await exportPDF(rows, filename, columns, pdfOptions, sections, includeRaw);
       }
 
       onGenerate?.(format, selected);
@@ -75,7 +126,7 @@ export default function ExportReportPanel<T extends RowData>({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] flex flex-col p-6 gap-5 min-w-[260px] w-full">
+    <div className="bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] flex flex-col p-6 gap-5 min-w-65 w-full">
 
       {/* ── Title ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
@@ -195,12 +246,12 @@ export default function ExportReportPanel<T extends RowData>({
         variant="primary"
         fullWidth
         onClick={handleGenerate}
-        disabled={loading || !data?.length}
+        disabled={loading || (!(getData) && !data?.length)}
       >
-        {loading ? "Generating…" : "Generate Report"}
+        {loading ? "Generating..." : "Generate Report"}
       </ActionButton>
 
-      {!data?.length && (
+      {!(getData) && !data?.length && (
         <p
           className="text-center text-[11px] text-gray-400"
           style={{ fontFamily: "Poppins, sans-serif" }}
@@ -210,4 +261,28 @@ export default function ExportReportPanel<T extends RowData>({
       )}
     </div>
   );
+}
+
+function defaultSummary<T extends RowData>(rows: T[]) {
+  if (!rows?.length) {
+    return { title: "Summary", lines: ["No rows available."] };
+  }
+
+  const lines: string[] = [`Rows: ${rows.length}`];
+
+  const numericKeys = new Set<string>();
+  for (const k of Object.keys(rows[0] ?? {})) {
+    const val = (rows[0] as any)?.[k];
+    if (typeof val === "number") numericKeys.add(k);
+  }
+
+  for (const key of Array.from(numericKeys)) {
+    const sum = rows.reduce((acc, r) => {
+      const v = (r as any)?.[key];
+      return acc + (typeof v === "number" && Number.isFinite(v) ? v : 0);
+    }, 0);
+    lines.push(`${key}: ${sum.toLocaleString()}`);
+  }
+
+  return { title: "Summary", lines };
 }

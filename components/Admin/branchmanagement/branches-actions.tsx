@@ -28,15 +28,15 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
   const editFields: EditField[] = [
     { name: "name", label: "Branch Name" },
     { name: "city", label: "City" },
-    { name: "phone", label: "Phone" },
+    { name: "phone", label: "Phone", type: "tel" },
     { name: "address", label: "Address" },
     { name: "regno", label: "Reg No", type: "text" }, 
     { 
       name: "email", 
       label: "Email", 
+      type: "text", 
       readOnly: isAdmin && !isOwner 
     },
-    // THE FIX: Defined this specifically as a password type so it masks characters
     { name: "password", label: "New Password", type: "password" },
   ];
 
@@ -105,7 +105,7 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
       )}
 
       {selectedBranch && editPopupOpen && (
-        <EditEntityModal<any> // Used <any> here since we are injecting "password" which might not be strictly typed in your Branch interface
+        <EditEntityModal<any> 
           open={editPopupOpen}
           title="Edit Branch"
           initialValues={selectedBranch}
@@ -115,6 +115,16 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
           validate={(values) => {
             const errors: Record<string, string> = {};
             
+            // THE FIX: Validation for Name
+            if (!values.name || !values.name.trim()) {
+              errors.name = "Name is required";
+            }
+
+            // THE FIX: Validation for City
+            if (!values.city || !values.city.trim()) {
+              errors.city = "City is required";
+            }
+
             // Check Registration Number
             if (
               values.regno && 
@@ -124,7 +134,46 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
               errors.regno = "Registration Number must contain at least one letter and one number";
             }
 
-            // THE FIX: Validate Password ONLY if the user typed something into the box
+            // Check Email
+            if (values.email) {
+              const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+              if (!emailRegex.test(values.email.trim())) {
+                  errors.email = "Please enter a valid email address";
+              }
+            } else {
+              errors.email = "Email is required";
+            }
+
+            // Check Phone Number
+            if (values.phone) {
+              const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
+
+              const allowedPrefixes = [
+                { code: "+94", len: 9 },
+                { code: "+1",  len: 10 },
+                { code: "+44", len: 10 },
+                { code: "+91", len: 10 },
+                { code: "+61", len: 9 },
+                { code: "+65", len: 8 },
+                { code: "+60", len: 10 },
+                { code: "0",   len: 9 },
+              ];
+
+              const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
+
+              if (!matchedConfig) {
+                errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
+              } else {
+                const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
+                if (!/^\d+$/.test(numberPart) || numberPart.length !== matchedConfig.len) {
+                  errors.phone = `For ${matchedConfig.code}, the number must be exactly ${matchedConfig.len} digits long.`;
+                }
+              }
+            } else {
+              errors.phone = "Phone number is required";
+            }
+
+            // Validate Password ONLY if the user typed something into the box
             if (values.password && values.password.trim() !== "") {
               if (values.password.length < 8) {
                 errors.password = "Password must be at least 8 characters";
