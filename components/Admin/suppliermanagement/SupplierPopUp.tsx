@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
-import ReusableForm, { FieldConfig } from "@/components/Admin/common/ReusableForm";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import type { Supplier } from "@/types/supplier.types";
@@ -31,16 +30,29 @@ type BranchOption = {
 type SupplierPopUpProps = {
   open: boolean;
   onClose: () => void;
-  onSave: (values: SupplierFormValues & { supplierType: SupplierType }) => void | Promise<void>;
+  onSave: (
+    values: SupplierFormValues & { supplierType: SupplierType },
+  ) => void | Promise<void>;
   supplierId?: string;
   title?: string;
   initialSupplier?: Supplier | null;
   branchOptions?: BranchOption[];
 };
 
-const baseFields: FieldConfig[] = [];
+type SupplierFormFieldName = keyof SupplierFormValues;
 
-const cooperateTopFields: FieldConfig[] = [
+type ValidationErrors = Partial<
+  Record<SupplierFormFieldName | "branches", string>
+>;
+
+type LocalFieldConfig = {
+  name: SupplierFormFieldName;
+  label: string;
+  placeholder?: string;
+  type?: "text" | "number" | "email" | "password";
+};
+
+const cooperateTopFields: LocalFieldConfig[] = [
   {
     name: "companyName",
     label: "Company Name",
@@ -49,10 +61,25 @@ const cooperateTopFields: FieldConfig[] = [
   },
 ];
 
-const cooperateBottomFields: FieldConfig[] = [
-  { name: "email", label: "Email", placeholder: "Enter email address", type: "text" },
-  { name: "address", label: "Address", placeholder: "Enter address", type: "text" },
-  { name: "coverArea", label: "Cover Area", placeholder: "Enter cover area", type: "text" },
+const cooperateBottomFields: LocalFieldConfig[] = [
+  {
+    name: "email",
+    label: "Email",
+    placeholder: "Enter email address",
+    type: "email",
+  },
+  {
+    name: "address",
+    label: "Address",
+    placeholder: "Enter address",
+    type: "text",
+  },
+  {
+    name: "coverArea",
+    label: "Cover Area",
+    placeholder: "Enter cover area",
+    type: "text",
+  },
   {
     name: "registrationNumber",
     label: "Registration Number (Optional)",
@@ -61,12 +88,32 @@ const cooperateBottomFields: FieldConfig[] = [
   },
 ];
 
-const individualFields: FieldConfig[] = [
+const individualFields: LocalFieldConfig[] = [
   { name: "name", label: "Name", placeholder: "Enter name", type: "text" },
-  { name: "phone", label: "Phone number", placeholder: "Enter phone number", type: "number" },
-  { name: "email", label: "Email", placeholder: "Enter email address", type: "text" },
-  { name: "address", label: "Address", placeholder: "Enter address", type: "text" },
-  { name: "coverArea", label: "Cover Area", placeholder: "Enter cover area", type: "text" },
+  {
+    name: "phone",
+    label: "Phone number",
+    placeholder: "Enter phone number",
+    type: "number",
+  },
+  {
+    name: "email",
+    label: "Email",
+    placeholder: "Enter email address",
+    type: "email",
+  },
+  {
+    name: "address",
+    label: "Address",
+    placeholder: "Enter address",
+    type: "text",
+  },
+  {
+    name: "coverArea",
+    label: "Cover Area",
+    placeholder: "Enter cover area",
+    type: "text",
+  },
   {
     name: "registrationNumber",
     label: "Registration Number (Optional)",
@@ -75,7 +122,10 @@ const individualFields: FieldConfig[] = [
   },
 ];
 
-const buildInitial = (supplierId?: string, initialSupplier?: Supplier | null) => {
+const buildInitial = (
+  supplierId?: string,
+  initialSupplier?: Supplier | null,
+): SupplierFormValues => {
   if (initialSupplier) {
     if (initialSupplier.type === "Company") {
       return {
@@ -123,6 +173,40 @@ const buildInitial = (supplierId?: string, initialSupplier?: Supplier | null) =>
   };
 };
 
+const isBlank = (value: string | undefined | null) =>
+  !value || value.trim().length === 0;
+
+const getRequiredFieldErrors = (
+  supplierType: SupplierType,
+  values: SupplierFormValues,
+): ValidationErrors => {
+  const nextErrors: ValidationErrors = {};
+
+  if (supplierType === "company") {
+    if (isBlank(values.companyName))
+      nextErrors.companyName = "Company name is required.";
+    if (isBlank(values.contactPersonName))
+      nextErrors.contactPersonName = "Name is required.";
+    if (isBlank(values.contactPersonPhone)) {
+      nextErrors.contactPersonPhone = "Phone number is required.";
+    }
+  } else {
+    if (isBlank(values.name)) nextErrors.name = "Name is required.";
+    if (isBlank(values.phone)) nextErrors.phone = "Phone number is required.";
+  }
+
+  if (isBlank(values.email)) nextErrors.email = "Email is required.";
+  if (isBlank(values.address)) nextErrors.address = "Address is required.";
+  if (isBlank(values.coverArea))
+    nextErrors.coverArea = "Cover area is required.";
+
+  if (values.branchIds.length === 0) {
+    nextErrors.branches = "Select at least one branch.";
+  }
+
+  return nextErrors;
+};
+
 export default function SupplierPopUp({
   open,
   onClose,
@@ -132,24 +216,38 @@ export default function SupplierPopUp({
   initialSupplier = null,
   branchOptions = [],
 }: SupplierPopUpProps) {
-  const [supplierType, setSupplierType] = React.useState<SupplierType>("company");
+  const [supplierType, setSupplierType] =
+    React.useState<SupplierType>("company");
   const [values, setValues] = React.useState<SupplierFormValues>(() =>
-    buildInitial(supplierId, initialSupplier)
+    buildInitial(supplierId, initialSupplier),
   );
+  const [errors, setErrors] = React.useState<ValidationErrors>({});
 
   React.useEffect(() => {
     if (!open) return;
 
-    setSupplierType(initialSupplier?.type === "Individual" ? "individual" : "company");
+    setSupplierType(
+      initialSupplier?.type === "Individual" ? "individual" : "company",
+    );
     setValues(buildInitial(supplierId, initialSupplier));
+    setErrors({});
   }, [open, supplierId, initialSupplier]);
 
-  const setField = (name: keyof SupplierFormValues, next: string | string[]) => {
-    setValues((prev) => ({ ...prev, [name]: next } as SupplierFormValues));
+  const setField = (name: SupplierFormFieldName, next: string | string[]) => {
+    setValues((prev) => ({ ...prev, [name]: next }) as SupplierFormValues);
+
+    setErrors((prev) => {
+      if (!prev[name]) return prev;
+
+      const nextErrors = { ...prev };
+      delete nextErrors[name];
+      return nextErrors;
+    });
   };
 
   const handleRadioChange = (next: SupplierType) => {
     setSupplierType(next);
+    setErrors({});
 
     setValues((prev) => {
       const common = {
@@ -183,10 +281,18 @@ export default function SupplierPopUp({
   const toggleBranch = (branchId: string) => {
     const exists = values.branchIds.includes(branchId);
 
+    setErrors((prev) => {
+      if (!prev.branches) return prev;
+
+      const nextErrors = { ...prev };
+      delete nextErrors.branches;
+      return nextErrors;
+    });
+
     if (exists) {
       setField(
         "branchIds",
-        values.branchIds.filter((id) => id !== branchId)
+        values.branchIds.filter((id) => id !== branchId),
       );
       return;
     }
@@ -195,24 +301,29 @@ export default function SupplierPopUp({
   };
 
   const handleSave = async () => {
+    const nextErrors = getRequiredFieldErrors(supplierType, values);
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return;
+    }
+
     await onSave({ ...values, supplierType });
   };
 
-  const commonStringValues: Record<string, string> = {
-    companyName: values.companyName ?? "",
-    contactPersonName: values.contactPersonName ?? "",
-    contactPersonPhone: values.contactPersonPhone ?? "",
-    name: values.name ?? "",
-    phone: values.phone ?? "",
-    email: values.email ?? "",
-    address: values.address ?? "",
-    registrationNumber: values.registrationNumber ?? "",
-    coverArea: values.coverArea ?? "",
-  };
-
-  const handleReusableFieldChange = (name: string, value: string) => {
-    setField(name as keyof SupplierFormValues, value);
-  };
+  const renderFields = (fields: LocalFieldConfig[]) => (
+    <div className="space-y-4">
+      {fields.map((field) => (
+        <FieldWithError
+          key={field.name}
+          field={field}
+          value={String(values[field.name] ?? "")}
+          error={errors[field.name]}
+          onChange={(next) => setField(field.name, next)}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <ModalShell
@@ -222,13 +333,6 @@ export default function SupplierPopUp({
       widthClassName="w-[900px] max-w-[92vw]"
     >
       <div className="space-y-5">
-        <ReusableForm
-          fields={baseFields}
-          values={commonStringValues}
-          onFieldChange={handleReusableFieldChange}
-          onSubmit={() => {}}
-        />
-
         <div className="flex items-center gap-10 px-1">
           <RadioOption
             label="Company"
@@ -244,65 +348,60 @@ export default function SupplierPopUp({
 
         {supplierType === "company" ? (
           <div className="space-y-4">
-            <ReusableForm
-              fields={cooperateTopFields}
-              values={commonStringValues}
-              onFieldChange={handleReusableFieldChange}
-              onSubmit={() => {}}
-            />
+            {renderFields(cooperateTopFields)}
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FormField
-                label="Name"
-                placeholder="Enter name"
+              <FieldWithError
+                field={{
+                  name: "contactPersonName",
+                  label: "Name",
+                  placeholder: "Enter name",
+                  type: "text",
+                }}
                 value={values.contactPersonName ?? ""}
+                error={errors.contactPersonName}
                 onChange={(next) => setField("contactPersonName", next)}
-                type="text"
               />
-              <FormField
-                label="Phone number"
-                placeholder="Enter phone number"
+
+              <FieldWithError
+                field={{
+                  name: "contactPersonPhone",
+                  label: "Phone number",
+                  placeholder: "Enter phone number",
+                  type: "number",
+                }}
                 value={values.contactPersonPhone ?? ""}
+                error={errors.contactPersonPhone}
                 onChange={(next) => setField("contactPersonPhone", next)}
-                type="number"
               />
             </div>
 
-            <ReusableForm
-              fields={cooperateBottomFields}
-              values={commonStringValues}
-              onFieldChange={handleReusableFieldChange}
-              onSubmit={() => {}}
-            />
+            {renderFields(cooperateBottomFields)}
           </div>
         ) : (
-          <ReusableForm
-            fields={individualFields}
-            values={commonStringValues}
-            onFieldChange={handleReusableFieldChange}
-            onSubmit={() => {}}
-          />
+          renderFields(individualFields)
         )}
 
         {branchOptions.length > 0 && (
           <div className="space-y-3">
-            <p className="text-sm text-gray-500 px-1">Branches</p>
+            <div className="flex items-center gap-2 px-1">
+              <p className="text-sm text-gray-500">Branches</p>
+              {errors.branches ? (
+                <p className="text-xs text-red-500">{errors.branches}</p>
+              ) : null}
+            </div>
+
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {branchOptions.map((branch) => {
                 const checked = values.branchIds.includes(branch.id);
 
                 return (
-                  <button
+                  <BranchCheckboxOption
                     key={branch.id}
-                    type="button"
-                    onClick={() => toggleBranch(branch.id)}
-                    className={`w-full rounded-3xl border px-4 py-3 text-left text-sm transition ${
-                      checked
-                        ? "border-orange-400 bg-orange-50 text-gray-800"
-                        : "border-gray-200 bg-white text-gray-700"
-                    }`}
-                  >
-                    {branch.name}
-                  </button>
+                    label={branch.name}
+                    checked={checked}
+                    onChange={() => toggleBranch(branch.id)}
+                  />
                 );
               })}
             </div>
@@ -310,12 +409,13 @@ export default function SupplierPopUp({
         )}
 
         <div className="flex items-center justify-center pt-2">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 { label: "Cancel", onClick: onClose, variant: "secondary" },
                 {
-                  label: title === "Edit Supplier" ? "Save Changes" : "Add supplier",
+                  label:
+                    title === "Edit Supplier" ? "Save Changes" : "Add supplier",
                   onClick: handleSave,
                   variant: "primary",
                 },
@@ -325,6 +425,77 @@ export default function SupplierPopUp({
         </div>
       </div>
     </ModalShell>
+  );
+}
+
+function FieldWithError({
+  field,
+  value,
+  error,
+  onChange,
+}: {
+  field: LocalFieldConfig;
+  value: string;
+  error?: string;
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <FormField
+        label={field.label}
+        placeholder={field.placeholder}
+        value={value}
+        onChange={onChange}
+        type={field.type ?? "text"}
+      />
+      {error ? <p className="px-4 text-xs text-red-500">{error}</p> : null}
+    </div>
+  );
+}
+
+function BranchCheckboxOption({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      onClick={onChange}
+      className="flex w-full cursor-pointer items-center gap-3 px-1 py-2 text-left text-sm text-gray-700 outline-none"
+    >
+      <span
+        className={[
+          "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition",
+          checked
+            ? "border-orange-500 bg-orange-500"
+            : "border-gray-300 bg-transparent",
+        ].join(" ")}
+      >
+        {checked ? (
+          <svg
+            viewBox="0 0 16 16"
+            className="h-3 w-3 text-white"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3.5 8.5L6.5 11.5L12.5 4.5" />
+          </svg>
+        ) : null}
+      </span>
+
+      <span className="flex-1">{label}</span>
+    </button>
   );
 }
 
@@ -343,15 +514,17 @@ function RadioOption({
       onClick={onClick}
       className="flex items-center gap-3 text-sm text-gray-700"
     >
-      <span className="min-w-[90px] text-left">{label}</span>
+      <span className="min-w-22.5 text-left">{label}</span>
 
       <span
         className={[
-          "h-5 w-5 rounded-full border flex items-center justify-center",
+          "flex h-5 w-5 items-center justify-center rounded-full border",
           checked ? "border-orange-500" : "border-gray-300",
         ].join(" ")}
       >
-        {checked ? <span className="h-3 w-3 rounded-full bg-orange-500" /> : null}
+        {checked ? (
+          <span className="h-3 w-3 rounded-full bg-orange-500" />
+        ) : null}
       </span>
     </button>
   );
