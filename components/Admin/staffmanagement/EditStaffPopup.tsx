@@ -355,7 +355,7 @@ export default function EditStaffPopup({
           <>
             <div className="space-y-2">
               <FieldLabel>Assigned Companies</FieldLabel>
-              <div className="min-h-[48px] rounded-2xl border border-gray-200 px-3 py-3">
+              <div className="min-h-12 rounded-2xl border border-gray-200 px-3 py-3">
                 <div className="flex flex-wrap gap-2">
                   {activeAssignedCompanies.map((company) =>
                     adminEditLocked ? (
