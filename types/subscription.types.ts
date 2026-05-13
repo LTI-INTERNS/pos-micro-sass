@@ -10,16 +10,23 @@ export type BusinessTypeEnum =
 
 export type SubscriptionType = 'FREE' | 'PRO' | 'ENTERPRISE';
 
-export type SupportLevel = 'BASIC' | 'PRIORITY' | 'SUPPORT_24_7';
+export type SupportLevel = 'EMAIL' | 'PRIORITY' | 'DEDICATED_24_7';
+export type ReportLevel = 'BASIC' | 'ADVANCED' | 'CUSTOM';
+export type AIPredictionLevel = 'NOT_INCLUDED' | 'INCLUDED' | 'FULL_SUITE';
 
 // ── Subscription shape returned by /auth/store-info ──────────────────────────
 
 export interface SubscriptionInfo {
   type:              SubscriptionType;
-  branchLimit:       number;
-  productLimit:      number;
-  advancedAnalytics: boolean;
+  priceMonthly:      number;
+  branchLimit:       number | null;
+  staffLimit:        number | null; // staff accounts = cashiers only
+  productLimit:      number | null; // product count = product variants
+  customerLimit:     number | null;
+  monthlyOrderLimit: number | null; // monthly order count is per branch
+  reportLevel:       ReportLevel;
   supportLevel:      SupportLevel;
+  aiPredictionLevel: AIPredictionLevel;
 }
 
 // ── Convenience helpers ───────────────────────────────────────────────────────
@@ -32,4 +39,9 @@ export function isPaidPlan(type: SubscriptionType): boolean {
 /** Returns true when the plan is ENTERPRISE. */
 export function isEnterprisePlan(type: SubscriptionType): boolean {
   return type === 'ENTERPRISE';
+}
+
+/** Returns true when AI Prediction is available for the plan. */
+export function hasAIPrediction(level?: AIPredictionLevel): boolean {
+  return level === 'INCLUDED' || level === 'FULL_SUITE';
 }
