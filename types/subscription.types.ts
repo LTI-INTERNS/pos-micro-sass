@@ -9,7 +9,6 @@ export type BusinessTypeEnum =
   | 'BOOKSHOP';
 
 export type SubscriptionType = 'FREE' | 'PRO' | 'ENTERPRISE';
-
 export type SupportLevel = 'EMAIL' | 'PRIORITY' | 'DEDICATED_24_7';
 export type ReportLevel = 'BASIC' | 'ADVANCED' | 'CUSTOM';
 export type AIPredictionLevel = 'NOT_INCLUDED' | 'INCLUDED' | 'FULL_SUITE';
@@ -18,12 +17,12 @@ export type AIPredictionLevel = 'NOT_INCLUDED' | 'INCLUDED' | 'FULL_SUITE';
 
 export interface SubscriptionInfo {
   type:              SubscriptionType;
-  priceMonthly:      number;
+  priceMonthly?:     string | number;
   branchLimit:       number | null;
-  staffLimit:        number | null; // staff accounts = cashiers only
-  productLimit:      number | null; // product count = product variants
+  staffLimit:        number | null; // Cashiers per branch
+  productLimit:      number | null; // Product variants
   customerLimit:     number | null;
-  monthlyOrderLimit: number | null; // monthly order count is per branch
+  monthlyOrderLimit: number | null; // Orders per branch per month
   reportLevel:       ReportLevel;
   supportLevel:      SupportLevel;
   aiPredictionLevel: AIPredictionLevel;
@@ -41,7 +40,6 @@ export function isEnterprisePlan(type: SubscriptionType): boolean {
   return type === 'ENTERPRISE';
 }
 
-/** Returns true when AI Prediction is available for the plan. */
 export function hasAIPrediction(level?: AIPredictionLevel): boolean {
   return level === 'INCLUDED' || level === 'FULL_SUITE';
 }
