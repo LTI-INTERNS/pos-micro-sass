@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
+import { getApiErrorMessage } from "@/lib/utils/api-error";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import BranchActionsBar from "@/components/Admin/branchmanagement/branches-actions";
 import BranchesTable from "@/components/Admin/branchmanagement/branches-table";
@@ -77,12 +78,8 @@ export default function BranchesPage() {
       
       const newBranch = await branchService.create(payload as any);
       setAllBranches((prev) => [...prev, newBranch]);
-    } catch (error: any) {
-      if (error.response && error.response.data && error.response.data.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("Failed to add branch. Please check the network.");
-      }
+    } catch (error: unknown) {
+      alert(getApiErrorMessage(error, "Failed to add branch. Please check the network."));
     }
   };
 
