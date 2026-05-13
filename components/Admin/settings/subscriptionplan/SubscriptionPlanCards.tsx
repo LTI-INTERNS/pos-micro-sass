@@ -51,7 +51,7 @@ export default function SubscriptionPlanCards() {
    */
   const handlePaymentSuccess = (newSubType: SubscriptionType) => {
     // Update subscription type in context.
-    // The full subscription object (limits, AI access, etc.) will be
+    // The full subscription object (limits, analytics flag, etc.) will be
     // refreshed on the next page load when /auth/store-info is called again.
     // For the current session we update just the type so plan cards re-render.
     setStoreInfo({
