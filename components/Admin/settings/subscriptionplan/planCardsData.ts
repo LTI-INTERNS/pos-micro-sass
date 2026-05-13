@@ -27,8 +27,8 @@ export const planCardsData: PlanCardData[] = [
     description: "Perfect for small shops just getting started.",
     features: [
       { label: "Branches",       value: "5" },
-      { label: "Staff accounts", value: "Up to 2" },
-      { label: "Products",       value: "Up to 250" },
+      { label: "Cashier accounts", value: "Up to 2 per branch" },
+      { label: "Product variants", value: "Up to 250" },
       { label: "Customers",      value: "Up to 500" },
       { label: "Orders / month", value: "1,000 per branch" },
       { label: "Reports",        value: "Basic" },
@@ -47,8 +47,8 @@ export const planCardsData: PlanCardData[] = [
     badge: "Most Popular",
     features: [
       { label: "Branches",       value: "Up to 15" },
-      { label: "Staff accounts", value: "Up to 25" },
-      { label: "Products",       value: "Unlimited" },
+      { label: "Cashier accounts", value: "Up to 25 per branch" },
+      { label: "Product variants", value: "Unlimited" },
       { label: "Customers",      value: "Unlimited" },
       { label: "Orders / month", value: "10,000 per branch" },
       { label: "Reports",        value: "Advanced" },
@@ -67,8 +67,8 @@ export const planCardsData: PlanCardData[] = [
     badge: "Enterprise",
     features: [
       { label: "Branches",       value: "Unlimited" },
-      { label: "Staff accounts", value: "Unlimited" },
-      { label: "Products",       value: "Unlimited" },
+      { label: "Cashier accounts", value: "Unlimited per branch" },
+      { label: "Product variants", value: "Unlimited" },
       { label: "Customers",      value: "Unlimited" },
       { label: "Orders / month", value: "Unlimited" },
       { label: "Reports",        value: "Custom" },
