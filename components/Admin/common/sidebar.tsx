@@ -35,7 +35,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Profit Calculation',   path: '/profitcalculation', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Supplier Management',  path: '/suppliermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Reports',              path: '/reports',           roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
-    // ── AI Prediction — only shown when the plan includes AI access ──
+    // ── AI Prediction — only shown when the plan includes AI prediction ──
     { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[], planRequired: true },
     { label: 'Branches',             path: '/branchmanagement',  roles: ['OWNER', 'ADMIN'] as UserRole[] },
     { label: 'POS Dashboard',        path: '/posdashboard',      roles: ['CASHIER'] as UserRole[] },
