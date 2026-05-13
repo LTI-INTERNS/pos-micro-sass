@@ -15,11 +15,11 @@ import type { SubscriptionType } from "@/types/subscription.types";
  */
 function subTypeToCardId(subType: SubscriptionType | ""): string {
   const map: Record<SubscriptionType, string> = {
-    FREE:       "basic",
+    FREE:       "free",
     PRO:        "pro",
-    ENTERPRISE: "advanced",
+    ENTERPRISE: "enterprise",
   };
-  return subType ? (map[subType] ?? "basic") : "basic";
+  return subType ? (map[subType] ?? "free") : "free";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ export default function SubscriptionPlanCards() {
    */
   const handlePaymentSuccess = (newSubType: SubscriptionType) => {
     // Update subscription type in context.
-    // The full subscription object (limits, analytics flag, etc.) will be
+    // The full subscription object (limits, AI access, etc.) will be
     // refreshed on the next page load when /auth/store-info is called again.
     // For the current session we update just the type so plan cards re-render.
     setStoreInfo({
