@@ -10,6 +10,7 @@ import { cashierService } from "@/lib/services/cashier-service";
 import { branchService } from "@/lib/services/branch-service";
 import { uploadService } from "@/lib/services/upload-service";
 import type { Branch } from "@/types/branch.types";
+import { getApiErrorMessage } from "@/lib/utils/api-error";
 
 type FormValues = {
   name:     string;
@@ -175,11 +176,12 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
       resetForm();
       onSaved?.();
     } catch (err: unknown) {
-      // Surface specific backend error messages when available
-      const message =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message;
-      setSaveError(message ?? "Failed to create cashier. Please try again.");
+      setSaveError(
+        getApiErrorMessage(
+          err,
+          "Failed to create cashier. Please try again."
+        )
+      );
     } finally {
       setSaving(false);
     }

@@ -24,6 +24,7 @@ import { branchService, productService, Branch, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import LoadingState from "@/components/Admin/common/LoadingState";
+import { getApiErrorMessage } from "@/lib/utils/api-error";
 
 // ── Shared local interfaces ───────────────────────────────────────────────────
 
@@ -900,12 +901,7 @@ export default function DashboardPage() {
             }
           } catch (error: unknown) {
             console.error("Failed to save product:", error);
-            const err = error as ApiError;
-            const msg =
-              err?.response?.data?.error?.message ||
-              err?.response?.data?.message ||
-              err?.message ||
-              "Failed to save product.";
+            const msg = getApiErrorMessage(error, "Failed to save product.");
             alert(`Error from Server: ${msg}`);
           }
           handleProductPopupClose();
@@ -930,11 +926,7 @@ export default function DashboardPage() {
             await reloadProducts();
           } catch (error: unknown) {
             console.error("Failed to add products to branch:", error);
-            const err = error as ApiError;
-            const msg =
-              err?.response?.data?.message ||
-              err?.message ||
-              "Failed to add products to branch.";
+            const msg = getApiErrorMessage(error, "Failed to add products to branch.");
             alert(`Error: ${msg}`);
           }
           handleProductPopupClose();
