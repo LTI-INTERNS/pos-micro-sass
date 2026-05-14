@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Settings, X } from 'lucide-react';
 import { useStoreInfo } from '@/lib/context/StoreInfoContext';
+import { hasAIPrediction } from '@/types/subscription.types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const userRole = (session?.user?.role?.toUpperCase() ?? 'CASHIER') as UserRole;
 
   const { storeInfo } = useStoreInfo();
-  const hasAI = storeInfo.subscription?.advancedAnalytics ?? false;
+  const hasAI = hasAIPrediction(storeInfo.subscription?.aiPredictionLevel);
 
   const allMenuItems = useMemo(() => [
     { label: 'Dashboard',            path: '/overview',          roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
@@ -34,7 +35,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Profit Calculation',   path: '/profitcalculation', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Supplier Management',  path: '/suppliermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Reports',              path: '/reports',           roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
-    // ── AI Prediction — only shown when the plan includes advancedAnalytics ──
+    // ── AI Prediction — only shown when the plan includes AI prediction ──
     { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[], planRequired: true },
     { label: 'Branches',             path: '/branchmanagement',  roles: ['OWNER', 'ADMIN'] as UserRole[] },
     { label: 'POS Dashboard',        path: '/posdashboard',      roles: ['CASHIER'] as UserRole[] },

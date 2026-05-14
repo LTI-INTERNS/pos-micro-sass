@@ -15,11 +15,11 @@ import type { SubscriptionType } from "@/types/subscription.types";
  */
 function subTypeToCardId(subType: SubscriptionType | ""): string {
   const map: Record<SubscriptionType, string> = {
-    FREE:       "basic",
+    FREE:       "free",
     PRO:        "pro",
-    ENTERPRISE: "advanced",
+    ENTERPRISE: "enterprise",
   };
-  return subType ? (map[subType] ?? "basic") : "basic";
+  return subType ? (map[subType] ?? "free") : "free";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────

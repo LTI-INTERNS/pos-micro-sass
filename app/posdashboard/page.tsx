@@ -20,6 +20,7 @@ import PosNegativeStockToast, { type PosNegativeToastInfo } from "@/components/P
 import { orderService } from "@/lib/services/order-service";
 import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 import type { CreateOrderInput } from "@/types/order.types";
+import { getApiErrorCode, getApiErrorMessage } from "@/lib/utils/api-error";
 
 
 type SavedReceiptData = {
@@ -379,8 +380,7 @@ const Page = () => {
       } catch (err: unknown) {
         console.error("Order creation failed:", err);
 
-        const code: string =
-          (err as any)?.response?.data?.error?.code ?? "UNKNOWN";
+        const code = getApiErrorCode(err);
 
         const messages: Record<string, string> = {
           INSUFFICIENT_STOCK:
@@ -397,9 +397,11 @@ const Page = () => {
             "The order has no items. Please add at least one item before confirming.",
           FORBIDDEN:
             "Only cashiers can create orders. Please log in with a cashier account.",
+          SUBSCRIPTION_LIMIT_REACHED:
+            getApiErrorMessage(err, "This order cannot be completed because your subscription plan order limit has been reached for this branch."),
         };
 
-        setSubmitError(messages[code] ?? "Failed to save the order. Please try again.");
+        setSubmitError(messages[code] ?? getApiErrorMessage(err, "Failed to save the order. Please try again."));
       } finally {
         setIsSubmitting(false);
       }

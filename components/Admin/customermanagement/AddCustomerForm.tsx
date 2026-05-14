@@ -9,6 +9,7 @@ import { customerService } from "@/lib/services/customer-service";
 import { branchService } from "@/lib/services/branch-service";
 import type { Customer } from "@/types/customer.types";
 import type { Branch } from "@/types/branch.types";
+import { getApiErrorMessage } from "@/lib/utils/api-error";
 
 type AddCustomerFormProps = {
   open: boolean;
@@ -83,10 +84,7 @@ export default function AddCustomerForm({
       onAdded?.(newCustomer);
       onClose();
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Failed to add customer. Please try again.";
-      setError(msg);
+      setError(getApiErrorMessage(err, "Failed to add customer. Please try again."));
     } finally {
       setSubmitting(false);
     }

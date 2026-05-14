@@ -30,7 +30,7 @@ apiClient.interceptors.request.use(async (config) => {
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const code = error?.response?.data?.code;
+        const code = error?.response?.data?.error?.code ?? error?.response?.data?.code;
         const status = error?.response?.status;
 
 
