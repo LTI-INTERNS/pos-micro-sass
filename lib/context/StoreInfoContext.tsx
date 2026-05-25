@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
 import type { BusinessTypeEnum, SubscriptionInfo } from "@/types/subscription.types";
@@ -8,32 +8,34 @@ import type { BusinessTypeEnum, SubscriptionInfo } from "@/types/subscription.ty
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type StoreInfo = {
-  storeName:     string;
-  branchName:    string;
-  cashierName:   string;
-  telephone:     string;
-  logoUrl:       string | null;
-  businessType:  BusinessTypeEnum | "";     // e.g. "CAFE" | "SUPERMARKET" | ""
+  storeName: string;
+  branchName: string;
+  cashierName: string;
+  telephone: string;
+  logoUrl: string | null;
+  businessType: BusinessTypeEnum | "";     // e.g. "CAFE" | "SUPERMARKET" | ""
   businessTypeId: string;                    // Business type ID from database
-  subscription:  SubscriptionInfo | null;   // null until the fetch resolves
+  subscription: SubscriptionInfo | null;   // null until the fetch resolves
 };
 
 type StoreInfoContextType = {
-  storeInfo:    StoreInfo;
+  storeInfo: StoreInfo;
   setStoreInfo: (info: Partial<StoreInfo>) => void;
+  refreshStoreInfo: () => Promise<void>;
+  isStoreInfoLoading: boolean;
 };
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 
 const defaultStoreInfo: StoreInfo = {
-  storeName:     "",
-  branchName:    "",
-  cashierName:   "",
-  telephone:     "",
-  logoUrl:       null,
-  businessType:  "",
+  storeName: "",
+  branchName: "",
+  cashierName: "",
+  telephone: "",
+  logoUrl: null,
+  businessType: "",
   businessTypeId: "",
-  subscription:  null,
+  subscription: null,
 };
 
 // ── Backend response shape ────────────────────────────────────────────────────
@@ -41,19 +43,21 @@ const defaultStoreInfo: StoreInfo = {
 interface StoreInfoResponse {
   success: boolean;
   data: {
-    logoUrl:       string;
-    telephone:     string;
-    businessType:  BusinessTypeEnum;
+    logoUrl: string;
+    telephone: string;
+    businessType: BusinessTypeEnum;
     businessTypeId: string;
-    subscription:  SubscriptionInfo;
+    subscription: SubscriptionInfo;
   };
 }
 
 // ── Context ───────────────────────────────────────────────────────────────────
 
 const StoreInfoContext = createContext<StoreInfoContextType>({
-  storeInfo:    defaultStoreInfo,
-  setStoreInfo: () => {},
+  storeInfo: defaultStoreInfo,
+  setStoreInfo: () => { },
+  refreshStoreInfo: async () => { },
+  isStoreInfoLoading: false,
 });
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -61,57 +65,72 @@ const StoreInfoContext = createContext<StoreInfoContextType>({
 export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [storeInfo, setStoreInfoState] = useState<StoreInfo>(defaultStoreInfo);
+  const [isStoreInfoLoading, setIsStoreInfoLoading] = useState(false);
 
-  const companyId  = session?.user?.companyId  ?? "";
+  const companyId = session?.user?.companyId ?? "";
   const companyName = session?.user?.companyName ?? "";
-  const branchName  = session?.user?.branchName  ?? "";
-  const userName    = session?.user?.name        ?? "";
+  const branchName = session?.user?.branchName ?? "";
+  const userName = session?.user?.name ?? "";
 
-  // Guard: only call the backend API once per authenticated companyId
+  // Guard: only call the backend API once per authenticated companyId,
+  // but allow manual refreshes after plan changes or database updates.
   const fetchedForId = useRef("");
+
+  const applySessionInfo = useCallback(() => {
+    setStoreInfoState((prev) => ({
+      ...prev,
+      storeName: companyName || prev.storeName,
+      branchName: branchName || prev.branchName,
+      cashierName: userName || prev.cashierName,
+    }));
+  }, [companyName, branchName, userName]);
+
+  const refreshStoreInfo = useCallback(async () => {
+    if (status !== "authenticated" || !companyId) return;
+
+    applySessionInfo();
+    setIsStoreInfoLoading(true);
+
+    try {
+      const { data: res } = await apiClient.get<StoreInfoResponse>("/auth/store-info");
+      if (!res.success) return;
+
+      setStoreInfoState((prev) => ({
+        ...prev,
+        logoUrl: res.data.logoUrl || prev.logoUrl,
+        telephone: res.data.telephone || prev.telephone,
+        businessType: res.data.businessType || prev.businessType,
+        businessTypeId: res.data.businessTypeId || prev.businessTypeId,
+        subscription: res.data.subscription ?? prev.subscription,
+      }));
+
+      fetchedForId.current = companyId;
+    } catch {
+      // Non-fatal — keep session-derived values, but allow the next render/manual
+      // refresh to retry instead of permanently showing stale/null subscription data.
+      fetchedForId.current = "";
+    } finally {
+      setIsStoreInfoLoading(false);
+    }
+  }, [status, companyId, applySessionInfo]);
 
   useEffect(() => {
     if (status !== "authenticated" || !companyId) return;
 
-    // ── Step 1: populate from session immediately (no network needed) ────────
-    setStoreInfoState((prev) => ({
-      ...prev,
-      storeName:   companyName || prev.storeName,
-      branchName:  branchName  || prev.branchName,
-      cashierName: userName    || prev.cashierName,
-    }));
+    applySessionInfo();
 
-    // ── Step 2: fetch logoUrl, telephone, businessType and subscription ──────
-    // Only hit the network if we haven't already fetched for this companyId
     if (fetchedForId.current === companyId) return;
-    fetchedForId.current = companyId;
+    void refreshStoreInfo();
 
-    apiClient
-      .get<StoreInfoResponse>("/auth/store-info")
-      .then(({ data: res }) => {
-        if (!res.success) return;
-        setStoreInfoState((prev) => ({
-          ...prev,
-          logoUrl:        res.data.logoUrl        || prev.logoUrl,
-          telephone:      res.data.telephone      || prev.telephone,
-          businessType:   res.data.businessType   || prev.businessType,
-          businessTypeId: res.data.businessTypeId || prev.businessTypeId,
-          subscription:   res.data.subscription   ?? prev.subscription,
-        }));
-      })
-      .catch(() => {
-        // Non-fatal — store name and branch are already populated from session
-      });
-
-  // Use stable primitives — NOT the session object (new ref every render = infinite loop)
-  }, [status, companyId, companyName, branchName, userName]);
+    // Use stable primitives — NOT the session object (new ref every render = infinite loop)
+  }, [status, companyId, applySessionInfo, refreshStoreInfo]);
 
   const setStoreInfo = (info: Partial<StoreInfo>) => {
     setStoreInfoState((prev) => ({ ...prev, ...info }));
   };
 
   return (
-    <StoreInfoContext.Provider value={{ storeInfo, setStoreInfo }}>
+    <StoreInfoContext.Provider value={{ storeInfo, setStoreInfo, refreshStoreInfo, isStoreInfoLoading }}>
       {children}
     </StoreInfoContext.Provider>
   );

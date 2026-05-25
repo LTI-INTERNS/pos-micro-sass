@@ -24,7 +24,8 @@ export type NotificationType =
   | "error"
   | "success"
   | "approval_pending"
-  | "negative_stock";
+  | "negative_stock"
+  | "subscription_upgrade";
 
 /** Flattened shape used by the UI panels / modals */
 export type ProductApprovalData = {
@@ -110,7 +111,7 @@ function mapApiNotification(n: ApiNotification, role?: string): Notification {
     stock:         0,
     unit:          productData?.variants?.[0]?.sellUnit ?? "each",
     imageUrl:      productData?.variants?.[0]?.imageUrl ?? undefined,
-    branchId:      n.branchId,
+    branchId:      n.branchId ?? "",
     branchName,
     branchManager: n.manager?.name ?? "",
     submittedBy:   n.manager?.email ?? n.manager?.name ?? "",
@@ -144,6 +145,21 @@ function mapApiNotification(n: ApiNotification, role?: string): Notification {
 
   const isManager = role?.toUpperCase() === "MANAGER";
   const read = isManager ? n.readByManager : n.readByAdmin;
+
+  if (n.type === 'SUBSCRIPTION_UPGRADE') {
+    const pData = n.productData || {};
+    const reqName = pData.requestedBy || 'A user';
+    const reqRole = pData.role ? pData.role.toLowerCase() : 'manager';
+    const reqBranch = pData.branchName && pData.branchName !== 'N/A' ? ` from ${pData.branchName}` : '';
+    
+    return {
+      id: n.notifId,
+      message: `${reqName} (${reqRole})${reqBranch} requested a plan upgrade to unlock AI Prediction.`,
+      type: "subscription_upgrade",
+      time,
+      read,
+    };
+  }
 
   return {
     id:      n.notifId,

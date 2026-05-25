@@ -60,6 +60,13 @@ const typeConfig: Record<
     bg: "hover:bg-red-50",
     text: "text-red-600",
   },
+  subscription_upgrade: {
+    dot: "bg-purple-500",
+    bar: "bg-purple-500",
+    label: "UPGRADE REQUEST",
+    bg: "hover:bg-purple-50",
+    text: "text-purple-600",
+  },
 };
 
 export default function NotificationPanel({
@@ -228,6 +235,12 @@ export default function NotificationPanel({
                           📍 {n.negativeStockAlert.branchName} · {n.negativeStockAlert.branchManager}
                         </p>
                       </>
+                    )}
+
+                    {n.type === "subscription_upgrade" && (
+                      <p className="text-[10px] text-gray-700 font-semibold mt-0.5 leading-snug">
+                        {n.message}
+                      </p>
                     )}
 
                     <p className="text-[10px] text-gray-400 mt-1">{n.time}</p>

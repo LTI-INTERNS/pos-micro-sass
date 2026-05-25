@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
@@ -18,17 +19,25 @@ import BranchDetailsForm from "@/components/Admin/settings/Details/BranchDetails
 import AdditionalSettingsContent from "@/components/Admin/settings/AdditionalSettings/AdditionalSettingsContent";
 import LoadingState from "@/components/Admin/common/LoadingState";
 
-export default function SettingPage() {
+function SettingPageContent() {
   const { data: session, status } = useSession();
   const { storeInfo } = useStoreInfo(); 
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
   
-  const [activeTab, setActiveTab] = useState<string>("personalDetails");
+  const [activeTab, setActiveTab] = useState<string>(initialTab || "personalDetails");
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
 
   const [managerBranch, setManagerBranch] = useState<Branch | null>(null);
   const [ownerCompany, setOwnerCompany] = useState<CompanyDetails | null>(null);
 
   const userRole = session?.user?.role?.toLowerCase() || "";
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     if (storeInfo?.logoUrl) {
@@ -137,5 +146,13 @@ export default function SettingPage() {
         {activeTab === "settings" && <AdditionalSettingsContent />}
       </div>
     </DashboardLayout>
+  );
+}
+
+export default function SettingPage() {
+  return (
+    <Suspense fallback={<DashboardLayout><LoadingState message="Loading settings..." /></DashboardLayout>}>
+      <SettingPageContent />
+    </Suspense>
   );
 }
