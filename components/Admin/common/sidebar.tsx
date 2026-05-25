@@ -35,8 +35,8 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     { label: 'Profit Calculation',   path: '/profitcalculation', roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Supplier Management',  path: '/suppliermanagement',roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Reports',              path: '/reports',           roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
-    // ── AI Prediction — only shown when the plan includes AI prediction ──
-    { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[], planRequired: true },
+    // ── AI Prediction — visible for all, restricted in page ──
+    { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Branches',             path: '/branchmanagement',  roles: ['OWNER', 'ADMIN'] as UserRole[] },
     { label: 'POS Dashboard',        path: '/posdashboard',      roles: ['CASHIER'] as UserRole[] },
   ], []);
@@ -44,10 +44,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const menuItems = useMemo(() => {
     return allMenuItems.filter(item => {
       if (item.roles && !item.roles.includes(userRole)) return false;
-      if (item.planRequired && !hasAI) return false;
       return true;
     });
-  }, [userRole, allMenuItems, hasAI]);
+  }, [userRole, allMenuItems]);
 
   const activeItem = useMemo(() => {
     if (pathname.startsWith('/settings')) return 'Settings';
