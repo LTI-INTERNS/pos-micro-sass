@@ -68,6 +68,14 @@ const typeConfig: Record<
     iconBg: "bg-red-50",
     iconColor: "text-red-500",
   },
+  subscription_upgrade: {
+    icon: <Info size={16} />,
+    label: "UPGRADE REQUEST",
+    badgeBg: "bg-purple-100",
+    badgeText: "text-purple-700",
+    iconBg: "bg-purple-50",
+    iconColor: "text-purple-500",
+  },
 };
 
 export default function NotificationMessagePopup({ open, onClose, data }: Props) {
