@@ -60,6 +60,7 @@ export default function ActionButton({
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
       className={`${base} ${styles[variant]} ${className} transition-all active:scale-90 ${
         disabled ? "opacity-60 cursor-not-allowed" : ""
       }`}
