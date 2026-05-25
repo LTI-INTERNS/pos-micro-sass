@@ -45,7 +45,7 @@ export default function ReportsPage() {
   const { data: session, status } = useSession();
 
   const [search, setSearch] = useState("");
-  const [chartTab, setChartTab] = useState("sales-trends");
+  const [chartTab, setChartTab] = useState("revenue-orders");
   const [tableTab, setTableTab] = useState<TableTab>("sales");
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
@@ -292,6 +292,7 @@ export default function ReportsPage() {
         <ReportTable
           activeTab={tableTab}
           search={search}
+          dateRange={statDateRange}
           selectedSale={selectedSale}
           onSelectSale={setSelectedSale}
           selectedExpense={selectedExpense}

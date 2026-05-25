@@ -1,19 +1,22 @@
-﻿"use client";
+﻿﻿﻿﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { expenseApi, ExpenseApiItem } from "@/lib/api/expenses";
 import { productService, Product } from "@/lib/services";
 import { orderService } from "@/lib/services/order-service";
 import type { Order } from "@/types/order.types";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import ModalShell from "@/components/Admin/common/ModalShell";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import { formatCurrency } from "@/lib/context/formatCurrency";
+import type { DateRangeParams } from "@/types/analytics.types";
 import type { SaleRow, ExpenseRow, ProductRow } from "@/types/report.type";
 
 type Props = {
   activeTab: string;
   search: string;
+  dateRange?: DateRangeParams;
   selectedSale: SaleRow | null;
   selectedExpense: ExpenseRow | null;
   selectedProduct: ProductRow | null;
@@ -28,6 +31,12 @@ function filterRows<T>(data: T[], search: string, keys: (keyof T)[]): T[] {
   return data.filter((row) =>
     keys.some((k) => String(row[k]).toLowerCase().includes(q))
   );
+}
+
+function isWithinDateRange(date: string | undefined, dateRange?: DateRangeParams) {
+  if (!dateRange?.startDate || !dateRange?.endDate) return true;
+  if (!date) return true;
+  return date >= dateRange.startDate && date <= dateRange.endDate;
 }
 
 const mapExpense = (item: ExpenseApiItem): ExpenseRow => ({
@@ -45,35 +54,6 @@ function formatOrderItems(items: Order["items"]): string {
   return items.map((i) => `${i.qty}x ${i.name}`).join("\n");
 }
 
-async function enrichOrdersWithItems(orders: Order[], maxConcurrency = 6) {
-  const results: Order[] = new Array(orders.length);
-  let cursor = 0;
-
-  async function worker() {
-    while (cursor < orders.length) {
-      const index = cursor++;
-      const order = orders[index];
-
-      if (order.items && order.items.length > 0) {
-        results[index] = order;
-        continue;
-      }
-
-      try {
-        results[index] = await orderService.getById(order.id);
-      } catch {
-        results[index] = order;
-      }
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(maxConcurrency, orders.length) }, worker)
-  );
-
-  return results;
-}
-
 
 
 const mapOrderToSaleRow = (order: Order): SaleRow => ({
@@ -83,7 +63,9 @@ const mapOrderToSaleRow = (order: Order): SaleRow => ({
     : "",
   invoiceId: order.orderNumber ?? "Unknown",
   customer: order.customer ?? "Unknown Customer",
-  items: formatOrderItems(order.items),
+  // Important: avoid extra per-order fetches on initial load.
+  // If list endpoint doesn't include items, load them lazily on "View".
+  items: order.items && order.items.length > 0 ? formatOrderItems(order.items) : "",
   paymentMethod: order.paymenttype ?? "Unknown",
   status:
     order.status === "COMPLETED"
@@ -115,13 +97,13 @@ function mapProductToReportRow(product: Product): ProductReportRow {
   const variants = product.variants ?? [];
 
   const basePrices = variants.map((v) =>
-    Number((v as any).basePrice ?? v.price ?? 0)
+    Number(v.basePrice ?? v.price ?? 0)
   );
   const sellingPrices = variants.map((v) =>
-    Number((v as any).sellingPrice ?? v.price ?? 0)
+    Number(v.sellingPrice ?? v.price ?? 0)
   );
   const totalStock = variants.reduce(
-    (sum, v) => sum + Number((v as any).stockQty ?? 0),
+    (sum, v) => sum + Number(v.stockQty ?? 0),
     0
   );
 
@@ -129,8 +111,8 @@ function mapProductToReportRow(product: Product): ProductReportRow {
 
   let stockStatus: ProductReportRow["stockStatus"] = "In Stock";
   for (const v of variants) {
-    const qty = Number((v as any).stockQty ?? 0);
-    const low = Number((v as any).lowStock ?? 0);
+    const qty = Number(v.stockQty ?? 0);
+    const low = Number(v.lowStock ?? 0);
     if (qty <= 0) {
       stockStatus = "Out of Stock";
       break;
@@ -160,6 +142,7 @@ function mapProductToReportRow(product: Product): ProductReportRow {
 export default function ReportTable({
   activeTab,
   search,
+  dateRange,
   selectedSale,
   onSelectSale,
   selectedExpense,
@@ -169,6 +152,15 @@ export default function ReportTable({
 }: Props) {
   const { currency, useCents } = useCurrency();
   const { data: session, status } = useSession();
+
+  const [itemsPopupOpen, setItemsPopupOpen] = useState(false);
+  const [itemsPopupSale, setItemsPopupSale] = useState<SaleRow | null>(null);
+  const [itemsPopupLoading, setItemsPopupLoading] = useState(false);
+  const [itemsPopupItemsText, setItemsPopupItemsText] = useState<string>("");
+  const [orderItemsCache, setOrderItemsCache] = useState<Record<string, string>>(
+    {}
+  );
+  const activeItemsRequestRef = useRef<string | null>(null);
 
   
   const [realSales, setRealSales] = useState<SaleRow[]>([]);
@@ -182,10 +174,9 @@ export default function ReportTable({
 
     orderService
       .getAll({ page: 1, limit: 1000 }) // ðŸ”¥ FIX: fetch full dataset
-      .then(async (data) => {
-        const enriched = await enrichOrdersWithItems(data);
+      .then((data) => {
         if (cancelled) return;
-        setRealSales(enriched.map(mapOrderToSaleRow));
+        setRealSales(data.map(mapOrderToSaleRow));
       })
       .catch(() => {
         if (cancelled) return;
@@ -203,6 +194,11 @@ export default function ReportTable({
 
   const finalSalesData = realSales;
 
+  const filteredSalesData = useMemo(
+    () => finalSalesData.filter((row) => isWithinDateRange(row.date, dateRange)),
+    [finalSalesData, dateRange]
+  );
+
   
   const [realExpenses, setRealExpenses] = useState<ExpenseRow[]>([]);
 
@@ -216,6 +212,14 @@ export default function ReportTable({
   }, [status, session]);
 
   const finalExpensesData = realExpenses;
+
+  const filteredExpensesData = useMemo(
+    () =>
+      finalExpensesData.filter((row) =>
+        isWithinDateRange(row.date, dateRange)
+      ),
+    [finalExpensesData, dateRange]
+  );
 
  
   const [productReportRows, setProductReportRows] = useState<ProductReportRow[]>([]);
@@ -233,6 +237,14 @@ export default function ReportTable({
       .finally(() => setProductsLoading(false));
   }, [activeTab, status]);
 
+  const filteredProductRows = useMemo(
+    () =>
+      productReportRows.filter((row) =>
+        isWithinDateRange(row.createdAt, dateRange)
+      ),
+    [productReportRows, dateRange]
+  );
+
   
 
   const SALE_COLS: Column<SaleRow>[] = [
@@ -243,11 +255,51 @@ export default function ReportTable({
     {
       key: "items",
       label: "Items",
-      render: (row) => (
-        <div className="max-w-105 whitespace-pre-line wrap-break-word text-xs text-slate-700">
-          {row.items}
-        </div>
-      ),
+      render: (row) => {
+        return (
+          <button
+            type="button"
+            className="text-xs font-semibold underline underline-offset-2 text-indigo-600 hover:text-indigo-700 cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              setItemsPopupSale(row);
+              setItemsPopupOpen(true);
+
+              const cached = orderItemsCache[row.id];
+              if (typeof cached === "string") {
+                setItemsPopupItemsText(cached);
+                setItemsPopupLoading(false);
+                return;
+              }
+
+              setItemsPopupItemsText("");
+              setItemsPopupLoading(true);
+
+              const requestKey = `${row.id}:${Date.now()}`;
+              activeItemsRequestRef.current = requestKey;
+
+              orderService
+                .getById(row.id)
+                .then((fullOrder) => {
+                  if (activeItemsRequestRef.current !== requestKey) return;
+                  const formatted = formatOrderItems(fullOrder.items);
+                  setOrderItemsCache((prev) => ({ ...prev, [row.id]: formatted }));
+                  setItemsPopupItemsText(formatted);
+                })
+                .catch(() => {
+                  if (activeItemsRequestRef.current !== requestKey) return;
+                  setItemsPopupItemsText("-");
+                })
+                .finally(() => {
+                  if (activeItemsRequestRef.current !== requestKey) return;
+                  setItemsPopupLoading(false);
+                });
+            }}
+          >
+            View
+          </button>
+        );
+      },
     },
     { key: "paymentMethod", label: "Payment Method" },
     {
@@ -341,28 +393,73 @@ const PRODUCT_COLS: Column<ProductReportRow>[] = [
     }
 
     const filtered = filterRows(
-      finalSalesData,
+      filteredSalesData,
       search,
       ["date", "invoiceId", "customer", "items", "paymentMethod", "status"]
     );
 
     return (
-      <div className="mb-4 max-h-120 overflow-y-auto">
-        <CommonTable
-          title="Sales Transactions"
-          data={filtered}
-          columns={SALE_COLS}
-          emptyMessage="No sales found"
-          selectedRowId={selectedSale?.id}
-          onSelectRow={onSelectSale}
-        />
-      </div>
+      <>
+        <div className="mb-4 max-h-120 overflow-y-auto">
+          <CommonTable
+            title="Sales Transactions"
+            data={filtered}
+            columns={SALE_COLS}
+            emptyMessage="No sales found"
+            selectedRowId={selectedSale?.id}
+            onSelectRow={onSelectSale}
+          />
+        </div>
+
+        <ModalShell
+          open={itemsPopupOpen}
+          title={`Items • Invoice ${itemsPopupSale?.invoiceId ?? ""}`}
+          onClose={() => {
+            setItemsPopupOpen(false);
+            setItemsPopupSale(null);
+            setItemsPopupLoading(false);
+            setItemsPopupItemsText("");
+            activeItemsRequestRef.current = null;
+          }}
+          widthClassName="w-[720px] max-w-[92vw]"
+        >
+          <div className="space-y-4">
+            <div className="text-sm text-slate-600">
+              <span className="font-semibold text-slate-800">Customer:</span>{" "}
+              {itemsPopupSale?.customer ?? "-"}
+            </div>
+
+            <div className="max-h-[60vh] overflow-auto rounded-xl border bg-slate-50 p-3">
+              {itemsPopupLoading ? (
+                <div className="text-sm text-slate-500">Loading items...</div>
+              ) : itemsPopupItemsText ? (
+                <ul className="space-y-2">
+                  {itemsPopupItemsText
+                    .split("\n")
+                    .map((line) => line.trim())
+                    .filter(Boolean)
+                    .map((line, idx) => (
+                      <li
+                        key={`${idx}-${line}`}
+                        className="rounded-lg bg-white px-3 py-2 text-sm text-slate-800 shadow-sm"
+                      >
+                        {line}
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-slate-500">No items.</div>
+              )}
+            </div>
+          </div>
+        </ModalShell>
+      </>
     );
   }
 
   if (activeTab === "expenses") {
     const filtered = filterRows(
-      finalExpensesData,
+      filteredExpensesData,
       search,
       ["date", "category", "description", "approvedBy"]
     );
@@ -391,7 +488,7 @@ const PRODUCT_COLS: Column<ProductReportRow>[] = [
     }
 
     const filtered = filterRows(
-      productReportRows,
+      filteredProductRows,
       search,
       ["name", "category", "brand", "sku"]
     );
