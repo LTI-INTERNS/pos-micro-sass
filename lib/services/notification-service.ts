@@ -31,11 +31,11 @@ export type NotificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type ApiNotification = {
     notifId: string;
     companyId: string;
-    branchId: string;
-    managerId: string;
-    type: 'PRODUCT_APPROVAL';
+    branchId: string | null;
+    managerId: string | null;
+    type: 'PRODUCT_APPROVAL' | 'SUBSCRIPTION_UPGRADE';
     status: NotificationStatus;
-    productData: ProductApprovalSubmitPayload;
+    productData: ProductApprovalSubmitPayload | { requestType: string } | any;
     rejectionReason?: string | null;
     reviewedBy?: string | null;
     reviewedAt?: string | null;
@@ -45,8 +45,8 @@ export type ApiNotification = {
     readByManager: boolean;
     createdAt: string;
     updatedAt: string;
-    branch: { name: string; city: string | null };
-    manager: { name: string; email: string };
+    branch?: { name: string; city: string | null } | null;
+    manager?: { name: string; email: string } | null;
 };
 
 interface ApiResponse<T> {
@@ -61,6 +61,12 @@ export const notificationService = {
     submit: (payload: ProductApprovalSubmitPayload): Promise<ApiNotification> =>
         apiClient
             .post<ApiResponse<ApiNotification>>('/notifications/product-approval', payload)
+            .then(res => res.data.data),
+
+    /** Manager/Admin: submit a subscription upgrade request */
+    submitSubscriptionUpgrade: (): Promise<ApiNotification> =>
+        apiClient
+            .post<ApiResponse<ApiNotification>>('/notifications/subscription-upgrade')
             .then(res => res.data.data),
 
     /** Admin/Owner: list all notifications for the company */
