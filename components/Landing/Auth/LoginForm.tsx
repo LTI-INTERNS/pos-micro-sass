@@ -15,7 +15,14 @@ export default function LoginForm() {
   const [form, setForm]                   = useState({ email: "", password: "" });
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState("");
+  const [verifyToast, setVerifyToast]       = useState(false);
   const [showAgreement, setShowAgreement] = useState(false);
+
+  useEffect(() => {
+    if (!verifyToast) return;
+    const t = setTimeout(() => setVerifyToast(false), 9000);
+    return () => clearTimeout(t);
+  }, [verifyToast]);
 
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -77,6 +84,10 @@ export default function LoginForm() {
       });
 
       if (!result?.ok || result.error) {
+        if (result?.error === "UNVERIFIED_ACCOUNT") {
+          setVerifyToast(true);
+          return;
+        }
         throw new Error("Invalid email or password");
       }
 
@@ -168,6 +179,18 @@ export default function LoginForm() {
 
   return (
     <>
+      {verifyToast && (
+        <div className="fixed top-5 right-5 z-[9999] max-w-md" role="status" aria-live="polite">
+          <div className="rounded-2xl bg-black/80 backdrop-blur-md border border-white/15 px-5 py-4 text-white shadow-xl">
+            <p className="text-sm font-semibold tracking-tight">Account pending activation</p>
+            <p className="mt-2 text-sm text-white/85 leading-relaxed">
+              A verification message has been sent to your registered email. Open it and use the secure link to
+              activate your account, then sign in again. If nothing arrives within a few minutes, check your spam or
+              junk folder.
+            </p>
+          </div>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="space-y-5">
 
         {error && <FormErrorMessage message={error} />}
