@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+
 type Props = {
   email: string;
   setEmail: (email: string) => void;
@@ -11,39 +13,53 @@ type Props = {
   onCancel?: () => void;
 };
 
-export default function StepEmail({
-  email,
-  setEmail,
-  onNext,
-  onCancel,
-}: Props) {
+export default function StepEmail({ email, setEmail, onNext, onCancel }: Props) {
   const router = useRouter();
   const [error, setError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
 
-  // simple email regex
   const isValidEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!email.trim()) {
       setError("Email is required");
       return;
     }
-
     if (!isValidEmail(email)) {
       setError("Please enter a valid email address");
       return;
     }
 
     setError("");
-    onNext();
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/api/v1/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data?.message ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      onNext();
+    } catch {
+      setError("Unable to reach the server. Please check your connection.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
     } else {
-      
       router.back();
     }
   };
@@ -73,10 +89,9 @@ export default function StepEmail({
           type="email"
           placeholder="example@yourdomain.com"
           className={`w-full px-4 py-3 rounded-full bg-white/10 border text-white text-xs placeholder-white/50 transition-colors
-            ${
-              error
-                ? "border-red-400 focus:border-red-400"
-                : "border-white/20 focus:border-orange-400"
+            ${error
+              ? "border-red-400 focus:border-red-400"
+              : "border-white/20 focus:border-orange-400"
             }
             focus:outline-none`}
           value={email}
@@ -84,9 +99,10 @@ export default function StepEmail({
             setEmail(e.target.value);
             setError("");
           }}
+          onKeyDown={(e) => e.key === "Enter" && handleNext()}
+          disabled={loading}
         />
 
-        {/* Error Message */}
         {error && (
           <p className="text-red-400 text-xs mt-1 ml-2">{error}</p>
         )}
@@ -101,14 +117,15 @@ export default function StepEmail({
           fullWidth={false}
           onClick={handleCancel}
           className="flex-1 !rounded-full !bg-transparent !border-orange-500/50 !text-orange-400 hover:!bg-orange-500/10"
+          disabled={loading}
         />
-
         <ActionButton
-          label="Send Code"
+          label={loading ? "Sending…" : "Send Code"}
           variant="primary"
           fullWidth={false}
           onClick={handleNext}
           className="flex-1 !rounded-full !bg-gradient-to-r !from-orange-500 !to-orange-600 hover:!from-orange-600 hover:!to-orange-700"
+          disabled={loading}
         />
       </div>
     </div>

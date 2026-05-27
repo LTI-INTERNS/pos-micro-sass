@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+
 type Props = {
   email: string;
   onNext: () => void;
@@ -13,6 +15,7 @@ export default function StepCode({ email, onNext, onBack }: Props) {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [timer, setTimer] = useState(45);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -26,12 +29,10 @@ export default function StepCode({ email, onNext, onBack }: Props) {
 
   const handleChange = (index: number, value: string) => {
     if (value && !/^\d$/.test(value)) return;
-
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
     setError("");
-
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
@@ -45,23 +46,17 @@ export default function StepCode({ email, onNext, onBack }: Props) {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData("text").trim();
-    const digits = pastedData.match(/\d/g);
-
+    const digits = e.clipboardData.getData("text").trim().match(/\d/g);
     if (digits) {
       const newCode = [...code];
-      digits.slice(0, 6).forEach((digit, idx) => {
-        newCode[idx] = digit;
-      });
+      digits.slice(0, 6).forEach((digit, idx) => { newCode[idx] = digit; });
       setCode(newCode);
       setError("");
-
-      const nextIndex = Math.min(digits.length, 5);
-      inputRefs.current[nextIndex]?.focus();
+      inputRefs.current[Math.min(digits.length, 5)]?.focus();
     }
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     if (timer > 0) {
       setError(`Please wait ${timer} seconds before resending the code.`);
       return;
@@ -70,32 +65,58 @@ export default function StepCode({ email, onNext, onBack }: Props) {
     setCode(["", "", "", "", "", ""]);
     setTimer(45);
     setError("");
-    inputRefs.current[0]?.focus();
+    setLoading(true);
 
-    // RESEND CODE LOGIC (to be implemented)
-    // Example:
-    // sendVerificationCode(email);
+    try {
+      await fetch(`${API}/api/v1/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    } catch {
+      setError("Unable to resend. Please check your connection.");
+    } finally {
+      setLoading(false);
+      inputRefs.current[0]?.focus();
+    }
+  };
+
+  const handleVerify = async () => {
+    const enteredCode = code.join("");
+    if (enteredCode.length < 6) {
+      setError("Please enter the 6-digit verification code");
+      return;
+    }
+
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/api/v1/auth/verify-reset-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp: enteredCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setError(data?.message ?? "Invalid code. Please try again.");
+        return;
+      }
+
+      onNext();
+    } catch {
+      setError("Unable to reach the server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const handleVerify = () => {
-    const enteredCode = code.join("");
-
-    if (!enteredCode || enteredCode.length < 6) {
-      setError("Please enter the 6-digit verification code");
-      return;
-    }
-
-    setError("");
-
-    // VERIFY CODE LOGIC (to be implemented)
-    // For now, assume success:
-    onNext();
   };
 
   return (
@@ -106,20 +127,11 @@ export default function StepCode({ email, onNext, onBack }: Props) {
             onClick={onBack}
             className="absolute left-0 top-0 ml-[-50] text-white/70 hover:text-white transition-colors cursor-pointer"
             aria-label="Go back"
+            disabled={loading}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 19.5L8.25 12l7.5-7.5"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+              strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
         )}
@@ -146,31 +158,27 @@ export default function StepCode({ email, onNext, onBack }: Props) {
         {code.map((digit, index) => (
           <input
             key={index}
-            ref={(el) => {
-              inputRefs.current[index] = el;
-            }}
+            ref={(el) => { inputRefs.current[index] = el; }}
             type="text"
             inputMode="numeric"
             maxLength={1}
             className={`w-12 h-14 text-center text-xl font-semibold rounded-lg bg-white/10 border-2 text-white transition-colors
-              ${
-                error
-                  ? "border-red-400 focus:border-red-400"
-                  : "border-orange-500/50 focus:border-orange-500"
+              ${error
+                ? "border-red-400 focus:border-red-400"
+                : "border-orange-500/50 focus:border-orange-500"
               }
               focus:outline-none`}
             value={digit}
             onChange={(e) => handleChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             autoFocus={index === 0}
+            disabled={loading}
           />
         ))}
       </div>
 
       {error && (
-        <p className="text-red-400 text-xs text-center">
-          {error}
-        </p>
+        <p className="text-red-400 text-xs text-center">{error}</p>
       )}
 
       <p className="text-white/80 text-xs mt-5">
@@ -180,18 +188,20 @@ export default function StepCode({ email, onNext, onBack }: Props) {
 
       <div className="flex gap-3 w-full mt-2">
         <ActionButton
-          label="Resend Code"
+          label={loading ? "Sending…" : "Resend Code"}
           variant="outline"
           fullWidth={false}
           onClick={handleResend}
           className="flex-1 !rounded-full !bg-transparent !border-orange-500/50 !text-orange-400 hover:!bg-orange-500/10"
+          disabled={loading}
         />
         <ActionButton
-          label="Verify Code"
+          label={loading ? "Verifying…" : "Verify Code"}
           variant="primary"
           fullWidth={false}
           onClick={handleVerify}
           className="flex-1 !rounded-full !bg-gradient-to-r !from-orange-500 !to-orange-600 hover:!from-orange-600 hover:!to-orange-700"
+          disabled={loading}
         />
       </div>
     </div>

@@ -6,7 +6,11 @@ import { useSession } from "next-auth/react";
 import StatCard from "@/components/Admin/common/StatCard";
 import { calcStatSummary } from "@/lib/utils/statCardUtils";
 import { overviewAnalyticsService } from "@/lib/services/analytics-service";
-import type { DateRangeParams, OverviewStats } from "@/types/analytics.types";
+import type {
+  DateRangeParams,
+  OverviewStats,
+  ProfitSummary,
+} from "@/types/analytics.types";
 
 type AmountRow = { date: string; amount: number };
 
@@ -37,6 +41,7 @@ export default function ReportStatCardGrid({
   const { status } = useSession();
 
   const [stats, setStats] = useState<OverviewStats | null>(null);
+  const [profitSummary, setProfitSummary] = useState<ProfitSummary | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
@@ -45,15 +50,21 @@ export default function ReportStatCardGrid({
     let cancelled = false;
     setLoadingStats(true);
 
-    overviewAnalyticsService
-      .getOverviewStats(dateRange)
-      .then((next) => {
+    Promise.all([
+      overviewAnalyticsService.getOverviewStats(dateRange),
+      overviewAnalyticsService
+        .getProfitReport(dateRange, 1, 1)
+        .then((r) => r.summary),
+    ])
+      .then(([nextStats, nextProfitSummary]) => {
         if (cancelled) return;
-        setStats(next);
+        setStats(nextStats);
+        setProfitSummary(nextProfitSummary);
       })
       .catch(() => {
         if (cancelled) return;
         setStats(null);
+        setProfitSummary(null);
       })
       .finally(() => {
         if (cancelled) return;
@@ -71,7 +82,9 @@ export default function ReportStatCardGrid({
   const totalSalesAmount = stats?.totalRevenue.value ?? fallbackSalesStats.total;
   const totalExpensesAmount =
     stats?.totalExpenses.value ?? fallbackExpenseStats.total;
-  const netProfitAmount = totalSalesAmount - totalExpensesAmount;
+  const fallbackNetProfitAmount = totalSalesAmount - totalExpensesAmount;
+  const grossProfitAmount =
+    profitSummary?.grossProfit.value ?? fallbackNetProfitAmount;
 
   const statCards = [
     {
@@ -99,12 +112,16 @@ export default function ReportStatCardGrid({
       caption: "vs previous period",
     },
     {
-      title: "Net Profit",
-      amount: loadingStats ? undefined : netProfitAmount,
+      title: "Gross Profit",
+      amount: loadingStats ? undefined : grossProfitAmount,
       value: loadingStats ? "…" : undefined,
-      percentage: stats ? "N/A" : "+0.0%",
-      trend: "neutral" as const,
-      caption: stats ? "computed" : "from previous 30 days",
+      percentage: profitSummary
+        ? pctLabel(profitSummary.grossProfit.pctChange)
+        : "N/A",
+      trend: profitSummary
+        ? trendFromPct(profitSummary.grossProfit.pctChange)
+        : ("neutral" as const),
+      caption: profitSummary ? "vs previous period" : "unavailable",
     },
     {
       title: "Transactions Count",
