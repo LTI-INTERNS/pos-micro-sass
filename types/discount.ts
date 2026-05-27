@@ -15,5 +15,5 @@ export type CreateDiscountPayload = {
   percentage: number;
   startDate: string;
   endDate: string;
-  branchId: string;
+  branchIds: string[]; // <-- CHANGED to an array
 };

@@ -12,7 +12,7 @@ type DiscountValues = {
   percentage: string;
   startDate: string;
   endDate: string;
-  branchId: string;
+  branchIds: string[]; // <-- Changed to array
 };
 
 type FormErrors = Partial<Record<keyof DiscountValues, string>>;
@@ -28,9 +28,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
   const role = session?.user?.role?.toUpperCase();
   const userBranchId = session?.user?.branchId ?? "";
   
-  // THE FIX: Extracting the token properly here too
   const token = (session as any)?.user?.backendToken;
-
   const canSelectBranch = role === "OWNER" || role === "ADMIN";
 
   const [branches, setBranches] = useState<{ label: string; value: string }[]>([]);
@@ -41,7 +39,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     percentage: "",
     startDate: "",
     endDate: "",
-    branchId: canSelectBranch ? "All" : userBranchId,
+    branchIds: canSelectBranch ? [] : [userBranchId], // Auto-fill for managers
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -52,13 +50,12 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     if (open && canSelectBranch && token) {
       const fetchBranches = async () => {
         try {
-          // Use the clean service method we just built
           const data = await discountService.getBranches(token);
           const branchOptions = data.map((b: any) => ({
             label: b.name,
             value: b.branchId,
           }));
-          setBranches([{ label: "All Branches", value: "All" }, ...branchOptions]);
+          setBranches(branchOptions);
         } catch (error) {
           console.error("Failed to fetch branches", error);
         }
@@ -67,7 +64,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     }
   }, [open, canSelectBranch, token]);
 
-  // Reset form when popup opens
+  // Reset form when popup opens/closes
   useEffect(() => {
     if (!open) return;
     setValues({
@@ -75,17 +72,36 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
       percentage: "",
       startDate: "",
       endDate: "",
-      branchId: canSelectBranch ? "All" : userBranchId,
+      branchIds: canSelectBranch ? [] : [userBranchId],
     });
     setErrors({});
     setApiError(null);
   }, [open, canSelectBranch, userBranchId]);
 
-  const setField = (name: keyof DiscountValues, value: string) => {
+  const setField = (name: keyof DiscountValues, value: any) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
     setApiError(null);
   };
+
+  // --- Checkbox Logic ---
+  const isAllSelected = branches.length > 0 && branches.every((b) => values.branchIds.includes(b.value));
+
+  const handleToggleAll = () => {
+    if (isAllSelected) {
+      setField("branchIds", []); // Deselect all
+    } else {
+      setField("branchIds", branches.map((b) => b.value)); // Select all
+    }
+  };
+
+  const handleToggleBranch = (id: string) => {
+    const newIds = values.branchIds.includes(id)
+      ? values.branchIds.filter((b) => b !== id)
+      : [...values.branchIds, id];
+    setField("branchIds", newIds);
+  };
+  // ----------------------
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -104,6 +120,10 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     if (!values.endDate) newErrors.endDate = "End date is required";
     else if (values.startDate && new Date(values.endDate) < new Date(values.startDate)) {
       newErrors.endDate = "End date cannot be before start date";
+    }
+
+    if (values.branchIds.length === 0) {
+      newErrors.branchIds = "Select at least one branch";
     }
 
     setErrors(newErrors);
@@ -180,22 +200,45 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
         />
         {errors.endDate && <p className="text-xs text-red-500 px-3">{errors.endDate}</p>}
 
+        {/* --- Branches Checkbox Grid --- */}
         <div>
           {canSelectBranch ? (
-            <div className="flex flex-col space-y-1">
-               <label className="text-sm font-medium text-gray-700">Branch</label>
-               <select
-                 className="border rounded-md px-3 py-2 text-sm text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                 value={values.branchId}
-                 onChange={(e) => setField("branchId", e.target.value)}
-               >
-                 {branches.map((b) => (
-                   <option key={b.value} value={b.value}>{b.label}</option>
-                 ))}
-               </select>
+            <div className="flex flex-col space-y-2 mt-2">
+               <label className="text-sm font-medium text-gray-700">Assign to Branches</label>
+               <div className="p-3 border rounded-md bg-gray-50/50">
+                 
+                 {/* All Branches Toggle */}
+                 <div className="mb-3 pb-3 border-b border-gray-200">
+                    <label className="flex items-center gap-2 cursor-pointer w-max">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                        checked={isAllSelected} 
+                        onChange={handleToggleAll} 
+                      />
+                      <span className="text-sm font-medium text-black">All Branches</span>
+                    </label>
+                 </div>
+
+                 {/* 3 Column Grid for Branches */}
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 gap-x-4">
+                   {branches.map((b) => (
+                     <label key={b.value} className="flex items-center gap-2 cursor-pointer">
+                       <input 
+                         type="checkbox" 
+                         className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                         checked={values.branchIds.includes(b.value)} 
+                         onChange={() => handleToggleBranch(b.value)} 
+                       />
+                       <span className="text-sm text-black truncate" title={b.label}>{b.label}</span>
+                     </label>
+                   ))}
+                 </div>
+               </div>
+               {errors.branchIds && <p className="text-xs text-red-500 px-1">{errors.branchIds}</p>}
             </div>
           ) : (
-            <>
+            <div className="mt-2">
               <FormField
                 label="Branch"
                 placeholder="Your Branch"
@@ -207,7 +250,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
               <p className="text-xs text-gray-400 px-3 mt-1">
                 Discounts are applied to your branch only.
               </p>
-            </>
+            </div>
           )}
         </div>
 

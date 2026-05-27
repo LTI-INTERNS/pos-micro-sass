@@ -54,15 +54,19 @@ export default function BranchesPage() {
   });
 
   const handleAddBranch = async (values: Record<string, string>) => {
-    // --- NEW: Local Frontend Validation against currently loaded branches ---
+    // --- Local Frontend Validation against currently loaded branches ---
     if (allBranches.some(b => b.phone === values.phoneNumber)) {
       return alert("Phone number is already registered");
     }
     if (allBranches.some(b => b.email === values.email)) {
       return alert("Email is already registered");
     }
-    if (allBranches.some(b => b.regno === values.registrationNumber)) {
-      return alert("Registration number is already registered");
+    
+    // THE FIX: Only check for Registration Number duplicates if it is NOT empty
+    if (values.registrationNumber && values.registrationNumber.trim() !== "") {
+      if (allBranches.some(b => b.regno === values.registrationNumber)) {
+        return alert("Registration number is already registered");
+      }
     }
 
     try {
@@ -86,15 +90,19 @@ export default function BranchesPage() {
   const handleEditBranch = async (updatedBranch: Branch) => {
     if (!selectedBranch) return;
 
-    // --- NEW: Local Frontend Validation against currently loaded branches (ignoring itself) ---
+    // --- Local Frontend Validation against currently loaded branches (ignoring itself) ---
     if (allBranches.some(b => b.id !== selectedBranch.id && b.phone === updatedBranch.phone)) {
       return alert("Phone number is already registered");
     }
     if (allBranches.some(b => b.id !== selectedBranch.id && b.email === updatedBranch.email)) {
       return alert("Email is already registered");
     }
-    if (allBranches.some(b => b.id !== selectedBranch.id && b.regno === updatedBranch.regno)) {
-      return alert("Registration number is already registered");
+
+    // THE FIX: Only check for Registration Number duplicates if it is NOT empty
+    if (updatedBranch.regno && updatedBranch.regno.trim() !== "") {
+      if (allBranches.some(b => b.id !== selectedBranch.id && b.regno === updatedBranch.regno)) {
+        return alert("Registration number is already registered");
+      }
     }
 
     try {
