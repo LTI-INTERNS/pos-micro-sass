@@ -3,93 +3,39 @@
 import { useState, useEffect } from "react";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import {
-  LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Legend,
+  ComposedChart,
 } from "recharts";
 import type { NameType, ValueType, Payload } from "recharts/types/component/DefaultTooltipContent";
-import { analyticsService, overviewAnalyticsService } from "@/lib/services/analytics-service";
-import type { SalesLine, SalesBar, SalesChartData, DateRangeParams } from "@/types/analytics.types";
+import { overviewAnalyticsService } from "@/lib/services/analytics-service";
+import type {
+  DateRangeParams,
+  SalesBar,
+  SalesChartData,
+  SalesReportRow,
+  TopSellingProduct,
+} from "@/types/analytics.types";
+import { useCurrency } from "@/lib/context/CurrencyContext";
+import { formatCurrency } from "@/lib/context/formatCurrency";
+import { format, parseISO } from "date-fns";
 
 
 const CHART_TABS = [
-  { id: "sales-trends",       label: "Sales Trends"       },
-  { id: "daily-breakdown",    label: "Daily Breakdown"    },
-  { id: "category-breakdown", label: "Category Breakdown" },
+  { id: "revenue-orders", label: "Revenue & Orders" },
+  { id: "top-products", label: "Top Products" },
+  { id: "product-trends", label: "Product Trends" },
 ];
 
-type ChartLine = {
-  key: string;
-  color: string;
-  name: string;
-};
-
-type ChartConfig = {
-  data: Record<string, string | number>[];
-  lines: ChartLine[];
-  loading: boolean;
-};
-
-// Transform SalesLine data to chart format
-function transformSalesTrendData(data: SalesLine[]): Record<string, string | number>[] {
-  return data.map(item => ({
-    day: item.day,
-    sales: item.coffeetalk + item.lowSlow + item.coldBrew + item.eplus + item.sinergy,
-    expenses: Math.round((item.coffeetalk + item.lowSlow + item.coldBrew + item.eplus + item.sinergy) * 0.4),
-  }));
-}
-
-// Transform SalesBar data to chart format
-function transformDailyBreakdownData(data: SalesBar[]): Record<string, string | number>[] {
-  return data.map(item => ({
-    day: item.hour,
-    revenue: item.value,
-    profit: Math.round(item.value * 0.6),
-  }));
-}
-
-// Transform SalesChartData to chart format
-function transformCategoryBreakdownData(data: SalesChartData): Record<string, string | number>[] {
-  if (!data.days.length || !data.series.length) {
-    return [];
-  }
-  
-  return data.days.map((day, index) => {
-    const row: Record<string, string | number> = { day };
-    data.series.forEach(series => {
-      row[series.name.toLowerCase().replace(/\s+/g, '')] = series.data[index] || 0;
-    });
-    return row;
-  });
-}
-
-const DEFAULT_CHART_CONFIGS: Record<string, ChartConfig> = {
-  "sales-trends": {
-    data: [],
-    lines: [
-      { key: "sales",    color: "#FF5C00", name: "Sales"    },
-      { key: "expenses", color: "#8167EE", name: "Expenses" },
-    ],
-    loading: true,
-  },
-  "daily-breakdown": {
-    data: [],
-    lines: [
-      { key: "revenue", color: "#FF5C00", name: "Revenue" },
-      { key: "profit",  color: "#73CB50", name: "Profit"  },
-    ],
-    loading: true,
-  },
-  "category-breakdown": {
-    data: [],
-    lines: [
-      { key: "beverages",  color: "#FF5C00", name: "Beverages"  },
-      { key: "snacks",     color: "#8167EE", name: "Snacks"     },
-      { key: "drygoods",   color: "#73CB50", name: "Dry Goods"  },
-      { key: "confection", color: "#F9716A", name: "Confection" },
-    ],
-    loading: true,
-  },
-};
+const COLORS = ["#FF5C00", "#8167EE", "#73CB50", "#F9716A", "#06B6D4", "#64748B"];
 
 type TooltipEntry = Payload<ValueType, NameType>;
 
@@ -125,25 +71,29 @@ type Props = {
 };
 
 export default function ReportChart({ activeTab, onTabChange, dateRange }: Props) {
-  const [salesLineData, setSalesLineData] = useState<SalesLine[]>([]);
+  const { currency, useCents } = useCurrency();
+
+  const [salesReport, setSalesReport] = useState<SalesReportRow[]>([]);
   const [salesBarData, setSalesBarData] = useState<SalesBar[]>([]);
   const [salesChartData, setSalesChartData] = useState<SalesChartData>({ days: [], series: [] });
+  const [topProducts, setTopProducts] = useState<TopSellingProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        // Fetch all data in parallel
-        const [lineData, barData, chartData] = await Promise.all([
-          analyticsService.getSalesLine(),
-          analyticsService.getSalesBar(),
+        const [salesReportRows, hourlyRows, chartData, topSelling] = await Promise.all([
+          overviewAnalyticsService.getSalesReport(dateRange),
+          overviewAnalyticsService.getSalesBar(dateRange),
           overviewAnalyticsService.getSalesChart(dateRange, 5),
+          overviewAnalyticsService.getTopSelling(dateRange, 8),
         ]);
-        
-        setSalesLineData(lineData);
-        setSalesBarData(barData);
+
+        setSalesReport(salesReportRows);
+        setSalesBarData(hourlyRows);
         setSalesChartData(chartData);
+        setTopProducts(topSelling);
       } catch (error) {
         console.error("Failed to fetch chart data:", error);
       } finally {
@@ -152,45 +102,54 @@ export default function ReportChart({ activeTab, onTabChange, dateRange }: Props
     }
     
     fetchData();
-  }, [dateRange?.startDate, dateRange?.endDate, dateRange?.branchId]);
+  }, [dateRange]);
 
-  // Build chart config based on active tab and fetched data
-  const getChartConfig = (): ChartConfig => {
-    switch (activeTab) {
-      case "sales-trends":
-        return {
-          data: transformSalesTrendData(salesLineData),
-          lines: [
-            { key: "sales",    color: "#FF5C00", name: "Sales"    },
-            { key: "expenses", color: "#8167EE", name: "Expenses" },
-          ],
-          loading,
-        };
-      case "daily-breakdown":
-        return {
-          data: transformDailyBreakdownData(salesBarData),
-          lines: [
-            { key: "revenue", color: "#FF5C00", name: "Revenue" },
-            { key: "profit",  color: "#73CB50", name: "Profit"  },
-          ],
-          loading,
-        };
-      case "category-breakdown":
-        return {
-          data: transformCategoryBreakdownData(salesChartData),
-          lines: salesChartData.series.map((s, i) => ({
-            key: s.name.toLowerCase().replace(/\s+/g, ''),
-            color: ["#FF5C00", "#8167EE", "#73CB50", "#F9716A"][i % 4],
-            name: s.name,
-          })),
-          loading,
-        };
-      default:
-        return DEFAULT_CHART_CONFIGS["sales-trends"];
+  const formatDayLabel = (iso: string) => {
+    try {
+      return format(parseISO(iso), "MMM d");
+    } catch {
+      return iso;
     }
   };
 
-  const config = getChartConfig();
+  const formatRangeLabel = () => {
+    const start = dateRange?.startDate ? formatDayLabel(dateRange.startDate) : null;
+    const end = dateRange?.endDate ? formatDayLabel(dateRange.endDate) : null;
+    if (start && end) return `${start} – ${end}`;
+    if (start) return `From ${start}`;
+    if (end) return `Until ${end}`;
+    return "All time";
+  };
+
+  const revenueOrdersData: Record<string, string | number>[] = salesReport.map((r) => ({
+    day: r.day,
+    revenue: r.revenue,
+    orders: r.orderCount,
+  }));
+
+  const topProductsData: Record<string, string | number>[] = topProducts.map((p) => ({
+    name: p.name,
+    revenue: p.revenue,
+    orders: p.orderCount,
+  }));
+
+  const productTrendsData: Record<string, string | number>[] =
+    salesChartData.days?.length && salesChartData.series?.length
+      ? salesChartData.days.map((day, index) => {
+          const row: Record<string, string | number> = { day };
+          salesChartData.series.forEach((s) => {
+            row[s.name] = s.data[index] ?? 0;
+          });
+          return row;
+        })
+      : [];
+
+  const currentData =
+    activeTab === "revenue-orders"
+      ? revenueOrdersData
+      : activeTab === "top-products"
+      ? topProductsData
+      : productTrendsData;
 
   return (
     <div id="report-chart-capture" className="flex-1 bg-white rounded-xl shadow-[0_2px_24px_rgba(25,25,28,0.04)] p-6 flex flex-col gap-4">
@@ -200,14 +159,14 @@ export default function ReportChart({ activeTab, onTabChange, dateRange }: Props
         onChange={onTabChange}
       />
 
-      {config.loading ? (
+      {loading ? (
         <div className="flex-1 flex items-center justify-center h-70">
           <div className="flex flex-col items-center gap-2">
             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-sm text-gray-400">Loading chart data...</span>
           </div>
         </div>
-      ) : config.data.length === 0 ? (
+      ) : currentData.length === 0 ? (
         <div className="flex-1 flex items-center justify-center h-70">
           <div className="flex flex-col items-center gap-2 text-gray-400">
             <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -219,51 +178,146 @@ export default function ReportChart({ activeTab, onTabChange, dateRange }: Props
       ) : (
         <div style={{ height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={config.data}
-              margin={{ top: 8, right: 8, left: -10, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis
-                dataKey="day"
-                tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              {config.lines.map((l: ChartLine) => (
-                <Line
-                  key={l.key}
-                  type="monotone"
-                  dataKey={l.key}
-                  stroke={l.color}
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 5 }}
-                  name={l.name}
+            {activeTab === "revenue-orders" ? (
+              <ComposedChart
+                data={revenueOrdersData}
+                margin={{ top: 8, right: 8, left: -10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={(v) => formatDayLabel(String(v))}
+                  tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  axisLine={false}
+                  tickLine={false}
                 />
-              ))}
-            </LineChart>
+                <YAxis
+                  yAxisId="left"
+                  tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => formatCurrency(Number(v ?? 0), currency, useCents)}
+                />
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (name === "Revenue") {
+                      return [
+                        formatCurrency(Number(value ?? 0), currency, useCents),
+                        name,
+                      ];
+                    }
+                    return [value as ValueType, name];
+                  }}
+                  labelFormatter={(label) => formatDayLabel(String(label))}
+                />
+                <Legend />
+                <Bar yAxisId="left" dataKey="revenue" name="Revenue" fill={COLORS[0]} radius={[6, 6, 0, 0]} />
+                <Line yAxisId="right" type="monotone" dataKey="orders" name="Orders" stroke={COLORS[1]} strokeWidth={2} dot={false} />
+              </ComposedChart>
+            ) : activeTab === "top-products" ? (
+              <BarChart
+                data={topProductsData}
+                margin={{ top: 8, right: 8, left: 10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 10, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  interval={0}
+                  angle={-12}
+                  height={50}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  tickFormatter={(v) => formatCurrency(Number(v ?? 0), currency, useCents)}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  formatter={(value, name) => {
+                    if (name === "Revenue") {
+                      return [
+                        formatCurrency(Number(value ?? 0), currency, useCents),
+                        name,
+                      ];
+                    }
+                    return [value as ValueType, name];
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="revenue" name="Revenue" fill={COLORS[0]} radius={[6, 6, 0, 0]} />
+              </BarChart>
+            ) : (
+              <LineChart
+                data={productTrendsData}
+                margin={{ top: 8, right: 8, left: -10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis
+                  dataKey="day"
+                  tickFormatter={(v) => formatDayLabel(String(v))}
+                  tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: "#b3b3b3", fontFamily: "Poppins" }}
+                  tickFormatter={(v) => formatCurrency(Number(v ?? 0), currency, useCents)}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  formatter={(value, name) => [
+                    formatCurrency(Number(value ?? 0), currency, useCents),
+                    name,
+                  ]}
+                  labelFormatter={(label) => formatDayLabel(String(label))}
+                />
+                <Legend />
+                {salesChartData.series.map((s, idx) => (
+                  <Line
+                    key={s.variantId}
+                    type="monotone"
+                    dataKey={s.name}
+                    stroke={COLORS[idx % COLORS.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                    name={s.name}
+                  />
+                ))}
+              </LineChart>
+            )}
           </ResponsiveContainer>
         </div>
       )}
 
-      <div className="flex items-center gap-4 flex-wrap">
-        {config.lines.map((l: ChartLine) => (
-          <span key={l.key} className="flex items-center gap-1.5 text-[11px] text-gray-500">
-            <span
-              className="w-3 h-0.5 rounded-full inline-block"
-              style={{ background: l.color }}
-            />
-            {l.name}
-          </span>
-        ))}
-      </div>
+      {activeTab === "revenue-orders" && salesBarData.length > 0 && (
+        <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 mb-2">
+            <div className="text-[12px] font-semibold text-slate-700">Sales by Hour</div>
+            <div className="text-[11px] text-slate-500">{formatRangeLabel()}</div>
+          </div>
+          <div style={{ height: 120 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesBarData.map((h) => ({ hour: h.hour, value: h.value }))}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="hour" tick={{ fontSize: 10, fill: "#b3b3b3", fontFamily: "Poppins" }} />
+                <YAxis hide />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="value" name="Sales" fill={COLORS[2]} radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
