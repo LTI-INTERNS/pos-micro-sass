@@ -344,12 +344,13 @@ export default function ProductsTable({
         label: "Actions",
         render: (row) => (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               const tagged = { ...row._product, _selectedVariantSku: row._sku };
               onView(tagged as unknown as Product);
             }}
-            className="text-blue-500 text-xs cursor-pointer hover:underline"
+            className="rounded-md bg-orange-500 px-3 py-1 text-sm font-medium text-white transition hover:bg-orange-600"
           >
             View
           </button>
@@ -417,11 +418,12 @@ export default function ProductsTable({
       label: "Actions",
       render: (row) => (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onView(row);
           }}
-          className="text-blue-500 text-xs cursor-pointer hover:underline"
+          className="rounded-md bg-orange-500 px-3 py-1 text-sm font-medium text-white transition hover:bg-orange-600"
         >
           View
         </button>
