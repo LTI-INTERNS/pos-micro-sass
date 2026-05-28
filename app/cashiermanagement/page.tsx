@@ -14,8 +14,10 @@ import DeactivateCashierPopup from "@/components/Admin/cashiermanagement/Deactiv
 import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import { cashierService } from "@/lib/services/cashier-service";
+import { branchService } from "@/lib/services/branch-service";
 import CashierStatCardGrid from "@/components/Admin/cashiermanagement/cashierStatCardGrid";
 import { queryKeys } from "@/lib/query-keys";
+import type { Branch } from "@/types/branch.types";
 import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.types";
 
 function toTableCashier(c: ApiCashier): TableCashier {
@@ -23,6 +25,8 @@ function toTableCashier(c: ApiCashier): TableCashier {
     id:             c.id,
     name:           c.name,
     cashierNo:      c.cashierNo,
+    branchId:       c.branchId,
+    branchName:     c.branchName,
     email:          c.email,
     imgUrl:         c.imgUrl,
     totalRevenue:   c.totalRevenue ?? 0,
@@ -46,6 +50,7 @@ export default function CashierManagementPage() {
   const [addOpen, setAddOpen]         = useState(false);
 
   const [selectedCashier, setSelectedCashier] = useState<ApiCashier | null>(null);
+  const [branches, setBranches] = useState<Branch[]>([]);
 
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen]         = useState(false);
@@ -88,6 +93,15 @@ export default function CashierManagementPage() {
   useEffect(() => {
     if (!canSeeAllBranches) setFilters((prev) => ({ ...prev, branch: "" }));
   }, [canSeeAllBranches]);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !canSeeAllBranches) return;
+
+    branchService
+      .getAll()
+      .then(setBranches)
+      .catch(() => setBranches([]));
+  }, [status, canSeeAllBranches]);
 
   const filterFields: SelectField[] = useMemo(() => {
     const branchOptions = canSeeAllBranches
@@ -200,6 +214,7 @@ export default function CashierManagementPage() {
     setActionError("");
 
     const payload: UpdateCashierInput = {
+      ...(canSeeAllBranches ? { branchId: updatedFields.branchId } : {}),
       cashierNo: updatedFields.cashierNo,
       name:      updatedFields.name,
       email:     updatedFields.email,
@@ -248,11 +263,31 @@ export default function CashierManagementPage() {
 
   const isFilterApplied = Object.values(filters).some((v) => v.trim() !== "");
   const removeFilter    = (key: string) => setFilters((prev) => ({ ...prev, [key]: "" }));
+  const branchEditOptions =
+    branches.length > 0
+      ? branches.map((branch) => ({ label: branch.name, value: branch.id }))
+      : Array.from(
+          new Map(
+            cashiers
+              .filter((c) => c.branchId && c.branchName)
+              .map((c) => [c.branchId, { label: c.branchName!, value: c.branchId }])
+          ).values()
+        );
 
   const editFields: EditField[] = [
     { name: "imgUrl", label: "Profile Photo", type: "image", uploadFolder: "cashiers" },
     { name: "name", label: "Name" },
     { name: "cashierNo", label: "Cashier No" },
+    ...(canSeeAllBranches
+      ? [
+          {
+            name: "branchId",
+            label: "Branch Name",
+            type: "select" as const,
+            options: branchEditOptions,
+          },
+        ]
+      : [{ name: "branchName", label: "Branch Name", readOnly: true }]),
     { name: "email", label: "Email" },
   ];
 
