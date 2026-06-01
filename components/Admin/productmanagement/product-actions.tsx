@@ -9,8 +9,9 @@ type Props = {
   onDelete: () => void;
   onEdit: () => void;
   onAddNew: () => void;
-  onAddVariant?: () => void; //  new
+  onAddVariant?: () => void; 
   userRole?: "owner" | "admin" | "manager";
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
 };
 
 export default function ProductActionsBar({
@@ -21,10 +22,11 @@ export default function ProductActionsBar({
   onAddNew,
   onAddVariant,
   userRole = "admin",
+  showToast,
 }: Props) {
   const requireSelection = (action?: () => void) => {
     if (!selectedProduct) {
-      alert("Please select a product first!");
+      showToast("Please select a product first!", "error"); // THE FIX: Use showToast instead of alert
       return;
     }
     action?.();
@@ -39,7 +41,6 @@ export default function ProductActionsBar({
         onClick={() => requireSelection(onAddStock)}
       />
 
-      {/*  Hide delete for manager */}
       {!isManager && (
         <ActionButton
           label="Delete Product"
@@ -52,14 +53,12 @@ export default function ProductActionsBar({
         onClick={() => requireSelection(onEdit)}
       />
 
-      {/*  Always visible */}
       <ActionButton
         label={isManager ? "Request New Product" : "Add New Product"}
         variant="primary"
         onClick={onAddNew}
       />
 
-      {/*  Only for manager */}
       {isManager && (
         <ActionButton
           label="Add from Company Catalog"

@@ -12,6 +12,7 @@ type Props = {
     deleteAll: boolean;
     selectedVariants: string[];
   }) => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
 };
 
 // ─── Reusable styled components ───────────────────
@@ -139,6 +140,7 @@ export default function DeleteProductPopup({
   onClose,
   product,
   onConfirm,
+  showToast,
 }: Props) {
   const [deleteAll, setDeleteAll] = useState(true);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
@@ -165,7 +167,7 @@ export default function DeleteProductPopup({
 
   const handleConfirm = () => {
     if (!deleteAll && selectedVariants.length === 0) {
-      alert("Please select at least one variant");
+      showToast("Please select at least one variant", "info"); // THE FIX: Show toast instead of alert
       return;
     }
 

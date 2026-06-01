@@ -15,12 +15,14 @@ type AddCustomerFormProps = {
   open: boolean;
   onClose: () => void;
   onAdded?: (customer: Customer) => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX: Accept showToast
 };
 
 export default function AddCustomerForm({
   open,
   onClose,
   onAdded,
+  showToast,
 }: AddCustomerFormProps) {
   const { data: session } = useSession();
   const role     = session?.user?.role     ?? "";
@@ -36,7 +38,6 @@ export default function AddCustomerForm({
 
   // ── Form submission state ─────────────────────────────────────────────────
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState("");
 
   // Fetch branches once when the modal opens (only for OWNER / ADMIN)
   useEffect(() => {
@@ -60,16 +61,16 @@ export default function AddCustomerForm({
     const effectiveBranchId = canSelectBranch ? selectedBranchId : branchId;
 
     if (!effectiveBranchId) {
-      setError(
+      showToast(
         canSelectBranch
           ? "Please select a branch before adding a customer."
-          : "No branch assigned to your account. Contact an administrator."
+          : "No branch assigned to your account. Contact an administrator.",
+        "error"
       );
-      return;
+      throw new Error("Validation Error"); // THE FIX: Throw error so the form data doesn't wipe
     }
 
     setSubmitting(true);
-    setError("");
 
     try {
       const newCustomer = await customerService.create({
@@ -83,8 +84,10 @@ export default function AddCustomerForm({
 
       onAdded?.(newCustomer);
       onClose();
+      showToast("Customer added successfully!", "success");
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Failed to add customer. Please try again."));
+      showToast(getApiErrorMessage(err, "Failed to add customer. Please try again."), "error");
+      throw err; // THE FIX: Throw error so the parent AddCustomerModal catches it and doesn't wipe data
     } finally {
       setSubmitting(false);
     }
@@ -105,7 +108,6 @@ export default function AddCustomerForm({
           value={selectedBranchId}
           onChange={(e) => {
             setSelectedBranchId(e.target.value);
-            setError("");
           }}
           className={`
             w-full rounded-full border px-4 py-2 outline-none text-sm font-normal
@@ -121,24 +123,15 @@ export default function AddCustomerForm({
           ))}
         </select>
       )}
-      {error && error.includes("branch") && (
-        <p className="text-xs text-red-500">{error}</p>
-      )}
     </div>
   ) : null;
 
   return (
     <>
-      {error && !error.includes("branch") && (
-        <div className="fixed inset-x-0 top-20 z-[60] mx-auto max-w-sm rounded-md bg-red-50 border border-red-200 px-4 py-2 text-sm text-red-700 shadow">
-          {error}
-        </div>
-      )}
       <AddCustomerModal
         open={open}
         title="New Customer"
         onClose={() => {
-          setError("");
           onClose();
         }}
         onSubmit={handleSubmit}

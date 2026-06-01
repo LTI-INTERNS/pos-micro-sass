@@ -17,6 +17,10 @@ import { customerService } from "@/lib/services/customer-service";
 import { queryKeys } from "@/lib/query-keys";
 import type { Customer } from "@/types/customer.types";
 
+// THE FIX: Import our global toast system
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 const ALLOWED_ROLES = ["OWNER", "ADMIN", "MANAGER"] as const;
 type AllowedRole = (typeof ALLOWED_ROLES)[number];
 
@@ -30,6 +34,9 @@ export default function CustomersPage() {
   const branchId = session?.user?.branchId ?? "";
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
   const queryClient = useQueryClient();
+
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
 
   const [start, setStart]                       = useState<Date | undefined>();
   const [end, setEnd]                           = useState<Date | undefined>();
@@ -103,11 +110,11 @@ export default function CustomersPage() {
     () =>
       baseFiltered.filter((c) => {
         if (filters.branch && c.branch.name !== filters.branch)                return false;
-        if (filters.status === "active"   && !c.activeState)                  return false;
-        if (filters.status === "inactive" &&  c.activeState)                  return false;
-        if (filters.points === "lt50"   && c.points >= 50)                    return false;
-        if (filters.points === "50-100" && (c.points < 50 || c.points > 100)) return false;
-        if (filters.points === "gt100"  && c.points <= 100)                   return false;
+        if (filters.status === "active"   && !c.activeState)                   return false;
+        if (filters.status === "inactive" &&  c.activeState)                   return false;
+        if (filters.points === "lt50"   && c.points >= 50)                     return false;
+        if (filters.points === "50-100" && (c.points < 50 || c.points > 100))  return false;
+        if (filters.points === "gt100"  && c.points <= 100)                    return false;
         return true;
       }),
     [baseFiltered, filters]
@@ -200,6 +207,7 @@ export default function CustomersPage() {
           }}
           onDelete={handleDeleteCustomer}
           onEdit={handleEditCustomer}
+          showToast={showToast} // Pass showToast down to actions bar
         />
 
         {isLoading ? (
@@ -214,6 +222,9 @@ export default function CustomersPage() {
           />
         )}
       </div>
+
+      {/* THE FIX: Render ToastNotification at the bottom */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </DashboardLayout>
   );
 }

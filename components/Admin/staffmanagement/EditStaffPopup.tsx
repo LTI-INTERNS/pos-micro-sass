@@ -19,6 +19,7 @@ type Props = {
   currentUserRole: string;
   onClose: () => void;
   onSuccess: () => void | Promise<void>;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX: Accept showToast
 };
 
 type FormErrors = Record<string, string>;
@@ -118,6 +119,7 @@ export default function EditStaffPopup({
   currentUserRole,
   onClose,
   onSuccess,
+  showToast,
 }: Props) {
   const isOwner = currentUserRole.toUpperCase() === "OWNER";
   const isAdminStaff = staff?.role === "ADMIN";
@@ -132,7 +134,6 @@ export default function EditStaffPopup({
   const [addedCompanyIds, setAddedCompanyIds] = React.useState<string[]>([]);
   const [removedCompanyIds, setRemovedCompanyIds] = React.useState<string[]>([]);
   const [errors, setErrors] = React.useState<FormErrors>({});
-  const [saveError, setSaveError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -147,7 +148,6 @@ export default function EditStaffPopup({
     setAddedCompanyIds([]);
     setRemovedCompanyIds([]);
     setErrors({});
-    setSaveError("");
   }, [isOpen, staff]);
 
   const originalAssignedCompanies: CompanyTag[] =
@@ -277,7 +277,6 @@ export default function EditStaffPopup({
     if (!staff || !validate()) return;
 
     setSaving(true);
-    setSaveError("");
 
     try {
       await staffService.update(staff.id, {
@@ -295,13 +294,13 @@ export default function EditStaffPopup({
       });
 
       await onSuccess();
-      onClose();
+      onClose(); // Only runs if successful!
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message ?? "Failed to update staff member.";
 
-      setSaveError(message);
+      showToast(message, "error"); // THE FIX: Toast displays, but popup stays open naturally
     } finally {
       setSaving(false);
     }
@@ -320,12 +319,6 @@ export default function EditStaffPopup({
         {adminEditLocked && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
             Admin accounts can only be edited by the owner.
-          </div>
-        )}
-
-        {saveError && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {saveError}
           </div>
         )}
 

@@ -6,6 +6,10 @@ import ActionButton from "@/components/Admin/common/ActionButton";
 import { branchService } from "@/lib/services/branch-service";
 import LoadingState from "@/components/Admin/common/LoadingState";
 
+// THE FIX: Import the Toast System
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 type BranchDetailsProps = {
   userRole?: string;
   initial?: {
@@ -24,16 +28,17 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
   const [modalOpen, setModalOpen] = React.useState(false);
   const normalizedRole = userRole?.toLowerCase();
 
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
+
   const [details, setDetails] = React.useState({
     name: "", city: "", email: "", phone: "", address: "", regNo: "",
   });
 
-  // Password State
   const [passwords, setPasswords] = React.useState({
     currentPassword: "", newPassword: "", confirmPassword: ""
   });
 
-  // Sync state when real data arrives
   React.useEffect(() => {
     if (initial) {
       setDetails({
@@ -63,27 +68,28 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
       if (onSave) await onSave(updatedValues);
       setDetails(updatedValues);
       setModalOpen(false);
-      alert("Branch details updated successfully!");
+      showToast("Branch details updated successfully!", "success");
     } catch (error: any) {
-      alert(error.message || "Failed to update branch details.");
+      // Show toast and DO NOT throw error, so the popup stays open naturally
+      showToast(error.message || "Failed to update branch details.", "error");
     }
   };
 
   const handlePasswordChange = async () => {
-    if (!passwords.currentPassword) return alert("Current password is required");
-    if (!passwords.newPassword) return alert("New password is required");
-    if (passwords.newPassword.length < 8) return alert("New password must be at least 8 characters");
-    if (passwords.newPassword !== passwords.confirmPassword) return alert("New passwords do not match");
+    if (!passwords.currentPassword) return showToast("Current password is required", "info");
+    if (!passwords.newPassword) return showToast("New password is required", "info");
+    if (passwords.newPassword.length < 8) return showToast("New password must be at least 8 characters", "error");
+    if (passwords.newPassword !== passwords.confirmPassword) return showToast("New passwords do not match", "error");
 
     try {
       await branchService.changePassword({
         currentPassword: passwords.currentPassword,
         newPassword: passwords.newPassword
       });
-      alert("Password changed successfully!");
+      showToast("Password changed successfully!", "success");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {
-      alert(error.response?.data?.message || "Failed to change password.");
+      showToast(error.response?.data?.message || error.message || "Failed to change password.", "error");
     }
   };
 
@@ -107,7 +113,6 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
             <SettingsRow label="Email" value={details.email} />
             <SettingsRow label="Phone" value={details.phone} />
             <SettingsRow label="Address" value={details.address} />
-            {/* THE FIX: Conditionally render Registration Number only if it exists and isn't "EMPTY" */}
             {details.regNo && details.regNo.trim() !== "" && details.regNo !== "EMPTY" && (
               <SettingsRow label="Registration No." value={details.regNo} />
             )}
@@ -172,12 +177,10 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         validate={(values: any) => {
           const errors: Record<string, string> = {};
           
-          // Basic fields validation
           if (!values.name?.trim()) errors.name = "Branch name is required";
           if (!values.city?.trim()) errors.city = "City is required";
           if (!values.address?.trim()) errors.address = "Address is required";
 
-          // Email validation
           if (values.email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(values.email.trim())) {
@@ -187,14 +190,12 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
             errors.email = "Email is required";
           }
 
-          // THE FIX: Registration is now Optional, but still validated IF provided
           if (values.regNo && values.regNo.trim() !== "" && values.regNo !== "EMPTY") {
             if (!/[a-zA-Z]/.test(values.regNo) || !/\d/.test(values.regNo)) {
               errors.regNo = "Registration Number must contain at least one letter and one number";
             }
           }
 
-          // Phone Validation
           if (values.phone) {
             const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
 
@@ -228,6 +229,9 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         }}
         onSave={handleSave}
       />
+      
+      {/* THE FIX: Render ToastNotification at the bottom */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

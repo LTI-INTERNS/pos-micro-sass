@@ -18,6 +18,7 @@ type Props = {
   onSuccess: () => void | Promise<void>;
   options: StaffCreateOptions;
   optionsLoading?: boolean;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX: Accept showToast
 };
 
 type AdminMode = "" | "NEW" | "EXISTING";
@@ -182,6 +183,7 @@ export default function AddStaffPopup({
   onSuccess,
   options,
   optionsLoading = false,
+  showToast,
 }: Props) {
   const { data: session } = useSession();
   const isOwner = String(session?.user?.role ?? "").toUpperCase() === "OWNER";
@@ -201,7 +203,6 @@ export default function AddStaffPopup({
   const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [errors, setErrors] = React.useState<FormErrors>({});
-  const [saveError, setSaveError] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -224,7 +225,6 @@ export default function AddStaffPopup({
     setPhone("");
     setPassword("");
     setErrors({});
-    setSaveError("");
   }, [isOpen, canAddAdmin, canAddManager]);
 
   React.useEffect(() => {
@@ -304,7 +304,6 @@ export default function AddStaffPopup({
     setPhone("");
     setPassword("");
     setErrors({});
-    setSaveError("");
   };
 
   const addSelectedCompany = () => {
@@ -370,7 +369,6 @@ export default function AddStaffPopup({
     if (!validate()) return;
 
     setSaving(true);
-    setSaveError("");
 
     try {
       if (role === "MANAGER") {
@@ -404,13 +402,13 @@ export default function AddStaffPopup({
       }
 
       await onSuccess();
-      onClose();
+      onClose(); // Only runs if successful!
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message ?? "Failed to save staff member.";
 
-      setSaveError(message);
+      showToast(message, "error"); // THE FIX: Toast displays, but popup doesn't close or clear data
     } finally {
       setSaving(false);
     }
@@ -427,11 +425,6 @@ export default function AddStaffPopup({
     >
       <div className="px-6 py-5">
         <div className="flex min-h-0 flex-col gap-4">
-          {saveError && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-              {saveError}
-            </div>
-          )}
 
           <div
             className={`grid overflow-hidden rounded border border-gray-200 ${
@@ -467,7 +460,6 @@ export default function AddStaffPopup({
                 setPhone("");
                 setPassword("");
                 setErrors({});
-                setSaveError("");
               }}
             />
           </div>

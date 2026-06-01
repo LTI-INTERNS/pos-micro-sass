@@ -7,6 +7,9 @@ import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup"
 import LogoUploadSection from "@/components/Admin/settings/Details/LogoUploadSection";
 import LoadingState from "@/components/Admin/common/LoadingState";
 
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 type CompanyDetails = {
   name: string;
   regNo?: string;
@@ -25,12 +28,15 @@ type CompanyDetailsProps = {
 export default function CompanyDetailsContent({ initial, logoUrl, onSave }: CompanyDetailsProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  const { toasts, showToast, dismissToast } = useToast();
+
   const [details, setDetails] = useState<CompanyDetails>({
     ...initial,
     logoUrl: logoUrl || "",
   });
 
   const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(logoUrl ?? null);
+  
   useEffect(() => {
     setDetails({
       ...initial,
@@ -45,8 +51,9 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
     if (onSave) {
       try {
         await onSave({ ...details, logoUrl: newLogoUrl || "" });
+        showToast("Company logo updated successfully!", "success");
       } catch (error: any) {
-        alert(error.message || "Failed to save logo.");
+        showToast(error.message || "Failed to save logo.", "error");
       }
     }
   };
@@ -55,7 +62,6 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
     { name: "name", label: "Company Name" },
     { name: "regNo", label: "Registration No" },
     { name: "email", label: "Email", type: "text" },
-    // THE FIX: Removed the 'prefix' lock so the user can type the full number including the + code
     { name: "phone", label: "Phone", type: "tel" },
     { name: "address", label: "Address", type: "textarea" },
   ];
@@ -67,9 +73,11 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
       }
       setDetails({ ...updatedValues, logoUrl: currentLogoUrl || "" });
       setIsModalOpen(false);
-      alert("Company details updated successfully!");
+      showToast("Company details updated successfully!", "success");
     } catch (error: any) {
-      alert(error.message || "Failed to update company details.");
+      showToast(error.message || "Failed to update company details.", "error");
+      // THE FIX: Removed `throw error;` here so Next.js doesn't crash with the red overlay!
+      // The popup stays open naturally because setIsModalOpen(false) was skipped.
     }
   };
 
@@ -159,9 +167,7 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
             errors.email = "Email is required";
           }
 
-          // THE FIX: Dynamic Prefix Validation
           if (values.phone) {
-            // Remove any spaces the user might have typed so we can accurately count digits
             const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
 
             const allowedPrefixes = [
@@ -172,19 +178,16 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
               { code: "+61", len: 9 },
               { code: "+65", len: 8 },
               { code: "+60", len: 10 },
-              { code: "0",   len: 9 }, // Local format without country code, assuming it should be 9 digits for Sri Lanka
+              { code: "0",   len: 9 }, 
             ];
 
-            // Find which country code the typed number starts with
             const matchedConfig = allowedPrefixes.find(p => phoneWithoutSpaces.startsWith(p.code));
 
             if (!matchedConfig) {
               errors.phone = "Phone must start with a valid code (+94, +1, +44, +91, +61, +65, +60 or 0)";
             } else {
-              // Slice off the country code to isolate the actual phone digits
               const numberPart = phoneWithoutSpaces.slice(matchedConfig.code.length);
               
-              // Ensure the remainder is ONLY numbers and exactly the required length
               if (!/^\d+$/.test(numberPart) || numberPart.length !== matchedConfig.len) {
                 errors.phone = `For ${matchedConfig.code}, the number must be exactly ${matchedConfig.len} digits long.`;
               }
@@ -199,6 +202,8 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
         }}
         onSave={handleSave}
       />
+      
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
