@@ -38,6 +38,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     // ── AI Prediction — visible for all, restricted in page ──
     { label: 'Ai Prediction',        path: '/aiprediction',      roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
     { label: 'Branches',             path: '/branchmanagement',  roles: ['OWNER', 'ADMIN'] as UserRole[] },
+    { label: 'System Logs',          path: '/systemlogs',        roles: ['OWNER'] as UserRole[] },
     { label: 'POS Dashboard',        path: '/posdashboard',      roles: ['CASHIER'] as UserRole[] },
   ], []);
 
