@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import NotificationBell from '@/components/Admin/notifications/NotificationBell';
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import Image from 'next/image';
+import { apiClient } from '@/lib/api-client';
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -19,6 +20,12 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
   const isCompanyLevel = role === 'OWNER' || role === 'ADMIN';
 
   const handleLogout = async () => {
+    // Log the logout action to the system log in the backend
+    try {
+      await apiClient.post('/auth/logout');
+    } catch (e) {
+      console.error("Failed to log logout event:", e);
+    }
     // OWNER logs in via /saaslogin — send them back there on sign-out
     const callbackUrl = role === 'OWNER' ? '/saaslogin' : '/login';
     await signOut({ callbackUrl });
