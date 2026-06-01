@@ -7,6 +7,7 @@ import { Menu, History, Lock, ExternalLink } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
+import { apiClient } from "@/lib/api-client";
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -33,6 +34,13 @@ const PosNavbar = ({ toggleSidebar, onOpenOrders }: NavbarProps) => {
     try {
       localStorage.removeItem("isLocked");
       sessionStorage.removeItem("cashier");
+
+      // Log logout event in backend
+      try {
+        await apiClient.post("/auth/logout");
+      } catch (e) {
+        console.error("Failed to log logout event:", e);
+      }
 
       await fetch("/api/branch-session", { method: "DELETE" });
 

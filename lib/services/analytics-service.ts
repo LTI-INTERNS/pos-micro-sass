@@ -1,11 +1,4 @@
 import { apiClient } from '@/lib/api-client';
-import {
-    statCards,
-    salesLineData,
-    salesBarData,
-    topSellingItemsData,
-    staffReportData,
-} from '@/lib/mocks/overview/mockData';
 import type {
     StatCard,
     SalesLine,
@@ -41,19 +34,34 @@ interface BackendEnvelope<T> {
 
 export const analyticsService = {
     getStats: (): Promise<StatCard[]> =>
-        apiClient.get<StatCard[]>('/analytics/stats').then(res => res.data).catch(() => statCards as unknown as StatCard[]),
+        apiClient
+            .get<StatCard[]>('/analytics/stats')
+            .then(res => res.data)
+            .catch((): StatCard[] => []),
 
     getSalesLine: (): Promise<SalesLine[]> =>
-        apiClient.get<SalesLine[]>('/analytics/sales-line').then(res => res.data).catch(() => salesLineData as SalesLine[]),
+        apiClient
+            .get<SalesLine[]>('/analytics/sales-line')
+            .then(res => res.data)
+            .catch((): SalesLine[] => []),
 
     getSalesBar: (): Promise<SalesBar[]> =>
-        apiClient.get<SalesBar[]>('/analytics/sales-bar').then(res => res.data).catch(() => salesBarData as SalesBar[]),
+        apiClient
+            .get<SalesBar[]>('/analytics/sales-bar')
+            .then(res => res.data)
+            .catch((): SalesBar[] => []),
 
     getTopSelling: (): Promise<TopSellingItem[]> =>
-        apiClient.get<TopSellingItem[]>('/analytics/top-selling').then(res => res.data).catch(() => topSellingItemsData as unknown as TopSellingItem[]),
+        apiClient
+            .get<TopSellingItem[]>('/analytics/top-selling')
+            .then(res => res.data)
+            .catch((): TopSellingItem[] => []),
 
     getStaffPerformance: (): Promise<StaffPerformance[]> =>
-        apiClient.get<StaffPerformance[]>('/analytics/staff-performance').then(res => res.data).catch(() => staffReportData as StaffPerformance[]),
+        apiClient
+            .get<StaffPerformance[]>('/analytics/staff-performance')
+            .then(res => res.data)
+            .catch((): StaffPerformance[] => []),
 };
 
 // ── New date-range aware overview service ─────────────────────────────────────
@@ -113,6 +121,22 @@ export const overviewAnalyticsService = {
             })
             .then(res => res.data.data)
             .catch((): SalesChartData => ({ days: [], series: [] })),
+
+    /**
+     * GET /api/v1/analytics/sales-bar
+     * Hourly sales bars; supports optional date range params when backend supports it.
+     * Note: some environments may return a plain array, others may return an envelope.
+     */
+    getSalesBar: (range?: DateRangeParams): Promise<SalesBar[]> =>
+        apiClient
+            .get<SalesBar[] | BackendEnvelope<SalesBar[]>>('/analytics/sales-bar', {
+                params: toParams(range),
+            })
+            .then(res => {
+                const payload = res.data;
+                return Array.isArray(payload) ? payload : (payload.data ?? []);
+            })
+            .catch((): SalesBar[] => []),
 
     /**
      * GET /api/v1/analytics/sales-report

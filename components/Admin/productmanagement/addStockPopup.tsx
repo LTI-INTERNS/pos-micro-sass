@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import { Product } from "@/lib/services";
 import { apiClient } from "@/lib/api-client";
@@ -66,6 +66,7 @@ type ExistingBranchVariantRow = {
   discount?: number | string | null;
   taxRate?: number | string | null;
   lowStock?: number | string | null;
+  supplierId?: string | null;
 };
 
 type Props = {
@@ -187,7 +188,14 @@ export default function AddStockPopup({
   };
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      hasInitializedRef.current = false;
+      lastPrefilledBranchIdRef.current = null;
+      return;
+    }
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     setSelectedBranch(null);
     setBranchesError(null);
     setBranchVariants({});
@@ -252,7 +260,13 @@ export default function AddStockPopup({
   );
 
   useEffect(() => {
-    if (!selectedBranch) return;
+    if (!selectedBranch) {
+      lastPrefilledBranchIdRef.current = null;
+      return;
+    }
+    if (selectedBranch.id === lastPrefilledBranchIdRef.current) return;
+    lastPrefilledBranchIdRef.current = selectedBranch.id;
+
     const variantIds = variants.map(v => v.variantId).filter(Boolean).join(',');
     if (!variantIds) return;
 
@@ -278,6 +292,14 @@ export default function AddStockPopup({
           stockMap[row.variantId] = Number(row.stockQty ?? 0);
         }
         setCurrentStock(stockMap);
+
+        // Pre-select the supplier that was last used for this product in this branch.
+        // All variants of a product share the same supplier, so the first non-null
+        // supplierId in the rows is used.
+        const existingSupplierId = existingRows.find(r => r.supplierId)?.supplierId ?? null;
+        if (existingSupplierId) {
+          setSelectedSupplierId(existingSupplierId);
+        }
 
         setBranchVariants((prev) => {
           const next = { ...prev };

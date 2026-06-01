@@ -36,6 +36,10 @@ export const authOptions: NextAuthOptions = {
                 const staffRes  = await fetch(`${API}/api/v1/auth/login`, { method: 'POST', headers, body });
                 const staffData = await staffRes.json();
 
+                if (!staffRes.ok && staffRes.status === 403 && staffData?.error?.code === 'UNVERIFIED_ACCOUNT') {
+                    throw new Error('UNVERIFIED_ACCOUNT');
+                }
+
                 if (staffRes.ok && staffData.success && staffData.data?.ok) {
                     const u = staffData.data;
                     return {
