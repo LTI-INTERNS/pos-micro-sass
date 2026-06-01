@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
 import { AlertTriangle } from "lucide-react";
+import { apiClient } from "@/lib/api-client";
 
 type Props = {
   variant?: "pos" | "switchuser";
@@ -55,6 +56,13 @@ export default function SessionExpiryGuard({
 
       localStorage.removeItem("isLocked");
       sessionStorage.removeItem("cashier");
+
+      // Attempt to log the logout event in backend before session is fully destroyed
+      try {
+        await apiClient.post("/auth/logout");
+      } catch (e) {
+        console.error("Failed to log logout event on session expiry:", e);
+      }
 
       await fetch("/api/branch-session", { method: "DELETE" });
 

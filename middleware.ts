@@ -140,6 +140,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/overview", req.url));
   }
 
+  // System Logs — OWNER only
+  if (pathname.startsWith("/systemlogs") && role !== "OWNER") {
+    return NextResponse.redirect(new URL("/overview", req.url));
+  }
+
   return NextResponse.next();
 }
 
@@ -163,5 +168,6 @@ export const config = {
     "/aiprediction/:path*",
     "/branchmanagement/:path*",
     "/settings/:path*",
+    "/systemlogs/:path*",
   ],
 };
