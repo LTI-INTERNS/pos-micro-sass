@@ -123,7 +123,6 @@ function SettingPageContent() {
               }}
               onSave={async (data) => {
                 try {
-                  // THE FIX: Correctly map 'regNo' to 'registrationNumber' so the backend receives it!
                   const payload = {
                     name: data.name,
                     city: data.city,
@@ -135,7 +134,6 @@ function SettingPageContent() {
                   const updated = await branchService.update('me', payload);
                   setManagerBranch(updated);
                 } catch (err: any) {
-                  // Standardize the error string so it triggers a clean alert
                   throw new Error(err.response?.data?.message || err.message || "Failed to update branch");
                 }
               }}

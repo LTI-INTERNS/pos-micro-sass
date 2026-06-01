@@ -30,13 +30,11 @@ export default function LogoUploadSection({
   const [errorMsg, setErrorMsg]       = useState<string | null>(null);
   const abortRef                      = useRef<AbortController | null>(null);
 
-
   useEffect(() => {
     setPreviewUrl(currentLogoUrl);
   }, [currentLogoUrl]);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
-
 
   const handleImageChange = async (blobUrl: string, file: File) => {
     setPreviewUrl(blobUrl); 

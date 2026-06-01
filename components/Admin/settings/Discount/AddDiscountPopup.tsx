@@ -12,7 +12,7 @@ type DiscountValues = {
   percentage: string;
   startDate: string;
   endDate: string;
-  branchIds: string[]; // <-- Changed to array
+  branchIds: string[]; 
 };
 
 type FormErrors = Partial<Record<keyof DiscountValues, string>>;
@@ -39,11 +39,10 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     percentage: "",
     startDate: "",
     endDate: "",
-    branchIds: canSelectBranch ? [] : [userBranchId], // Auto-fill for managers
+    branchIds: canSelectBranch ? [] : [userBranchId], 
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [apiError, setApiError] = useState<string | null>(null);
 
   // Fetch branches when popup opens
   useEffect(() => {
@@ -75,13 +74,11 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
       branchIds: canSelectBranch ? [] : [userBranchId],
     });
     setErrors({});
-    setApiError(null);
   }, [open, canSelectBranch, userBranchId]);
 
   const setField = (name: keyof DiscountValues, value: any) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
-    setApiError(null);
   };
 
   // --- Checkbox Logic ---
@@ -89,9 +86,9 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
 
   const handleToggleAll = () => {
     if (isAllSelected) {
-      setField("branchIds", []); // Deselect all
+      setField("branchIds", []); 
     } else {
-      setField("branchIds", branches.map((b) => b.value)); // Select all
+      setField("branchIds", branches.map((b) => b.value)); 
     }
   };
 
@@ -133,12 +130,11 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
   const handleSave = async () => {
     if (!validateForm()) return;
     setLoading(true);
-    setApiError(null);
     try {
       await onSave(values);
-      onClose();
+      onClose(); // Will ONLY run if onSave succeeds!
     } catch (err: any) {
-      setApiError(err.message || "Failed to save discount. Please try again.");
+      // Failed! Form data stays intact so the user can fix the specific field
     } finally {
       setLoading(false);
     }
@@ -147,7 +143,6 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
   const handleCancel = () => {
     onClose();
     setErrors({});
-    setApiError(null);
   };
 
   return (
@@ -164,8 +159,6 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
           handleSave();
         }}
       >
-        {apiError && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{apiError}</p>}
-
         <FormField
           label="Title"
           placeholder="Enter discount title"

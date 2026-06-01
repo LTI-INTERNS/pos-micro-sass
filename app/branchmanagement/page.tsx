@@ -12,6 +12,9 @@ import { branchService, Branch } from "@/lib/services/branch-service";
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 export default function BranchesPage() {
   const [allBranches, setAllBranches] = useState<Branch[]>([]);
   const [start] = useState<Date | undefined>();
@@ -19,6 +22,8 @@ export default function BranchesPage() {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+
+  const { toasts, showToast, dismissToast } = useToast();
 
   useEffect(() => {
     branchService.getAll().then(setAllBranches).catch(err => console.error("Failed to fetch branches", err));
@@ -54,18 +59,20 @@ export default function BranchesPage() {
   });
 
   const handleAddBranch = async (values: Record<string, string>) => {
-    // --- Local Frontend Validation against currently loaded branches ---
+    // THE FIX: Added "throw new Error()" to stop the popup from closing!
     if (allBranches.some(b => b.phone === values.phoneNumber)) {
-      return alert("Phone number is already registered");
+      showToast("Phone number is already registered", "error");
+      throw new Error("Validation Error");
     }
     if (allBranches.some(b => b.email === values.email)) {
-      return alert("Email is already registered");
+      showToast("Email is already registered", "error");
+      throw new Error("Validation Error");
     }
     
-    // THE FIX: Only check for Registration Number duplicates if it is NOT empty
     if (values.registrationNumber && values.registrationNumber.trim() !== "") {
       if (allBranches.some(b => b.regno === values.registrationNumber)) {
-        return alert("Registration number is already registered");
+        showToast("Registration number is already registered", "error");
+        throw new Error("Validation Error");
       }
     }
 
@@ -82,26 +89,30 @@ export default function BranchesPage() {
       
       const newBranch = await branchService.create(payload as any);
       setAllBranches((prev) => [...prev, newBranch]);
+      showToast("Branch added successfully!", "success");
     } catch (error: unknown) {
-      alert(getApiErrorMessage(error, "Failed to add branch. Please check the network."));
+      showToast(getApiErrorMessage(error, "Failed to add branch. Please check the network."), "error");
+      throw error; // THE FIX: Pass the error back to the popup so it stays open
     }
   };
 
   const handleEditBranch = async (updatedBranch: Branch) => {
     if (!selectedBranch) return;
 
-    // --- Local Frontend Validation against currently loaded branches (ignoring itself) ---
+    // THE FIX: Added "throw new Error()" to stop the popup from closing!
     if (allBranches.some(b => b.id !== selectedBranch.id && b.phone === updatedBranch.phone)) {
-      return alert("Phone number is already registered");
+      showToast("Phone number is already registered", "error");
+      throw new Error("Validation Error");
     }
     if (allBranches.some(b => b.id !== selectedBranch.id && b.email === updatedBranch.email)) {
-      return alert("Email is already registered");
+      showToast("Email is already registered", "error");
+      throw new Error("Validation Error");
     }
 
-    // THE FIX: Only check for Registration Number duplicates if it is NOT empty
     if (updatedBranch.regno && updatedBranch.regno.trim() !== "") {
       if (allBranches.some(b => b.id !== selectedBranch.id && b.regno === updatedBranch.regno)) {
-        return alert("Registration number is already registered");
+        showToast("Registration number is already registered", "error");
+        throw new Error("Validation Error");
       }
     }
 
@@ -122,12 +133,14 @@ export default function BranchesPage() {
       const updated = await branchService.update(selectedBranch.id, payload);
       setAllBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       setSelectedBranch(updated);
+      showToast("Branch updated successfully!", "success");
     } catch (error: any) {
       if (error.response && error.response.data && error.response.data.message) {
-        alert(error.response.data.message);
+        showToast(error.response.data.message, "error");
       } else {
-        alert("Failed to update branch.");
+        showToast("Failed to update branch.", "error");
       }
+      throw error; // THE FIX: Pass the error back to the popup so it stays open
     }
   };
 
@@ -137,9 +150,10 @@ export default function BranchesPage() {
       await branchService.delete(selectedBranch.id);
       setAllBranches((prev) => prev.filter((b) => b.id !== selectedBranch.id));
       setSelectedBranch(null);
+      showToast("Branch deleted successfully!", "success");
     } catch (error) {
       console.error("Failed to delete branch", error);
-      alert("Failed to delete branch. It may be linked to existing records.");
+      showToast("Failed to delete branch. It may be linked to existing records.", "error");
     }
   };
 
@@ -188,6 +202,8 @@ export default function BranchesPage() {
           setSelectedBranch={setSelectedBranch}
         />
       </div>
+
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </DashboardLayout>
   );
 }
