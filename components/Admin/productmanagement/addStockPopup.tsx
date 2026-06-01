@@ -77,7 +77,7 @@ type Props = {
   branchName?: string;
   branchId?: string;
   onSave?: (data: { branch: string; supplierId: string | null; variants: Record<string, BranchVariantData> }) => Promise<void> | void;
-  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
+  showToast: (message: string, type: "success" | "error" | "info") => void;
 };
 
 // ─── Small reusable UI pieces ─────────────────────────────────────────────────
@@ -164,6 +164,10 @@ export default function AddStockPopup({
   showToast,
 }: Props) {
   const isManager = userRole === "manager";
+
+  // THE FIX: Declare the missing refs here!
+  const hasInitializedRef = useRef(false);
+  const lastPrefilledBranchIdRef = useRef<string | null>(null);
 
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
   const [branches, setBranches] = useState<Branch[]>([]);
@@ -293,9 +297,6 @@ export default function AddStockPopup({
         }
         setCurrentStock(stockMap);
 
-        // Pre-select the supplier that was last used for this product in this branch.
-        // All variants of a product share the same supplier, so the first non-null
-        // supplierId in the rows is used.
         const existingSupplierId = existingRows.find(r => r.supplierId)?.supplierId ?? null;
         if (existingSupplierId) {
           setSelectedSupplierId(existingSupplierId);
@@ -322,7 +323,7 @@ export default function AddStockPopup({
       })
       .catch((err: unknown) => {
         console.error('[AddStock] Failed to pre-fill existing values:', err);
-        showToast("Could not load existing branch stock values.", "error"); // THE FIX: Show toast
+        showToast("Could not load existing branch stock values.", "error");
       })
       .finally(() => setPrefilling(false));
   }, [selectedBranch, variants, showToast]);
@@ -380,13 +381,13 @@ export default function AddStockPopup({
         variants: branchVariants,
       });
 
-      showToast("Stock added successfully!", "success"); // THE FIX: Show toast
-      onClose(); // Only runs if API call succeeds
+      showToast("Stock added successfully!", "success");
+      onClose();
     } catch (err: unknown) {
       console.error("Failed to save stock:", err);
       const apiErr = err as { response?: { data?: { message?: string } }; message?: string };
       const msg = apiErr?.response?.data?.message || apiErr?.message || "Failed to save stock.";
-      showToast(msg, "error"); // THE FIX: Toast displays, but popup doesn't close
+      showToast(msg, "error");
     } finally {
       setSaving(false);
     }
