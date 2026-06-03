@@ -10,8 +10,8 @@ import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup"
 
 type Props = {
   selectedBranch: Branch | null;
-  onAdd?: (values: Record<string, string>) => void;
-  onEdit?: (branch: Branch) => void;
+  onAdd?: (values: Record<string, string>) => Promise<void> | void;
+  onEdit?: (branch: Branch) => Promise<void> | void;
   onDelete?: () => void;
 };
 
@@ -76,9 +76,14 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
           open={showPopup}
           onClose={() => setShowPopup(false)}
           branchId=""
-          onSubmit={(values) => {
-            onAdd?.(values); 
-            setShowPopup(false);
+          onSubmit={async (values) => {
+            try {
+              await onAdd?.(values); 
+              setShowPopup(false); 
+            } catch (error) {
+              // THE FIX: Re-throw the error so AddBranchForm knows it failed and doesn't wipe the data!
+              throw error; 
+            }
           }}
         />
       )}
@@ -115,17 +120,14 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
           validate={(values) => {
             const errors: Record<string, string> = {};
             
-            // THE FIX: Validation for Name
             if (!values.name || !values.name.trim()) {
               errors.name = "Name is required";
             }
 
-            // THE FIX: Validation for City
             if (!values.city || !values.city.trim()) {
               errors.city = "City is required";
             }
 
-            // Check Registration Number
             if (
               values.regno && 
               values.regno.trim() !== "" && 
@@ -134,7 +136,6 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
               errors.regno = "Registration Number must contain at least one letter and one number";
             }
 
-            // Check Email
             if (values.email) {
               const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
               if (!emailRegex.test(values.email.trim())) {
@@ -144,7 +145,6 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
               errors.email = "Email is required";
             }
 
-            // Check Phone Number
             if (values.phone) {
               const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
 
@@ -173,7 +173,6 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
               errors.phone = "Phone number is required";
             }
 
-            // Validate Password ONLY if the user typed something into the box
             if (values.password && values.password.trim() !== "") {
               if (values.password.length < 8) {
                 errors.password = "Password must be at least 8 characters";
@@ -184,10 +183,14 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
 
             return errors;
           }}
-
-          onSave={(updatedBranch) => {
-            onEdit?.(updatedBranch);
-            setEditPopupOpen(false);
+          onSave={async (updatedBranch) => {
+            try {
+              await onEdit?.(updatedBranch);
+              setEditPopupOpen(false);
+            } catch (error) {
+              // THE FIX: Re-throw the error here as well for the edit modal
+              throw error; 
+            }
           }}
         />
       )}

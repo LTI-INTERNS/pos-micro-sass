@@ -20,13 +20,15 @@ import { BusinessTypeId } from "@/components/Admin/productmanagement/Productcate
 import { useLowStockNotifications } from "@/components/Admin/notifications/Uselowstocknotifications";
 import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
+// THE FIX: Import the Global Toast System
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 import { branchService, productService, Branch, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import LoadingState from "@/components/Admin/common/LoadingState";
 import { getApiErrorMessage } from "@/lib/utils/api-error";
-
-// ── Shared local interfaces ───────────────────────────────────────────────────
 
 interface VariantLike {
   variantId?: string | number;
@@ -45,8 +47,6 @@ interface ApiError {
   };
 }
 
-// ── Helper: map a Product to the ExistingProduct / initialData shape ──────────
-
 function toPopupProduct(p: Product) {
   return {
     id: p.id,
@@ -61,7 +61,7 @@ function toPopupProduct(p: Product) {
       values: opt.values,
     })),
     variants: (p.variants ?? []).map((v, i) => ({
-      ...(v as unknown as Record<string, unknown>), // preserves real variantId from the backend spread
+      ...(v as unknown as Record<string, unknown>), 
       id: i + 1,
       sku: v.sku,
       barcode: v.barcode || "",
@@ -73,8 +73,6 @@ function toPopupProduct(p: Product) {
     })),
   };
 }
-
-// ── Helper: extract the base Product from a (possibly variant-tagged) product ─
 
 type TaggedProduct = Product & { _selectedVariantSku?: string };
 
@@ -108,7 +106,8 @@ export default function DashboardPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // ── ALL hooks must be declared before any conditional return ─────────────────
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
@@ -143,8 +142,6 @@ export default function DashboardPage() {
 
   const activeBranchLabel = session?.user?.branchName || "";
 
-  // Stable primitives extracted so useEffect deps don't use the session object
-  // (session is a new object reference every render → infinite re-render loop)
   const sessionStatus = status;
   const sessionCompanyId = session?.user?.companyId ?? "";
 
@@ -194,15 +191,11 @@ export default function DashboardPage() {
     };
   }, [sessionStatus, sessionCompanyId, activeBranchId]);
   
-  // ── Sync selectedProduct when product list updates (prevents stale data) ───────
   useEffect(() => {
     if (selectedProduct) {
       const updated = products.find(p => p.id === selectedProduct.id);
-      // Only trigger an update if the underlying data reference has changed (e.g. background refresh)
-      // or if we're initializing for the first time.
       if (updated && updated !== lastSyncProductRef.current) {
         lastSyncProductRef.current = updated;
-        // Preserve the _selectedVariantSku tag if it exists (used in manager view for row highlighting)
         const tag = (selectedProduct as TaggedProduct)._selectedVariantSku;
         if (tag) {
           setSelectedProduct({ ...updated, _selectedVariantSku: tag } as Product);
@@ -215,7 +208,6 @@ export default function DashboardPage() {
     }
   }, [products, selectedProduct]);
 
-  // ── Background Polling: refresh product data every 20s if tab is visible ───────
   useEffect(() => {
     if (sessionStatus !== "authenticated") return;
 
@@ -228,8 +220,6 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [sessionStatus, reloadProducts]);
 
-  // Fetch full company catalog when the "Add from Catalog" popup opens.
-  // Uses ?catalog=true to bypass the branch filter so managers see everything.
   useEffect(() => {
     if (!addVariantOpen) return;
     setCatalogLoading(true);
@@ -238,8 +228,6 @@ export default function DashboardPage() {
       .finally(() => setCatalogLoading(false));
   }, [addVariantOpen]);
 
-
-  // Exclude UI state from actual data filters
   const filters = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { search: _search, filterOpen: _filterOpen, ...rest } = urlFilters;
@@ -347,7 +335,6 @@ export default function DashboardPage() {
     });
   }, [canUseBranchFilter, enrichedProducts, selectedBranch]);
 
-  // Global Barcode Scanner Hook for Product Management
   const barcodeBuffer = useRef("");
   const scanTimeout = useRef<NodeJS.Timeout | null>(null);
   const setSearchRef = useRef(setSearch);
@@ -360,7 +347,6 @@ export default function DashboardPage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!e.key) return;
 
-      // Barcode scanners usually end with "Enter"
       if (e.key === "Enter") {
         if (barcodeBuffer.current.length > 0) {
           setSearchRef.current(barcodeBuffer.current);
@@ -370,16 +356,13 @@ export default function DashboardPage() {
         return;
       }
 
-      // We only care about character keys (don't block inputs)
       if (e.key.length === 1) {
-        // Collect everything. If focused on search bar, the browser will also type it.
-        // If not focused, our buffer will hold it and "Enter" will submit it.
         barcodeBuffer.current += e.key;
 
         if (scanTimeout.current) clearTimeout(scanTimeout.current);
         scanTimeout.current = setTimeout(() => {
           barcodeBuffer.current = "";
-        }, 200); // 200ms debounce
+        }, 200); 
       }
     };
 
@@ -388,10 +371,9 @@ export default function DashboardPage() {
       window.removeEventListener("keydown", handleKeyDown);
       if (scanTimeout.current) clearTimeout(scanTimeout.current);
     };
-  }, []); // Permanent listener
+  }, []);
 
   const tableFilters = useMemo(() => {
-    // Branch filtering is handled separately against stocked branch records.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { branch: _branch, ...rest } = filters;
     return rest;
@@ -704,9 +686,6 @@ export default function DashboardPage() {
     setFilters(newFilters);
   };
 
-  // Build catalog list for the manager "Add from Company Catalog" popup.
-  // - Catalog source: ALL company products (from getCatalog, bypasses branch filter)
-  // - Mark products already stocked in this branch as alreadyAdded:true
   const branchProductIds = useMemo(
     () => new Set(products.map((p) => p.id)),
     [products]
@@ -759,7 +738,6 @@ export default function DashboardPage() {
     });
   };
 
-
   useEffect(() => {
     const handleRefresh = () => reloadProducts();
     window.addEventListener("product-data-refresh", handleRefresh);
@@ -793,8 +771,6 @@ export default function DashboardPage() {
   }, [editOpen, baseSelectedProduct]);
 
   const companyProductData: ExistingProduct | null = null;
-
-  // ── Now safe to do conditional rendering in JSX ─────────────────────────────
 
   return (
     <DashboardLayout>
@@ -861,6 +837,7 @@ export default function DashboardPage() {
           onAddNew={() => setAddOpen(true)}
           userRole={userRole}
           onAddVariant={() => setAddVariantOpen(true)}
+          showToast={showToast} // THE FIX: Pass showToast down
         />
 
         {isLoading ? (
@@ -880,36 +857,31 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── Unified Add / Edit / AddVariant popup ── */}
       <AddProductPopup
         open={productPopupOpen}
         onClose={handleProductPopupClose}
+        showToast={showToast} // THE FIX: Pass showToast down
         onSave={async (updatedProduct) => {
-          // This fires for non-catalog flows (Add New Product, Edit Product)
           try {
             if (editOpen && baseSelectedProduct) {
-              console.log("SENDING TO SERVICE:", {
-                id: baseSelectedProduct.id,
-                payload: updatedProduct,
-              });
               await productService.update(baseSelectedProduct.id, updatedProduct as never);
               await reloadProducts();
+              showToast("Product updated successfully!", "success");
             } else {
-              console.log("CREATING PRODUCT PAYLOAD:", JSON.stringify(updatedProduct, null, 2));
               await productService.create(updatedProduct as never);
               await reloadProducts();
+              showToast("Product created successfully!", "success");
             }
+            // THE FIX: Close modal ONLY if save was successful
+            handleProductPopupClose();
           } catch (error: unknown) {
             console.error("Failed to save product:", error);
             const msg = getApiErrorMessage(error, "Failed to save product.");
-            alert(`Error from Server: ${msg}`);
+            showToast(`Error: ${msg}`, "error");
+            // Do NOT call handleProductPopupClose() here, so data stays intact
           }
-          handleProductPopupClose();
         }}
         onAddToBranch={async (selectedCatalogProducts) => {
-          // Catalog mode: register each selected product's variants in this branch
-          // by calling /branch-variants/stock with stockQty:0.
-          // This creates the BranchVariant rows so the product appears in manager's table.
           try {
             const { apiClient } = await import("@/lib/api-client");
             for (const p of selectedCatalogProducts) {
@@ -922,14 +894,16 @@ export default function DashboardPage() {
               if (variants.length === 0) continue;
               await apiClient.post("/branch-variants/stock", { variants });
             }
-            // Refresh branch product list
             await reloadProducts();
+            showToast("Products added to branch successfully!", "success");
+            // THE FIX: Close modal ONLY if save was successful
+            handleProductPopupClose();
           } catch (error: unknown) {
             console.error("Failed to add products to branch:", error);
             const msg = getApiErrorMessage(error, "Failed to add products to branch.");
-            alert(`Error: ${msg}`);
+            showToast(`Error: ${msg}`, "error");
+            // Do NOT call handleProductPopupClose() here
           }
-          handleProductPopupClose();
         }}
         isAddVariantMode={addVariantOpen}
         existingProducts={existingProductsForVariant}
@@ -940,7 +914,6 @@ export default function DashboardPage() {
         catalogLoading={catalogLoading}
       />
 
-      {/* ViewProductPopup */}
       <ViewProductPopup
         open={viewOpen}
         onClose={() => setViewOpen(false)}
@@ -948,7 +921,6 @@ export default function DashboardPage() {
         userRole={userRole}
       />
 
-      {/* AddStockPopup */}
       {baseSelectedProduct && (
         <AddStockPopup
           product={baseSelectedProduct}
@@ -957,19 +929,19 @@ export default function DashboardPage() {
           userRole={userRole}
           branchName={activeBranchLabel || "Selected Branch"}
           branchId={activeBranchId || undefined}
+          showToast={showToast} // THE FIX: Pass showToast down
           onSave={async () => {
-            // Await the reload so the table is already fresh when the popup closes.
             await reloadProducts();
           }}
         />
       )}
 
-      {/* DeleteProductPopup */}
       {baseSelectedProduct && (
         <DeleteProductPopup
           isOpen={deleteOpen}
           onClose={() => setDeleteOpen(false)}
           product={baseSelectedProduct}
+          showToast={showToast} // THE FIX: Pass showToast down
           onConfirm={async ({ deleteAll, selectedVariants }) => {
             try {
               if (deleteAll) {
@@ -986,17 +958,20 @@ export default function DashboardPage() {
                   })
                 );
               }
-              // Notify other components (like product table) to refresh
               window.dispatchEvent(new CustomEvent("product-data-refresh"));
+              showToast("Product deleted successfully!", "success");
             } catch (error: unknown) {
               console.error("Failed to delete product:", error);
-              alert("Failed to delete product.");
+              showToast("Failed to delete product.", "error");
             } finally {
               setDeleteOpen(false);
             }
           }}
         />
       )}
+      
+      {/* THE FIX: Render global toast container */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </DashboardLayout>
   );
 }

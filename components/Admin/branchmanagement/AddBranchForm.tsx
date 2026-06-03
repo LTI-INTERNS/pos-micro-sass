@@ -8,7 +8,7 @@ import FormField from "@/components/Admin/common/FormField";
 type FormValues = {
   branchId: string;
   name: string;
-  city: string; // Added City
+  city: string; 
   phoneNumber: string;
   address: string;
   registrationNumber: string;
@@ -23,7 +23,8 @@ type AddBranchFormProps = {
   open: boolean;
   onClose: () => void;
   branchId: string;
-  onSubmit: (values: Record<string, string>) => void;
+  // THE FIX: Updated type to allow async Promise
+  onSubmit: (values: Record<string, string>) => Promise<void> | void;
 };
 
 export default function AddBranchForm({
@@ -35,7 +36,7 @@ export default function AddBranchForm({
   const [values, setValues] = React.useState<Record<string, string>>({
     branchId: branchId,
     name: "",
-    city: "", // Added City
+    city: "", 
     phoneNumber: "",
     address: "",
     registrationNumber: "",
@@ -47,7 +48,6 @@ export default function AddBranchForm({
   const [errors, setErrors] = React.useState<FormErrors>({});
 
   const setField = (name: keyof FormValues, next: string) => {
-    // THE FIX: Allow digits, spaces, and the '+' sign for country codes
     if (name === "phoneNumber") {
       next = next.replace(/[^\d+\s]/g, ""); 
     }
@@ -66,7 +66,6 @@ export default function AddBranchForm({
 
     if (!values.city.trim()) newErrors.city = "City is required";
 
-    // THE FIX: Dynamic Prefix Validation (Matches CompanyDetailsContent.tsx)
     if (values.phoneNumber.trim()) {
       const phoneWithoutSpaces = values.phoneNumber.replace(/\s+/g, "");
 
@@ -100,7 +99,6 @@ export default function AddBranchForm({
     if (!values.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) newErrors.email = "Please enter a valid email address";
 
-    // Ensure Registration Number contains at least one letter AND at least one number
     if (
       values.registrationNumber.trim() && 
       (!/[a-zA-Z]/.test(values.registrationNumber) || !/\d/.test(values.registrationNumber))
@@ -118,11 +116,15 @@ export default function AddBranchForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  // THE FIX: Wait for the API to confirm success before wiping the form data
+  const handleSubmit = async () => {
     if (validateForm()) {
-      console.log("Form is valid! Submitted data:", values);
-      onSubmit(values);
-      resetForm();
+      try {
+        await onSubmit(values);
+        resetForm();
+      } catch (error) {
+        // Failed! Form data stays intact so the user can fix the specific field
+      }
     }
   };
 
@@ -135,7 +137,7 @@ export default function AddBranchForm({
     setValues({
       branchId: branchId,
       name: "",
-      city: "", // Added City
+      city: "", 
       phoneNumber: "",
       address: "",
       registrationNumber: "",
@@ -166,7 +168,6 @@ export default function AddBranchForm({
           )}
         </div>
 
-        {/* --- New City Field --- */}
         <div>
           <FormField
             label="City"
@@ -274,6 +275,7 @@ export default function AddBranchForm({
                 },
                 {
                   label: "Add Branch",
+                  // Replaced standard onClick with our new async handleSubmit
                   onClick: handleSubmit,
                   variant: "primary",
                 },

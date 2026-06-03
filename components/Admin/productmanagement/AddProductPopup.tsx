@@ -7,7 +7,7 @@ import { useNotifications } from "@/lib/context/NotificationsContext";
 import { getCategoriesByBusinessType } from "@/components/Admin/productmanagement/Productcategorydata";
 import {
   ProductState,
-  AddProductPopupProps,
+  AddProductPopupProps as BaseProps, // Renamed so we can extend it
   ExistingProduct,
   STEPS,
   isNewId,
@@ -20,7 +20,10 @@ import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 export type { ExistingProduct } from "./types";
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// THE FIX: Extend original props to accept showToast
+export interface AddProductPopupProps extends BaseProps {
+  showToast: (message: string, type: "success" | "error" | "info") => void;
+}
 
 export default function AddProductPopup({
   open,
@@ -37,6 +40,7 @@ export default function AddProductPopup({
   existingProducts = [],
   companyProduct = null,
   catalogLoading = false,
+  showToast,
 }: AddProductPopupProps) {
   const { addNotification } = useNotifications();
   const { posSettings } = usePosSettings();
@@ -46,7 +50,6 @@ export default function AddProductPopup({
   const [state, setState] = React.useState<ProductState>(emptyState());
   const [submitting, setSubmitting] = React.useState(false);
   const categories = getCategoriesByBusinessType(businessTypeId);
-
 
   const [selectedProductIds, setSelectedProductIds] = React.useState<Set<number | string>>(new Set());
   const [selectedOptionIds, setSelectedOptionIds] = React.useState<Set<number>>(new Set());
@@ -68,7 +71,6 @@ export default function AddProductPopup({
       return;
     }
 
-    // Only initialize if we just opened OR the product ID changed
     const isNewOpening = !wasOpen.current;
     const isDifferentProduct = initialData?.id !== lastInitId.current;
 
@@ -80,7 +82,6 @@ export default function AddProductPopup({
 
       if (initialData) {
         if (isManagerEditMode && companyProduct) {
-          // companyProduct supplied: diff against initialData to show only items not yet in branch
           const branchOptionNames = new Set(initialData.options.map((o) => o.name));
           const branchVariantSkus = new Set(initialData.variants.map((v) => v.sku));
           const availableOptions = (companyProduct.options ?? []).filter((o) => !branchOptionNames.has(o.name));
@@ -89,7 +90,6 @@ export default function AddProductPopup({
           setSelectedOptionIds(new Set(availableOptions.map((o) => o.id)));
           setSelectedVariantIds(new Set(availableVariants.map((v) => v.id)));
         } else if (isManagerEditMode && !companyProduct) {
-          // No companyProduct: load all options/variants from initialData and pre-select all
           setState(initialData);
           setSelectedOptionIds(new Set(initialData.options.map((o) => o.id)));
           setSelectedVariantIds(new Set(initialData.variants.map((v) => v.id)));
@@ -157,60 +157,41 @@ export default function AddProductPopup({
 
     const validateUniqueSkus = (variants: ProductState["variants"]) => {
       const seen = new Set<string>();
-
       for (const variant of variants) {
         const sku = variant.sku.trim();
         if (!sku) continue;
-
         const normalized = sku.toUpperCase();
-        if (seen.has(normalized)) {
-          return `SKU ${sku} is already used in another variant.`;
-        }
-
+        if (seen.has(normalized)) return `SKU ${sku} is already used in another variant.`;
         seen.add(normalized);
       }
-
       return null;
     };
 
     const validateVariantOptions = (variant: ProductState["variants"][number]) => {
       if (activeOptionNames.length === 0) return null;
-
       for (const optionName of activeOptionNames) {
         const selectedValue = variant.optionValues.find((entry) => entry.optionName === optionName)?.value?.trim();
-        if (!selectedValue) {
-          return `Please select a value for ${optionName} on every variant.`;
-        }
+        if (!selectedValue) return `Please select a value for ${optionName} on every variant.`;
       }
-
       return null;
     };
 
     const validateBarcodeCollisions = (variants: ProductState["variants"]) => {
       const barcodeOwnerMap = new Map<string, string>();
-
       for (const variant of variants) {
         const barcode = variant.barcode.trim();
         if (!barcode) continue;
-
         const optionSignature = variant.optionValues
           .map((entry) => `${entry.optionName}:${entry.value}`)
           .sort()
           .join("|");
-
-        const variantIdentity =
-          optionSignature ||
-          variant.sku.trim().toUpperCase() ||
-          `variant-${variant.id}`;
-
+        const variantIdentity = optionSignature || variant.sku.trim().toUpperCase() || `variant-${variant.id}`;
         const currentOwner = barcodeOwnerMap.get(barcode);
         if (currentOwner && currentOwner !== variantIdentity) {
           return `Barcode ${barcode} is already used by a different variant in this product.`;
         }
-
         barcodeOwnerMap.set(barcode, variantIdentity);
       }
-
       return null;
     };
 
@@ -225,11 +206,10 @@ export default function AddProductPopup({
     if (step === 1 && isManagerVariantMode && selectedProductIds.size === 1 && selectedOptionIds.size === 0)
       return "Please select at least one option.";
     if (step === 2) {
-      if (Object.keys(barcodeErrors).length > 0)
-        return "Please fix all barcode errors before continuing.";
-
+      if (Object.keys(barcodeErrors).length > 0) return "Please fix all barcode errors before continuing.";
       if (isManagerVariantMode && selectedProductIds.size === 1 && selectedVariantIds.size === 0)
         return "Please select at least one variant.";
+      
       if (!isManagerVariantMode && !isManagerEditMode) {
         if (state.variants.length === 0) return "Please add at least one product variant.";
         const duplicateSkuError = validateUniqueSkus(state.variants);
@@ -266,21 +246,31 @@ export default function AddProductPopup({
   };
 
   const goStep = (n: number) => setStep(n);
-  const handleNext = () => { const err = validateStep(); if (err) { alert(err); return; } if (step < STEPS.length - 1) setStep((s) => s + 1); };
+  
+  const handleNext = () => { 
+    const err = validateStep(); 
+    if (err) { 
+      showToast(err, "error"); // THE FIX: Show toast instead of alert
+      return; 
+    } 
+    if (step < STEPS.length - 1) setStep((s) => s + 1); 
+  };
+  
   const handleBack = () => { if (step > 0) setStep((s) => s - 1); };
 
   const handleSave = async () => {
     const err = validateStep();
-    if (err) { alert(err); return; }
+    if (err) { 
+      showToast(err, "error"); // THE FIX: Show toast instead of alert
+      return; 
+    }
 
     if (isManagerVariantMode) {
-      // Catalog mode: pass the full selected ExistingProduct objects back
-      // so the parent can call the stock API with real variantIds.
       if (onAddToBranch) {
         const selected = existingProducts.filter((p) => selectedProductIds.has(p.id));
         onAddToBranch(selected);
       }
-      onClose();
+      // onClose handled by parent inside the try block
       return;
     }
 
@@ -296,7 +286,6 @@ export default function AddProductPopup({
       finalState = state;
     }
 
-    // ── Manager submitting a brand-new product for approval ──────────────────
     if (userRole === "manager" && !isManagerEditMode && !isManagerVariantMode) {
       setSubmitting(true);
       try {
@@ -321,17 +310,13 @@ export default function AddProductPopup({
         });
         setShowSuccessPopup(true);
       } catch {
-        addNotification({
-          type: "error",
-          message: "Failed to submit for approval. Please try again.",
-        });
+        showToast("Failed to submit for approval. Please try again.", "error"); // THE FIX: Use toast
       } finally {
         setSubmitting(false);
       }
       return;
     }
 
-    // ── Manager editing (adding new variants to existing product) ─────────────
     if (userRole === "manager" && managerAddedNewItems) {
       addNotification({
         type: "approval_pending",
@@ -354,10 +339,12 @@ export default function AddProductPopup({
           status:       "pending",
         },
       });
+      // We still want to use toasts instead of alerts where applicable
+      showToast("Request submitted for approval.", "success");
     }
 
-    onSave(finalState);
-    onClose();
+    // Call parent onSave, parent handles the try/catch logic to skip close on error
+    await onSave(finalState);
   };
 
   const saveLabel = isManagerVariantMode

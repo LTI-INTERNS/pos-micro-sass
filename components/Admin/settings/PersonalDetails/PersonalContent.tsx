@@ -7,12 +7,17 @@ import ActionButton from "@/components/Admin/common/ActionButton";
 import { fetchPersonalDetails, updatePersonalDetails, updatePassword } from "@/lib/services/user-service";
 import LoadingState from "@/components/Admin/common/LoadingState";
 
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 export default function PersonalContent({ userRole }: { userRole: string; userId?: string }) {
   const { data: session } = useSession();
   const token = (session as any)?.user?.backendToken;
 
   const [modalOpen, setModalOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
+  
+  const { toasts, showToast, dismissToast } = useToast();
   
   const [personalDetails, setPersonalDetails] = React.useState({
     name: "",
@@ -51,21 +56,23 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
       const updatedData = await updatePersonalDetails(values, token);
       setPersonalDetails((prev) => ({ ...prev, ...updatedData }));
       setModalOpen(false);
-      alert("Details updated successfully!");
+      showToast("Details updated successfully!", "success"); 
     } catch (error: any) {
-      alert(error.message || "Failed to update details"); 
+      showToast(error.message || "Failed to update details", "error"); 
+      // THE FIX: Removed 'throw error;' here so Next.js doesn't crash. 
+      // Because we are in the catch block, setModalOpen(false) is skipped, so the popup stays open naturally!
     }
   };
 
   const handlePasswordChange = async () => {
     if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
-      return alert("Please fill in all password fields.");
+      return showToast("Please fill in all password fields.", "info");
     }
     if (passwords.newPassword.length < 8) {
-      return alert("New password must be at least 8 characters long.");
+      return showToast("New password must be at least 8 characters long.", "error");
     }
     if (passwords.newPassword !== passwords.confirmPassword) {
-      return alert("New password and confirm password do not match.");
+      return showToast("New password and confirm password do not match.", "error");
     }
 
     try {
@@ -74,10 +81,10 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
         newPassword: passwords.newPassword
       }, token);
       
-      alert("Password changed successfully!");
+      showToast("Password changed successfully!", "success");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (error: any) {
-      alert(error.message || "Failed to change password");
+      showToast(error.message || "Failed to change password", "error");
     }
   };
 
@@ -91,7 +98,6 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
   ];
 
   if (userRole !== "owner") {
-    // Added type: "tel" to match your Company Details component behavior
     editFields.push({ name: "phone", label: "Phone", type: "tel" });
   }
 
@@ -145,7 +151,6 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
             errors.name = "Name is required";
           }
 
-          // Validate Email
           if (values.email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(values.email.trim())) {
@@ -155,7 +160,6 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
             errors.email = "Email is required";
           }
 
-          // Validate Phone (Only if the user role isn't 'owner')
           if (userRole !== "owner") {
             if (values.phone) {
               const phoneWithoutSpaces = values.phone.replace(/\s+/g, "");
@@ -189,6 +193,8 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
         }}
         onSave={handleSaveDetails}
       />
+      
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

@@ -14,17 +14,23 @@ import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import LoadingState from "@/components/Admin/common/LoadingState";
 
+// THE FIX: Import the Toast System
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 import { Discount } from "@/types/discount";
 import { discountService } from "@/lib/services/discountService";
 
 export default function DiscountContent() {
   const { data: session } = useSession();
   
-  // THE FIX: Extracting the token exactly like PersonalContent.tsx
   const token = (session as any)?.user?.backendToken;
 
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
 
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
@@ -44,7 +50,6 @@ export default function DiscountContent() {
   const userRole = session?.user?.role?.toUpperCase() || "";
   const isAdminOrOwner = userRole === "ADMIN" || userRole === "OWNER";
 
-  // Derive unique branches from the current discounts data
   const branchOptions = useMemo(() => {
     if (!isAdminOrOwner) return [];
     const branches = Array.from(new Set(discounts.map(d => d.branch?.name).filter(Boolean)));
@@ -66,20 +71,25 @@ export default function DiscountContent() {
 
   useEffect(() => {
     fetchDiscounts(true);
-    // Poll every 10 seconds to keep the manager view updated in real-time
     const interval = setInterval(() => fetchDiscounts(), 10000);
     return () => clearInterval(interval);
   }, [fetchDiscounts]);
 
   const handleSaveDiscount = async (values: any) => {
-    await discountService.createDiscount({
-      title: values.title,
-      percentage: Number(values.percentage),
-      startDate: values.startDate,
-      endDate: values.endDate,
-      branchId: values.branchId,
-    }, token);
-    await fetchDiscounts();
+    try {
+      await discountService.createDiscount({
+        title: values.title,
+        percentage: Number(values.percentage),
+        startDate: values.startDate,
+        endDate: values.endDate,
+        branchIds: values.branchIds, 
+      }, token);
+      await fetchDiscounts();
+      showToast("Discount added successfully!", "success");
+    } catch (error: any) {
+      showToast(error.message || "Failed to add discount.", "error");
+      throw error; // THE FIX: Re-throw to prevent the AddDiscountPopup from closing
+    }
   };
 
   const handleDeleteDiscount = async () => {
@@ -89,8 +99,9 @@ export default function DiscountContent() {
       setDiscounts((prev) => prev.filter((d) => d.discountId !== selectedDiscount.discountId));
       setSelectedDiscount(null);
       setDeleteOpen(false);
-    } catch (error) {
-      console.error("Error deleting discount:", error);
+      showToast("Discount deleted successfully!", "success");
+    } catch (error: any) {
+      showToast(error.message || "Failed to delete discount.", "error");
     }
   };
 
@@ -98,7 +109,6 @@ export default function DiscountContent() {
     if (!selectedDiscount) return;
     try {
       const newStatus = !selectedDiscount.status;
-      // Optimistic update
       setDiscounts((prev) => 
         prev.map((d) => d.discountId === selectedDiscount.discountId ? { ...d, status: newStatus } : d)
       );
@@ -106,11 +116,10 @@ export default function DiscountContent() {
       await discountService.toggleStatus(selectedDiscount.discountId, newStatus, token);
       setDeactivateOpen(false);
       
-      // Refresh in background to ensure sync with server
       await fetchDiscounts();
-    } catch (error) {
-      console.error("Error toggling discount status:", error);
-      // Revert on error
+      showToast(`Discount ${newStatus ? "activated" : "deactivated"} successfully!`, "success");
+    } catch (error: any) {
+      showToast(error.message || "Failed to update discount status.", "error");
       await fetchDiscounts();
     }
   };
@@ -126,14 +135,12 @@ export default function DiscountContent() {
   });
 
   const filteredDiscounts = baseFilteredDiscounts.filter((d) => {
-    // Status filter
     if (filters.status) {
       const expired = new Date(d.endDate) < new Date();
       if (filters.status === "active" && (expired || !d.status)) return false;
       if (filters.status === "expired" && (!expired && d.status)) return false;
     }
 
-    // Branch filter (only for Admin/Owner)
     if (isAdminOrOwner && filters.branch && d.branch?.name !== filters.branch) {
       return false;
     }
@@ -266,6 +273,9 @@ export default function DiscountContent() {
           onConfirm={handleDeleteDiscount}
         />
       )}
+
+      {/* THE FIX: Render ToastNotification at the bottom */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
-}
+}
