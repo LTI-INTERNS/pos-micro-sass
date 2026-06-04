@@ -1,13 +1,14 @@
 "use client";
 
-import GlassBackground from "@/components/saas/common/GlassBackground";
-import PaymentResultPopup from "@/components/saas/paymentProcess/PaymentResultPopup";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PaymentCancelPage() {
-  return (
-    <GlassBackground>
-      <div className="min-h-[560px]" />
-      <PaymentResultPopup type="cancel" />
-    </GlassBackground>
-  );
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/companyregistration?paymentStatus=cancel");
+  }, [router]);
+
+  return null;
 }
