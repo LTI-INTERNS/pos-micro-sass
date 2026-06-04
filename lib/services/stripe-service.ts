@@ -27,10 +27,27 @@ export async function createStripeCheckoutSession(
 
     return { ok: true, checkoutUrl };
   } catch (error: any) {
+    const status = error?.response?.status;
+    const serverMessage = error?.response?.data?.message;
+
+    if (status === 401) {
+      return {
+        ok: false,
+        message: 'Please log in as an owner before starting Stripe checkout.',
+      };
+    }
+
+    if (status === 403) {
+      return {
+        ok: false,
+        message: 'Only owner accounts can create a Stripe checkout session.',
+      };
+    }
+
     return {
       ok: false,
       message:
-        error?.response?.data?.message ||
+        serverMessage ||
         error?.message ||
         'Unable to start Stripe checkout. Please try again.',
     };
