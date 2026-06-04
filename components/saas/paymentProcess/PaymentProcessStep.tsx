@@ -145,9 +145,9 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       </section>
 
       <div className="mt-8 flex justify-between font-bold text-lg">
-        <span>Total</span>
+        <span>{isFree ? "Total" : "Monthly Total"}</span>
         <span>
-          {summary.currency} {summary.total}
+          {summary.currency} {summary.total}{isFree ? "" : " / month"}
         </span>
       </div>
     </div>
@@ -196,7 +196,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       <div>
         <h2 className="text-2xl font-bold text-white mb-2">Secure Stripe Checkout</h2>
         <p className="text-white/60 text-sm leading-relaxed">
-          Your card details will be entered on Stripe&apos;s secure hosted checkout page. We do not store or process card numbers in this app.
+          Your subscription will be created on Stripe&apos;s secure hosted checkout page. We do not store or process card numbers in this app.
         </p>
       </div>
 
@@ -210,9 +210,9 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
           <span className="text-white font-medium">{summary.companyName}</span>
         </div>
         <div className="border-t border-white/10 pt-3 flex justify-between font-semibold text-white">
-          <span>Total Due Today</span>
+          <span>Monthly Subscription</span>
           <span>
-            {summary.currency} {summary.total}
+            {summary.currency} {summary.total} / month
           </span>
         </div>
       </div>
@@ -224,7 +224,7 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
         onClick={handleStripeCheckout}
         disabled={submitting}
       >
-        {submitting ? "Redirecting…" : "Continue to Stripe"}
+        {submitting ? "Redirecting…" : "Subscribe with Stripe"}
       </ActionButton>
     </div>
   );
