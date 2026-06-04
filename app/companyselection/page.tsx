@@ -12,6 +12,8 @@ import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
 import ActionButton from "@/components/Admin/common/ActionButton";
 import CompanySelectItem from "@/components/saas/companySelection/CompanySelectItem";
 import { companyService, Company } from "@/lib/services/company-service";
+import PaymentResultPopup from "@/components/saas/paymentProcess/PaymentResultPopup";
+import { clearRegistrationData } from "@/app/companyregistration/useRegistrationPersistence";
 
 export default function CompanySelectPage() {
   const router = useRouter();
@@ -21,8 +23,26 @@ export default function CompanySelectPage() {
   const [selectedId, setSelectedId] = useState("");
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
 
   const role = session?.user?.role?.toUpperCase();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paymentStatus") === "success") {
+      clearRegistrationData();
+      setShowPaymentSuccess(true);
+    }
+  }, []);
+
+  const closePaymentSuccessPopup = () => {
+    setShowPaymentSuccess(false);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("paymentStatus");
+    url.searchParams.delete("session_id");
+    router.replace(`${url.pathname}${url.search}`);
+  };
+
 
   // ── Fetch companies from the real API ────────────────────────────────────────
   const fetchCompanies = useCallback(async () => {
@@ -229,6 +249,13 @@ export default function CompanySelectPage() {
 
         </GlassBackground>
       </div>
+
+      {showPaymentSuccess && (
+        <PaymentResultPopup
+          type="success"
+          onClose={closePaymentSuccessPopup}
+        />
+      )}
     </CommonLayout>
   );
 }
