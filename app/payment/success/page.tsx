@@ -1,19 +1,20 @@
 "use client";
 
 import { useEffect } from "react";
-import { clearRegistrationData } from "@/app/companyregistration/useRegistrationPersistence";
-import GlassBackground from "@/components/saas/common/GlassBackground";
-import PaymentResultPopup from "@/components/saas/paymentProcess/PaymentResultPopup";
+import { useRouter } from "next/navigation";
 
 export default function PaymentSuccessPage() {
-  useEffect(() => {
-    clearRegistrationData();
-  }, []);
+  const router = useRouter();
 
-  return (
-    <GlassBackground>
-      <div className="min-h-[560px]" />
-      <PaymentResultPopup type="success" />
-    </GlassBackground>
-  );
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    const target = sessionId
+      ? `/companyselection?paymentStatus=success&session_id=${encodeURIComponent(sessionId)}`
+      : "/companyselection?paymentStatus=success";
+
+    router.replace(target);
+  }, [router]);
+
+  return null;
 }
