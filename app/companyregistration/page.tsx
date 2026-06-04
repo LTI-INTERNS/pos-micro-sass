@@ -21,11 +21,6 @@ export type RegistrationData = {
     logoPublicId: string;
     businessTypeId: string;
     subId: string;
-    paymentMethod: "mastercard" | "visa";
-    nameOnCard: string;
-    cardNumber: string;
-    expDate: string;
-    cvv: string;
 };
 
 const STEPS = [
@@ -38,7 +33,6 @@ const STEPS = [
 const DEFAULT_DATA: RegistrationData = {
     companyName: "", address: "", contact: "", email: "", logo: null, logoUrl: "", logoPublicId: "",
     businessTypeId: "", subId: "",
-    paymentMethod: "mastercard", nameOnCard: "", cardNumber: "", expDate: "", cvv: "",
 };
 
 export default function RegistrationPage() {
