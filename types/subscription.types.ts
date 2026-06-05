@@ -28,6 +28,11 @@ export interface SubscriptionInfo {
   aiPredictionLevel: AIPredictionLevel;
 }
 
+// True when the company already has a Stripe customer ID saved from a successful Stripe checkout.
+export interface StripeBillingInfo {
+  hasStripeCustomer: boolean;
+}
+
 // ── Convenience helpers ───────────────────────────────────────────────────────
 
 /** Returns true when the plan is PRO or ENTERPRISE. */
