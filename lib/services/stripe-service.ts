@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/api-client';
-import type { SubscriptionType } from '@/types/subscription.types';
 
 export interface CreateStripeCheckoutSessionInput {
   companyName: string;
@@ -11,31 +10,37 @@ export interface CreateStripeCheckoutSessionInput {
   subId: string;
 }
 
-export type RedirectResult =
+export type StripeRedirectResult =
   | { ok: true; url: string }
-  | { ok: false; message: string };
+  | { ok: false; message: string; code?: string };
 
-export type CreateStripeCheckoutSessionResult =
-  | { ok: true; checkoutUrl: string }
-  | { ok: false; message: string };
-
-function subscriptionTypeToSubId(subType: SubscriptionType): string {
-  return `SUB_${subType}`;
-}
-
-function toUserMessage(error: any, fallback: string): string {
+function readStripeError(error: any, fallback: string): StripeRedirectResult {
   const status = error?.response?.status;
-  const serverMessage = error?.response?.data?.message;
+  const responseData = error?.response?.data;
+  const code = responseData?.error?.code ?? responseData?.code;
+  const serverMessage =
+    responseData?.error?.userMessage ??
+    responseData?.error?.message ??
+    responseData?.message;
 
-  if (status === 401) return 'Please log in as an owner before starting Stripe checkout.';
-  if (status === 403) return 'Only owner accounts can manage this subscription.';
+  if (status === 401) {
+    return { ok: false, code, message: 'Please log in before managing subscriptions.' };
+  }
 
-  return serverMessage || error?.message || fallback;
+  if (status === 403) {
+    return { ok: false, code, message: 'Only owner/admin accounts can manage this subscription.' };
+  }
+
+  return {
+    ok: false,
+    code,
+    message: serverMessage || error?.message || fallback,
+  };
 }
 
 export async function createStripeCheckoutSession(
   input: CreateStripeCheckoutSessionInput,
-): Promise<CreateStripeCheckoutSessionResult> {
+): Promise<StripeRedirectResult> {
   try {
     const res = await apiClient.post('/stripe/create-checkout-session', input);
     const checkoutUrl = res.data?.data?.checkoutUrl;
@@ -44,45 +49,38 @@ export async function createStripeCheckoutSession(
       return { ok: false, message: 'Stripe checkout URL was not returned by the server.' };
     }
 
-    return { ok: true, checkoutUrl };
+    return { ok: true, url: checkoutUrl };
   } catch (error: any) {
-    return {
-      ok: false,
-      message: toUserMessage(error, 'Unable to start Stripe checkout. Please try again.'),
-    };
+    return readStripeError(error, 'Unable to start Stripe checkout. Please try again.');
   }
 }
 
-export async function createSubscriptionCheckoutSession(
-  subType: SubscriptionType,
-): Promise<RedirectResult> {
+export async function createSubscriptionCheckoutSession(subId: string): Promise<StripeRedirectResult> {
   try {
-    const res = await apiClient.post('/stripe/create-subscription-checkout-session', {
-      subId: subscriptionTypeToSubId(subType),
-    });
-    const url = res.data?.data?.checkoutUrl;
+    const res = await apiClient.post('/stripe/create-subscription-checkout-session', { subId });
+    const checkoutUrl = res.data?.data?.checkoutUrl;
 
-    if (!url) return { ok: false, message: 'Stripe checkout URL was not returned by the server.' };
-    return { ok: true, url };
+    if (!checkoutUrl) {
+      return { ok: false, message: 'Stripe checkout URL was not returned by the server.' };
+    }
+
+    return { ok: true, url: checkoutUrl };
   } catch (error: any) {
-    return {
-      ok: false,
-      message: toUserMessage(error, 'Unable to start subscription checkout. Please try again.'),
-    };
+    return readStripeError(error, 'Unable to start subscription checkout. Please try again.');
   }
 }
 
-export async function createBillingPortalSession(): Promise<RedirectResult> {
+export async function createBillingPortalSession(): Promise<StripeRedirectResult> {
   try {
     const res = await apiClient.post('/stripe/create-billing-portal-session');
-    const url = res.data?.data?.portalUrl;
+    const portalUrl = res.data?.data?.portalUrl;
 
-    if (!url) return { ok: false, message: 'Stripe billing portal URL was not returned by the server.' };
-    return { ok: true, url };
+    if (!portalUrl) {
+      return { ok: false, message: 'Stripe Billing Portal URL was not returned by the server.' };
+    }
+
+    return { ok: true, url: portalUrl };
   } catch (error: any) {
-    return {
-      ok: false,
-      message: toUserMessage(error, 'Unable to open the Stripe billing portal. Please try again.'),
-    };
+    return readStripeError(error, 'Unable to open Stripe Billing Portal. Please try again.');
   }
 }
