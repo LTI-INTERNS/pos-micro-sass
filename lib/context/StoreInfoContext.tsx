@@ -16,6 +16,7 @@ export type StoreInfo = {
   businessType: BusinessTypeEnum | "";     // e.g. "CAFE" | "SUPERMARKET" | ""
   businessTypeId: string;                    // Business type ID from database
   subscription: SubscriptionInfo | null;   // null until the fetch resolves
+  hasStripeCustomer: boolean;              // true after a successful Stripe checkout has saved a customer ID
 };
 
 type StoreInfoContextType = {
@@ -36,6 +37,7 @@ const defaultStoreInfo: StoreInfo = {
   businessType: "",
   businessTypeId: "",
   subscription: null,
+  hasStripeCustomer: false,
 };
 
 // ── Backend response shape ────────────────────────────────────────────────────
@@ -48,6 +50,7 @@ interface StoreInfoResponse {
     businessType: BusinessTypeEnum;
     businessTypeId: string;
     subscription: SubscriptionInfo;
+    hasStripeCustomer?: boolean;
   };
 }
 
@@ -102,6 +105,7 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
         businessType: res.data.businessType || prev.businessType,
         businessTypeId: res.data.businessTypeId || prev.businessTypeId,
         subscription: res.data.subscription ?? prev.subscription,
+        hasStripeCustomer: Boolean(res.data.hasStripeCustomer),
       }));
 
       fetchedForId.current = companyId;
