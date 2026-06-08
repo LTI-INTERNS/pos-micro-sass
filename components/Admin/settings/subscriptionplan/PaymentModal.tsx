@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
-import { createSubscriptionCheckoutSession } from "@/lib/services/stripe-service";
+import { changeSubscriptionPlan } from "@/lib/services/stripe-service";
 import type { SubscriptionType } from "@/types/subscription.types";
 import type { ToastType } from "@/components/Admin/common/ToastNotification";
 
@@ -22,31 +22,39 @@ type Props = {
   plan: PaymentPlan | null;
   onClose: () => void;
   onNotify?: (message: string, type?: ToastType) => void;
+  onChanged?: () => Promise<void> | void;
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function PaymentModal({ open, plan, onClose, onNotify }: Props) {
+export default function PaymentModal({ open, plan, onClose, onNotify, onChanged }: Props) {
   const [loading, setLoading] = useState(false);
+  const submittingRef = useRef(false);
 
   const handleCheckout = async () => {
-    if (!plan) return;
+    if (!plan || submittingRef.current) return;
 
-    if (plan.subType === "FREE") {
-      onNotify?.("Free plan does not require Stripe checkout. Use Manage Billing to cancel a paid subscription.", "info");
-      return;
-    }
-
+    submittingRef.current = true;
     setLoading(true);
-    const result = await createSubscriptionCheckoutSession(`SUB_${plan.subType}`);
+    const result = await changeSubscriptionPlan(`SUB_${plan.subType}`);
 
     if (!result.ok) {
+      submittingRef.current = false;
       setLoading(false);
       onNotify?.(result.message, "error");
       return;
     }
 
-    window.location.href = result.url;
+    if (result.action === "checkout") {
+      window.location.href = result.url;
+      return;
+    }
+
+    submittingRef.current = false;
+    setLoading(false);
+    onNotify?.(result.message, "success");
+    onClose();
+    await onChanged?.();
   };
 
   const handleClose = () => {
@@ -56,10 +64,12 @@ export default function PaymentModal({ open, plan, onClose, onNotify }: Props) {
 
   if (!plan) return null;
 
+  const isFree = plan.subType === "FREE";
+
   return (
     <ModalShell
       open={open}
-      title={`Continue with ${plan.name}`}
+      title={`${isFree ? "Schedule" : "Continue with"} ${plan.name}`}
       onClose={handleClose}
       widthClassName="w-[520px] max-w-[94vw]"
     >
@@ -76,15 +86,22 @@ export default function PaymentModal({ open, plan, onClose, onNotify }: Props) {
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-600 leading-6">
-          You will be redirected to Stripe Checkout. Stripe will securely collect the payment method.
-          Your app will activate this plan only after Stripe confirms the payment through the webhook.
+          {isFree ? (
+            <>
+              Your paid access will stay active until the current billing period ends. After that, Stripe will cancel the paid subscription and the app will move this company to the Free plan.
+            </>
+          ) : (
+            <>
+              If this is an upgrade, Stripe will apply it immediately and charge the prorated difference. If you already scheduled a cancellation or downgrade, this request will replace the previous scheduled change so only one future change stays active.
+            </>
+          )}
         </div>
 
         <PopupActions
           actions={[
             { label: "Cancel", onClick: handleClose, variant: "secondary", disabled: loading },
             {
-              label: loading ? "Redirecting..." : "Continue to Stripe",
+              label: loading ? "Processing..." : isFree ? "Schedule Free Plan" : "Continue",
               onClick: handleCheckout,
               variant: "primary",
               disabled: loading,
