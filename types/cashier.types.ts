@@ -26,6 +26,7 @@ export interface CreateCashierInput {
 }
 
 export interface UpdateCashierInput {
+    branchId?:  string;
     cashierNo?: string;
     name?:      string;
     email?:     string;
