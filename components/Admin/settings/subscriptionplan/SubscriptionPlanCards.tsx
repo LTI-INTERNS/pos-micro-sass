@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, CalendarClock, ExternalLink, RefreshCcw } from "lucide-react";
+import { AlertCircle, CalendarClock, ExternalLink, RefreshCcw, XCircle } from "lucide-react";
 import PlanCard from "@/components/Admin/settings/subscriptionplan/PlanCard";
 import { planCardsData, PlanCardData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
 import PaymentModal, { PaymentPlan } from "@/components/Admin/settings/subscriptionplan/PaymentModal";
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
-import { createBillingPortalSession } from "@/lib/services/stripe-service";
+import { cancelScheduledSubscriptionChange, createBillingPortalSession } from "@/lib/services/stripe-service";
 import type { SubscriptionType } from "@/types/subscription.types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -43,10 +43,11 @@ function formatDate(value?: string | null): string {
 }
 
 function actionLabelForPlan(plan: PlanCardData, currentType: SubscriptionType, hasStripeCustomer: boolean): string {
-  if (plan.subType === "FREE") return "Downgrade / cancel in Stripe";
+  if (plan.subType === currentType) return "Keep this plan";
+  if (plan.subType === "FREE") return hasStripeCustomer ? "Schedule cancellation" : "Free plan active";
   if (!hasStripeCustomer || currentType === "FREE") return "Upgrade with Stripe";
-  if (planRank(plan.subType) > planRank(currentType)) return "Upgrade with Stripe";
-  return "Schedule downgrade in Stripe";
+  if (planRank(plan.subType) > planRank(currentType)) return "Upgrade now";
+  return "Schedule downgrade";
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ export default function SubscriptionPlanCards() {
   const { toasts, showToast, dismissToast } = useToast();
   const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [cancelScheduleLoading, setCancelScheduleLoading] = useState(false);
 
   const currentType = storeInfo.subscription?.type ?? "FREE";
   const currentPlanId = storeInfo.subscription ? subTypeToCardId(storeInfo.subscription.type) : "";
@@ -74,17 +76,13 @@ export default function SubscriptionPlanCards() {
   }, [currentPlanId]);
 
   const handlePlanClick = (plan: PlanCardData) => {
-    // For existing Stripe customers, downgrades/cancellations should go through
-    // Stripe Billing Portal so Stripe can schedule them at period end.
-    if (hasStripeCustomer && planRank(plan.subType) < planRank(currentType)) {
-      void handleManageBilling();
+    if (plan.subType === currentType && scheduledSubscription) {
+      void handleCancelScheduledChange();
       return;
     }
 
-    if (plan.subType === "FREE") {
-      void handleManageBilling();
-      return;
-    }
+    if (plan.subType === currentType) return;
+    if (plan.subType === "FREE" && !hasStripeCustomer) return;
 
     setSelectedPlan(cardToPaymentPlan(plan));
   };
@@ -108,6 +106,21 @@ export default function SubscriptionPlanCards() {
     }
 
     window.location.href = result.url;
+  };
+
+  const handleCancelScheduledChange = async () => {
+    setCancelScheduleLoading(true);
+    const result = await cancelScheduledSubscriptionChange();
+
+    if (!result.ok) {
+      setCancelScheduleLoading(false);
+      showToast(result.message, "error");
+      return;
+    }
+
+    showToast(result.message, "success");
+    await refreshStoreInfo();
+    setCancelScheduleLoading(false);
   };
 
   useEffect(() => {
@@ -187,6 +200,17 @@ export default function SubscriptionPlanCards() {
                 <RefreshCcw size={13} /> Refresh
               </button>
 
+              {scheduledSubscription && (
+                <button
+                  type="button"
+                  onClick={handleCancelScheduledChange}
+                  disabled={cancelScheduleLoading}
+                  className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-600 transition active:scale-95 disabled:opacity-60"
+                >
+                  <XCircle size={13} /> {cancelScheduleLoading ? "Cancelling..." : "Cancel Scheduled Change"}
+                </button>
+              )}
+
               {hasStripeCustomer && (
                 <button
                   type="button"
@@ -203,7 +227,7 @@ export default function SubscriptionPlanCards() {
 
         {scheduledSubscription && (
           <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs text-blue-700">
-            <CalendarClock size={16} className="mt-0.5 flex-shrink-0" />
+            <CalendarClock size={16} className="mt-0.5 shrink-0" />
             <span>
               Scheduled change: your current {currentType} access stays active until {formatDate(scheduledSubscription.effectiveAt)}. Your plan will change to {scheduledSubscription.type} after that date.
             </span>
@@ -212,7 +236,7 @@ export default function SubscriptionPlanCards() {
 
         {billingFailed && (
           <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
-            <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
             <span>Latest subscription payment failed. Open Manage Billing and update the payment method.</span>
           </div>
         )}
@@ -220,7 +244,7 @@ export default function SubscriptionPlanCards() {
         {isPaidPlan && !hasStripeCustomer && (
           <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-700 md:flex-row md:items-center md:justify-between">
             <div className="flex items-start gap-3">
-              <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
               <span>
                 This company is marked as paid in the database, but it is not connected to Stripe. Complete checkout for this paid plan to create the Stripe customer before using Manage Billing.
               </span>
@@ -242,8 +266,7 @@ export default function SubscriptionPlanCards() {
         {sortedPlans.map((plan) => {
           const isCurrent = plan.id === currentPlanId;
           const isScheduled = scheduledSubscription?.type === plan.subType;
-          const canUsePortalForFree = plan.subType === "FREE" && hasStripeCustomer;
-          const canUseCheckoutForPaid = plan.subType !== "FREE" && !isCurrent;
+          const canSelectPlan = !isCurrent || Boolean(scheduledSubscription && plan.subType === currentType);
 
           return (
             <PlanCard
@@ -255,8 +278,8 @@ export default function SubscriptionPlanCards() {
               badge={isScheduled ? "Scheduled next" : plan.badge}
               features={plan.features}
               isCurrent={isCurrent}
-              upgradeLabel={actionLabelForPlan(plan, currentType, hasStripeCustomer)}
-              onUpgrade={canUseCheckoutForPaid || canUsePortalForFree ? () => handlePlanClick(plan) : undefined}
+              upgradeLabel={scheduledSubscription && plan.subType === currentType ? "Keep current plan" : actionLabelForPlan(plan, currentType, hasStripeCustomer)}
+              onUpgrade={canSelectPlan ? () => handlePlanClick(plan) : undefined}
             />
           );
         })}
@@ -267,6 +290,7 @@ export default function SubscriptionPlanCards() {
         plan={selectedPlan}
         onClose={() => setSelectedPlan(null)}
         onNotify={showToast}
+        onChanged={refreshStoreInfo}
       />
     </>
   );
