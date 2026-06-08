@@ -10,6 +10,8 @@ export type Cashier = {
   name: string;
   imgUrl?: string | null;
   cashierNo: string;
+  branchId: string;
+  branchName?: string;
   totalRevenue: number;
   email: string;
   passwordMasked: string;

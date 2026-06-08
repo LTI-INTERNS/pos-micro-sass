@@ -12,6 +12,12 @@ export type SubscriptionType = 'FREE' | 'PRO' | 'ENTERPRISE';
 export type SupportLevel = 'EMAIL' | 'PRIORITY' | 'DEDICATED_24_7';
 export type ReportLevel = 'BASIC' | 'ADVANCED' | 'CUSTOM';
 export type AIPredictionLevel = 'NOT_INCLUDED' | 'INCLUDED' | 'FULL_SUITE';
+export type SubscriptionBillingStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | null;
+
+export interface ScheduledSubscriptionInfo {
+  type: SubscriptionType;
+  effectiveAt: string;
+}
 
 // ── Subscription shape returned by /auth/store-info ──────────────────────────
 

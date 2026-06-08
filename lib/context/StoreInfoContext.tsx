@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { apiClient } from "@/lib/api-client";
-import type { BusinessTypeEnum, SubscriptionInfo } from "@/types/subscription.types";
+import type { BusinessTypeEnum, ScheduledSubscriptionInfo, SubscriptionBillingStatus, SubscriptionInfo } from "@/types/subscription.types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -16,6 +16,11 @@ export type StoreInfo = {
   businessType: BusinessTypeEnum | "";     // e.g. "CAFE" | "SUPERMARKET" | ""
   businessTypeId: string;                    // Business type ID from database
   subscription: SubscriptionInfo | null;   // null until the fetch resolves
+  hasStripeCustomer: boolean;
+  hasStripeSubscription: boolean;
+  subscriptionBillingStatus: SubscriptionBillingStatus;
+  currentPeriodEnd: string | null;
+  scheduledSubscription: ScheduledSubscriptionInfo | null;
 };
 
 type StoreInfoContextType = {
@@ -36,6 +41,11 @@ const defaultStoreInfo: StoreInfo = {
   businessType: "",
   businessTypeId: "",
   subscription: null,
+  hasStripeCustomer: false,
+  hasStripeSubscription: false,
+  subscriptionBillingStatus: null,
+  currentPeriodEnd: null,
+  scheduledSubscription: null,
 };
 
 // ── Backend response shape ────────────────────────────────────────────────────
@@ -48,6 +58,11 @@ interface StoreInfoResponse {
     businessType: BusinessTypeEnum;
     businessTypeId: string;
     subscription: SubscriptionInfo;
+    hasStripeCustomer: boolean;
+    hasStripeSubscription: boolean;
+    subscriptionBillingStatus: SubscriptionBillingStatus;
+    currentPeriodEnd: string | null;
+    scheduledSubscription: ScheduledSubscriptionInfo | null;
   };
 }
 
@@ -102,6 +117,11 @@ export function StoreInfoProvider({ children }: { children: React.ReactNode }) {
         businessType: res.data.businessType || prev.businessType,
         businessTypeId: res.data.businessTypeId || prev.businessTypeId,
         subscription: res.data.subscription ?? prev.subscription,
+        hasStripeCustomer: Boolean(res.data.hasStripeCustomer),
+        hasStripeSubscription: Boolean(res.data.hasStripeSubscription),
+        subscriptionBillingStatus: res.data.subscriptionBillingStatus ?? null,
+        currentPeriodEnd: res.data.currentPeriodEnd ?? null,
+        scheduledSubscription: res.data.scheduledSubscription ?? null,
       }));
 
       fetchedForId.current = companyId;
