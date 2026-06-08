@@ -10,6 +10,7 @@ import BusinessTypeStep     from "@/components/saas/businessType/BusinessTypeSte
 import SubscriptionPlanStep from "@/components/saas/subscriptionPlan/SubscriptionPlanStep";
 import PaymentProcessStep   from "@/components/saas/paymentProcess/PaymentProcessStep";
 import { useRegistrationPersistence } from "@/app/companyregistration/useRegistrationPersistence";
+import PaymentResultPopup from "@/components/saas/paymentProcess/PaymentResultPopup";
 
 export type RegistrationData = {
     companyName: string;
@@ -21,11 +22,6 @@ export type RegistrationData = {
     logoPublicId: string;
     businessTypeId: string;
     subId: string;
-    paymentMethod: "mastercard" | "visa";
-    nameOnCard: string;
-    cardNumber: string;
-    expDate: string;
-    cvv: string;
 };
 
 const STEPS = [
@@ -38,7 +34,6 @@ const STEPS = [
 const DEFAULT_DATA: RegistrationData = {
     companyName: "", address: "", contact: "", email: "", logo: null, logoUrl: "", logoPublicId: "",
     businessTypeId: "", subId: "",
-    paymentMethod: "mastercard", nameOnCard: "", cardNumber: "", expDate: "", cvv: "",
 };
 
 export default function RegistrationPage() {
@@ -48,6 +43,7 @@ export default function RegistrationPage() {
     const [completedSteps,   setCompletedSteps]   = useState(0);
     const [registrationData, setRegistrationData] = useState<RegistrationData>(DEFAULT_DATA);
     const [hydrated,         setHydrated]         = useState(false);
+    const [showPaymentCancel, setShowPaymentCancel] = useState(false);
 
     // Restore from localStorage on first mount
     useEffect(() => {
@@ -60,6 +56,27 @@ export default function RegistrationPage() {
         setHydrated(true);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("paymentStatus") === "cancel") {
+            setShowPaymentCancel(true);
+            setCurrentStep(4);
+            setCompletedSteps((prev) => Math.max(prev, 3));
+        }
+    }, []);
+
+    const closePaymentCancelPopup = () => {
+        setShowPaymentCancel(false);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("paymentStatus");
+        routerReplace(`${url.pathname}${url.search}`);
+    };
+
+    const routerReplace = (path: string) => {
+        window.history.replaceState(null, "", path);
+    };
 
     // Persist whenever data or step changes
     useEffect(() => {
@@ -137,6 +154,13 @@ export default function RegistrationPage() {
                     data={registrationData}
                     onComplete={handleComplete}
                     onBack={handleBack}
+                />
+            )}
+
+            {showPaymentCancel && (
+                <PaymentResultPopup
+                    type="cancel"
+                    onClose={closePaymentCancelPopup}
                 />
             )}
         </CommonLayout>
