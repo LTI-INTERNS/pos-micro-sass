@@ -102,7 +102,13 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
       return;
     }
 
-    window.location.href = result.checkoutUrl;
+    if (!result.url) {
+      setFormError("Stripe checkout URL was not returned by the server.");
+      setSubmitting(false);
+      return;
+    }
+
+    window.location.href = result.url;
   }
 
   const planKey = data.subId?.toLowerCase().replace("sub_", "") ?? "";
