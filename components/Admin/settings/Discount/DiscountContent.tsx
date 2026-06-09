@@ -14,7 +14,6 @@ import { useTableFilters } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import LoadingState from "@/components/Admin/common/LoadingState";
 
-// THE FIX: Import the Toast System
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
 
@@ -29,7 +28,6 @@ export default function DiscountContent() {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // THE FIX: Initialize the toast hook
   const { toasts, showToast, dismissToast } = useToast();
 
   const [start, setStart] = useState<Date | undefined>();
@@ -88,7 +86,7 @@ export default function DiscountContent() {
       showToast("Discount added successfully!", "success");
     } catch (error: any) {
       showToast(error.message || "Failed to add discount.", "error");
-      throw error; // THE FIX: Re-throw to prevent the AddDiscountPopup from closing
+      throw error; 
     }
   };
 
@@ -220,14 +218,26 @@ export default function DiscountContent() {
         <ActionButton
           label="Activate / Deactivate Discount"
           variant="outline"
-          disabled={!selectedDiscount}
-          onClick={() => setDeactivateOpen(true)}
+          // THE FIX: Removed disabled prop to allow clicks, then handle validation inside onClick
+          onClick={() => {
+            if (!selectedDiscount) {
+              showToast("Please select a discount first!", "error");
+              return;
+            }
+            setDeactivateOpen(true);
+          }}
         />
         <ActionButton
           label="Delete Discount"
           variant="outline"
-          disabled={!selectedDiscount}
-          onClick={() => setDeleteOpen(true)}
+          // THE FIX: Removed disabled prop to allow clicks, then handle validation inside onClick
+          onClick={() => {
+            if (!selectedDiscount) {
+              showToast("Please select a discount first!", "error");
+              return;
+            }
+            setDeleteOpen(true);
+          }}
         />
         <ActionButton
           label="Add Discount"
@@ -274,7 +284,6 @@ export default function DiscountContent() {
         />
       )}
 
-      {/* THE FIX: Render ToastNotification at the bottom */}
       <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
