@@ -121,9 +121,12 @@ export default function AddBranchForm({
     if (validateForm()) {
       try {
         await onSubmit(values);
+        // onSubmit is only awaited if it succeeds. If validation fails in the parent,
+        // it throws, this code is skipped, and the modal stays open!
         resetForm();
+        onClose(); 
       } catch (error) {
-        // Failed! Form data stays intact so the user can fix the specific field
+        // Validation/API error occurred. Form data is preserved.
       }
     }
   };
