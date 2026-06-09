@@ -193,6 +193,7 @@ export default function StaffManagementPage() {
 
   const noAdminCapacity = userRole === "OWNER" && createOptions.adminCompanies.length === 0;
   const noManagerCapacity = createOptions.managerBranches.length === 0;
+  const addStaffRole = activeTab === "admins" ? "ADMIN" : "MANAGER";
 
   const canEditSelected =
     !!selectedStaff && !(selectedStaff.role === "ADMIN" && userRole !== "OWNER");
@@ -200,9 +201,14 @@ export default function StaffManagementPage() {
     !!selectedStaff && !(selectedStaff.role === "ADMIN" && userRole !== "OWNER");
 
   const openAddPopup = () => {
-    if (userRole === "OWNER") {
-      if (noAdminCapacity && noManagerCapacity) {
-        showToast("All available companies already have admin accounts, and all available branches already have manager accounts.", "info");
+    if (activeTab === "admins") {
+      if (userRole !== "OWNER") {
+        showToast("Admin accounts can only be added by the owner.", "error");
+        return;
+      }
+
+      if (noAdminCapacity) {
+        showToast("All available companies already have admin accounts.", "info");
         return;
       }
     } else if (noManagerCapacity) {
@@ -379,6 +385,7 @@ export default function StaffManagementPage() {
 
       <AddStaffPopup
         isOpen={showAddPopup}
+        role={addStaffRole}
         onClose={() => setShowAddPopup(false)}
         showToast={showToast}
         onSuccess={async () => {

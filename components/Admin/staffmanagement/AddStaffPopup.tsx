@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useSession } from "next-auth/react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import type {
@@ -14,6 +13,7 @@ import { staffService } from "@/lib/services/staff-service";
 
 type Props = {
   isOpen: boolean;
+  role: StaffRole;
   onClose: () => void;
   onSuccess: () => void | Promise<void>;
   options: StaffCreateOptions;
@@ -23,39 +23,6 @@ type Props = {
 
 type AdminMode = "" | "NEW" | "EXISTING";
 type FormErrors = Record<string, string>;
-
-function ChoiceButton({
-  label,
-  active,
-  disabled,
-  onClick,
-  isLast = false,
-}: {
-  label: string;
-  active: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-  isLast?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={`w-full px-4 py-3 text-center text-sm font-semibold transition ${
-        !isLast ? "border-r border-gray-200" : ""
-      } ${
-        active
-          ? "bg-orange-50 text-orange-500"
-          : "bg-white text-[#98A2B3]"
-      } ${
-        disabled ? "cursor-not-allowed opacity-50" : "hover:bg-orange-50/40"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
 
 function ActionButton({
   label,
@@ -99,20 +66,30 @@ function RoundedInput({
   placeholder,
   type = "text",
   disabled = false,
+  autoComplete,
+  name,
+  suppressAutoFill = false,
 }: {
   value: string;
   onChange: (next: string) => void;
   placeholder: string;
   type?: string;
   disabled?: boolean;
+  autoComplete?: string;
+  name?: string;
+  suppressAutoFill?: boolean;
 }) {
   return (
     <input
       type={type}
+      name={name}
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      autoComplete={autoComplete}
+      data-1p-ignore={suppressAutoFill ? "true" : undefined}
+      data-lpignore={suppressAutoFill ? "true" : undefined}
       className={`w-full rounded-full border px-4 py-2 outline-none placeholder:text-gray-300 ${
         disabled ? "border-gray-200 bg-gray-100 text-gray-400" : "border-gray-200 text-gray-700"
       } focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
@@ -179,19 +156,13 @@ function RemovableTag({
 
 export default function AddStaffPopup({
   isOpen,
+  role,
   onClose,
   onSuccess,
   options,
   optionsLoading = false,
   showToast,
 }: Props) {
-  const { data: session } = useSession();
-  const isOwner = String(session?.user?.role ?? "").toUpperCase() === "OWNER";
-
-  const canAddAdmin = isOwner && options.adminCompanies.length > 0;
-  const canAddManager = options.managerBranches.length > 0;
-
-  const [role, setRole] = React.useState<StaffRole>("MANAGER");
   const [adminMode, setAdminMode] = React.useState<AdminMode>("");
   const [scopeId, setScopeId] = React.useState("");
   const [existingAdminId, setExistingAdminId] = React.useState("");
@@ -208,13 +179,7 @@ export default function AddStaffPopup({
   React.useEffect(() => {
     if (!isOpen) return;
 
-    if (canAddManager) {
-      setRole("MANAGER");
-    } else if (canAddAdmin) {
-      setRole("ADMIN");
-    }
-
-    setAdminMode("");
+    setAdminMode(role === "ADMIN" ? "NEW" : "");
     setScopeId("");
     setExistingAdminId("");
     setSelectedCompanyIds([]);
@@ -225,26 +190,17 @@ export default function AddStaffPopup({
     setPhone("");
     setPassword("");
     setErrors({});
-  }, [isOpen, canAddAdmin, canAddManager]);
-
-  React.useEffect(() => {
-    if (!canAddManager && role === "MANAGER" && canAddAdmin) {
-      setRole("ADMIN");
-      setAdminMode("");
-    }
-
-    if (!canAddAdmin && role === "ADMIN") {
-      setRole("MANAGER");
-      setAdminMode("");
-    }
-  }, [role, canAddAdmin, canAddManager]);
+  }, [isOpen, role]);
 
   const existingAdmin: ExistingAdminOption | undefined = React.useMemo(
     () => options.existingAdmins.find((item) => item.id === existingAdminId),
     [existingAdminId, options.existingAdmins]
   );
 
-  const assignedTags: CompanyTag[] = existingAdmin?.assignedCompanies ?? [];
+  const assignedTags: CompanyTag[] = React.useMemo(
+    () => existingAdmin?.assignedCompanies ?? [],
+    [existingAdmin]
+  );
 
   const existingAssignedCompanyIds = React.useMemo(
     () => assignedTags.map((company) => company.companyId),
@@ -419,51 +375,12 @@ export default function AddStaffPopup({
   return (
     <ModalShell
       open={isOpen}
-      title="Add New Staff"
+      title={role === "ADMIN" ? "Add Admin" : "Add Manager"}
       onClose={onClose}
       widthClassName="w-[820px] max-w-[95vw] max-h-[90vh] flex flex-col overflow-hidden"
     >
       <div className="px-6 py-5">
         <div className="flex min-h-0 flex-col gap-4">
-
-          <div
-            className={`grid overflow-hidden rounded border border-gray-200 ${
-              isOwner ? "grid-cols-2" : "grid-cols-1"
-            }`}
-          >
-            {isOwner && (
-              <ChoiceButton
-                label="Admin"
-                active={role === "ADMIN"}
-                disabled={!canAddAdmin || optionsLoading}
-                isLast={false}
-                onClick={() => {
-                  setRole("ADMIN");
-                  setAdminMode("");
-                  resetAdminSelectionState();
-                }}
-              />
-            )}
-
-            <ChoiceButton
-              label="Manager"
-              active={role === "MANAGER"}
-              disabled={!canAddManager || optionsLoading}
-              isLast={true}
-              onClick={() => {
-                setRole("MANAGER");
-                setAdminMode("");
-                setScopeId("");
-                setName("");
-                setStaffNo("");
-                setEmail("");
-                setPhone("");
-                setPassword("");
-                setErrors({});
-              }}
-            />
-          </div>
-
           {role === "ADMIN" && (
             <div className="grid grid-cols-2 gap-3">
               <ActionButton
@@ -535,6 +452,9 @@ export default function AddStaffPopup({
                     value={phone}
                     onChange={(value) => setPhone(value.replace(/\D/g, ""))}
                     placeholder="Enter phone number"
+                    name="new-staff-phone"
+                    autoComplete="off"
+                    suppressAutoFill
                   />
                   {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
                 </div>
@@ -546,6 +466,9 @@ export default function AddStaffPopup({
                     onChange={setPassword}
                     placeholder="Enter password"
                     type="password"
+                    name="new-staff-password"
+                    autoComplete="new-password"
+                    suppressAutoFill
                   />
                   {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
                 </div>
@@ -599,6 +522,9 @@ export default function AddStaffPopup({
                     value={phone}
                     onChange={(value) => setPhone(value.replace(/\D/g, ""))}
                     placeholder="Enter phone number"
+                    name="new-admin-phone"
+                    autoComplete="off"
+                    suppressAutoFill
                   />
                   {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
                 </div>
@@ -610,6 +536,9 @@ export default function AddStaffPopup({
                     onChange={setPassword}
                     placeholder="Enter password"
                     type="password"
+                    name="new-admin-password"
+                    autoComplete="new-password"
+                    suppressAutoFill
                   />
                   {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
                 </div>
