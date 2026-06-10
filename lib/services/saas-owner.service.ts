@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import type { SaasOwnerCompany, SaasOwnerBranch } from '@/types/saas-owner.types';
-import type { SubscriptionType } from '@/types/subscription.types';
+import type { SubscriptionType, BusinessTypeEnum } from '@/types/subscription.types';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -15,14 +15,13 @@ interface BackendBranch {
   email: string;
   address: string;
   registrationNumber?: string;
-  regno?: string;
   createdAt?: string;
 }
 
 interface BackendCompany {
   companyId: string;
   name: string;
-  businessType: { name: string };
+  businessType: { type: string };
   address: string;
   email: string;
   contactNumber: string;
@@ -31,7 +30,8 @@ interface BackendCompany {
   createdAt: string;
   subscription: { type: SubscriptionType };
   branches: BackendBranch[];
-  _count?: { branches: number; staff: number };
+  activeStaff: number;
+  _count?: { branches: number };
   status?: 'ACTIVE' | 'INACTIVE';
 }
 
@@ -42,14 +42,14 @@ const mapBranch = (b: BackendBranch): SaasOwnerBranch => ({
   phone: b.phone,
   email: b.email,
   address: b.address,
-  regno: b.registrationNumber || b.regno || '',
+  regno: b.registrationNumber ?? '',
   createdAt: b.createdAt,
 });
 
 const mapCompany = (c: BackendCompany): SaasOwnerCompany => ({
   id: c.companyId,
   name: c.name,
-  businessType: c.businessType?.name as any,
+  businessType: (c.businessType?.type ?? '') as BusinessTypeEnum,
   address: c.address,
   email: c.email,
   phone: c.contactNumber,
@@ -58,7 +58,7 @@ const mapCompany = (c: BackendCompany): SaasOwnerCompany => ({
   registeredAt: c.createdAt,
   subscription: c.subscription?.type ?? 'FREE',
   branchCount: c._count?.branches ?? c.branches?.length ?? 0,
-  activeStaff: c._count?.staff,
+  activeStaff: c.activeStaff ?? 0,
   status: c.status ?? 'ACTIVE',
   branches: (c.branches ?? []).map(mapBranch),
 });
