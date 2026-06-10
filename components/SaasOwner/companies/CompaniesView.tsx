@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Eye } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import FilterChips from "@/components/Admin/common/FilterChips";
@@ -13,6 +14,8 @@ import PlanBadge from "@/components/SaasOwner/ui/PlanBadge";
 import StatusDot from "@/components/SaasOwner/ui/StatusDot";
 import BusinessTypePill from "@/components/SaasOwner/ui/BusinessTypePill";
 import { saasOwnerService } from "@/lib/services/saas-owner.service";
+import { queryKeys } from "@/lib/query-keys";
+import { useSaasOwnerPolling } from "@/hooks/useSaasOwnerPolling";
 import type { SaasOwnerCompany } from "@/types/saas-owner.types";
 import type { SubscriptionType, BusinessTypeEnum } from "@/types/subscription.types";
 
@@ -34,20 +37,17 @@ type Filters = {
 };
 
 export default function CompaniesView() {
-  const [companies, setCompanies] = useState<SaasOwnerCompany[]>([]);
-  const [loading, setLoading] = useState(true);
+  useSaasOwnerPolling();
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Filters>({});
   const [selectedCompany, setSelectedCompany] = useState<SaasOwnerCompany | null>(null);
   const [detailCompany, setDetailCompany] = useState<SaasOwnerCompany | null>(null);
 
-  useEffect(() => {
-    saasOwnerService
-      .getAllCompanies()
-      .then(setCompanies)
-      .catch((err) => console.error("Failed to fetch companies", err))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: companies = [], isLoading, isError, refetch } = useQuery({
+    queryKey: queryKeys.saasOwner.companies(),
+    queryFn:  () => saasOwnerService.getAllCompanies(),
+    staleTime: 0,
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -111,7 +111,16 @@ export default function CompaniesView() {
     },
   ];
 
-  if (loading) return <LoadingState message="Loading companies…" />;
+  if (isLoading) return <LoadingState message="Loading companies…" />;
+
+  if (isError) return (
+    <div className="py-10 text-center text-red-400 text-sm">
+      Failed to load companies.{" "}
+      <button className="underline hover:text-red-300" onClick={() => void refetch()}>
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div>
