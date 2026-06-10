@@ -180,9 +180,9 @@ export default function CompaniesView() {
         onRemove={removeFilter}
       />
 
-      {/* Split layout: table + branch panel */}
-      <div className="mt-4 grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2">
+
+      <div className="mt-4 grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+        <div className="xl:col-span-2 max-h-[calc(100vh-280px)] overflow-y-auto rounded-xl border border-gray-100 bg-white">
           <CommonTable
             title={`${filtered.length} ${filtered.length === 1 ? "Company" : "Companies"}`}
             data={filtered}
@@ -192,7 +192,7 @@ export default function CompaniesView() {
             onSelectRow={setSelectedCompany}
           />
         </div>
-        <div>
+        <div className="xl:sticky xl:top-[80px] max-h-[calc(100vh-280px)] overflow-y-auto rounded-xl">
           <BranchesPanel company={selectedCompany} />
         </div>
       </div>
