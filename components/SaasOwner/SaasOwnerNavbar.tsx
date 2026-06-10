@@ -9,7 +9,7 @@ interface Props {
 
 export default function SaasOwnerNavbar({ onMenuToggle }: Props) {
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/saaslogin" });
+    await signOut({ callbackUrl: "/saasownerlogin" });
   };
 
   return (
