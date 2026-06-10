@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import StatCard from "@/components/Admin/common/StatCard";
 import TabSelector from "@/components/Admin/common/TabSelector";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
@@ -11,6 +12,8 @@ import StatusDot from "@/components/SaasOwner/ui/StatusDot";
 import BusinessTypePill from "@/components/SaasOwner/ui/BusinessTypePill";
 import { planCardsData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
 import { saasOwnerService } from "@/lib/services/saas-owner.service";
+import { queryKeys } from "@/lib/query-keys";
+import { useSaasOwnerPolling } from "@/hooks/useSaasOwnerPolling";
 import type { SaasOwnerCompany } from "@/types/saas-owner.types";
 import type { SubscriptionType } from "@/types/subscription.types";
 
@@ -58,17 +61,15 @@ const byPlanColumns: Column<SaasOwnerCompany>[] = [
 ];
 
 export default function SubscriptionsView() {
-  const [companies, setCompanies] = useState<SaasOwnerCompany[]>([]);
-  const [loading, setLoading] = useState(true);
+  useSaasOwnerPolling();
+
   const [tab, setTab] = useState("overview");
 
-  useEffect(() => {
-    saasOwnerService
-      .getAllCompanies()
-      .then(setCompanies)
-      .catch((err) => console.error("Failed to fetch companies", err))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: companies = [], isLoading, isError, refetch } = useQuery({
+    queryKey: queryKeys.saasOwner.companies(),
+    queryFn:  () => saasOwnerService.getAllCompanies(),
+    staleTime: 0,
+  });
 
   const counts = useMemo(
     () => ({
@@ -76,19 +77,28 @@ export default function SubscriptionsView() {
       PRO: companies.filter((c) => c.subscription === "PRO").length,
       ENTERPRISE: companies.filter((c) => c.subscription === "ENTERPRISE").length,
     }),
-    [companies]
+    [companies],
   );
 
   const totalRevenue = useMemo(
     () =>
       (["FREE", "PRO", "ENTERPRISE"] as SubscriptionType[]).reduce(
         (sum, type) => sum + counts[type] * PLAN_PRICES[type],
-        0
+        0,
       ),
-    [counts]
+    [counts],
   );
 
-  if (loading) return <LoadingState message="Loading subscription data…" />;
+  if (isLoading) return <LoadingState message="Loading subscription data…" />;
+
+  if (isError) return (
+    <div className="py-10 text-center text-red-400 text-sm">
+      Failed to load subscription data.{" "}
+      <button className="underline hover:text-red-300" onClick={() => void refetch()}>
+        Retry
+      </button>
+    </div>
+  );
 
   return (
     <div>
@@ -138,7 +148,6 @@ export default function SubscriptionsView() {
         className="mb-6 max-w-sm"
       />
 
-      {/* Plan Overview tab */}
       {tab === "overview" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {planCardsData.map((plan) => (
@@ -151,7 +160,6 @@ export default function SubscriptionsView() {
         </div>
       )}
 
-      {/* Companies by Plan tab */}
       {tab === "companies" && (
         <div className="space-y-8">
           {planCardsData.map((plan) => {
