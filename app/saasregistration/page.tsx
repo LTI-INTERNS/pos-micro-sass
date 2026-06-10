@@ -12,10 +12,13 @@ import GlassBackground from "@/components/saas/common/GlassBackground";
 import {
   InputField,
   PasswordField,
-  FormErrorMessage,
 } from "@/components/saas/common/FormFields";
 
 import { registerAction } from "@/app/saasregistration/auth";
+
+// NEW: Import Toast System
+import LandingToast from "@/components/saas/common/LandingToast";
+import { useLandingToast } from "@/hooks/useLandingToast";
 
 type RegisterFields = "name" | "email" | "password" | "confirmPassword";
 
@@ -35,8 +38,8 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [formError, setFormError] = useState("");
-  const [success, setSuccess] = useState("");
+  // Initialize Toast
+  const { toasts, showToast, dismissToast } = useLandingToast();
 
   const [serverFieldError, setServerFieldError] = useState<
     Partial<Record<RegisterFields, string>>
@@ -65,14 +68,10 @@ export default function RegisterPage() {
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitted(true);
-    setFormError("");
-    setSuccess("");
-
-    // clear old server errors on new submit
     setServerFieldError({});
 
     if (!canSubmit) {
-      setFormError("Please fix the errors and try again.");
+      showToast("Please fix the errors and try again.", "error");
       return;
     }
 
@@ -86,7 +85,7 @@ export default function RegisterPage() {
       const res = await registerAction(fd);
 
       if (!res.ok) {
-        setFormError(res.message);
+        showToast(res.message, "error");
 
         const field = res.field as RegisterFields | undefined;
         if (field) {
@@ -101,20 +100,18 @@ export default function RegisterPage() {
             confirmPassword: true,
           });
         }
-
         return;
       }
 
-      setSuccess(res.message);
+      showToast(res.message, "success");
 
-      // Redirect to login after a short pause so the user can read the success message
-      setTimeout(() => { window.location.href = "/saaslogin"; }, 1500);
+      // Redirect to login after a short pause
+      setTimeout(() => { window.location.href = "/saaslogin"; }, 2000);
     });
   }
 
   return (
     <CommonLayout navbar={<Navigation />} >
-      
       <div className="pt-10 pb-20 px-4">
         <GlassBackground>
           <div>
@@ -122,7 +119,6 @@ export default function RegisterPage() {
               showDivider
               left={
                 <div className="flex items-center justify-center w-full">
-                  {/* Left promo card */}
                   <Card variant="gradient" padding="lg" radius="2xl" className="w-full max-w-md">
                     <h1 className="text-3xl sm:text-4xl font-bold leading-tight">
                       Start your POS <br />
@@ -153,13 +149,6 @@ export default function RegisterPage() {
                   </h2>
 
                   <form onSubmit={onSubmit} className="space-y-5">
-                    {formError && <FormErrorMessage message={formError} />}
-                    {success && (
-                      <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white">
-                        {success}
-                      </div>
-                    )}
-
                     <div className="space-y-4">
                       <InputField
                         id="reg-name"
@@ -287,6 +276,9 @@ export default function RegisterPage() {
           </div>
         </GlassBackground>
       </div>
+      
+      {/* Render Toast System */}
+      <LandingToast toasts={toasts} onDismiss={dismissToast} />
     </CommonLayout>
   );
 }
