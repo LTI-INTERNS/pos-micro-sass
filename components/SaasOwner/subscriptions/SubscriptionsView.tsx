@@ -11,18 +11,12 @@ import EditPlanModal from "@/components/SaasOwner/subscriptions/EditPlanModal";
 import PlanBadge from "@/components/SaasOwner/ui/PlanBadge";
 import StatusDot from "@/components/SaasOwner/ui/StatusDot";
 import BusinessTypePill from "@/components/SaasOwner/ui/BusinessTypePill";
-import { planCardsData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
 import { saasOwnerService } from "@/lib/services/saas-owner.service";
 import { queryKeys } from "@/lib/query-keys";
 import { useSaasOwnerPolling } from "@/hooks/useSaasOwnerPolling";
+import { buildLivePlanCard } from "@/lib/subscription-display";
 import type { SaasOwnerCompany } from "@/types/saas-owner.types";
 import type { SubscriptionType } from "@/types/subscription.types";
-
-const PLAN_PRICES: Record<SubscriptionType, number> = {
-  FREE: 0,
-  PRO: 29.99,
-  ENTERPRISE: 99.99,
-};
 
 const TABS = [
   { id: "overview", label: "Plan Overview" },
@@ -67,11 +61,22 @@ export default function SubscriptionsView() {
   const [tab, setTab] = useState("overview");
   const [editType, setEditType] = useState<SubscriptionType | null>(null);
 
-  const { data: companies = [], isLoading, isError, refetch } = useQuery({
+  const { data: companies = [], isLoading: loadingCo, isError, refetch } = useQuery({
     queryKey: queryKeys.saasOwner.companies(),
     queryFn:  () => saasOwnerService.getAllCompanies(),
     staleTime: 0,
   });
+
+  const { data: liveSubs = [], isLoading: loadingSubs } = useQuery({
+    queryKey: queryKeys.saasOwner.allSubscriptions(),
+    queryFn:  () => saasOwnerService.getAllSubscriptions(),
+    staleTime: 0,
+  });
+
+  const livePlanCards = useMemo(
+    () => liveSubs.map(buildLivePlanCard),
+    [liveSubs],
+  );
 
   const counts = useMemo(
     () => ({
@@ -82,16 +87,17 @@ export default function SubscriptionsView() {
     [companies],
   );
 
-  const totalRevenue = useMemo(
-    () =>
-      (["FREE", "PRO", "ENTERPRISE"] as SubscriptionType[]).reduce(
-        (sum, type) => sum + counts[type] * PLAN_PRICES[type],
-        0,
-      ),
-    [counts],
-  );
+  const totalRevenue = useMemo(() => {
+    return liveSubs.reduce((sum, sub) => {
+      const count = counts[sub.type] ?? 0;
+      return sum + parseFloat(sub.priceMonthly) * count;
+    }, 0);
+  }, [liveSubs, counts]);
 
-  if (isLoading) return <LoadingState message="Loading subscription data…" />;
+  const planPrice = (type: SubscriptionType) =>
+    parseFloat(liveSubs.find((s) => s.type === type)?.priceMonthly ?? "0");
+
+  if (loadingCo || loadingSubs) return <LoadingState message="Loading subscription data…" />;
 
   if (isError) return (
     <div className="py-10 text-center text-red-400 text-sm">
@@ -113,50 +119,21 @@ export default function SubscriptionsView() {
 
       {/* Revenue summary */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <StatCard
-          title="Monthly Revenue"
-          value={`$${totalRevenue.toFixed(2)}`}
-          trend="up"
-          percentage="+8% this month"
-          showDetailButton={false}
-        />
-        <StatCard
-          title="Free Plan"
-          value={String(counts.FREE)}
-          trend="neutral"
-          percentage="companies"
-          showDetailButton={false}
-        />
-        <StatCard
-          title="Pro Plan"
-          value={String(counts.PRO)}
-          trend="up"
-          percentage={`$${(counts.PRO * PLAN_PRICES.PRO).toFixed(2)}/mo`}
-          showDetailButton={false}
-        />
-        <StatCard
-          title="Enterprise Plan"
-          value={String(counts.ENTERPRISE)}
-          trend="up"
-          percentage={`$${(counts.ENTERPRISE * PLAN_PRICES.ENTERPRISE).toFixed(2)}/mo`}
-          showDetailButton={false}
-        />
+        <StatCard title="Monthly Revenue" value={`$${totalRevenue.toFixed(2)}`}                                          trend="up"      percentage="+8% this month" showDetailButton={false} />
+        <StatCard title="Free Plan"       value={String(counts.FREE)}                                                    trend="neutral" percentage="companies"       showDetailButton={false} />
+        <StatCard title="Pro Plan"        value={String(counts.PRO)}        trend="up" percentage={`$${(counts.PRO        * planPrice("PRO")       ).toFixed(2)}/mo`} showDetailButton={false} />
+        <StatCard title="Enterprise Plan" value={String(counts.ENTERPRISE)} trend="up" percentage={`$${(counts.ENTERPRISE * planPrice("ENTERPRISE")).toFixed(2)}/mo`} showDetailButton={false} />
       </div>
 
-      <TabSelector
-        tabs={TABS}
-        activeTab={tab}
-        onChange={setTab}
-        className="mb-6 max-w-sm"
-      />
+      <TabSelector tabs={TABS} activeTab={tab} onChange={setTab} className="mb-6 max-w-sm" />
 
       {tab === "overview" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {planCardsData.map((plan) => (
+          {livePlanCards.map((plan) => (
             <PlanOverviewCard
-              key={plan.id}
+              key={plan.subType}
               plan={plan}
-              subscriberCount={counts[plan.subType] ?? 0}
+              subscriberCount={counts[plan.subType as SubscriptionType] ?? 0}
               onEdit={(type) => setEditType(type)}
             />
           ))}
@@ -165,20 +142,15 @@ export default function SubscriptionsView() {
 
       {tab === "companies" && (
         <div className="space-y-8">
-          {planCardsData.map((plan) => {
-            const planCompanies = companies.filter(
-              (c) => c.subscription === plan.subType
-            );
+          {livePlanCards.map((plan) => {
+            const planCompanies = companies.filter((c) => c.subscription === plan.subType);
             return (
-              <div key={plan.id}>
+              <div key={plan.subType}>
                 <div className="flex items-center gap-3 mb-3">
-                  <PlanBadge plan={plan.subType} />
-                  <span className="text-sm font-bold text-gray-900">
-                    {plan.name} Plan
-                  </span>
+                  <PlanBadge plan={plan.subType as SubscriptionType} />
+                  <span className="text-sm font-bold text-gray-900">{plan.name} Plan</span>
                   <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-2.5 py-0.5 font-semibold">
-                    {planCompanies.length}{" "}
-                    {planCompanies.length === 1 ? "company" : "companies"}
+                    {planCompanies.length} {planCompanies.length === 1 ? "company" : "companies"}
                   </span>
                 </div>
                 <CommonTable
