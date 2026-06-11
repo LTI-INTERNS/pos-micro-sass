@@ -39,10 +39,11 @@ export const queryKeys = {
 
   // ── SaaS Owner ──────────────────────────────────────────────────────────────
   saasOwner: {
-    version:             () => ["saasOwner", "version"]             as const,
+    version:             () => ["saasOwner", "version"]           as const,
     companies:           () => ["saasOwner", "companies"]           as const,
     company:             (id: string) => ["saasOwner", "company", id] as const,
     subscriptionSummary: () => ["saasOwner", "subscriptionSummary"] as const,
+    allSubscriptions:    () => ["saasOwner", "allSubscriptions"] as const,
     subscriptionDetail:  (type: string) => ["saasOwner", "subscription", type] as const,
   },
 } as const;
