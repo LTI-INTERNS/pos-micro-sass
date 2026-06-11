@@ -105,6 +105,16 @@ export const saasOwnerService = {
       .get<ApiResponse<SubscriptionDetail>>(`/saas-owner/subscriptions/${type}`)
       .then((res) => res.data.data),
 
+  /** Fetch all three plan details in parallel — used to drive live card display */
+  getAllSubscriptions: (): Promise<SubscriptionDetail[]> =>
+    Promise.all(
+      (['FREE', 'PRO', 'ENTERPRISE'] as SubscriptionType[]).map((type) =>
+        apiClient
+          .get<ApiResponse<SubscriptionDetail>>(`/saas-owner/subscriptions/${type}`)
+          .then((res) => res.data.data),
+      ),
+    ),
+
   updateSubscription: (
     type:  SubscriptionType,
     input: UpdateSubscriptionInput,
