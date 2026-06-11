@@ -15,7 +15,7 @@ export const queryKeys = {
     stats: (branchId?: string) => ["customers", "stats", { branchId: branchId ?? null }] as const,
   },
   cashiers: {
-    list: (branchId?: string) => ["cashiers", "list", { branchId: branchId ?? null }] as const,
+    list:  (branchId?: string) => ["cashiers", "list",  { branchId: branchId ?? null }] as const,
     stats: (branchId?: string) => ["cashiers", "stats", { branchId: branchId ?? null }] as const,
   },
   orders: {
@@ -43,5 +43,6 @@ export const queryKeys = {
     companies:           () => ["saasOwner", "companies"]           as const,
     company:             (id: string) => ["saasOwner", "company", id] as const,
     subscriptionSummary: () => ["saasOwner", "subscriptionSummary"] as const,
+    subscriptionDetail:  (type: string) => ["saasOwner", "subscription", type] as const,
   },
 } as const;
