@@ -35,6 +35,32 @@ interface BackendCompany {
   status?: 'ACTIVE' | 'INACTIVE';
 }
 
+export interface SubscriptionDetail {
+  subId:             string;
+  type:              SubscriptionType;
+  priceMonthly:      string;
+  branchLimit:       number | null;
+  staffLimit:        number | null;
+  productLimit:      number | null;
+  customerLimit:     number | null;
+  monthlyOrderLimit: number | null;
+  reportLevel:       'BASIC' | 'ADVANCED' | 'CUSTOM';
+  supportLevel:      'EMAIL' | 'PRIORITY' | 'DEDICATED_24_7';
+  aiPredictionLevel: 'NOT_INCLUDED' | 'INCLUDED' | 'FULL_SUITE';
+}
+
+export interface UpdateSubscriptionInput {
+  priceMonthly:      number;
+  branchLimit:       number | null;
+  staffLimit:        number | null;
+  productLimit:      number | null;
+  customerLimit:     number | null;
+  monthlyOrderLimit: number | null;
+  reportLevel:       'BASIC' | 'ADVANCED' | 'CUSTOM';
+  supportLevel:      'EMAIL' | 'PRIORITY' | 'DEDICATED_24_7';
+  aiPredictionLevel: 'NOT_INCLUDED' | 'INCLUDED' | 'FULL_SUITE';
+}
+
 const mapBranch = (b: BackendBranch): SaasOwnerBranch => ({
   id: b.branchId,
   name: b.name,
@@ -73,4 +99,20 @@ export const saasOwnerService = {
     apiClient
       .get<ApiResponse<BackendCompany>>(`/saas-owner/companies/${id}`)
       .then((res) => mapCompany(res.data.data)),
+
+  getSubscriptionByType: (type: SubscriptionType): Promise<SubscriptionDetail> =>
+    apiClient
+      .get<ApiResponse<SubscriptionDetail>>(`/saas-owner/subscriptions/${type}`)
+      .then((res) => res.data.data),
+
+  updateSubscription: (
+    type:  SubscriptionType,
+    input: UpdateSubscriptionInput,
+  ): Promise<SubscriptionDetail> =>
+    apiClient
+      .patch<ApiResponse<SubscriptionDetail>>(
+        `/saas-owner/subscriptions/${type}`,
+        input,
+      )
+      .then((res) => res.data.data),
 };
