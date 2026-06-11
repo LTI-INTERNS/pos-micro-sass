@@ -7,6 +7,7 @@ import TabSelector from "@/components/Admin/common/TabSelector";
 import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
 import LoadingState from "@/components/Admin/common/LoadingState";
 import PlanOverviewCard from "@/components/SaasOwner/subscriptions/PlanOverviewCard";
+import EditPlanModal from "@/components/SaasOwner/subscriptions/EditPlanModal";
 import PlanBadge from "@/components/SaasOwner/ui/PlanBadge";
 import StatusDot from "@/components/SaasOwner/ui/StatusDot";
 import BusinessTypePill from "@/components/SaasOwner/ui/BusinessTypePill";
@@ -64,6 +65,7 @@ export default function SubscriptionsView() {
   useSaasOwnerPolling();
 
   const [tab, setTab] = useState("overview");
+  const [editType, setEditType] = useState<SubscriptionType | null>(null);
 
   const { data: companies = [], isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.saasOwner.companies(),
@@ -155,6 +157,7 @@ export default function SubscriptionsView() {
               key={plan.id}
               plan={plan}
               subscriberCount={counts[plan.subType] ?? 0}
+              onEdit={(type) => setEditType(type)}
             />
           ))}
         </div>
@@ -188,6 +191,13 @@ export default function SubscriptionsView() {
           })}
         </div>
       )}
+
+      {/* Edit plan modal */}
+      <EditPlanModal
+        open={Boolean(editType)}
+        type={editType}
+        onClose={() => setEditType(null)}
+      />
     </div>
   );
 }
