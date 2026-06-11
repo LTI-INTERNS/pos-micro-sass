@@ -41,7 +41,7 @@ function LabeledInput({
       </label>
       <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden focus-within:border-orange-400 transition-colors bg-white">
         {prefix && (
-          <span className="px-3 text-sm text-gray-400 border-r border-gray-200 bg-gray-50 h-full flex items-center py-2">
+          <span className="px-3 text-sm text-gray-400 border-r border-gray-200 bg-gray-50 flex items-center py-2">
             {prefix}
           </span>
         )}
@@ -50,8 +50,8 @@ function LabeledInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder ?? "Unlimited"}
-          className="flex-1 px-3 py-2 text-sm text-gray-800 outline-none bg-white"
           min={type === "number" ? "0" : undefined}
+          className="flex-1 px-3 py-2 text-sm text-gray-800 outline-none bg-white"
         />
       </div>
     </div>
@@ -123,8 +123,12 @@ export default function EditPlanModal({ open, type, onClose }: Props) {
     mutationFn: (input: UpdateSubscriptionInput) =>
       saasOwnerService.updateSubscription(type!, input),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.saasOwner.companies() });
-      await queryClient.invalidateQueries({ queryKey: queryKeys.saasOwner.subscriptionSummary() });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.saasOwner.allSubscriptions() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.saasOwner.subscriptionDetail(type!) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.saasOwner.companies() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.saasOwner.subscriptionSummary() }),
+      ]);
       setSaveSuccess(true);
       setTimeout(() => { setSaveSuccess(false); onClose(); }, 1200);
     },
@@ -235,13 +239,9 @@ export default function EditPlanModal({ open, type, onClose }: Props) {
               : "bg-orange-500 hover:bg-orange-600 cursor-pointer disabled:opacity-60"
             }`}
         >
-          {saving ? (
-            <><Loader2 size={14} className="animate-spin" /> Saving…</>
-          ) : saveSuccess ? (
-            <><Check size={14} /> Saved!</>
-          ) : (
-            "Save Changes"
-          )}
+          {saving      ? <><Loader2 size={14} className="animate-spin" /> Saving…</> :
+           saveSuccess ? <><Check size={14} /> Saved!</> :
+           "Save Changes"}
         </button>
       </div>
     </ModalShell>
