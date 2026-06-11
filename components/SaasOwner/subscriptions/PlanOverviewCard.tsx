@@ -1,14 +1,23 @@
 "use client";
 
 import { Check, Building2, Pencil } from "lucide-react";
-import type { PlanCardData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
+import type { LivePlanCard } from "@/lib/subscription-display";
 import type { SubscriptionType } from "@/types/subscription.types";
 
 interface Props {
-  plan: PlanCardData;
+  plan: LivePlanCard;
   subscriberCount: number;
   onEdit:          (type: SubscriptionType) => void;
 }
+
+const FEATURED_BORDER: Record<string, string> = {
+  PRO: "border-orange-400",
+};
+
+const BADGE_STYLE: Record<string, string> = {
+  "Most Popular": "bg-orange-500 text-white",
+  Enterprise:     "bg-gray-100 text-gray-500",
+};
 
 export default function PlanOverviewCard({ plan, subscriberCount, onEdit }: Props) {
   const isFeatured = plan.subType === "PRO";
@@ -16,15 +25,14 @@ export default function PlanOverviewCard({ plan, subscriberCount, onEdit }: Prop
   return (
     <div
       className={`relative bg-white rounded-2xl p-6 flex flex-col gap-4 shadow-sm border-2 ${
-        isFeatured ? "border-orange-400" : "border-gray-200"
+        FEATURED_BORDER[plan.subType] ?? "border-gray-200"
       }`}
     >
+      {/* Badge */}
       {plan.badge && (
         <span
           className={`absolute top-5 right-14 text-xs font-semibold px-3 py-1 rounded-full ${
-            isFeatured 
-            ? "bg-orange-500 text-white"
-            : "bg-gray-100 text-gray-500"
+            BADGE_STYLE[plan.badge] ?? "bg-gray-100 text-gray-500"
           }`}
         >
           {plan.badge}
@@ -33,7 +41,7 @@ export default function PlanOverviewCard({ plan, subscriberCount, onEdit }: Prop
 
       {/* Edit pencil — top right corner */}
       <button
-        onClick={() => onEdit(plan.subType)}
+        onClick={() => onEdit(plan.subType as SubscriptionType)}
         className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center
           bg-gray-100 hover:bg-orange-100 hover:text-orange-500 text-gray-400
           transition-all cursor-pointer active:scale-90"
