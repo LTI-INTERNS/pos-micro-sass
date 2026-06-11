@@ -1,3 +1,14 @@
+import { QueryClient } from '@tanstack/react-query';
+
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 1000 * 60 * 5,
+            retry: 1,
+        },
+    },
+});
+
 export const queryKeys = {
   customers: {
     list: (branchId?: string) => ["customers", "list", { branchId: branchId ?? null }] as const,
@@ -24,5 +35,13 @@ export const queryKeys = {
       },
     ] as const,
     stats: (branchId?: string) => ["orders", "stats", { branchId: branchId ?? null }] as const,
+  },
+
+  // ── SaaS Owner ──────────────────────────────────────────────────────────────
+  saasOwner: {
+    version:             () => ["saasOwner", "version"]             as const,
+    companies:           () => ["saasOwner", "companies"]           as const,
+    company:             (id: string) => ["saasOwner", "company", id] as const,
+    subscriptionSummary: () => ["saasOwner", "subscriptionSummary"] as const,
   },
 } as const;

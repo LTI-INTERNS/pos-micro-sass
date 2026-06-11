@@ -12,8 +12,8 @@ interface BackendJwt {
     companyId: string;
     branchId:  string;
     exp:       number;
-    userId?:    string;     // OWNER | ADMIN | MANAGER
-    cashierId?: string;     // CASHIER
+    userId?:    string;
+    cashierId?: string;
 }
 
 export const authOptions: NextAuthOptions = {
@@ -78,6 +78,41 @@ export const authOptions: NextAuthOptions = {
             },
         }),
 
+ 
+        CredentialsProvider({
+            id:   'saas-owner-login',
+            name: 'SaaS Owner Login',
+            credentials: {
+                email:    { label: 'Email',    type: 'email'    },
+                password: { label: 'Password', type: 'password' },
+            },
+            async authorize(credentials) {
+                if (!credentials?.email || !credentials?.password) return null;
+
+                const res  = await fetch(`${API}/api/v1/saas-owner/auth/login`, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ email: credentials.email, password: credentials.password }),
+                });
+                const data = await res.json();
+
+                if (!res.ok || !data.success || !data.data?.ok) return null;
+
+                const u = data.data;
+                return {
+                    id:          u.token,
+                    email:       u.email,
+                    name:        u.name,
+                    role:        'SAAS_OWNER',
+                    branchId:    '',
+                    branchName:  '',
+                    companyId:   '',
+                    companyName: '',
+                    token:       u.token,
+                };
+            },
+        }),
+
         CredentialsProvider({
             id:   'cashier-pin',
             name: 'Cashier PIN',
@@ -103,7 +138,7 @@ export const authOptions: NextAuthOptions = {
                     companyId:   credentials.companyId,
                     companyName: credentials.companyName,
                     token:       credentials.token,
-                    cashierId:   credentials.cashierId,  // cashier.cashierId
+                    cashierId:   credentials.cashierId,
                 };
             },
         }),
@@ -140,13 +175,16 @@ export const authOptions: NextAuthOptions = {
     ],
 
     callbacks: {
-        async jwt({ token, user, trigger, session: sessionUpdate }: { token: JWT; user: AdapterUser | User; trigger?: string; session?: { companyId?: string; companyName?: string; backendToken?: string } }) {
-
+        async jwt({ token, user, trigger, session: sessionUpdate }: {
+            token:    JWT;
+            user:     AdapterUser | User;
+            trigger?: string;
+            session?: { companyId?: string; companyName?: string; backendToken?: string };
+        }) {
             if (trigger === 'update' && sessionUpdate?.companyId) {
                 token.companyId    = sessionUpdate.companyId;
                 token.companyName  = sessionUpdate.companyName ?? token.companyName;
                 token.backendToken = sessionUpdate.backendToken ?? token.backendToken;
-                // Re-decode the new backend token to refresh tokenExpiry
                 if (sessionUpdate.backendToken) {
                     try {
                         const decoded     = jwtDecode<BackendJwt>(sessionUpdate.backendToken);
@@ -156,7 +194,6 @@ export const authOptions: NextAuthOptions = {
                 return token;
             }
 
-            // ── First sign-in — map from authorize() return value ─────────
             if (user) {
                 token.role         = user.role;
                 token.branchId     = user.branchId;
@@ -165,7 +202,6 @@ export const authOptions: NextAuthOptions = {
                 token.companyName  = user.companyName;
                 token.backendToken = user.token;
 
-                // cashierId pre-set by cashier-pin provider
                 if ((user as any).cashierId) {
                     token.cashierId = (user as any).cashierId;
                 }
@@ -173,18 +209,11 @@ export const authOptions: NextAuthOptions = {
                 try {
                     const decoded     = jwtDecode<BackendJwt>(user.token);
                     token.tokenExpiry = decoded.exp;
-                    // Only override companyId/branchId from JWT if they are non-empty.
-                    // OWNER/ADMIN have companyId '' until they select one — keep it as-is.
                     if (decoded.companyId) token.companyId = decoded.companyId;
                     if (decoded.branchId)  token.branchId  = decoded.branchId;
-
-                    // Decode userId / cashierId from backend JWT
-                    //   CASHIER              → cashierId
-                    //   OWNER | ADMIN | MANAGER → userId
                     if (decoded.cashierId) token.cashierId = decoded.cashierId;
                     if (decoded.userId)    token.userId    = decoded.userId;
-
-                } catch { /* keep values already set from authorize() */ }
+                } catch { /* keep values already set */ }
 
                 return token;
             }
@@ -196,10 +225,6 @@ export const authOptions: NextAuthOptions = {
             return token;
         },
 
-        //  In components / pages:
-        //    OWNER | ADMIN | MANAGER → session.user.userId
-        //    CASHIER                 → session.user.cashierId
-
         async session({ session, token }: { session: Session; token: JWT }) {
             session.user.role         = token.role;
             session.user.branchId     = token.branchId;
@@ -207,8 +232,8 @@ export const authOptions: NextAuthOptions = {
             session.user.companyId    = token.companyId;
             session.user.companyName  = token.companyName;
             session.user.backendToken = token.backendToken;
-            session.user.userId       = token.userId;      // OWNER | ADMIN | MANAGER
-            session.user.cashierId    = token.cashierId;   // CASHIER
+            session.user.userId       = token.userId;
+            session.user.cashierId    = token.cashierId;
 
             if (token.error) session.error = token.error;
 
@@ -217,13 +242,12 @@ export const authOptions: NextAuthOptions = {
     },
 
     pages: {
-  
         signIn: '/saaslogin',
     },
 
     session: {
         strategy: 'jwt',
-        maxAge:   8 * 60 * 60,  // 8 hours — matches backend JWT expiry
+        maxAge:   8 * 60 * 60,
     },
 
     secret: process.env.NEXTAUTH_SECRET,
