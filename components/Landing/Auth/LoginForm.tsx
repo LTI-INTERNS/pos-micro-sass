@@ -1,37 +1,29 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import {
   InputField,
   PasswordField,
-  FormErrorMessage,
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
 
-export default function LoginForm() {
-  const [form, setForm]                   = useState({ email: "", password: "" });
-  const [loading, setLoading]             = useState(false);
-  const [error, setError]                 = useState("");
-  const [verifyToast, setVerifyToast]       = useState(false);
+// Accept showToast from the parent page
+type Props = {
+  showToast: (message: string, type: "success" | "error" | "info") => void;
+};
+
+export default function LoginForm({ showToast }: Props) {
+  const [form, setForm]   = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const [showAgreement, setShowAgreement] = useState(false);
-
-  useEffect(() => {
-    if (!verifyToast) return;
-    const t = setTimeout(() => setVerifyToast(false), 9000);
-    return () => clearTimeout(t);
-  }, [verifyToast]);
-
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setError("");
   };
-
-  // ── Branch session helpers ──────────────────────────────────────────────────
 
   const clearBranchSession = async () => {
     try {
@@ -69,11 +61,8 @@ export default function LoginForm() {
     }
   };
 
-  // ── Form submission ─────────────────────────────────────────────────────────
-
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     try {
@@ -85,7 +74,7 @@ export default function LoginForm() {
 
       if (!result?.ok || result.error) {
         if (result?.error === "UNVERIFIED_ACCOUNT") {
-          setVerifyToast(true);
+          showToast("Account pending activation. Please check your email for the verification link.", "info");
           return;
         }
         throw new Error("Invalid email or password");
@@ -170,8 +159,8 @@ export default function LoginForm() {
           throw new Error("Unrecognised account role. Please contact support.");
       }
     } catch (err: unknown) {
-      if (err instanceof Error) setError(err.message);
-      else setError("Something went wrong. Please try again.");
+      if (err instanceof Error) showToast(err.message, "error");
+      else showToast("Something went wrong. Please try again.", "error");
     } finally {
       setLoading(false);
     }
@@ -179,22 +168,7 @@ export default function LoginForm() {
 
   return (
     <>
-      {verifyToast && (
-        <div className="fixed top-5 right-5 z-[9999] max-w-md" role="status" aria-live="polite">
-          <div className="rounded-2xl bg-black/80 backdrop-blur-md border border-white/15 px-5 py-4 text-white shadow-xl">
-            <p className="text-sm font-semibold tracking-tight">Account pending activation</p>
-            <p className="mt-2 text-sm text-white/85 leading-relaxed">
-              A verification message has been sent to your registered email. Open it and use the secure link to
-              activate your account, then sign in again. If nothing arrives within a few minutes, check your spam or
-              junk folder.
-            </p>
-          </div>
-        </div>
-      )}
       <form onSubmit={handleSubmit} className="space-y-5">
-
-        {error && <FormErrorMessage message={error} />}
-
         <InputField
           id="login-email"
           label="Email Address"
@@ -242,7 +216,7 @@ export default function LoginForm() {
       {showAgreement && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-semibold">End User Agreement</h3>
+            <h3 className="text-lg font-semibold text-gray-900">End User Agreement</h3>
             <p className="text-sm text-gray-600">
               This system is for authorized employees only. By continuing, you
               agree to follow company policies, maintain data confidentiality,

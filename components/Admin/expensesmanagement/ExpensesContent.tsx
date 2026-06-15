@@ -24,6 +24,10 @@ import {
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 
+// THE FIX: Import our global toast system
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 type UserRole = "owner" | "admin" | "manager";
 
 const normalizeExpense = (item: ExpenseApiItem): Expenses => ({
@@ -43,6 +47,9 @@ const normalizeExpense = (item: ExpenseApiItem): Expenses => ({
 
 export default function ExpensesContent() {
   const { data: session, status } = useSession();
+
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
 
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
@@ -111,9 +118,10 @@ export default function ExpensesContent() {
       });
     } catch (error: any) {
       console.error("Failed to load expenses:", error);
-      alert(
+      showToast(
         error?.response?.data?.error?.message ||
-          "Failed to load expense data."
+          "Failed to load expense data.",
+        "error"
       );
     } finally {
       setPageLoading(false);
@@ -203,13 +211,15 @@ export default function ExpensesContent() {
       setSaveLoading(true);
       await expenseApi.createExpense(session, values);
       await fetchAll();
-      resetPopupState();
+      showToast("Expense added successfully!", "success"); // THE FIX: Added success toast
+      resetPopupState(); // Only runs if no error occurred
     } catch (error: any) {
       console.error("Create expense failed:", error);
-      alert(
+      showToast(
         error?.response?.data?.error?.message ||
-          "Failed to create expense."
-      );
+          "Failed to create expense.",
+        "error"
+      ); // THE FIX: Show error toast and do NOT throw, so popup stays open naturally
     } finally {
       setSaveLoading(false);
     }
@@ -229,13 +239,15 @@ export default function ExpensesContent() {
       setSaveLoading(true);
       await expenseApi.updateExpense(session, editingExpense.expenseId, values);
       await fetchAll();
+      showToast("Expense updated successfully!", "success"); // THE FIX: Added success toast
       resetPopupState();
     } catch (error: any) {
       console.error("Update expense failed:", error);
-      alert(
+      showToast(
         error?.response?.data?.error?.message ||
-          "Failed to update expense."
-      );
+          "Failed to update expense.",
+        "error"
+      ); // THE FIX: Show error toast and preserve data
     } finally {
       setSaveLoading(false);
     }
@@ -243,7 +255,7 @@ export default function ExpensesContent() {
 
   const handleDelete = async () => {
     if (!selectedExpense) {
-      alert("Please select an expense first.");
+      showToast("Please select an expense first.", "error"); // THE FIX: Toast instead of alert
       return;
     }
 
@@ -256,11 +268,13 @@ export default function ExpensesContent() {
       await expenseApi.deleteExpense(session, selectedExpense.expenseId);
       setSelectedExpense(null);
       await fetchAll();
+      showToast("Expense deleted successfully!", "success"); // THE FIX: Added success toast
     } catch (error: any) {
       console.error("Delete expense failed:", error);
-      alert(
+      showToast(
         error?.response?.data?.error?.message ||
-          "Failed to delete expense."
+          "Failed to delete expense.",
+        "error"
       );
     }
   };
@@ -269,11 +283,7 @@ export default function ExpensesContent() {
 
   return (
     <div className="w-full space-y-5">
-      
-
       <StatCardGrid expenses={expenses} />
-      {/* <StatCardGrid expenses={filteredExpenses} /> */}
-
 
       <DateRangePicker
         startDate={start}
@@ -336,7 +346,7 @@ export default function ExpensesContent() {
           variant="outline"
           onClick={() => {
             if (!selectedExpense) {
-              alert("Please select an expense first.");
+              showToast("Please select an expense first.", "error"); // THE FIX: Toast instead of alert
               return;
             }
 
@@ -393,6 +403,9 @@ export default function ExpensesContent() {
             : null
         }
       />
+
+      {/* THE FIX: Render global toast container */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }

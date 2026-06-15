@@ -18,6 +18,10 @@ import type {
 } from "@/types/supplier.types";
 import type { Branch } from "@/types/branch.types";
 
+// THE FIX: Import our global toast system
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 type UserRole = "owner" | "admin" | "manager";
 
 export default function SupplierPage() {
@@ -27,6 +31,9 @@ export default function SupplierPage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
 
   const { data: session } = useSession();
 
@@ -166,15 +173,8 @@ export default function SupplierPage() {
   }, [filters, search, branchFilteredSuppliers, isManager]);
 
   const handleAddSupplier = async (payload: CreateSupplierInput) => {
-    try {
-      const created = await supplierService.create(payload);
-      setSuppliersList((prev) => [created, ...prev]);
-    } catch (error: any) {
-      console.error("ADD SUPPLIER FULL ERROR:", error);
-      console.error("ADD SUPPLIER RESPONSE:", error?.response);
-      console.error("ADD SUPPLIER RESPONSE DATA:", error?.response?.data);
-      throw error;
-    }
+    const created = await supplierService.create(payload);
+    setSuppliersList((prev) => [created, ...prev]);
   };
 
   const handleEditSupplier = async (
@@ -245,6 +245,7 @@ export default function SupplierPage() {
               onAdd={handleAddSupplier}
               onEdit={handleEditSupplier}
               onDelete={handleDeleteSupplier}
+              showToast={showToast} // THE FIX: Pass showToast down
             />
           </Suspense>
         )}
@@ -256,6 +257,9 @@ export default function SupplierPage() {
           userRole={role}
         />
       </div>
+
+      {/* THE FIX: Render global toast container */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </DashboardLayout>
   );
 }
