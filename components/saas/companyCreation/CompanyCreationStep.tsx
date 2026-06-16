@@ -51,7 +51,7 @@ function isValidPhone(input: string) {
 }
 
 
-export default function CompanyCreationStep({ data, onNext }: Props) {
+export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
     const [companyName, setCompanyName] = useState(data.companyName);
     const [address, setAddress] = useState(data.address);
     const [contact, setContact] = useState(data.contact);
@@ -287,8 +287,6 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
                     />
                 </div>
             </GlassBackground>
-
-            <div className="mt-10 ml-50 flex justify-start text-white mb-20" />
         </>
     );
 }
