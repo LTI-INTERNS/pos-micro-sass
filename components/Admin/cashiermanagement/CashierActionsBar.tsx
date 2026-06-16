@@ -9,6 +9,7 @@ type Props = {
   onEdit?: () => void;
   onAdd?: () => void;
   onExport?: () => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
 };
 
 export default function CashierActionsBar({
@@ -18,6 +19,7 @@ export default function CashierActionsBar({
   onEdit,
   onAdd,
   onExport,
+  showToast,
 }: Props) {
   const canDelete = role === "OWNER" || role === "ADMIN";
 

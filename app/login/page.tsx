@@ -9,9 +9,16 @@ import Navigation from "@/components/saas/companyCreation/Navigation";
 import GlassBackground from "@/components/saas/common/GlassBackground";
 import LoginForm from "@/components/Landing/Auth/LoginForm";
 
+// NEW: Import Toast System
+import LandingToast from "@/components/saas/common/LandingToast";
+import { useLandingToast } from "@/hooks/useLandingToast";
+
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  
+  // Initialize Toast System
+  const { toasts, showToast, dismissToast } = useLandingToast();
 
   const handleBack = async () => {
     try {
@@ -27,6 +34,7 @@ export default function LoginPage() {
       await signOut({ redirect: false });
     } catch (error) {
       console.error("BACK BUTTON ERROR:", error);
+      showToast("Failed to safely log out. Please refresh the page.", "error");
     } finally {
       router.replace("/saaslanding");
     }
@@ -55,10 +63,14 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-8">
-            <LoginForm />
+            {/* Pass showToast to LoginForm */}
+            <LoginForm showToast={showToast} />
           </div>
         </GlassBackground>
       </div>
+      
+      {/* Render Toast System */}
+      <LandingToast toasts={toasts} onDismiss={dismissToast} />
     </CommonLayout>
   );
 }

@@ -24,9 +24,14 @@ function isPublicAuthPath(pathname: string) {
   return (
     pathname.startsWith("/login") ||
     pathname.startsWith("/saaslogin") ||
+    pathname.startsWith("/saasownerlogin") ||
     pathname.startsWith("/forgotpassword") ||
     pathname.startsWith("/resetpassword")
   );
+}
+
+function isSaasOwnerPath(pathname: string) {
+  return pathname.startsWith("/saasowner");
 }
 
 export async function middleware(req: NextRequest) {
@@ -65,6 +70,7 @@ export async function middleware(req: NextRequest) {
 
   // No auth at all
   if (!token) {
+    if (isPublicAuthPath(pathname)) return NextResponse.next();
     const dest = pathname.startsWith("/companyselection") ? "/saaslogin" : "/login";
     return NextResponse.redirect(new URL(dest, req.url));
   }
@@ -77,6 +83,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if (isSaasOwnerPath(pathname)) {
+    if (role !== "SAAS_OWNER") {
+      const dest = role === "OWNER" || role === "ADMIN" ? "/overview" : "/login";
+      return NextResponse.redirect(new URL(dest, req.url));
+    }
+    return NextResponse.next();
+  }
+
+  if (role === "SAAS_OWNER") {
+    return NextResponse.redirect(new URL("/saasowner/companies", req.url));
+  }
   // All protected routes except companyselection need a company
   if (!token.companyId) {
     const dest = role === "OWNER" ? "/saaslogin" : "/login";
@@ -151,6 +168,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   matcher: [
     "/companyselection/:path*",
+    "/saasowner/:path*",
+    "/saasownerlogin/:path*",
     "/overview/:path*",
     "/posdashboard/:path*",
     "/customer-display/:path*",

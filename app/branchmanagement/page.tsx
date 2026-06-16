@@ -194,6 +194,7 @@ export default function BranchesPage() {
           onAdd={handleAddBranch}
           onEdit={handleEditBranch}
           onDelete={handleDeleteBranch}
+          showToast={showToast} // THE FIX: Pass the showToast function
         />
 
         <BranchesTable

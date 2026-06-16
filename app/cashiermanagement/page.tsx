@@ -20,6 +20,10 @@ import { queryKeys } from "@/lib/query-keys";
 import type { Branch } from "@/types/branch.types";
 import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.types";
 
+// THE FIX: Import our global toast system
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 function toTableCashier(c: ApiCashier): TableCashier {
   return {
     id:             c.id,
@@ -42,6 +46,9 @@ export default function CashierManagementPage() {
   const branchId = session?.user?.branchId ?? "";
   const queryClient = useQueryClient();
 
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
+
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
   const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
 
@@ -55,8 +62,7 @@ export default function CashierManagementPage() {
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen]         = useState(false);
   const [editPopupOpen, setEditPopupOpen]             = useState(false);
-  const [, setActionLoading]                          = useState(false);
-  const [actionError, setActionError]                 = useState("");
+  const [actionLoading, setActionLoading]             = useState(false);
 
   const [filters, setFilters] = useState<Record<string, string>>({
     revenueRange: "",
@@ -173,7 +179,6 @@ export default function CashierManagementPage() {
   async function handleToggleStatus() {
     if (!selectedCashier) return;
     setActionLoading(true);
-    setActionError("");
     try {
       await cashierService.toggleStatus(selectedCashier.id, !selectedCashier.activeStatus);
       setSelectedCashier(null);
@@ -182,8 +187,9 @@ export default function CashierManagementPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
       ]);
       setDeactivatePopupOpen(false);
+      showToast("Cashier status updated successfully!", "success");
     } catch {
-      setActionError("Failed to update cashier status. Please try again.");
+      showToast("Failed to update cashier status. Please try again.", "error");
     } finally {
       setActionLoading(false);
     }
@@ -192,7 +198,6 @@ export default function CashierManagementPage() {
   async function handleDelete() {
     if (!selectedCashier) return;
     setActionLoading(true);
-    setActionError("");
     try {
       await cashierService.remove(selectedCashier.id);
       setSelectedCashier(null);
@@ -201,8 +206,9 @@ export default function CashierManagementPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
       ]);
       setDeletePopupOpen(false);
+      showToast("Cashier deleted successfully!", "success");
     } catch {
-      setActionError("Failed to delete cashier. Please try again.");
+      showToast("Failed to delete cashier. Please try again.", "error");
     } finally {
       setActionLoading(false);
     }
@@ -211,7 +217,6 @@ export default function CashierManagementPage() {
   function handleEdit(updatedFields: TableCashier) {
     if (!selectedCashier) return;
     setActionLoading(true);
-    setActionError("");
 
     const payload: UpdateCashierInput = {
       ...(canSeeAllBranches ? { branchId: updatedFields.branchId } : {}),
@@ -232,8 +237,12 @@ export default function CashierManagementPage() {
           queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
         ]);
         setEditPopupOpen(false);
+        showToast("Cashier updated successfully!", "success");
       })
-      .catch(() => setActionError("Failed to update cashier. Please try again."))
+      .catch((err: any) => {
+        showToast(err.response?.data?.message || err.message || "Failed to update cashier.", "error");
+        // We do NOT throw the error here, so the EditEntityModal stays open naturally.
+      })
       .finally(() => setActionLoading(false));
   }
 
@@ -297,18 +306,6 @@ export default function CashierManagementPage() {
 
         <CashierStatCardGrid />
 
-        {actionError && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-300">
-            {actionError}
-            <button
-              className="ml-3 underline text-red-400 hover:text-red-300"
-              onClick={() => setActionError("")}
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
         <div className="relative w-full">
           <SearchBar
             placeholder="Search Cashier..."
@@ -333,23 +330,24 @@ export default function CashierManagementPage() {
 
         <CashierActionsBar
           role={role}
+          showToast={showToast} // THE FIX: Pass showToast down
           onDeactivate={() => {
             if (!selectedCashier) {
-              alert("Please select a cashier first!");
+              showToast("Please select a cashier first!", "error");
               return;
             }
             setDeactivatePopupOpen(true);
           }}
           onDelete={() => {
             if (!selectedCashier) {
-              alert("Please select a cashier first!");
+              showToast("Please select a cashier first!", "error");
               return;
             }
             setDeletePopupOpen(true);
           }}
           onEdit={() => {
             if (!selectedCashier) {
-              alert("Please select a cashier first!");
+              showToast("Please select a cashier first!", "error");
               return;
             }
             setEditPopupOpen(true);
@@ -377,9 +375,9 @@ export default function CashierManagementPage() {
           />
         )}
 
-        {/* AddCashierForm — refetch after close to pick up the new record */}
         <AddCashierForm
           isOpen={addOpen}
+          showToast={showToast} // THE FIX: Pass showToast down
           onClose={() => { setAddOpen(false); }}
           onSaved={async () => {
             setAddOpen(false);
@@ -390,10 +388,9 @@ export default function CashierManagementPage() {
           }}
         />
 
-        {/* DeactivateCashierPopup */}
         <DeactivateCashierPopup
           isOpen={deactivatePopupOpen}
-          onClose={() => { setDeactivatePopupOpen(false); setActionError(""); }}
+          onClose={() => { setDeactivatePopupOpen(false); }}
           cashier={selectedTableCashier ?? undefined}
           onConfirm={handleToggleStatus}
         />
@@ -401,7 +398,7 @@ export default function CashierManagementPage() {
         {selectedCashier && (
           <DeletePopup
             isOpen={deletePopupOpen}
-            onClose={() => { setDeletePopupOpen(false); setActionError(""); }}
+            onClose={() => { setDeletePopupOpen(false); }}
             item={selectedTableCashier!}
             itemName="Cashier"
             getDisplayText={(c) => (
@@ -420,14 +417,17 @@ export default function CashierManagementPage() {
         {selectedCashier && editPopupOpen && (
           <EditEntityModal<TableCashier>
             open={editPopupOpen}
-            title="Edit Cashier"
+            title={actionLoading ? "Saving…" : "Edit Cashier"}
             initialValues={selectedTableCashier!}
             fields={editFields}
-            onClose={() => { setEditPopupOpen(false); setActionError(""); }}
+            onClose={() => { setEditPopupOpen(false); }}
             onSave={handleEdit}
           />
         )}
       </div>
+
+      {/* THE FIX: Render ToastNotification at the bottom */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </DashboardLayout>
   );
 }
