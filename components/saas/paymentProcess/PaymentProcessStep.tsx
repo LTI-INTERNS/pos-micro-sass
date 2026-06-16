@@ -249,16 +249,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
         </div>
       </GlassBackground>
 
-      <div className="mt-10 ml-50 lg:ml-110 md:ml-50 xl:ml-150 flex justify-start text-white mb-20">
-        <button
-          onClick={onBack}
-          className="font-semibold hover:opacity-80 cursor-pointer"
-          disabled={submitting}
-        >
-          {"< Back"}
-        </button>
-      </div>
-
       <PaymentSuccessPopup
         isOpen={showSuccess}
         paymentSuccess={paymentSuccess}
