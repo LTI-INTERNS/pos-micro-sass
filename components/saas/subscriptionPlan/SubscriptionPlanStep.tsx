@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
 import GlassBackground from "@/components/saas/common/GlassBackground";
 import PlanCardGrid from "@/components/saas/subscriptionPlan/PlanCardGrid";
@@ -9,17 +9,29 @@ type Props = {
   onBack: () => void;
   completedSteps: number;
   submitting?: boolean;
+  onCanProceedChange?: (can: boolean) => void;
+  triggerRef?: React.MutableRefObject<(() => void) | null>;
 };
 
-export default function SubscriptionPlanStep({ data, onNext, onBack, submitting = false }: Props) {
+export default function SubscriptionPlanStep({ data, onNext, submitting = false, onCanProceedChange, triggerRef }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<string>(data.subId);
 
   const canProceed = selectedPlan.length > 0;
+
+  // Notify parent whenever canProceed changes
+  useEffect(() => {
+    onCanProceedChange?.(canProceed);
+  }, [canProceed, onCanProceedChange]);
 
   const handleNext = () => {
     if (!canProceed || submitting) return;
     onNext({ subId: selectedPlan });
   };
+
+  // Expose handleNext to parent via ref
+  useEffect(() => {
+    if (triggerRef) triggerRef.current = handleNext;
+  });
 
   return (
     <>
@@ -35,29 +47,6 @@ export default function SubscriptionPlanStep({ data, onNext, onBack, submitting 
           />
         </div>
       </GlassBackground>
-
-      <div className="mt-10 flex items-center justify-center mb-20">
-        <div className="flex w-full max-w-xl items-center justify-between text-white">
-          <button
-            onClick={onBack}
-            className="font-semibold hover:opacity-80 cursor-pointer"
-          >
-            {"< Back"}
-          </button>
-
-          <button
-            onClick={handleNext}
-            disabled={!canProceed || submitting}
-            className={`font-semibold transition-opacity ${
-              canProceed && !submitting
-                ? "hover:opacity-80 cursor-pointer"
-                : "opacity-40 cursor-not-allowed"
-            }`}
-          >
-            {submitting ? "Creating..." : "Next >"}
-          </button>
-        </div>
-      </div>
     </>
   );
 }
