@@ -225,7 +225,6 @@ export default function RegistrationPage() {
                     <CompanyCreationStep
                         data={registrationData}
                         onNext={handleNext}
-                        onBack={handleBack}
                     />
                 )}
 
@@ -255,7 +254,6 @@ export default function RegistrationPage() {
                     <PaymentProcessStep
                         data={registrationData}
                         onComplete={handleComplete}
-                        onBack={handleBack}
                     />
                 )}
             </div>
