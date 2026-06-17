@@ -28,7 +28,6 @@ type Touched = {
 type Props = {
     data:   RegistrationData;
     onNext: (data: Partial<RegistrationData>) => void;
-    onBack: () => void;
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -51,7 +50,7 @@ function isValidPhone(input: string) {
 }
 
 
-export default function CompanyCreationStep({ data, onNext, onBack }: Props) {
+export default function CompanyCreationStep({ data, onNext }: Props) {
     const [companyName, setCompanyName] = useState(data.companyName);
     const [address, setAddress] = useState(data.address);
     const [contact, setContact] = useState(data.contact);
