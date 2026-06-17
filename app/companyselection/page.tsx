@@ -157,7 +157,7 @@ export default function CompanySelectPage() {
   ) : null;
 
   const CompanyList = companies.length > 0 ? (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar">
       {companies.map((c: Company) => (
         <CompanySelectItem
           key={c.companyId}
