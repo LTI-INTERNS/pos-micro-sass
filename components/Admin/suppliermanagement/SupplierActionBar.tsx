@@ -123,9 +123,10 @@ export default function SupplierActionsBar({
               await onAdd(payload);
               setShowAddPopup(false);
               showToast("Supplier added successfully!", "success"); // THE FIX
-            } catch (error: any) {
+            } catch (error: unknown) {
               console.error("Failed to create supplier:", error);
-              showToast(error?.response?.data?.message || error?.message || "Failed to create supplier.", "error"); // THE FIX
+              const err = error as { response?: { data?: { message?: string } }; message?: string };
+              showToast(err?.response?.data?.message || err?.message || "Failed to create supplier.", "error"); // THE FIX
             }
           }}
         />
@@ -144,9 +145,10 @@ export default function SupplierActionsBar({
               await onEdit(selectedSupplier.id, buildPayload(values));
               setShowEditPopup(false);
               showToast("Supplier updated successfully!", "success"); // THE FIX
-            } catch (error: any) {
+            } catch (error: unknown) {
               console.error("Failed to update supplier:", error);
-              showToast(error?.response?.data?.message || error?.message || "Failed to update supplier.", "error"); // THE FIX
+              const err = error as { response?: { data?: { message?: string } }; message?: string };
+              showToast(err?.response?.data?.message || err?.message || "Failed to update supplier.", "error"); // THE FIX
             }
           }}
         />
@@ -172,9 +174,10 @@ export default function SupplierActionsBar({
               await onDelete(selectedSupplier.id);
               setDeletePopupOpen(false);
               showToast("Supplier deleted successfully!", "success"); // THE FIX
-            } catch (error: any) {
+            } catch (error: unknown) {
               console.error("Failed to delete supplier:", error);
-              showToast(error?.response?.data?.message || error?.message || "Failed to delete supplier.", "error"); // THE FIX
+              const err = error as { response?: { data?: { message?: string } }; message?: string };
+              showToast(err?.response?.data?.message || err?.message || "Failed to delete supplier.", "error"); // THE FIX
             }
           }}
         />
