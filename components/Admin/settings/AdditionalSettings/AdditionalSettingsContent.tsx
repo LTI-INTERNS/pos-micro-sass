@@ -178,9 +178,10 @@ export default function AdditionalSettingsContent() {
       });
 
       setShowSuccess(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorResponse = err as { response?: { data?: { error?: string } }; message?: string };
       const msg =
-        err?.response?.data?.error || err?.message || "Failed to save settings.";
+        errorResponse.response?.data?.error || errorResponse.message || "Failed to save settings.";
       setSaveError(msg);
     } finally {
       setSaving(false);
