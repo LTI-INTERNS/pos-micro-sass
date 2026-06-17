@@ -218,7 +218,7 @@ export default function ProductApprovalModal({
         {data.rejectionReason && (
           <div className="mt-1 pl-6">
             <p className="text-[11px] font-medium text-red-800">Reason:</p>
-            <p className="text-[11px] text-red-600 italic">"{data.rejectionReason}"</p>
+            <p className="text-[11px] text-red-600 italic">&quot;{data.rejectionReason}&quot;</p>
           </div>
         )}
       </div>
@@ -424,7 +424,7 @@ export default function ProductApprovalModal({
                             {v.barcode && <span className="text-[9px] text-gray-400 bg-gray-100 px-1 rounded">#{v.barcode}</span>}
                          </div>
                          <div className="flex flex-wrap gap-1 mt-1">
-                           {v.optionValues?.map((ov: any, idx: number) => (
+                           {v.optionValues?.map((ov: { optionName: string; value: string }, idx: number) => (
                              <span key={idx} className="text-[9px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded-md font-medium">
                                {ov.optionName}: {ov.value}
                              </span>
