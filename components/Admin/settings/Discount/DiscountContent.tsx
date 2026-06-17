@@ -23,7 +23,7 @@ import { discountService } from "@/lib/services/discountService";
 export default function DiscountContent() {
   const { data: session } = useSession();
   
-  const token = (session as any)?.user?.backendToken;
+  const token = (session as { user?: { backendToken?: string } } | null)?.user?.backendToken;
 
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,13 @@ export default function DiscountContent() {
     return () => clearInterval(interval);
   }, [fetchDiscounts]);
 
-  const handleSaveDiscount = async (values: any) => {
+  const handleSaveDiscount = async (values: {
+    title: string;
+    percentage: string;
+    startDate: string;
+    endDate: string;
+    branchIds: string[];
+  }) => {
     try {
       await discountService.createDiscount({
         title: values.title,
@@ -84,8 +90,9 @@ export default function DiscountContent() {
       }, token);
       await fetchDiscounts();
       showToast("Discount added successfully!", "success");
-    } catch (error: any) {
-      showToast(error.message || "Failed to add discount.", "error");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to add discount.", "error");
       throw error; 
     }
   };
@@ -98,8 +105,9 @@ export default function DiscountContent() {
       setSelectedDiscount(null);
       setDeleteOpen(false);
       showToast("Discount deleted successfully!", "success");
-    } catch (error: any) {
-      showToast(error.message || "Failed to delete discount.", "error");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to delete discount.", "error");
     }
   };
 
@@ -116,8 +124,9 @@ export default function DiscountContent() {
       
       await fetchDiscounts();
       showToast(`Discount ${newStatus ? "activated" : "deactivated"} successfully!`, "success");
-    } catch (error: any) {
-      showToast(error.message || "Failed to update discount status.", "error");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to update discount status.", "error");
       await fetchDiscounts();
     }
   };
