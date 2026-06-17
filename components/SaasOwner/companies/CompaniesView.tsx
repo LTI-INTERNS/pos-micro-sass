@@ -64,7 +64,7 @@ export default function CompaniesView() {
   }, [companies, search, filters]);
 
   const removeFilter = (key: string) =>
-    setFilters((f) => { const n = { ...f }; delete (n as any)[key]; return n; });
+    setFilters((f) => { const n = { ...f }; delete n[key as keyof Filters]; return n; });
 
   const columns: Column<SaasOwnerCompany>[] = [
     { key: "index", label: "", render: (_, i) => i + 1 },
@@ -163,7 +163,7 @@ export default function CompaniesView() {
           ).map(({ key, label, options }) => (
             <select
               key={key}
-              value={(filters as any)[key] ?? ""}
+              value={filters[key] ?? ""}
               onChange={(e) =>
                 setFilters((f) => ({
                   ...f,
