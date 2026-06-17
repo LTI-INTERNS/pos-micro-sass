@@ -114,11 +114,12 @@ export default function SalesBarChart({ dateRange }: Props) {
                 fontSize: '12px',
                 color: '#f9fafb',
               }}
-              formatter={(value: number | undefined, key: string | undefined) => {
-                const v = value ?? 0;
-                if (key === 'revenue')    return [formatCurrency(v, currency, useCents), 'Revenue'] as [string, string];
-                if (key === 'orderCount') return [String(v), 'Orders'] as [string, string];
-                return [String(v), key ?? 'Value'] as [string, string];
+              formatter={(value: unknown, key: unknown) => {
+                const v = typeof value === 'number' ? value : 0;
+                const k = typeof key === 'string' ? key : '';
+                if (k === 'revenue')    return [formatCurrency(v, currency, useCents), 'Revenue'] as [string, string];
+                if (k === 'orderCount') return [String(v), 'Orders'] as [string, string];
+                return [String(v), k || 'Value'] as [string, string];
               }}
             />
             <Bar dataKey="revenue" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={36} />
