@@ -4,8 +4,6 @@ import { useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Settings, X } from 'lucide-react';
-import { useStoreInfo } from '@/lib/context/StoreInfoContext';
-import { hasAIPrediction } from '@/types/subscription.types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -20,9 +18,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { data: session } = useSession();
 
   const userRole = (session?.user?.role?.toUpperCase() ?? 'CASHIER') as UserRole;
-
-  const { storeInfo } = useStoreInfo();
-  const hasAI = hasAIPrediction(storeInfo.subscription?.aiPredictionLevel);
 
   const allMenuItems = useMemo(() => [
     { label: 'Dashboard',            path: '/overview',          roles: ['OWNER', 'ADMIN', 'MANAGER'] as UserRole[] },
