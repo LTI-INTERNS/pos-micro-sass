@@ -632,9 +632,6 @@ export function Step3({
     update(variant.id, "sku", buildUniqueSku(variant));
   };
 
-  const getVariantOptionValue = (variant: ProductVariant, optionName: string) =>
-    variant.optionValues.find((entry) => entry.optionName === optionName)?.value ?? "";
-
   const updateVariantOptionValue = (variantId: number, optionName: string, value: string) => {
     onChange({
       variants: state.variants.map((variant) => {
