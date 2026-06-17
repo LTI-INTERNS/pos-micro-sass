@@ -32,8 +32,8 @@ export const discountService = {
     
     if (!res.ok) throw new Error("Failed to fetch discounts");
     
-    const data = await res.json();
-    return data.map((d: any) => ({ ...d, id: d.discountId }));
+    const data = (await res.json()) as Omit<Discount, "id">[];
+    return data.map((d) => ({ ...d, id: d.discountId }) as Discount);
   },
 
   async createDiscount(payload: CreateDiscountPayload, token?: string) {
