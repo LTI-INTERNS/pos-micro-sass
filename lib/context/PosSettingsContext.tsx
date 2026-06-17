@@ -82,7 +82,6 @@ export function PosSettingsProvider({ children }: { children: ReactNode }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Optimistic update so the admin settings page feels instant. */
