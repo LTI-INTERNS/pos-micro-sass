@@ -15,7 +15,6 @@ export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRangeParams | undefined>(undefined);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   const handleDateChange = useCallback(
     (start: Date | undefined, end: Date | undefined) => {
@@ -34,7 +33,6 @@ export default function DashboardPage() {
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     setRefreshKey((k) => k + 1);
-    setLastUpdated(new Date());
     setTimeout(() => setRefreshing(false), 600);
   }, []);
 
