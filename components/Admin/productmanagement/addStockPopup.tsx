@@ -43,6 +43,7 @@ type RawVariant = {
   lowStock?: number | string | null;
   optionValues?: Array<{ optionName?: string; value?: string } | string>;
   imageUrl?: string;
+  branchVariants?: Array<{ branchId: string }>;
 };
 
 function getVariantLabel(raw: RawVariant): string {
@@ -422,8 +423,8 @@ export default function AddStockPopup({
             }
 
             const assignedBranchIds = new Set<string>(
-              (product.variants as any[]).flatMap(
-                (v: any) => (v.branchVariants ?? []).map((bv: any) => bv.branchId)
+              (product.variants as unknown as RawVariant[]).flatMap(
+                (v) => (v.branchVariants ?? []).map((bv) => bv.branchId)
               )
             );
 

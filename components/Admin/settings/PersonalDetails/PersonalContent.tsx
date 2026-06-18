@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/useToast";
 
 export default function PersonalContent({ userRole }: { userRole: string; userId?: string }) {
   const { data: session } = useSession();
-  const token = (session as any)?.user?.backendToken;
+  const token = (session as { user?: { backendToken?: string } } | null)?.user?.backendToken;
 
   const [modalOpen, setModalOpen] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -51,14 +51,15 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
     loadData();
   }, [token]);
 
-  const handleSaveDetails = async (values: any) => {
+  const handleSaveDetails = async (values: Record<string, string>) => {
     try {
       const updatedData = await updatePersonalDetails(values, token);
       setPersonalDetails((prev) => ({ ...prev, ...updatedData }));
       setModalOpen(false);
       showToast("Details updated successfully!", "success"); 
-    } catch (error: any) {
-      showToast(error.message || "Failed to update details", "error"); 
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to update details", "error"); 
       // THE FIX: Removed 'throw error;' here so Next.js doesn't crash. 
       // Because we are in the catch block, setModalOpen(false) is skipped, so the popup stays open naturally!
     }
@@ -83,8 +84,9 @@ export default function PersonalContent({ userRole }: { userRole: string; userId
       
       showToast("Password changed successfully!", "success");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error: any) {
-      showToast(error.message || "Failed to change password", "error");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to change password", "error");
     }
   };
 

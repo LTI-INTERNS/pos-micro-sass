@@ -2,29 +2,42 @@
 import { useCallback } from "react";
 import { RegistrationData } from "@/app/companyregistration/page";
 
-const STORAGE_KEY = "company_registration_draft";
-const STEP_KEY    = "company_registration_step";
+const DRAFT_KEY_PREFIX = "company_registration_draft_";
+const STEP_KEY_PREFIX  = "company_registration_step_";
 
 type PersistableData = Omit<RegistrationData, "logo">;
 
-export function saveRegistrationData(data: RegistrationData, step: number): void {
+/** Build per-owner localStorage keys. Returns null if userId is missing. */
+function getKeys(userId: string | null | undefined): { draftKey: string; stepKey: string } | null {
+    if (!userId) return null;
+    return {
+        draftKey: `${DRAFT_KEY_PREFIX}${userId}`,
+        stepKey:  `${STEP_KEY_PREFIX}${userId}`,
+    };
+}
+
+export function saveRegistrationData(data: RegistrationData, step: number, userId: string | null | undefined): void {
+    const keys = getKeys(userId);
+    if (!keys) return; // No user identity — do not persist to prevent cross-owner leaks
     try {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { logo, ...rest } = data;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rest satisfies PersistableData));
-        localStorage.setItem(STEP_KEY, String(step));
+        localStorage.setItem(keys.draftKey, JSON.stringify(rest satisfies PersistableData));
+        localStorage.setItem(keys.stepKey, String(step));
     } catch {
         // quota exceeded or private-browsing mode — fail silently
     }
 }
 
-export function loadRegistrationData(): {
+export function loadRegistrationData(userId: string | null | undefined): {
     data: Partial<RegistrationData> | null;
     step: number;
 } {
+    const keys = getKeys(userId);
+    if (!keys) return { data: null, step: 1 }; // No user identity — return empty to prevent cross-owner leaks
     try {
-        const raw     = localStorage.getItem(STORAGE_KEY);
-        const rawStep = localStorage.getItem(STEP_KEY);
+        const raw     = localStorage.getItem(keys.draftKey);
+        const rawStep = localStorage.getItem(keys.stepKey);
         if (!raw) return { data: null, step: 1 };
 
         const data = JSON.parse(raw) as PersistableData;
@@ -35,16 +48,18 @@ export function loadRegistrationData(): {
     }
 }
 
-export function clearRegistrationData(): void {
+export function clearRegistrationData(userId: string | null | undefined): void {
+    const keys = getKeys(userId);
+    if (!keys) return;
     try {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem(STEP_KEY);
+        localStorage.removeItem(keys.draftKey);
+        localStorage.removeItem(keys.stepKey);
     } catch { /* ignore */ }
 }
 
-export function useRegistrationPersistence() {
-    const save  = useCallback((data: RegistrationData, step: number) => saveRegistrationData(data, step), []);
-    const load  = useCallback(() => loadRegistrationData(), []);
-    const clear = useCallback(() => clearRegistrationData(), []);
+export function useRegistrationPersistence(userId: string | null | undefined) {
+    const save  = useCallback((data: RegistrationData, step: number) => saveRegistrationData(data, step, userId), [userId]);
+    const load  = useCallback(() => loadRegistrationData(userId), [userId]);
+    const clear = useCallback(() => clearRegistrationData(userId), [userId]);
     return { save, load, clear };
 }

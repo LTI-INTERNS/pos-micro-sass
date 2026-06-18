@@ -21,7 +21,7 @@ type BranchDetailsProps = {
     address: string;
     regNo: string;
   };
-  onSave?: (data: any) => Promise<void> | void;
+  onSave?: (data: Record<string, string>) => Promise<void> | void;
 };
 
 export default function BranchDetailsForm({ userRole, initial, onSave }: BranchDetailsProps) {
@@ -63,15 +63,16 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
     { name: "regNo", label: "Registration No." },
   ];
 
-  const handleSave = async (updatedValues: any) => {
+  const handleSave = async (updatedValues: Record<string, string>) => {
     try {
       if (onSave) await onSave(updatedValues);
-      setDetails(updatedValues);
+      setDetails(updatedValues as typeof details);
       setModalOpen(false);
       showToast("Branch details updated successfully!", "success");
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Show toast and DO NOT throw error, so the popup stays open naturally
-      showToast(error.message || "Failed to update branch details.", "error");
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to update branch details.", "error");
     }
   };
 
@@ -88,8 +89,9 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
       });
       showToast("Password changed successfully!", "success");
       setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (error: any) {
-      showToast(error.response?.data?.message || error.message || "Failed to change password.", "error");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      showToast(err.response?.data?.message || err.message || "Failed to change password.", "error");
     }
   };
 
@@ -174,7 +176,7 @@ export default function BranchDetailsForm({ userRole, initial, onSave }: BranchD
         initialValues={details}
         fields={editFields}
         onClose={() => setModalOpen(false)}
-        validate={(values: any) => {
+        validate={(values: Record<string, string>) => {
           const errors: Record<string, string> = {};
           
           if (!values.name?.trim()) errors.name = "Branch name is required";

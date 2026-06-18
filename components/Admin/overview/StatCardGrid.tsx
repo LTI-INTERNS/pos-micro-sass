@@ -11,33 +11,16 @@ function formatPct(pct: number): string {
   return (pct >= 0 ? "+" : "") + pct.toFixed(1) + "%";
 }
 
-type CardData = {
+type CardDef = {
   title:      string;
   value?:     string;
   amount?:    number;
   percentage: string;
-  trend:      "up" | "down";
+  trend:      "up" | "down" | "neutral";
   caption:    string;
 };
 
-function buildCards(stats: OverviewStats, loading: boolean): CardData[] {
-  const placeholder = (title: string, isAmount: boolean): CardData => ({
-    title,
-    ...(isAmount ? { amount: undefined } : { value: "—" }),
-    percentage: "",
-    trend:      "up",
-    caption:    "vs previous period",
-  });
-
-  if (loading) {
-    return [
-      placeholder("Total Sales",        true),
-      placeholder("Customers",          false),
-      placeholder("Expenses",           true),
-      placeholder("Low Stock Products", false),
-    ];
-  }
-
+function buildCards(stats: OverviewStats): CardDef[] {
   return [
     {
       title:      "Total Sales",
@@ -47,28 +30,35 @@ function buildCards(stats: OverviewStats, loading: boolean): CardData[] {
       caption:    "vs previous period",
     },
     {
+      title:      "Orders",
+      value:      stats.totalOrders.value.toLocaleString(),
+      percentage: formatPct(stats.totalOrders.pctChange),
+      trend:      stats.totalOrders.pctChange >= 0 ? "up" : "down",
+      caption:    "vs previous period",
+    },
+    {
       title:      "Customers",
-      value:      String(stats.totalCustomers.value),
+      value:      stats.totalCustomers.value.toLocaleString(),
       percentage: formatPct(stats.totalCustomers.pctChange),
       trend:      stats.totalCustomers.pctChange >= 0 ? "up" : "down",
       caption:    "vs previous period",
     },
     {
-      title:      "Expenses",
-      amount:     stats.totalExpenses.value,
-      percentage: formatPct(stats.totalExpenses.pctChange),
-      trend:      stats.totalExpenses.pctChange >= 0 ? "up" : "down",
-      caption:    "vs previous period",
-    },
-    {
-      title:      "Low Stock Products",
+      title:      "Low Stock Items",
       value:      String(stats.lowStockCount),
       percentage: "",
-      trend:      "down",
-      caption:    "products below threshold",
+      trend:      stats.lowStockCount > 0 ? "down" : "neutral",
+      caption:    stats.lowStockCount > 0 ? "need attention" : "all stocked",
     },
   ];
 }
+
+const ROUTE_MAP: Record<string, string> = {
+  "Total Sales":    "/reports",
+  Orders:           "/reports",
+  Customers:        "/customermanagement",
+  "Low Stock Items":"/productmanagement",
+};
 
 type Props = { dateRange?: DateRangeParams };
 
@@ -96,6 +86,7 @@ export default function StatCardGrid({ dateRange }: Props) {
     overviewAnalyticsService
       .getOverviewStats(params)
       .then(setStats)
+      .catch(() => setStats(null))
       .finally(() => setLoading(false));
   }, [status, branchId, canSeeAllBranches, dateRange]);
 
@@ -107,34 +98,39 @@ export default function StatCardGrid({ dateRange }: Props) {
     lowStockCount:  0,
   };
 
-  const cards = buildCards(stats ?? emptyStats, loading);
-
-  const handleDetailClick = (title: string) => {
-    const routeMap: Record<string, string> = {
-      Customers:           "/customermanagement",
-      "Low Stock Products": "/productmanagement",
-      "Total Sales":        "/reports",
-      Expenses:             "/expensesmanagement",
-    };
-    const route = routeMap[title];
-    if (route) router.push(route);
-  };
+  const cards = loading ? null : buildCards(stats ?? emptyStats);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {cards.map((card) => (
-        <StatCard
-          key={card.title}
-          title={card.title}
-          value={card.value}
-          amount={card.amount}
-          percentage={card.percentage}
-          trend={card.trend}
-          caption={card.caption}
-          showDetailButton={true}
-          onDetailClick={() => handleDetailClick(card.title)}
-        />
-      ))}
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
+      {loading
+        ? Array.from({ length: 4 }).map((_, i) => (
+            /* Skeleton card */
+            <div
+              key={i}
+              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse flex flex-col gap-3"
+            >
+              <div className="h-3 bg-gray-100 rounded w-1/2" />
+              <div className="h-9 bg-gray-100 rounded w-2/3" />
+              <div className="h-5 bg-gray-100 rounded-full w-1/3" />
+              <div className="mt-4 h-3 bg-gray-100 rounded w-1/4" />
+            </div>
+          ))
+        : cards!.map((card) => (
+            <StatCard
+              key={card.title}
+              title={card.title}
+              value={card.value}
+              amount={card.amount}
+              percentage={card.percentage}
+              trend={card.trend}
+              caption={card.caption}
+              showDetailButton
+              onDetailClick={() => {
+                const route = ROUTE_MAP[card.title];
+                if (route) router.push(route);
+              }}
+            />
+          ))}
     </div>
   );
 }

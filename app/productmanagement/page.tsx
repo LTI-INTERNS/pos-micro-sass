@@ -24,7 +24,7 @@ import { useNegativeStockAlerts } from "@/components/Admin/notifications/useNega
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
 
-import { branchService, productService, Branch, Product } from "@/lib/services";
+import { productService, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import LoadingState from "@/components/Admin/common/LoadingState";
@@ -35,16 +35,6 @@ interface VariantLike {
   id?: string | number;
   sku: string;
   sellUnit?: string;
-}
-
-interface ApiError {
-  message?: string;
-  response?: {
-    data?: {
-      message?: string;
-      error?: { message?: string };
-    };
-  };
 }
 
 function toPopupProduct(p: Product) {
@@ -82,10 +72,6 @@ function getBaseProduct(p: Product): Product {
   return copy as Product;
 }
 
-function formatBranchLabel(branch: Branch) {
-  return branch.city?.trim() ? `${branch.name} (${branch.city})` : branch.name;
-}
-
 type UserRole = "owner" | "admin" | "manager";
 
 const managerAvailabilityOptions = [
@@ -111,7 +97,6 @@ export default function DashboardPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
-  const [branches, setBranches] = useState<Branch[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [start, setStart] = useState<Date | undefined>();
@@ -162,10 +147,7 @@ export default function DashboardPage() {
     setDeleteOpen(false);
   }, [activeBranchId]);
 
-  useEffect(() => {
-    if (sessionStatus !== "authenticated" || !sessionCompanyId || !canUseBranchFilter) return;
-    branchService.getAll().then(setBranches).catch((err) => console.error("Failed to load branches:", err));
-  }, [sessionStatus, sessionCompanyId, canUseBranchFilter]);
+
 
   useEffect(() => {
     if (sessionStatus !== "authenticated" || !sessionCompanyId) return;

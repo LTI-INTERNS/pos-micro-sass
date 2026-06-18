@@ -9,7 +9,7 @@ type UploadStatus = "idle" | "uploading" | "success" | "error";
 
 type LogoUploadSectionProps = {
   currentLogoUrl: string | null;
-  onLogoChange: (logoUrl: string | null) => void;
+  onLogoChange: (logoUrl: string | null, file?: File | null) => void;
   folder?: UploadFolder;
   disabled?: boolean;
   title?: string;

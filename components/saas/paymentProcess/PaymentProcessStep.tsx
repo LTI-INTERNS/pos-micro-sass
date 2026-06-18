@@ -24,10 +24,9 @@ function LineText({ children }: { children: React.ReactNode }) {
 type Props = {
   data: RegistrationData;
   onComplete: () => void;
-  onBack: () => void;
 };
 
-export default function PaymentProcessStep({ data, onComplete, onBack }: Props) {
+export default function PaymentProcessStep({ data, onComplete }: Props) {
   const { data: session } = useSession();
 
   const isFree = data.subId === "SUB_FREE";
@@ -248,16 +247,6 @@ export default function PaymentProcessStep({ data, onComplete, onBack }: Props) 
           </div>
         </div>
       </GlassBackground>
-
-      <div className="mt-10 ml-50 lg:ml-110 md:ml-50 xl:ml-150 flex justify-start text-white mb-20">
-        <button
-          onClick={onBack}
-          className="font-semibold hover:opacity-80 cursor-pointer"
-          disabled={submitting}
-        >
-          {"< Back"}
-        </button>
-      </div>
 
       <PaymentSuccessPopup
         isOpen={showSuccess}

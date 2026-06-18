@@ -27,18 +27,17 @@ type AddCashierFormProps = {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
 };
 
-export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps) {
+export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashierFormProps) {
   const { data: session } = useSession();
   const role       = session?.user?.role       ?? "";
   const branchId   = session?.user?.branchId   ?? "";
   const branchName = session?.user?.branchName ?? "";
 
-  // Only OWNER and ADMIN can select a branch; MANAGER is locked to their own branch
   const canSelectBranch = role === "OWNER" || role === "ADMIN";
 
-  // ── Branch options (real data for OWNER / ADMIN) ──────────────────────────
   const [branches, setBranches]               = React.useState<Branch[]>([]);
   const [branchesLoading, setBranchesLoading] = React.useState(false);
   const [branchError, setBranchError]         = React.useState("");
@@ -60,7 +59,6 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
 
   const branchOptions = branches.map((b) => ({ value: b.id, label: b.name }));
 
-  // ── Form state ────────────────────────────────────────────────────────────
   const [profileImageUrl, setProfileImageUrl] = React.useState<string | null>(null);
   const [imageUploading, setImageUploading]   = React.useState(false);
 
@@ -76,16 +74,13 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
   const [formValues, setFormValues] = React.useState<FormValues>(emptyForm);
   const [errors, setErrors]         = React.useState<FormErrors>({});
   const [saving, setSaving]         = React.useState(false);
-  const [saveError, setSaveError]   = React.useState("");
 
-  // Reset form whenever the popup opens
   React.useEffect(() => {
     if (!isOpen) return;
     setFormValues(emptyForm());
     setProfileImageUrl(null);
     setImageUploading(false);
     setErrors({});
-    setSaveError("");
     setBranchRetry(0);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -153,15 +148,12 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
     setProfileImageUrl(null);
     setImageUploading(false);
     setErrors({});
-    setSaveError("");
   };
 
-  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!validateForm()) return;
 
     setSaving(true);
-    setSaveError("");
 
     try {
       await cashierService.create({
@@ -174,14 +166,11 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
         ...(profileImageUrl ? { imgUrl: profileImageUrl } : {}),
       });
       resetForm();
+      showToast("Cashier added successfully!", "success"); // THE FIX: Show toast
       onSaved?.();
     } catch (err: unknown) {
-      setSaveError(
-        getApiErrorMessage(
-          err,
-          "Failed to create cashier. Please try again."
-        )
-      );
+      showToast(getApiErrorMessage(err, "Failed to create cashier. Please try again."), "error"); // THE FIX: Show toast
+      // We do NOT throw here so the popup stays open for corrections
     } finally {
       setSaving(false);
     }
@@ -204,19 +193,6 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
     <ModalShell open={isOpen} title="Add New Cashier" onClose={handleCancel}>
       <div className="space-y-2 mt-[-4px]">
 
-        {/* Save error banner */}
-        {saveError && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-300">
-            {saveError}
-            <button
-              className="ml-3 underline text-red-400 hover:text-red-300"
-              onClick={() => setSaveError("")}
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
         {/* Profile Image */}
         <ImageUploader
           shape="circle"
@@ -231,7 +207,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
               const { url } = await uploadService.upload(file, "cashiers");
               setProfileImageUrl(url);
             } catch {
-              setSaveError("Image upload failed. Please try again.");
+              showToast("Image upload failed. Please try again.", "error"); // THE FIX
               setProfileImageUrl(null);
             } finally {
               setImageUploading(false);
@@ -302,7 +278,6 @@ export function AddCashierForm({ isOpen, onClose, onSaved }: AddCashierFormProps
           <p className="text-xs text-red-500 px-3">{errors.email}</p>
         )}
 
-        {/* Phone — required by the backend */}
         <FormField
           label="Phone"
           placeholder="Enter Phone Number"

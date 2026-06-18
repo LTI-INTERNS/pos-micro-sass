@@ -34,11 +34,11 @@ export const productsData: ProductWithBranches[] = [
     tax: 0,
     stock: 50,
     lowstock: 10,
-    options: [{ name: "Size", values: ["500ml", "1L", "2L"] }],
+    options: [{ id: 1, name: "Size", values: ["500ml", "1L", "2L"] }],
     variants: [
-      { sku: "COKE-500", price: 100, barcode: "5000112637922", optionValues: [{ optionName: "Size", value: "500ml" }] },
-      { sku: "COKE-1L",  price: 180, barcode: "5000112638012", optionValues: [{ optionName: "Size", value: "1L"    }] },
-      { sku: "COKE-2L",  price: 350, barcode: "5000112638029", optionValues: [{ optionName: "Size", value: "2L"    }] },
+      { id: 1, sku: "COKE-500", price: 100, barcode: "5000112637922", optionValues: [{ optionName: "Size", value: "500ml" }] },
+      { id: 2, sku: "COKE-1L",  price: 180, barcode: "5000112638012", optionValues: [{ optionName: "Size", value: "1L"    }] },
+      { id: 3, sku: "COKE-2L",  price: 350, barcode: "5000112638029", optionValues: [{ optionName: "Size", value: "2L"    }] },
     ],
     branchStock: {
       Colombo: {
@@ -70,10 +70,10 @@ export const productsData: ProductWithBranches[] = [
     tax: 0,
     stock: 30,
     lowstock: 5,
-    options: [{ name: "Portion", values: ["Regular", "Large"] }],
+    options: [{ id: 2, name: "Portion", values: ["Regular", "Large"] }],
     variants: [
-      { sku: "CFR-REG", price: 550, barcode: "1234567890001", optionValues: [{ optionName: "Portion", value: "Regular" }] },
-      { sku: "CFR-LRG", price: 750, barcode: "1234567890002", optionValues: [{ optionName: "Portion", value: "Large"   }] },
+      { id: 4, sku: "CFR-REG", price: 550, barcode: "1234567890001", optionValues: [{ optionName: "Portion", value: "Regular" }] },
+      { id: 5, sku: "CFR-LRG", price: 750, barcode: "1234567890002", optionValues: [{ optionName: "Portion", value: "Large"   }] },
     ],
     branchStock: {
       Colombo: {
@@ -104,7 +104,7 @@ export const productsData: ProductWithBranches[] = [
     lowstock: 20,
     options: [],
     variants: [
-      { sku: "WATER-1L", price: 80, barcode: "4719512002057", optionValues: [] },
+      { id: 6, sku: "WATER-1L", price: 80, barcode: "4719512002057", optionValues: [] },
     ],
     branchStock: {
       Colombo: {
@@ -132,7 +132,7 @@ export const productsData: ProductWithBranches[] = [
     lowstock: 5,
     options: [],
     variants: [
-      { sku: "LASAGNA-STD", price: 750, barcode: "9876543210001", optionValues: [] },
+      { id: 7, sku: "LASAGNA-STD", price: 750, barcode: "9876543210001", optionValues: [] },
     ],
     branchStock: {
       Colombo: {
@@ -158,10 +158,10 @@ export const productsData: ProductWithBranches[] = [
     tax: 0,
     stock: 40,
     lowstock: 8,
-    options: [{ name: "Add-ons", values: ["Extra Cheese", "Bacon"] }],
+    options: [{ id: 3, name: "Add-ons", values: ["Extra Cheese", "Bacon"] }],
     variants: [
-      { sku: "BURGER-BASE",   price: 650, barcode: "6001234500001", optionValues: [{ optionName: "Add-ons", value: "Extra Cheese" }] },
-      { sku: "BURGER-CHEESE", price: 750, barcode: "6001234500002", optionValues: [{ optionName: "Add-ons", value: "Bacon"        }] },
+      { id: 8, sku: "BURGER-BASE",   price: 650, barcode: "6001234500001", optionValues: [{ optionName: "Add-ons", value: "Extra Cheese" }] },
+      { id: 9, sku: "BURGER-CHEESE", price: 750, barcode: "6001234500002", optionValues: [{ optionName: "Add-ons", value: "Bacon"        }] },
     ],
     branchStock: {
       Colombo: {

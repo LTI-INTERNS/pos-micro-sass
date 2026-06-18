@@ -52,8 +52,9 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
       try {
         await onSave({ ...details, logoUrl: newLogoUrl || "" });
         showToast("Company logo updated successfully!", "success");
-      } catch (error: any) {
-        showToast(error.message || "Failed to save logo.", "error");
+      } catch (error: unknown) {
+        const err = error as { message?: string };
+        showToast(err.message || "Failed to save logo.", "error");
       }
     }
   };
@@ -74,8 +75,9 @@ export default function CompanyDetailsContent({ initial, logoUrl, onSave }: Comp
       setDetails({ ...updatedValues, logoUrl: currentLogoUrl || "" });
       setIsModalOpen(false);
       showToast("Company details updated successfully!", "success");
-    } catch (error: any) {
-      showToast(error.message || "Failed to update company details.", "error");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showToast(err.message || "Failed to update company details.", "error");
       // THE FIX: Removed `throw error;` here so Next.js doesn't crash with the red overlay!
       // The popup stays open naturally because setIsModalOpen(false) was skipped.
     }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useId, useRef, useState, useEffect } from "react";
+import Image from "next/image";
 import { uploadService, UPLOAD_CONSTRAINTS } from "@/lib/services/upload-service";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -43,8 +44,17 @@ export default function LogoUploadPill({
     const [fileName,    setFileName]    = useState("");
     const [error,       setError]       = useState("");
 
+    const previewUrlRef = useRef<string | null>(null);
     useEffect(() => {
-        return () => { uploadService.revokePreview(previewUrl); };
+        previewUrlRef.current = previewUrl;
+    }, [previewUrl]);
+
+    useEffect(() => {
+        return () => {
+            if (previewUrlRef.current) {
+                uploadService.revokePreview(previewUrlRef.current);
+            }
+        };
     }, []);
 
     const clearAll = () => {
@@ -139,10 +149,13 @@ export default function LogoUploadPill({
                         "flex items-center gap-4",
                     ].join(" ")}
                 >
-                    <img
+                    <Image
                         src={previewUrl}
                         alt="Logo preview"
+                        width={48}
+                        height={48}
                         className="h-12 w-12 rounded-lg object-cover shrink-0 border border-white/20"
+                        unoptimized
                     />
 
                     <div className="flex-1 min-w-0">

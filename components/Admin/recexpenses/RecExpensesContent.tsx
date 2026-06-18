@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -24,6 +24,10 @@ import {
 import FilterChips from "@/components/Admin/common/FilterChips";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 
+// THE FIX: Import our global toast system
+import ToastNotification from "@/components/Admin/common/ToastNotification";
+import { useToast } from "@/hooks/useToast";
+
 type UserRole = "owner" | "admin" | "manager";
 
 const normalizeRecurringExpense = (
@@ -45,6 +49,9 @@ const normalizeRecurringExpense = (
 
 export default function RecurringExpensesContent() {
   const { data: session, status } = useSession();
+
+  // THE FIX: Initialize the toast hook
+  const { toasts, showToast, dismissToast } = useToast();
 
   const [start, setStart] = useState<Date | undefined>();
   const [end, setEnd] = useState<Date | undefined>();
@@ -86,7 +93,7 @@ export default function RecurringExpensesContent() {
   const canUseBranchFilter = isOwner || isAdmin;
   const showBranchColumn = isOwner || isAdmin;
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     if (!session) return;
 
     try {
@@ -111,22 +118,24 @@ export default function RecurringExpensesContent() {
           null
         );
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load recurring expenses:", error);
-      alert(
-        error?.response?.data?.error?.message ||
-          "Failed to load recurring expense data."
-      );
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      showToast(
+        err?.response?.data?.error?.message ||
+          "Failed to load recurring expense data.",
+        "error"
+      ); // THE FIX: Toast instead of alert
     } finally {
       setPageLoading(false);
     }
-  };
+  }, [session, showToast]);
 
   useEffect(() => {
     if (status === "authenticated") {
       void fetchAll();
     }
-  }, [status]);
+  }, [status, fetchAll]);
 
   const branchFilteredRecurringExpenses = useMemo(() => {
     if (status === "loading") return [];
@@ -213,13 +222,16 @@ export default function RecurringExpensesContent() {
       setSaveLoading(true);
       await recurringExpenseApi.createRecurringExpense(session, values);
       await fetchAll();
+      showToast("Recurring expense added successfully!", "success"); // THE FIX: Added success toast
       resetPopupState();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create recurring expense failed:", error);
-      alert(
-        error?.response?.data?.error?.message ||
-          "Failed to create recurring expense."
-      );
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      showToast(
+        err?.response?.data?.error?.message ||
+          "Failed to create recurring expense.",
+        "error"
+      ); // THE FIX: Toast instead of alert
     } finally {
       setSaveLoading(false);
     }
@@ -243,13 +255,16 @@ export default function RecurringExpensesContent() {
         values
       );
       await fetchAll();
+      showToast("Recurring expense updated successfully!", "success"); // THE FIX: Added success toast
       resetPopupState();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update recurring expense failed:", error);
-      alert(
-        error?.response?.data?.error?.message ||
-          "Failed to update recurring expense."
-      );
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      showToast(
+        err?.response?.data?.error?.message ||
+          "Failed to update recurring expense.",
+        "error"
+      ); // THE FIX: Toast instead of alert
     } finally {
       setSaveLoading(false);
     }
@@ -257,7 +272,7 @@ export default function RecurringExpensesContent() {
 
   const handleDelete = async () => {
     if (!selectedRecExpense) {
-      alert("Please select a recurring expense first.");
+      showToast("Please select a recurring expense first.", "error"); // THE FIX: Toast instead of alert
       return;
     }
 
@@ -273,16 +288,19 @@ export default function RecurringExpensesContent() {
       );
       setSelectedRecExpense(null);
       await fetchAll();
-    } catch (error: any) {
+      showToast("Recurring expense deleted successfully!", "success"); // THE FIX: Added success toast
+    } catch (error: unknown) {
       console.error("Delete recurring expense failed:", error);
-      alert(
-        error?.response?.data?.error?.message ||
-          "Failed to delete recurring expense."
-      );
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      showToast(
+        err?.response?.data?.error?.message ||
+          "Failed to delete recurring expense.",
+        "error"
+      ); // THE FIX: Toast instead of alert
     }
   };
 
-  const isLoading = status === "loading";
+  const isLoading = status === "loading" || pageLoading;
 
   return (
     <div className="w-full space-y-5">
@@ -352,7 +370,7 @@ export default function RecurringExpensesContent() {
           variant="outline"
           onClick={() => {
             if (!selectedRecExpense) {
-              alert("Please select a recurring expense first.");
+              showToast("Please select a recurring expense first.", "error"); // THE FIX: Toast instead of alert
               return;
             }
 
@@ -411,6 +429,9 @@ export default function RecurringExpensesContent() {
             : null
         }
       />
+      
+      {/* THE FIX: Render global toast container */}
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
