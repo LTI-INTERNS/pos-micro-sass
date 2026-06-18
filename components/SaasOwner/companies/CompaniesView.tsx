@@ -42,6 +42,7 @@ export default function CompaniesView() {
   const [filters, setFilters] = useState<Filters>({});
   const [selectedCompany, setSelectedCompany] = useState<SaasOwnerCompany | null>(null);
   const [detailCompany, setDetailCompany] = useState<SaasOwnerCompany | null>(null);
+  const [branchesPanelOpen, setBranchesPanelOpen] = useState(false);
 
   const { data: companies = [], isLoading, isError, refetch } = useQuery({
     queryKey: queryKeys.saasOwner.companies(),
@@ -190,8 +191,8 @@ export default function CompaniesView() {
       />
 
 
-      <div className="mt-4 grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-        <div className="xl:col-span-2 max-h-[calc(100vh-280px)] overflow-y-auto rounded-xl border border-gray-100 bg-white">
+      <div className="mt-4 grid grid-cols-1 xl:grid-cols-[1fr_auto] gap-6 items-start">
+        <div className="max-h-[calc(100vh-280px)] overflow-y-auto rounded-xl border border-gray-100 bg-white">
           <CommonTable
             title={`${filtered.length} ${filtered.length === 1 ? "Company" : "Companies"}`}
             data={filtered}
@@ -201,8 +202,12 @@ export default function CompaniesView() {
             onSelectRow={setSelectedCompany}
           />
         </div>
-        <div className="xl:sticky xl:top-[80px] max-h-[calc(100vh-280px)] overflow-y-auto rounded-xl">
-          <BranchesPanel company={selectedCompany} />
+        <div className={`xl:sticky xl:top-[80px] max-h-[calc(100vh-280px)] overflow-y-auto rounded-xl transition-all duration-200 ${branchesPanelOpen ? "xl:w-[420px]" : "xl:w-10"}`}>
+          <BranchesPanel
+            company={selectedCompany}
+            collapsed={!branchesPanelOpen}
+            onToggleCollapse={() => setBranchesPanelOpen((v) => !v)}
+          />
         </div>
       </div>
 

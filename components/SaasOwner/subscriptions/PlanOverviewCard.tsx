@@ -1,36 +1,58 @@
 "use client";
 
-import { Check, Building2 } from "lucide-react";
-import type { PlanCardData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
+import { Check, Building2, Pencil } from "lucide-react";
+import type { LivePlanCard } from "@/lib/subscription-display";
+import type { SubscriptionType } from "@/types/subscription.types";
 
 interface Props {
-  plan: PlanCardData;
+  plan: LivePlanCard;
   subscriberCount: number;
+  onEdit:          (type: SubscriptionType) => void;
 }
 
-export default function PlanOverviewCard({ plan, subscriberCount }: Props) {
+const FEATURED_BORDER: Record<string, string> = {
+  PRO: "border-orange-400",
+};
+
+const BADGE_STYLE: Record<string, string> = {
+  "Most Popular": "bg-orange-500 text-white",
+  Enterprise:     "bg-gray-100 text-gray-500",
+};
+
+export default function PlanOverviewCard({ plan, subscriberCount, onEdit }: Props) {
   const isFeatured = plan.subType === "PRO";
 
   return (
     <div
       className={`relative bg-white rounded-2xl p-6 flex flex-col gap-4 shadow-sm border-2 ${
-        isFeatured ? "border-orange-400" : "border-gray-200"
+        FEATURED_BORDER[plan.subType] ?? "border-gray-200"
       }`}
     >
+      {/* Badge */}
       {plan.badge && (
         <span
-          className={`absolute top-5 right-5 text-xs font-semibold px-3 py-1 rounded-full ${
-            isFeatured
-              ? "bg-orange-500 text-white"
-              : "bg-gray-100 text-gray-500"
+          className={`absolute top-5 right-14 text-xs font-semibold px-3 py-1 rounded-full ${
+            BADGE_STYLE[plan.badge] ?? "bg-gray-100 text-gray-500"
           }`}
         >
           {plan.badge}
         </span>
       )}
 
+      {/* Edit pencil — top right corner */}
+      <button
+        onClick={() => onEdit(plan.subType as SubscriptionType)}
+        className="absolute top-4 right-4 w-7 h-7 rounded-full flex items-center justify-center
+          bg-gray-100 hover:bg-orange-100 hover:text-orange-500 text-gray-400
+          transition-all cursor-pointer active:scale-90"
+        title={`Edit ${plan.name} plan`}
+        aria-label={`Edit ${plan.name} plan`}
+      >
+        <Pencil size={13} />
+      </button>
+
       {/* Name + Price */}
-      <div className="flex flex-col gap-1 pr-28">
+      <div className="flex flex-col gap-1 pr-16">
         <h2 className="text-lg font-bold text-gray-900">{plan.name}</h2>
         <div className="flex items-baseline gap-1.5 mt-0.5">
           <span className="text-4xl font-extrabold text-gray-900 tracking-tight leading-none">
@@ -43,7 +65,7 @@ export default function PlanOverviewCard({ plan, subscriberCount }: Props) {
         <p className="text-xs text-gray-400 mt-0.5">{plan.description}</p>
       </div>
 
-      {/* Live subscriber count */}
+      {/* Subscriber count */}
       <div className="flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-lg px-4 py-2.5">
         <Building2 size={14} className="text-orange-500 flex-shrink-0" />
         <span className="text-xs font-bold text-orange-700">{subscriberCount}</span>
@@ -62,8 +84,7 @@ export default function PlanOverviewCard({ plan, subscriberCount }: Props) {
               <Check size={9} strokeWidth={2.5} className="text-orange-500" />
             </span>
             <p className="text-xs text-gray-400">
-              {f.label}:{" "}
-              <span className="font-bold text-gray-900">{f.value}</span>
+              {f.label}: <span className="font-bold text-gray-900">{f.value}</span>
             </p>
           </div>
         ))}

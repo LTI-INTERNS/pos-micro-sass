@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import type { SubscriptionPlanDetails, SubscriptionType } from '@/types/subscription.types';
 
 export type SystemSettings = {
   settingId?: string;
@@ -52,5 +53,17 @@ export const settingsService = {
    */
   async save(payload: SaveSettingsPayload): Promise<void> {
     await apiClient.put('/settings', payload);
+  },
+
+  //Calls GET /api/v1/settings/subscriptions/:type/details
+  async fetchSubscriptionPlanDetails(type: SubscriptionType): Promise<SubscriptionPlanDetails | null> {
+    try {
+      const res = await apiClient.get<{ success: boolean; data: SubscriptionPlanDetails }>(
+        `/settings/subscriptions/${type}/details`,
+      );
+      return res.data?.data ?? null;
+    } catch {
+      return null;
+    }
   },
 };
