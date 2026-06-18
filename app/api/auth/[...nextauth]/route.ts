@@ -202,8 +202,9 @@ export const authOptions: NextAuthOptions = {
                 token.companyName  = user.companyName;
                 token.backendToken = user.token;
 
-                if ((user as any).cashierId) {
-                    token.cashierId = (user as any).cashierId;
+                const u = user as { cashierId?: string };
+                if (u.cashierId) {
+                    token.cashierId = u.cashierId;
                 }
 
                 try {

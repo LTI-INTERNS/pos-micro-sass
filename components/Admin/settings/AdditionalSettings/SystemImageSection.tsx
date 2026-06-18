@@ -81,9 +81,10 @@ export default function SystemImageSection({
       setSelectedId("custom");
       onImageChange(result.publicId, result.url);
       setBackgroundImage(result.url);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload failed:", error);
-      alert(error.message || "Failed to upload image");
+      const err = error as { message?: string };
+      alert(err.message || "Failed to upload image");
     } finally {
       setIsUploading(false);
     }

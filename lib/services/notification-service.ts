@@ -35,7 +35,7 @@ export type ApiNotification = {
     managerId: string | null;
     type: 'PRODUCT_APPROVAL' | 'SUBSCRIPTION_UPGRADE';
     status: NotificationStatus;
-    productData: ProductApprovalSubmitPayload | { requestType: string } | any;
+    productData: ProductApprovalSubmitPayload | { requestType?: string; requestedBy?: string; role?: string; branchName?: string } | null | unknown;
     rejectionReason?: string | null;
     reviewedBy?: string | null;
     reviewedAt?: string | null;

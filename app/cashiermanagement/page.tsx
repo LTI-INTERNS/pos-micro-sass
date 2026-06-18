@@ -239,8 +239,9 @@ export default function CashierManagementPage() {
         setEditPopupOpen(false);
         showToast("Cashier updated successfully!", "success");
       })
-      .catch((err: any) => {
-        showToast(err.response?.data?.message || err.message || "Failed to update cashier.", "error");
+      .catch((err: unknown) => {
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        showToast(error.response?.data?.message || error.message || "Failed to update cashier.", "error");
         // We do NOT throw the error here, so the EditEntityModal stays open naturally.
       })
       .finally(() => setActionLoading(false));
@@ -330,7 +331,6 @@ export default function CashierManagementPage() {
 
         <CashierActionsBar
           role={role}
-          showToast={showToast} // THE FIX: Pass showToast down
           onDeactivate={() => {
             if (!selectedCashier) {
               showToast("Please select a cashier first!", "error");

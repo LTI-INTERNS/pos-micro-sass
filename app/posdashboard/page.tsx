@@ -224,8 +224,6 @@ const Page = () => {
 
   const panelRef = useRef<CustomerInfoPanelHandle>(null);
 
-  const orderNo = useMemo(() => `ORD-${new Date().getTime()}`, []);
-
   // -- Negative Stock Notifications Logic --
   const [negativeStockToasts, setNegativeStockToasts] = useState<PosNegativeToastInfo[]>([]);
 

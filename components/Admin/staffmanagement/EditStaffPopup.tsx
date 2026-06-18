@@ -7,7 +7,6 @@ import { staffService } from "@/lib/services/staff-service";
 import type {
   AdminStaff,
   CompanyOption,
-  CompanyTag,
   ManagerStaff,
   StaffCreateOptions,
 } from "@/types/staff.types";
@@ -150,8 +149,9 @@ export default function EditStaffPopup({
     setErrors({});
   }, [isOpen, staff]);
 
-  const originalAssignedCompanies: CompanyTag[] =
-    staff?.role === "ADMIN" ? staff.assignedCompanies : [];
+  const originalAssignedCompanies = React.useMemo(() => {
+    return staff?.role === "ADMIN" ? staff.assignedCompanies : [];
+  }, [staff]);
 
   const activeAssignedCompanies = React.useMemo(() => {
     if (!isAdminStaff || !staff) return [];

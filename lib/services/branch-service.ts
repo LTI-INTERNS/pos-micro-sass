@@ -3,6 +3,11 @@ import { Branch, CreateBranchInput, UpdateBranchInput } from '@/types/branch.typ
 
 export type { Branch, CreateBranchInput, UpdateBranchInput };
 
+export interface ChangePasswordInput {
+    currentPassword?: string;
+    newPassword?: string;
+}
+
 interface BackendBranch {
     branchId: string;
     name:     string;
@@ -47,12 +52,12 @@ export const branchService = {
             .get<ApiResponse<BackendBranch>>(`/branches/${id}`)
             .then(res => mapBranch(res.data.data)),
 
-    create: (data: CreateBranchInput | any): Promise<Branch> =>
+    create: (data: CreateBranchInput): Promise<Branch> =>
         apiClient
             .post<ApiResponse<BackendBranch>>('/branches', data)
             .then(res => mapBranch(res.data.data)),
 
-    update: (id: string, data: UpdateBranchInput | any): Promise<Branch> =>
+    update: (id: string, data: UpdateBranchInput): Promise<Branch> =>
         apiClient
             .put<ApiResponse<BackendBranch>>(`/branches/${id}`, data)
             .then(res => mapBranch(res.data.data)),
@@ -67,7 +72,7 @@ export const branchService = {
             .get<ApiResponse<BackendBranch>>('/branches/me')
             .then(res => mapBranch(res.data.data)),
     
-    changePassword: (data: any): Promise<void> =>
+    changePassword: (data: ChangePasswordInput): Promise<void> =>
         apiClient
             .put('/branches/me/password', data)
             .then(res => res.data),

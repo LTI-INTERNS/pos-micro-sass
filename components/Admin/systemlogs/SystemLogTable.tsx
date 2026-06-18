@@ -209,7 +209,7 @@ export default function SystemLogTable({ logs, expandedId, onExpand }: Props) {
             </p>
             <p className="mb-3 text-[11px] text-gray-400">
               IP: {log.ipAddress} &nbsp;·&nbsp;
-              UA: {(log.deviceInfo as any)?.userAgent?.slice(0, 80) ?? "—"}
+              UA: {(log.deviceInfo as { userAgent?: string } | null)?.userAgent?.slice(0, 80) ?? "—"}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {log.beforeState && (

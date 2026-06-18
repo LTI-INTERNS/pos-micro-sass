@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
 import type { Swiper as SwiperType } from "swiper";
 import { Autoplay, Pagination } from "swiper/modules";
-import { User } from "lucide-react";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -172,7 +172,14 @@ export default function TestimonialSection() {
 
                     <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
                       <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-white/20 flex items-center justify-center [@media(min-width:2560px)]:w-16 [@media(min-width:2560px)]:h-16">
-                        <img src={item.avatar} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                        <Image
+                          src={item.avatar ?? ""}
+                          alt={item.name}
+                          width={56}
+                          height={56}
+                          className="w-full h-full object-cover rounded-full"
+                          unoptimized
+                        />
                       </div>
                       <div>
                         <h3 className="text-white font-semibold text-base sm:text-lg [@media(min-width:2560px)]:text-2xl">

@@ -24,10 +24,9 @@ function LineText({ children }: { children: React.ReactNode }) {
 type Props = {
   data: RegistrationData;
   onComplete: () => void;
-  onBack: () => void;
 };
 
-export default function PaymentProcessStep({ data, onComplete, onBack }: Props) {
+export default function PaymentProcessStep({ data, onComplete }: Props) {
   const { data: session } = useSession();
 
   const isFree = data.subId === "SUB_FREE";

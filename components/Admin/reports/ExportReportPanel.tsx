@@ -272,13 +272,13 @@ function defaultSummary<T extends RowData>(rows: T[]) {
 
   const numericKeys = new Set<string>();
   for (const k of Object.keys(rows[0] ?? {})) {
-    const val = (rows[0] as any)?.[k];
+    const val = rows[0]?.[k];
     if (typeof val === "number") numericKeys.add(k);
   }
 
   for (const key of Array.from(numericKeys)) {
     const sum = rows.reduce((acc, r) => {
-      const v = (r as any)?.[key];
+      const v = r?.[key];
       return acc + (typeof v === "number" && Number.isFinite(v) ? v : 0);
     }, 0);
     lines.push(`${key}: ${sum.toLocaleString()}`);

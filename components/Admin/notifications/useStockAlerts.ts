@@ -112,11 +112,12 @@ export function useStockAlerts(enabled: boolean) {
 
     intervalRef.current = setInterval(fetchAndShow, POLL_INTERVAL_MS);
 
+    const currentTimeoutRefs = timeoutRefs.current;
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       // Clear all auto-dismiss timers
-      timeoutRefs.current.forEach((t) => clearTimeout(t));
-      timeoutRefs.current.clear();
+      currentTimeoutRefs.forEach((t) => clearTimeout(t));
+      currentTimeoutRefs.clear();
     };
   }, [enabled, sessionStatus, branchId, fetchAndShow]);
 
