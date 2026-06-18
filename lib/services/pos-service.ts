@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api-client';
+import { productsData } from '@/lib/mocks/productmanagement';
 
 export interface PosProduct {
     id: string;
@@ -15,10 +16,37 @@ interface ApiResponse<T> {
     data: T;
 }
 
+interface OptionValue {
+    value?: {
+        value?: string;
+    };
+}
+
+interface BranchVariant {
+    sellingPriceOverride?: string | number | null;
+    stockQty?: string | number;
+    availability?: boolean;
+}
+
+interface ProductVariant {
+    variantId: string;
+    optionValues?: OptionValue[];
+    sellingPrice?: string | number;
+    branchVariants?: BranchVariant[];
+    imageUrl?: string;
+    barcode?: string;
+}
+
+interface BackendPosProduct {
+    name: string;
+    imageUrl?: string;
+    variants?: ProductVariant[];
+}
+
 export const posService = {
     getProducts: (params?: { search?: string; limit?: number }): Promise<PosProduct[]> =>
         apiClient
-            .get<ApiResponse<any[]>>('/products', { params })
+            .get<ApiResponse<BackendPosProduct[]>>('/products', { params })
             .then(res => {
                 const products = res.data?.data ?? [];
                 const posProducts: PosProduct[] = [];
@@ -29,7 +57,7 @@ export const posService = {
                     for (const v of p.variants) {
                         // Extract option values if any
                         const optionString = v.optionValues
-                            ?.map((ov: any) => ov.value?.value)
+                            ?.map((ov: OptionValue) => ov.value?.value)
                             .filter(Boolean)
                             .join(' - ') || '';
 

@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CalendarClock, ExternalLink, RefreshCcw, XCircle } from "lucide-react";
 import PlanCard from "@/components/Admin/settings/subscriptionplan/PlanCard";
-import { planCardsData, PlanCardData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
+import { PlanCardData } from "@/components/Admin/settings/subscriptionplan/planCardsData";
 import PaymentModal, { PaymentPlan } from "@/components/Admin/settings/subscriptionplan/PaymentModal";
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import { cancelScheduledSubscriptionChange, createBillingPortalSession } from "@/lib/services/stripe-service";
-import type { SubscriptionType } from "@/types/subscription.types";
+import { settingsService } from "@/lib/services/settings-service";
+import type { SubscriptionPlanDetails, SubscriptionType } from "@/types/subscription.types";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -50,7 +51,61 @@ function actionLabelForPlan(plan: PlanCardData, currentType: SubscriptionType, h
   return "Schedule downgrade";
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+function formatLimit(value: number | null, unit = ""): string {
+  if (value === null) return "Unlimited";
+  return unit ? `${value.toLocaleString()} ${unit}` : value.toLocaleString();
+}
+
+function formatReportLevel(level: SubscriptionPlanDetails["reportLevel"]): string {
+  const map = { BASIC: "Basic", ADVANCED: "Advanced", CUSTOM: "Custom" } as const;
+  return map[level] ?? level;
+}
+
+function formatSupportLevel(level: SubscriptionPlanDetails["supportLevel"]): string {
+  const map = { EMAIL: "Email", PRIORITY: "Priority", DEDICATED_24_7: "24/7 Dedicated" } as const;
+  return map[level] ?? level;
+}
+
+function formatAILevel(level: SubscriptionPlanDetails["aiPredictionLevel"]): string {
+  const map = { NOT_INCLUDED: "Not included", INCLUDED: "Included", FULL_SUITE: "Full suite" } as const;
+  return map[level] ?? level;
+}
+
+
+function detailsToPlanCard(details: SubscriptionPlanDetails): PlanCardData {
+  const id = details.type.toLowerCase() as "free" | "pro" | "enterprise";
+  const badge = details.type === "PRO" ? "Most Popular" : details.type === "ENTERPRISE" ? "Enterprise" : undefined;
+  const description =
+    details.type === "FREE"
+      ? "Perfect for small shops just getting started."
+      : details.type === "PRO"
+        ? "For growing businesses that need more power."
+        : "Enterprise-grade features for large operations.";
+
+  return {
+    id,
+    subType: details.type,
+    name: details.type,
+    price: `$${parseFloat(details.priceMonthly).toFixed(2)}`,
+    billingCycle: "month",
+    description,
+    badge,
+    features: [
+      { label: "Branches",         value: formatLimit(details.branchLimit) },
+      { label: "Cashier accounts", value: details.staffLimit === null ? "Unlimited per branch" : `Up to ${details.staffLimit} per branch` },
+      { label: "Product variants", value: formatLimit(details.productLimit) },
+      { label: "Customers",        value: formatLimit(details.customerLimit) },
+      { label: "Orders / month",   value: details.monthlyOrderLimit === null ? "Unlimited" : `${details.monthlyOrderLimit.toLocaleString()} per branch` },
+      { label: "Reports",          value: formatReportLevel(details.reportLevel) },
+      { label: "Support",          value: formatSupportLevel(details.supportLevel) },
+      { label: "AI Prediction",    value: formatAILevel(details.aiPredictionLevel) },
+    ],
+  };
+}
+
+const PLAN_TYPES: SubscriptionType[] = ["FREE", "PRO", "ENTERPRISE"];
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export default function SubscriptionPlanCards() {
   const { storeInfo, refreshStoreInfo, isStoreInfoLoading } = useStoreInfo();
@@ -59,21 +114,40 @@ export default function SubscriptionPlanCards() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelScheduleLoading, setCancelScheduleLoading] = useState(false);
 
+  const [planCards, setPlanCards] = useState<PlanCardData[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  const loadPlanCards = useCallback(async () => {
+    setPlansLoading(true);
+    const results = await Promise.all(
+      PLAN_TYPES.map((type) => settingsService.fetchSubscriptionPlanDetails(type)),
+    );
+    const cards = results
+      .filter((d): d is NonNullable<typeof d> => d !== null)
+      .map(detailsToPlanCard);
+    setPlanCards(cards);
+    setPlansLoading(false);
+  }, []);
+
+  useEffect(() => {
+    void loadPlanCards();
+  }, [loadPlanCards]);
+
   const currentType = storeInfo.subscription?.type ?? "FREE";
   const currentPlanId = storeInfo.subscription ? subTypeToCardId(storeInfo.subscription.type) : "";
   const hasStripeCustomer = storeInfo.hasStripeCustomer;
   const isPaidPlan = currentType === "PRO" || currentType === "ENTERPRISE";
   const billingFailed = storeInfo.subscriptionBillingStatus === "FAILED";
-  const currentPlanData = planCardsData.find((plan) => plan.subType === currentType);
+  const currentPlanData = planCards.find((plan) => plan.subType === currentType);
   const scheduledSubscription = storeInfo.scheduledSubscription;
 
   const sortedPlans = useMemo(() => {
-    return [...planCardsData].sort((a, b) => {
+    return [...planCards].sort((a, b) => {
       if (a.id === currentPlanId) return -1;
       if (b.id === currentPlanId) return 1;
       return 0;
     });
-  }, [currentPlanId]);
+  }, [planCards, currentPlanId]);
 
   const handlePlanClick = (plan: PlanCardData) => {
     if (plan.subType === currentType && scheduledSubscription) {
@@ -149,7 +223,7 @@ export default function SubscriptionPlanCards() {
     }
   }, [refreshStoreInfo, showToast]);
 
-  if (!storeInfo.subscription && isStoreInfoLoading) {
+  if ((!storeInfo.subscription && isStoreInfoLoading) || plansLoading) {
     return (
       <div className="rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-500">
         Loading current subscription plan...

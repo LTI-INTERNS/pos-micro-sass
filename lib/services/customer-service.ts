@@ -5,8 +5,6 @@ import type {
     CreateCustomerInput,
     UpdateCustomerInput,
 } from '@/types/customer.types';
-import type { ApiResponse } from '@/types/api.types';
-
 export type { Customer, CreateCustomerInput, UpdateCustomerInput };
 
 // ── Mapper: backend shape → frontend Customer ─────────────────────────────────

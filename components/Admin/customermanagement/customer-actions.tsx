@@ -7,6 +7,7 @@ import DeletePopup from "@/components/Admin/common/Deletepopup";
 import { Customer } from "@/lib/services";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import { customerService } from "@/lib/services/customer-service";
+import { getApiErrorMessage } from "@/lib/utils/api-error";
 
 type Props = {
   selectedCustomer: Customer | null;
@@ -51,8 +52,8 @@ export default function CustomerActionsBar({
       onEdit?.(updated);
       setEditPopupOpen(false);
       showToast("Customer updated successfully!", "success");
-    } catch (err: any) {
-      showToast(err.response?.data?.message || err.message || "Failed to update customer. Please try again.", "error");
+    } catch (err: unknown) {
+      showToast(getApiErrorMessage(err, "Failed to update customer. Please try again."), "error");
       throw err; // THE FIX: Re-throw to ensure EditPopup doesn't wipe data
     } finally {
       setEditLoading(false);
@@ -67,8 +68,8 @@ export default function CustomerActionsBar({
       onDelete?.();
       setDeletePopupOpen(false);
       showToast("Customer deleted successfully!", "success");
-    } catch (err: any) {
-      showToast(err.response?.data?.message || err.message || "Failed to delete customer. Please try again.", "error");
+    } catch (err: unknown) {
+      showToast(getApiErrorMessage(err, "Failed to delete customer. Please try again."), "error");
     } finally {
       setDeleteLoading(false);
     }

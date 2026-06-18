@@ -20,6 +20,7 @@ type Props = {
   onAdd: (payload: CreateSupplierInput) => Promise<void>;
   onEdit: (supplierId: string, payload: UpdateSupplierInput) => Promise<void>;
   onDelete: (supplierId: string) => Promise<void>;
+  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
 };
 
 function buildPayload(values: SupplierFormValues & { supplierType: "company" | "individual" }): CreateSupplierInput {
@@ -55,6 +56,7 @@ export default function SupplierActionsBar({
   onAdd,
   onEdit,
   onDelete,
+  showToast, // THE FIX
 }: Props) {
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
@@ -84,7 +86,7 @@ export default function SupplierActionsBar({
           label="Delete Supplier"
           onClick={() => {
             if (!selectedSupplier) {
-              alert("Please select a supplier first!");
+              showToast("Please select a supplier first!", "error"); // THE FIX
               return;
             }
             setDeletePopupOpen(true);
@@ -95,7 +97,7 @@ export default function SupplierActionsBar({
           label="Edit Supplier"
           onClick={() => {
             if (!selectedSupplier) {
-              alert("Please select a supplier first!");
+              showToast("Please select a supplier first!", "error"); // THE FIX
               return;
             }
             setShowEditPopup(true);
@@ -118,12 +120,13 @@ export default function SupplierActionsBar({
           onSave={async (values) => {
             try {
               const payload = buildPayload(values);
-              console.log("CREATE SUPPLIER PAYLOAD:", payload);
               await onAdd(payload);
               setShowAddPopup(false);
-            } catch (error) {
+              showToast("Supplier added successfully!", "success"); // THE FIX
+            } catch (error: unknown) {
               console.error("Failed to create supplier:", error);
-              alert("Failed to create supplier.");
+              const err = error as { response?: { data?: { message?: string } }; message?: string };
+              showToast(err?.response?.data?.message || err?.message || "Failed to create supplier.", "error"); // THE FIX
             }
           }}
         />
@@ -141,9 +144,11 @@ export default function SupplierActionsBar({
             try {
               await onEdit(selectedSupplier.id, buildPayload(values));
               setShowEditPopup(false);
-            } catch (error) {
+              showToast("Supplier updated successfully!", "success"); // THE FIX
+            } catch (error: unknown) {
               console.error("Failed to update supplier:", error);
-              alert("Failed to update supplier.");
+              const err = error as { response?: { data?: { message?: string } }; message?: string };
+              showToast(err?.response?.data?.message || err?.message || "Failed to update supplier.", "error"); // THE FIX
             }
           }}
         />
@@ -168,9 +173,11 @@ export default function SupplierActionsBar({
             try {
               await onDelete(selectedSupplier.id);
               setDeletePopupOpen(false);
-            } catch (error) {
+              showToast("Supplier deleted successfully!", "success"); // THE FIX
+            } catch (error: unknown) {
               console.error("Failed to delete supplier:", error);
-              alert("Failed to delete supplier.");
+              const err = error as { response?: { data?: { message?: string } }; message?: string };
+              showToast(err?.response?.data?.message || err?.message || "Failed to delete supplier.", "error"); // THE FIX
             }
           }}
         />

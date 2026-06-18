@@ -247,14 +247,14 @@ export default function ReportsPage() {
                           limit: 1000,
                         });
                         const enriched = await enrichOrdersWithItems(orders);
-                        return enriched.map(mapOrderToSaleRow) as any;
+                        return enriched.map(mapOrderToSaleRow) as Record<string, unknown>[];
                       }
                       if (tableTab === "expenses") {
                         const rows = await expenseApi.getExpenses(session);
-                        return rows.map(mapExpense) as any;
+                        return rows.map(mapExpense) as Record<string, unknown>[];
                       }
                       const rows = await productService.getAll();
-                      return rows.map(mapProductToReportRow) as any;
+                      return rows.map(mapProductToReportRow) as Record<string, unknown>[];
                     }
                   : undefined
               }
@@ -367,23 +367,23 @@ const mapOrderToSaleRow = (order: Order): SaleRow => ({
 });
 
 function mapProductToReportRow(product: Product): ProductReportRow {
-  const variants = (product as any).variants ?? [];
+  const variants = product.variants ?? [];
 
-  const basePrices = variants.map((v: any) =>
+  const basePrices = variants.map((v) =>
     Number(v?.basePrice ?? v?.price ?? 0)
   );
-  const sellingPrices = variants.map((v: any) =>
+  const sellingPrices = variants.map((v) =>
     Number(v?.sellingPrice ?? v?.price ?? 0)
   );
   const totalStock = variants.reduce(
-    (sum: number, v: any) => sum + Number(v?.stockQty ?? 0),
+    (sum: number, v) => sum + Number(v?.stockQty ?? 0),
     0
   );
 
-  const allSkus = variants.map((v: any) => v?.sku).filter(Boolean).join(", ");
+  const allSkus = variants.map((v) => v?.sku).filter(Boolean).join(", ");
 
   let stockStatus: ProductReportRow["stockStatus"] = "In Stock";
-  for (const v of variants as any[]) {
+  for (const v of variants) {
     const qty = Number(v?.stockQty ?? 0);
     const low = Number(v?.lowStock ?? 0);
     if (qty <= 0) {
@@ -394,18 +394,18 @@ function mapProductToReportRow(product: Product): ProductReportRow {
   }
 
   return {
-    id: String((product as any).id),
-    name: (product as any).name ?? "",
-    category: (product as any).category ?? "Unknown",
-    brand: (product as any).brand ?? "Unknown",
+    id: String(product.id),
+    name: product.name ?? "",
+    category: product.category ?? "Unknown",
+    brand: product.brand ?? "Unknown",
     sku: allSkus || "Unknown",
     variants: variants.length,
     basePrice: basePrices.length ? Math.min(...basePrices) : 0,
     sellingPrice: sellingPrices.length ? Math.min(...sellingPrices) : 0,
     stockQty: totalStock,
     stockStatus,
-    createdAt: (product as any).createdAt
-      ? new Date((product as any).createdAt).toISOString().split("T")[0]
+    createdAt: product.createdAt
+      ? new Date(product.createdAt).toISOString().split("T")[0]
       : "Unknown",
   };
 }

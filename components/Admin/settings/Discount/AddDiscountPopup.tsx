@@ -28,7 +28,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
   const role = session?.user?.role?.toUpperCase();
   const userBranchId = session?.user?.branchId ?? "";
   
-  const token = (session as any)?.user?.backendToken;
+  const token = (session as { user?: { backendToken?: string } } | null)?.user?.backendToken;
   const canSelectBranch = role === "OWNER" || role === "ADMIN";
 
   const [branches, setBranches] = useState<{ label: string; value: string }[]>([]);
@@ -50,7 +50,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
       const fetchBranches = async () => {
         try {
           const data = await discountService.getBranches(token);
-          const branchOptions = data.map((b: any) => ({
+          const branchOptions = data.map((b: { name: string; branchId: string }) => ({
             label: b.name,
             value: b.branchId,
           }));
@@ -76,7 +76,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     setErrors({});
   }, [open, canSelectBranch, userBranchId]);
 
-  const setField = (name: keyof DiscountValues, value: any) => {
+  const setField = <K extends keyof DiscountValues>(name: K, value: DiscountValues[K]) => {
     setValues((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -133,7 +133,7 @@ const AddDiscountPopup = ({ open, onClose, onSave }: AddDiscountPopupProps) => {
     try {
       await onSave(values);
       onClose(); // Will ONLY run if onSave succeeds!
-    } catch (err: any) {
+    } catch {
       // Failed! Form data stays intact so the user can fix the specific field
     } finally {
       setLoading(false);

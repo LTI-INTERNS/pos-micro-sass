@@ -1,0 +1,175 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import StatCard from "@/components/Admin/common/StatCard";
+import TabSelector from "@/components/Admin/common/TabSelector";
+import CommonTable, { Column } from "@/components/Admin/common/CommonTable";
+import LoadingState from "@/components/Admin/common/LoadingState";
+import PlanOverviewCard from "@/components/SaasOwner/subscriptions/PlanOverviewCard";
+import EditPlanModal from "@/components/SaasOwner/subscriptions/EditPlanModal";
+import PlanBadge from "@/components/SaasOwner/ui/PlanBadge";
+import StatusDot from "@/components/SaasOwner/ui/StatusDot";
+import BusinessTypePill from "@/components/SaasOwner/ui/BusinessTypePill";
+import { saasOwnerService } from "@/lib/services/saas-owner.service";
+import { queryKeys } from "@/lib/query-keys";
+import { useSaasOwnerPolling } from "@/hooks/useSaasOwnerPolling";
+import { buildLivePlanCard } from "@/lib/subscription-display";
+import type { SaasOwnerCompany } from "@/types/saas-owner.types";
+import type { SubscriptionType } from "@/types/subscription.types";
+
+const TABS = [
+  { id: "overview", label: "Plan Overview" },
+  { id: "companies", label: "Companies by Plan" },
+];
+
+const byPlanColumns: Column<SaasOwnerCompany>[] = [
+  { key: "index", label: "", render: (_, i) => i + 1 },
+  {
+    key: "name",
+    label: "Company Name",
+    render: (row) => <span className="font-semibold text-gray-900">{row.name}</span>,
+  },
+  {
+    key: "businessType",
+    label: "Type",
+    render: (row) => <BusinessTypePill type={row.businessType} />,
+  },
+  { key: "city", label: "City", render: (row) => row.city ?? "—" },
+  { key: "branchCount", label: "Branches", align: "center" as const },
+  {
+    key: "activeStaff",
+    label: "Staff",
+    align: "center" as const,
+    render: (row) => row.activeStaff ?? "—",
+  },
+  {
+    key: "status",
+    label: "Status",
+    render: (row) => <StatusDot status={row.status} />,
+  },
+  {
+    key: "registeredAt",
+    label: "Since",
+    render: (row) => new Date(row.registeredAt).getFullYear(),
+  },
+];
+
+export default function SubscriptionsView() {
+  useSaasOwnerPolling();
+
+  const [tab, setTab] = useState("overview");
+  const [editType, setEditType] = useState<SubscriptionType | null>(null);
+
+  const { data: companies = [], isLoading: loadingCo, isError, refetch } = useQuery({
+    queryKey: queryKeys.saasOwner.companies(),
+    queryFn:  () => saasOwnerService.getAllCompanies(),
+    staleTime: 0,
+  });
+
+  const { data: liveSubs = [], isLoading: loadingSubs } = useQuery({
+    queryKey: queryKeys.saasOwner.allSubscriptions(),
+    queryFn:  () => saasOwnerService.getAllSubscriptions(),
+    staleTime: 0,
+  });
+
+  const livePlanCards = useMemo(
+    () => liveSubs.map(buildLivePlanCard),
+    [liveSubs],
+  );
+
+  const counts = useMemo(
+    () => ({
+      FREE: companies.filter((c) => c.subscription === "FREE").length,
+      PRO: companies.filter((c) => c.subscription === "PRO").length,
+      ENTERPRISE: companies.filter((c) => c.subscription === "ENTERPRISE").length,
+    }),
+    [companies],
+  );
+
+  const totalRevenue = useMemo(() => {
+    return liveSubs.reduce((sum, sub) => {
+      const count = counts[sub.type] ?? 0;
+      return sum + parseFloat(sub.priceMonthly) * count;
+    }, 0);
+  }, [liveSubs, counts]);
+
+  const planPrice = (type: SubscriptionType) =>
+    parseFloat(liveSubs.find((s) => s.type === type)?.priceMonthly ?? "0");
+
+  if (loadingCo || loadingSubs) return <LoadingState message="Loading subscription data…" />;
+
+  if (isError) return (
+    <div className="py-10 text-center text-red-400 text-sm">
+      Failed to load subscription data.{" "}
+      <button className="underline hover:text-red-300" onClick={() => void refetch()}>
+        Retry
+      </button>
+    </div>
+  );
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-xl font-extrabold text-gray-900">Subscription Plans</h1>
+        <p className="text-sm text-gray-400 mt-0.5">
+          Overview of all plans and company subscriptions
+        </p>
+      </div>
+
+      {/* Revenue summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <StatCard title="Monthly Revenue" value={`$${totalRevenue.toFixed(2)}`}                                          trend="up"      percentage="+8% this month" showDetailButton={false} />
+        <StatCard title="Free Plan"       value={String(counts.FREE)}                                                    trend="neutral" percentage="companies"       showDetailButton={false} />
+        <StatCard title="Pro Plan"        value={String(counts.PRO)}        trend="up" percentage={`$${(counts.PRO        * planPrice("PRO")       ).toFixed(2)}/mo`} showDetailButton={false} />
+        <StatCard title="Enterprise Plan" value={String(counts.ENTERPRISE)} trend="up" percentage={`$${(counts.ENTERPRISE * planPrice("ENTERPRISE")).toFixed(2)}/mo`} showDetailButton={false} />
+      </div>
+
+      <TabSelector tabs={TABS} activeTab={tab} onChange={setTab} className="mb-6 max-w-sm" />
+
+      {tab === "overview" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {livePlanCards.map((plan) => (
+            <PlanOverviewCard
+              key={plan.subType}
+              plan={plan}
+              subscriberCount={counts[plan.subType as SubscriptionType] ?? 0}
+              onEdit={(type) => setEditType(type)}
+            />
+          ))}
+        </div>
+      )}
+
+      {tab === "companies" && (
+        <div className="space-y-8">
+          {livePlanCards.map((plan) => {
+            const planCompanies = companies.filter((c) => c.subscription === plan.subType);
+            return (
+              <div key={plan.subType}>
+                <div className="flex items-center gap-3 mb-3">
+                  <PlanBadge plan={plan.subType as SubscriptionType} />
+                  <span className="text-sm font-bold text-gray-900">{plan.name} Plan</span>
+                  <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-2.5 py-0.5 font-semibold">
+                    {planCompanies.length} {planCompanies.length === 1 ? "company" : "companies"}
+                  </span>
+                </div>
+                <CommonTable
+                  data={planCompanies}
+                  columns={byPlanColumns}
+                  emptyMessage={`No companies on ${plan.name} plan`}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Edit plan modal */}
+      <EditPlanModal
+        open={Boolean(editType)}
+        type={editType}
+        onClose={() => setEditType(null)}
+      />
+    </div>
+  );
+}

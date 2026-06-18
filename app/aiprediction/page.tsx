@@ -67,7 +67,7 @@ export default function AiPredictionPage() {
         message: "Upgrade request sent to the owner successfully.",
         type: "success",
       });
-    } catch (error: any) {
+    } catch {
       addNotification({
         message: "Failed to send upgrade request. Please try again.",
         type: "error",

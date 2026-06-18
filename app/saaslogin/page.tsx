@@ -13,9 +13,12 @@ import GlassBackground from "@/components/saas/common/GlassBackground";
 import {
   InputField,
   PasswordField,
-  FormErrorMessage,
 } from "@/components/saas/common/FormFields";
 import ActionButton from "@/components/Admin/common/ActionButton";
+
+// NEW: Import Toast System
+import LandingToast from "@/components/saas/common/LandingToast";
+import { useLandingToast } from "@/hooks/useLandingToast";
 
 export default function SaasLoginPage() {
   const [isPending, startTransition] = useTransition();
@@ -23,7 +26,10 @@ export default function SaasLoginPage() {
   const [touched, setTouched]        = useState({ email: false, pw: false });
   const [email, setEmail]            = useState("");
   const [pw, setPw]                  = useState("");
-  const [formError, setFormError]    = useState("");
+  
+  // Initialize Toast
+  const { toasts, showToast, dismissToast } = useLandingToast();
+
   const [serverFieldError, setServerFieldError] = useState<{
     email?: string;
     pw?: string;
@@ -43,11 +49,10 @@ export default function SaasLoginPage() {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitted(true);
-    setFormError("");
     setServerFieldError({});
 
     if (!canSubmit) {
-      setFormError("Please fix the errors and try again.");
+      showToast("Please fix the errors and try again.", "error");
       return;
     }
 
@@ -59,7 +64,7 @@ export default function SaasLoginPage() {
       });
 
       if (!result?.ok || result.error) {
-        setFormError("Invalid email or password");
+        showToast("Invalid email or password", "error");
         setTouched({ email: true, pw: true });
         return;
       }
@@ -69,11 +74,10 @@ export default function SaasLoginPage() {
       const role       = session?.user?.role?.toUpperCase();
 
       if (role !== "OWNER") {
-        setFormError("This login is for owners only. Please use the staff login page.");
+        showToast("This login is for owners only. Please use the staff login page.", "error");
         return;
       }
 
-      // Check if the owner has any companies — if not, send them to create one first
       try {
         const companiesRes = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/auth/companies`,
@@ -83,7 +87,6 @@ export default function SaasLoginPage() {
         const hasCompanies  = (companiesData?.data?.length ?? 0) > 0;
         window.location.href = hasCompanies ? "/companyselection" : "/companyregistration";
       } catch {
-        // Fallback to company selection on network error
         window.location.href = "/companyselection";
       }
     });
@@ -119,8 +122,6 @@ export default function SaasLoginPage() {
                 </h2>
 
                 <form onSubmit={onSubmit} className="space-y-5">
-                  {formError && <FormErrorMessage message={formError} />}
-
                   <div className="space-y-4">
                     <InputField
                       id="login-email"
@@ -190,6 +191,9 @@ export default function SaasLoginPage() {
           />
         </GlassBackground>
       </div>
+
+      {/* Render Toast System */}
+      <LandingToast toasts={toasts} onDismiss={dismissToast} />
     </CommonLayout>
   );
 }

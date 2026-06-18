@@ -82,7 +82,7 @@ const AddExpensesPopup = ({
 
   const canEditBranch = role === "owner" || role === "admin";
   const sessionBranchId =
-    (session?.user as any)?.branchId?.trim?.() ||
+    (session?.user as { branchId?: string } | undefined)?.branchId?.trim?.() ||
     "";
   const [values, setValues] = React.useState<ExpenseFormValues>({
     date: "",

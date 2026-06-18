@@ -1,5 +1,19 @@
 import axios from "axios";
 
+interface SessionLike {
+  accessToken?: string;
+  token?: string;
+  jwt?: string;
+  backendToken?: string;
+  user?: {
+    accessToken?: string;
+    token?: string;
+    jwt?: string;
+    backendToken?: string;
+    access_token?: string;
+  };
+}
+
 export type ExpenseApiItem = {
   expensesId: string;
   branchId: string;
@@ -44,22 +58,23 @@ const API_BASE_URL = `${
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 }/api/v1`;
 
-const getAccessToken = (session?: any) => {
+const getAccessToken = (session?: unknown) => {
+  const s = session as SessionLike | null | undefined;
   return (
-    session?.accessToken ||
-    session?.token ||
-    session?.jwt ||
-    session?.backendToken ||
-    session?.user?.accessToken ||
-    session?.user?.token ||
-    session?.user?.jwt ||
-    session?.user?.backendToken ||
-    session?.user?.access_token ||
+    s?.accessToken ||
+    s?.token ||
+    s?.jwt ||
+    s?.backendToken ||
+    s?.user?.accessToken ||
+    s?.user?.token ||
+    s?.user?.jwt ||
+    s?.user?.backendToken ||
+    s?.user?.access_token ||
     ""
   );
 };
 
-const createApi = (session?: any) => {
+const createApi = (session?: unknown) => {
   const token = getAccessToken(session);
 
   if (!token) {
@@ -77,7 +92,7 @@ const createApi = (session?: any) => {
 
 export const expenseApi = {
   async getExpenses(
-    session?: any,
+    session?: unknown,
     params?: {
       branchId?: string;
       categoryId?: string;
@@ -95,7 +110,7 @@ export const expenseApi = {
     return response.data.data;
   },
 
-  async getExpenseCategories(session?: any) {
+  async getExpenseCategories(session?: unknown) {
     const api = createApi(session);
     const response = await api.get<{ success: boolean; data: ExpenseCategoryItem[] }>(
       "/expenses/categories/all"
@@ -103,7 +118,7 @@ export const expenseApi = {
     return response.data.data;
   },
 
-  async createExpense(session: any, payload: ExpenseFormPayload) {
+  async createExpense(session: unknown, payload: ExpenseFormPayload) {
     const api = createApi(session);
     const response = await api.post<{ success: boolean; data: ExpenseApiItem }>(
       "/expenses",
@@ -113,7 +128,7 @@ export const expenseApi = {
   },
 
   async updateExpense(
-    session: any,
+    session: unknown,
     expenseId: string,
     payload: Partial<ExpenseFormPayload>
   ) {
@@ -125,19 +140,19 @@ export const expenseApi = {
     return response.data.data;
   },
 
-  async deleteExpense(session: any, expenseId: string) {
+  async deleteExpense(session: unknown, expenseId: string) {
     const api = createApi(session);
     await api.delete(`/expenses/${expenseId}`);
   },
 
-  async getBranches(session?: any) {
+  async getBranches(session?: unknown) {
     const api = createApi(session);
     const response = await api.get("/branches");
     const raw = response.data?.data ?? response.data ?? [];
 
     if (!Array.isArray(raw)) return [];
 
-    return raw.map((branch: any) => ({
+    return raw.map((branch: { branchId?: string; id?: string; name?: string; branchName?: string }) => ({
       branchId: branch.branchId ?? branch.id ?? "",
       name: branch.name ?? branch.branchName ?? "",
     })) as BranchItem[];
