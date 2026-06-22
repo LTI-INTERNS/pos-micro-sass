@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import { staffService } from "@/lib/services/staff-service";
@@ -18,7 +19,8 @@ type Props = {
   currentUserRole: string;
   onClose: () => void;
   onSuccess: () => void | Promise<void>;
-  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX: Accept showToast
+  existingPhones?: string[];
+  showToast: (message: string, type: "success" | "error" | "info") => void;
 };
 
 type FormErrors = Record<string, string>;
@@ -40,17 +42,32 @@ function RoundedInput({
   type?: string;
   disabled?: boolean;
 }) {
+  const [showPassword, setShowPassword] = React.useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
-    <input
-      type={type}
-      value={value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={`w-full rounded-full border px-4 py-2 outline-none placeholder:text-gray-300 ${
-        disabled ? "bg-gray-100 text-gray-400 border-gray-200" : "border-gray-200 text-gray-700"
-      } focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
-    />
+    <div className="relative w-full">
+      <input
+        type={inputType}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full rounded-full border px-4 py-2 outline-none placeholder:text-gray-300 ${disabled ? "bg-gray-100 text-gray-400 border-gray-200" : "border-gray-200 text-gray-700"
+          } ${isPassword ? "pr-10" : ""} focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+          tabIndex={-1}
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -72,9 +89,8 @@ function RoundedSelect({
       value={value}
       disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full rounded-full border px-4 py-2 outline-none ${
-        disabled ? "bg-gray-100 text-gray-400 border-gray-200" : "border-gray-200 text-gray-700"
-      } focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
+      className={`w-full rounded-full border px-4 py-2 outline-none ${disabled ? "bg-gray-100 text-gray-400 border-gray-200" : "border-gray-200 text-gray-700"
+        } focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
     >
       <option value="">{placeholder}</option>
       {options.map((option) => (
@@ -118,6 +134,7 @@ export default function EditStaffPopup({
   currentUserRole,
   onClose,
   onSuccess,
+  existingPhones = [],
   showToast,
 }: Props) {
   const isOwner = currentUserRole.toUpperCase() === "OWNER";
@@ -129,6 +146,7 @@ export default function EditStaffPopup({
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [managerBranchId, setManagerBranchId] = React.useState("");
   const [companyPicker, setCompanyPicker] = React.useState("");
   const [addedCompanyIds, setAddedCompanyIds] = React.useState<string[]>([]);
   const [removedCompanyIds, setRemovedCompanyIds] = React.useState<string[]>([]);
@@ -143,6 +161,7 @@ export default function EditStaffPopup({
     setEmail(staff.email);
     setPhone(staff.phone);
     setPassword("");
+    setManagerBranchId(staff.role === "MANAGER" ? staff.branchId : "");
     setCompanyPicker("");
     setAddedCompanyIds([]);
     setRemovedCompanyIds([]);
@@ -205,6 +224,25 @@ export default function EditStaffPopup({
     activeAssignedCompanies,
   ]);
 
+  const managerBranchOptions = React.useMemo(() => {
+    const baseOptions = options.managerBranches.map((branch) => ({
+      value: branch.id,
+      label: branch.name,
+    }));
+
+    if (staff && staff.role === "MANAGER" && staff.branchId) {
+      const isCurrentIncluded = baseOptions.some((opt) => opt.value === staff.branchId);
+      if (!isCurrentIncluded) {
+        baseOptions.unshift({
+          value: staff.branchId,
+          label: staff.branchName,
+        });
+      }
+    }
+
+    return baseOptions;
+  }, [options.managerBranches, staff]);
+
   const addCompany = () => {
     if (!companyPicker) return;
 
@@ -255,6 +293,13 @@ export default function EditStaffPopup({
 
     if (phone.trim() && phone.trim().length < 10) {
       nextErrors.phone = "Phone number must have at least 10 digits";
+    } else if (
+      phone.trim() &&
+      phone.trim() !== staff.phone.trim() &&
+      existingPhones.includes(phone.trim())
+    ) {
+      showToast("Phone number is already registered to another staff member.", "error");
+      nextErrors.phone = "Phone number already in use";
     }
 
     if (password.trim() && password.trim().length < 6) {
@@ -285,6 +330,7 @@ export default function EditStaffPopup({
         email: email.trim().toLowerCase(),
         phone: phone.trim(),
         ...(password.trim() ? { password: password.trim() } : {}),
+        ...(staff.role === "MANAGER" ? { branchId: managerBranchId } : {}),
         ...(staff.role === "ADMIN" && addedCompanyIds.length > 0
           ? { addCompanyIds: addedCompanyIds }
           : {}),
@@ -396,7 +442,7 @@ export default function EditStaffPopup({
                   type="button"
                   onClick={addCompany}
                   disabled={adminEditLocked || !companyPicker}
-                  className="rounded-full border border-orange-500 px-4 py-2 text-sm font-semibold text-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="rounded-full border border-orange-500 px-4 py-2 text-sm font-semibold text-orange-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   Add
                 </button>
@@ -406,11 +452,11 @@ export default function EditStaffPopup({
         ) : (
           <div className="space-y-2">
             <FieldLabel>Branch</FieldLabel>
-            <RoundedInput
-              value={staff.branchName}
-              onChange={() => undefined}
-              placeholder="Branch"
-              disabled={true}
+            <RoundedSelect
+              value={managerBranchId}
+              onChange={setManagerBranchId}
+              placeholder="Select Branch"
+              options={managerBranchOptions}
             />
           </div>
         )}
