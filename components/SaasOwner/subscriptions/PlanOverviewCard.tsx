@@ -20,8 +20,6 @@ const BADGE_STYLE: Record<string, string> = {
 };
 
 export default function PlanOverviewCard({ plan, subscriberCount, onEdit }: Props) {
-  const isFeatured = plan.subType === "PRO";
-
   return (
     <div
       className={`relative bg-white rounded-2xl p-6 flex flex-col gap-4 shadow-sm border-2 ${
