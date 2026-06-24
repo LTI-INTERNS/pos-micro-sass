@@ -46,6 +46,7 @@ export interface Product {
     options: ProductOption[];
     variants: ProductVariant[];
     companyId?: string;
+    branchesStock?: Record<string, Record<string, unknown>>;
 }
 
 export type CreateProductInput = {

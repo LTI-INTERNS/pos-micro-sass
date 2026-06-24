@@ -125,7 +125,7 @@ export default function AddBranchForm({
         // it throws, this code is skipped, and the modal stays open!
         resetForm();
         onClose(); 
-      } catch (error) {
+      } catch {
         // Validation/API error occurred. Form data is preserved.
       }
     }

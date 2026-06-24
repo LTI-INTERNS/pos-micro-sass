@@ -100,12 +100,13 @@ function SettingPageContent() {
                 address: ownerCompany?.address || "",
               }}
               logoUrl={companyLogoUrl}
-              onSave={async (data) => {
+               onSave={async (data) => {
                 try {
                   const updated = await companyService.updateMyCompany(data);
                   setOwnerCompany(updated);
-                } catch (err: any) {
-                  throw new Error(err.response?.data?.message || err.message || "Failed to update company");
+                } catch (err: unknown) {
+                  const errorResponse = err as { response?: { data?: { message?: string } }; message?: string };
+                  throw new Error(errorResponse.response?.data?.message || errorResponse.message || "Failed to update company");
                 }
               }}
             />
@@ -133,8 +134,9 @@ function SettingPageContent() {
                   };
                   const updated = await branchService.update('me', payload);
                   setManagerBranch(updated);
-                } catch (err: any) {
-                  throw new Error(err.response?.data?.message || err.message || "Failed to update branch");
+                } catch (err: unknown) {
+                  const errorResponse = err as { response?: { data?: { message?: string } }; message?: string };
+                  throw new Error(errorResponse.response?.data?.message || errorResponse.message || "Failed to update branch");
                 }
               }}
             />

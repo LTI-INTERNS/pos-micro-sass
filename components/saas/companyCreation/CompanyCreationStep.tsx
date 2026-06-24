@@ -28,7 +28,6 @@ type Touched = {
 type Props = {
     data:   RegistrationData;
     onNext: (data: Partial<RegistrationData>) => void;
-    onBack: () => void;
 };
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
@@ -287,8 +286,6 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
                     />
                 </div>
             </GlassBackground>
-
-            <div className="mt-10 ml-50 flex justify-start text-white mb-20" />
         </>
     );
 }

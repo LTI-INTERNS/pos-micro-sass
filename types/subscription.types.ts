@@ -49,3 +49,17 @@ export function isEnterprisePlan(type: SubscriptionType): boolean {
 export function hasAIPrediction(level?: AIPredictionLevel): boolean {
   return level === 'INCLUDED' || level === 'FULL_SUITE';
 }
+
+export interface SubscriptionPlanDetails {
+  subId:             string;
+  type:              SubscriptionType;
+  priceMonthly:      string;           // serialised Decimal → string
+  branchLimit:       number | null;    // null = unlimited
+  staffLimit:        number | null;
+  productLimit:      number | null;
+  customerLimit:     number | null;
+  monthlyOrderLimit: number | null;
+  reportLevel:       ReportLevel;
+  supportLevel:      SupportLevel;
+  aiPredictionLevel: AIPredictionLevel;
+}

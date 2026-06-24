@@ -155,8 +155,9 @@ export function usePDFExport<T extends RowData>() {
           }
         } else if (section.kind === "image") {
           try {
-            const props = (doc as any).getImageProperties
-              ? (doc as any).getImageProperties(section.dataUrl)
+            const docWithImage = doc as { getImageProperties?: (url: string) => { width: number; height: number } };
+            const props = docWithImage.getImageProperties
+              ? docWithImage.getImageProperties(section.dataUrl)
               : null;
             const maxW = pageWidth - margin * 2;
             const imgW = maxW;

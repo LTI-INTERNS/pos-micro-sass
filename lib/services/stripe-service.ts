@@ -23,9 +23,26 @@ export type StripeCancelScheduledChangeResult =
   | { ok: true; action: 'cancelled_scheduled_change'; message: string }
   | { ok: false; message: string; code?: string };
 
-function readStripeError(error: any, fallback: string): { ok: false; message: string; code?: string } {
-  const status = error?.response?.status;
-  const responseData = error?.response?.data;
+interface AxiosErrorLike {
+  response?: {
+    status?: number;
+    data?: {
+      error?: {
+        code?: string;
+        userMessage?: string;
+        message?: string;
+      };
+      code?: string;
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
+function readStripeError(error: unknown, fallback: string): { ok: false; message: string; code?: string } {
+  const err = error as AxiosErrorLike | null | undefined;
+  const status = err?.response?.status;
+  const responseData = err?.response?.data;
   const code = responseData?.error?.code ?? responseData?.code;
   const serverMessage =
     responseData?.error?.userMessage ??
@@ -48,7 +65,7 @@ function readStripeError(error: any, fallback: string): { ok: false; message: st
   return {
     ok: false,
     code,
-    message: serverMessage || error?.message || fallback,
+    message: serverMessage || err?.message || fallback,
   };
 }
 
@@ -64,7 +81,7 @@ export async function createStripeCheckoutSession(
     }
 
     return { ok: true, url: checkoutUrl };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return readStripeError(error, 'Unable to start Stripe checkout. Please try again.');
   }
 }
@@ -79,7 +96,7 @@ export async function createSubscriptionCheckoutSession(subId: string): Promise<
     }
 
     return { ok: true, url: checkoutUrl };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return readStripeError(error, 'Unable to start subscription checkout. Please try again.');
   }
 }
@@ -98,7 +115,7 @@ export async function changeSubscriptionPlan(subId: string): Promise<StripeSubsc
     }
 
     return { ok: false, message: 'Subscription change response was not returned by the server.' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return readStripeError(error, 'Unable to change subscription. Please try again.');
   }
 }
@@ -113,7 +130,7 @@ export async function cancelScheduledSubscriptionChange(): Promise<StripeCancelS
     }
 
     return { ok: false, message: 'Cancel scheduled change response was not returned by the server.' };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return readStripeError(error, 'Unable to cancel scheduled change. Please try again.');
   }
 }
@@ -128,7 +145,7 @@ export async function createBillingPortalSession(): Promise<StripeRedirectResult
     }
 
     return { ok: true, url: portalUrl };
-  } catch (error: any) {
+  } catch (error: unknown) {
     return readStripeError(error, 'Unable to open Stripe Billing Portal. Please try again.');
   }
 }

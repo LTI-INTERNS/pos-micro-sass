@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Buttons from "@/components/Admin/common/ActionButton";
 import type { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal";
 import { useCurrency } from "@/lib/context/CurrencyContext";
-import { Mail, X, Loader2 } from "lucide-react";
+import { Mail, X } from "lucide-react";
 
 import OrderSummaryContent, {
   PaymentIcons,
@@ -88,8 +88,9 @@ export default function OrderConfirmation({
       try {
         await customerService.updateEmail(customerId, trimmed);
         setEmailSaved(true);
-      } catch (err: any) {
-        const code = err?.response?.data?.error?.code ?? "";
+      } catch (err: unknown) {
+        const errorResponse = err as { response?: { data?: { error?: { code?: string } } } };
+        const code = errorResponse?.response?.data?.error?.code ?? "";
         if (code === "DUPLICATE_EMAIL") {
           setEmailError("This email is already used by another customer.");
         } else {
@@ -215,7 +216,11 @@ export default function OrderConfirmation({
               <Buttons
                 label="Cancel"
                 onClick={() => {
-                  onCancelEdit ? onCancelEdit() : onClose();
+                  if (onCancelEdit) {
+                    onCancelEdit();
+                  } else {
+                    onClose();
+                  }
                 }}
                 className="flex-1 px-8 py-3 rounded-full border border-orange-400 text-orange-500 font-semibold hover:bg-orange-50"
               />

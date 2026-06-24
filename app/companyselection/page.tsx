@@ -30,10 +30,10 @@ export default function CompanySelectPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("paymentStatus") === "success") {
-      clearRegistrationData();
+      clearRegistrationData(session?.user?.userId ?? null);
       setShowPaymentSuccess(true);
     }
-  }, []);
+  }, [session?.user?.userId]);
 
   const closePaymentSuccessPopup = () => {
     setShowPaymentSuccess(false);
@@ -67,12 +67,7 @@ export default function CompanySelectPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, role]);
 
-  useEffect(() => {
-    if (role !== "ADMIN" || loading || companies.length !== 1) return;
-    onSelectCompany(companies[0].companyId);
-  }, [role, loading, companies]);
-
-  async function onSelectCompany(companyId: string) {
+  const onSelectCompany = useCallback(async (companyId: string) => {
     setSelectedId(companyId);
     setError("");
 
@@ -119,7 +114,12 @@ export default function CompanySelectPage() {
     });
 
     router.push("/overview");
-  }
+  }, [companies, session?.user?.backendToken, update, router]);
+
+  useEffect(() => {
+    if (role !== "ADMIN" || loading || companies.length !== 1) return;
+    onSelectCompany(companies[0].companyId);
+  }, [role, loading, companies, onSelectCompany]);
 
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (status === "loading" || loading) {
@@ -157,7 +157,7 @@ export default function CompanySelectPage() {
   ) : null;
 
   const CompanyList = companies.length > 0 ? (
-    <div className="space-y-4">
+    <div className="space-y-4 max-h-[360px] overflow-y-auto pr-2 custom-scrollbar">
       {companies.map((c: Company) => (
         <CompanySelectItem
           key={c.companyId}

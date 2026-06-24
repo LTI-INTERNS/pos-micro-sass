@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -91,7 +91,7 @@ export default function ExpensesContent() {
   const canUseBranchFilter = isOwner || isAdmin;
   const showBranchColumn = isOwner || isAdmin;
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     if (!session) return;
 
     try {
@@ -116,23 +116,24 @@ export default function ExpensesContent() {
           null
         );
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load expenses:", error);
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       showToast(
-        error?.response?.data?.error?.message ||
+        err?.response?.data?.error?.message ||
           "Failed to load expense data.",
         "error"
       );
     } finally {
       setPageLoading(false);
     }
-  };
+  }, [session, showToast]);
 
   useEffect(() => {
     if (status === "authenticated") {
       void fetchAll();
     }
-  }, [status]);
+  }, [status, fetchAll]);
 
   const branchFilteredExpenses = useMemo(() => {
     if (status === "loading") return [];
@@ -213,10 +214,11 @@ export default function ExpensesContent() {
       await fetchAll();
       showToast("Expense added successfully!", "success"); // THE FIX: Added success toast
       resetPopupState(); // Only runs if no error occurred
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Create expense failed:", error);
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       showToast(
-        error?.response?.data?.error?.message ||
+        err?.response?.data?.error?.message ||
           "Failed to create expense.",
         "error"
       ); // THE FIX: Show error toast and do NOT throw, so popup stays open naturally
@@ -241,10 +243,11 @@ export default function ExpensesContent() {
       await fetchAll();
       showToast("Expense updated successfully!", "success"); // THE FIX: Added success toast
       resetPopupState();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Update expense failed:", error);
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       showToast(
-        error?.response?.data?.error?.message ||
+        err?.response?.data?.error?.message ||
           "Failed to update expense.",
         "error"
       ); // THE FIX: Show error toast and preserve data
@@ -269,17 +272,18 @@ export default function ExpensesContent() {
       setSelectedExpense(null);
       await fetchAll();
       showToast("Expense deleted successfully!", "success"); // THE FIX: Added success toast
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Delete expense failed:", error);
+      const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
       showToast(
-        error?.response?.data?.error?.message ||
+        err?.response?.data?.error?.message ||
           "Failed to delete expense.",
         "error"
       );
     }
   };
 
-  const isLoading = status === "loading";
+  const isLoading = status === "loading" || pageLoading;
 
   return (
     <div className="w-full space-y-5">

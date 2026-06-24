@@ -12,9 +12,13 @@ export interface Branch {
 }
 
 export interface CreateBranchInput {
-    // ... your existing fields
+    name: string;
+    city: string;
+    phone: string;
+    email: string;
+    address: string;
+    registrationNumber?: string;
+    password?: string;
 }
 
-export interface UpdateBranchInput {
-    // ... your existing fields
-}
+export interface UpdateBranchInput extends Partial<CreateBranchInput> {}

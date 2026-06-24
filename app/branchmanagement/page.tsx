@@ -8,7 +8,7 @@ import BranchActionsBar from "@/components/Admin/branchmanagement/branches-actio
 import BranchesTable from "@/components/Admin/branchmanagement/branches-table";
 import StatCardGrid from "@/components/Admin/branchmanagement/branchStarCardGrid";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
-import { branchService, Branch } from "@/lib/services/branch-service";
+import { branchService, Branch, UpdateBranchInput } from "@/lib/services/branch-service";
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 
@@ -87,7 +87,7 @@ export default function BranchesPage() {
         password: values.password, 
       };
       
-      const newBranch = await branchService.create(payload as any);
+      const newBranch = await branchService.create(payload);
       setAllBranches((prev) => [...prev, newBranch]);
       showToast("Branch added successfully!", "success");
     } catch (error: unknown) {
@@ -117,7 +117,7 @@ export default function BranchesPage() {
     }
 
     try {
-      const payload: any = {
+      const payload: UpdateBranchInput = {
         name: updatedBranch.name,
         city: updatedBranch.city,
         phone: updatedBranch.phone,
@@ -126,17 +126,18 @@ export default function BranchesPage() {
         email: updatedBranch.email,
       };
 
-      if ((updatedBranch as any).password) {
-        payload.password = (updatedBranch as any).password;
+      if (updatedBranch.password) {
+        payload.password = updatedBranch.password;
       }
 
       const updated = await branchService.update(selectedBranch.id, payload);
       setAllBranches((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
       setSelectedBranch(updated);
       showToast("Branch updated successfully!", "success");
-    } catch (error: any) {
-      if (error.response && error.response.data && error.response.data.message) {
-        showToast(error.response.data.message, "error");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      if (err.response?.data?.message) {
+        showToast(err.response.data.message, "error");
       } else {
         showToast("Failed to update branch.", "error");
       }

@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import { useSession } from "next-auth/react";
 import { notificationService } from "@/lib/services/notification-service";
-import type { ApiNotification } from "@/lib/services/notification-service";
+import type { ApiNotification, OptionApprovalInput, VariantApprovalInput, ProductApprovalSubmitPayload } from "@/lib/services/notification-service";
 import type { NegativeStockAlertData } from "@/components/Admin/notifications/useNegativeStockAlerts";
 
 // ── Re-export ApiNotification for consumers ───────────────────────────────────
@@ -55,8 +55,8 @@ export type ProductApprovalData = {
   reviewerName?: string;
   reviewerRole?: string;
   rejectionReason?: string;
-  options?: any[];
-  variants?: any[];
+  options?: OptionApprovalInput[];
+  variants?: VariantApprovalInput[];
 };
 
 export type Notification = {
@@ -88,7 +88,7 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
 // ── Helper: map a backend ApiNotification to a UI Notification ────────────────
 
 function mapApiNotification(n: ApiNotification, role?: string): Notification {
-  const productData = n.productData;
+  const productData = n.productData as ProductApprovalSubmitPayload | null | undefined;
   const branchName = n.branch?.city
     ? `${n.branch.name} (${n.branch.city})`
     : n.branch?.name ?? "";
@@ -147,7 +147,7 @@ function mapApiNotification(n: ApiNotification, role?: string): Notification {
   const read = isManager ? n.readByManager : n.readByAdmin;
 
   if (n.type === 'SUBSCRIPTION_UPGRADE') {
-    const pData = n.productData || {};
+    const pData = (n.productData as { requestedBy?: string; role?: string; branchName?: string } | null | undefined) || {};
     const reqName = pData.requestedBy || 'A user';
     const reqRole = pData.role ? pData.role.toLowerCase() : 'manager';
     const reqBranch = pData.branchName && pData.branchName !== 'N/A' ? ` from ${pData.branchName}` : '';
@@ -176,7 +176,6 @@ function mapApiNotification(n: ApiNotification, role?: string): Notification {
 export function NotificationsProvider({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const role = session?.user?.role?.toUpperCase();
-  const isAdminOrOwner = role === "ADMIN" || role === "OWNER";
 
   // We keep two separate arrays so we can merge stock-alert toasts (local)
   // with DB-backed product-approval notifications.
@@ -196,7 +195,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     } finally {
       setLoading(false);
     }
-  }, [session?.user]);
+  }, [session?.user, role]);
 
   // Fetch on mount and set up polling every 15 seconds
   useEffect(() => {

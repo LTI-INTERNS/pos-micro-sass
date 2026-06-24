@@ -107,13 +107,13 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
       )}
 
       {selectedBranch && editPopupOpen && (
-        <EditEntityModal<any> 
+        <EditEntityModal<Branch> 
           open={editPopupOpen}
           title="Edit Branch"
           initialValues={selectedBranch}
           fields={editFields}
           onClose={() => setEditPopupOpen(false)}
-          validate={(values) => {
+          validate={() => {
             const errors: Record<string, string> = {};
             // ... (your existing validation logic)
             return errors;
@@ -122,7 +122,7 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
             try {
               await onEdit?.(updatedBranch);
               setEditPopupOpen(false);
-            } catch (error) {
+            } catch {
               // THE FIX: Do NOT throw here. The error was already shown via showToast in page.tsx
               // Swallowing this error keeps the modal open.
             }
