@@ -198,6 +198,7 @@ const Page = () => {
   const { data: session } = useSession();
 
   const [search, setSearch] = useState("");
+  const [inventoryRefreshKey, setInventoryRefreshKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -373,6 +374,7 @@ const Page = () => {
         setConfirmOpen(false);
         setPaymentOpen(false);
         clearCart();
+      setInventoryRefreshKey((key) => key + 1);
         hardResetPaymentFlow();
         panelRef.current?.sendOrderConfirmed();
       } catch (err: unknown) {
@@ -432,7 +434,7 @@ const Page = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto pr-2 mt-2">
-            <ItemGrid search={search} onSearchChange={setSearch} onAdd={handleAddItem} />
+            <ItemGrid search={search} onSearchChange={setSearch} onAdd={handleAddItem} refreshKey={inventoryRefreshKey} />
           </div>
         </div>
 
