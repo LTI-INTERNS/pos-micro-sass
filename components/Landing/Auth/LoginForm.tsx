@@ -9,6 +9,7 @@ import {
 import ActionButton from "@/components/Admin/common/ActionButton";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
+const LOWERCASE_EMAIL_MESSAGE = "Email address should be in lowercase letters.";
 
 // Accept showToast from the parent page
 type Props = {
@@ -63,16 +64,27 @@ export default function LoginForm({ showToast }: Props) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    const email = form.email.trim();
+    if (/[A-Z]/.test(email)) {
+      showToast(LOWERCASE_EMAIL_MESSAGE, "error");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const result = await signIn("credentials", {
-        email:    form.email,
+        email,
         password: form.password,
         redirect: false,
       });
 
       if (!result?.ok || result.error) {
+        if (result?.error === "EMAIL_MUST_BE_LOWERCASE") {
+          showToast(LOWERCASE_EMAIL_MESSAGE, "error");
+          return;
+        }
         if (result?.error === "UNVERIFIED_ACCOUNT") {
           showToast("Account pending activation. Please check your email for the verification link.", "info");
           return;
