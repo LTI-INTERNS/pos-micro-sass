@@ -24,19 +24,13 @@ export default function CompanySelectPage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState("");
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false);
+  const [finalizingPayment, setFinalizingPayment] = useState(false);
 
   const role = session?.user?.role?.toUpperCase();
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("paymentStatus") === "success") {
-      clearRegistrationData(session?.user?.userId ?? null);
-      setShowPaymentSuccess(true);
-    }
-  }, [session?.user?.userId]);
-
   const closePaymentSuccessPopup = () => {
     setShowPaymentSuccess(false);
+    setError("");
     const url = new URL(window.location.href);
     url.searchParams.delete("paymentStatus");
     url.searchParams.delete("session_id");
@@ -57,6 +51,75 @@ export default function CompanySelectPage() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("paymentStatus") !== "success") return;
+
+    const sessionId = params.get("session_id");
+    clearRegistrationData(session?.user?.userId ?? null);
+    setError("");
+    setShowPaymentSuccess(true);
+
+    if (!sessionId) return;
+
+    let cancelled = false;
+
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const finalizeCheckout = async () => {
+      try {
+        setFinalizingPayment(true);
+
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000"}/api/v1/stripe/confirm-company-checkout`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session?.user?.backendToken ?? ""}`,
+              },
+              body: JSON.stringify({ sessionId }),
+            },
+          );
+
+          const json = await res.json().catch(() => ({}));
+
+          if (!res.ok || !json.success) {
+            const message =
+              json?.error?.userMessage ||
+              json?.error?.message ||
+              json?.message ||
+              "Payment was successful, but registration could not be completed. Please contact support.";
+            throw new Error(message);
+          }
+
+          if (json?.data?.status === "completed") {
+            setError("");
+            break;
+          }
+          await sleep(1500);
+        }
+
+        if (!cancelled) await fetchCompanies();
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Payment was successful, but registration could not be completed. Please contact support.");
+        }
+      } finally {
+        if (!cancelled) setFinalizingPayment(false);
+      }
+    };
+
+    finalizeCheckout();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, session?.user?.userId, session?.user?.backendToken, fetchCompanies]);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -126,14 +189,14 @@ export default function CompanySelectPage() {
     return (
       <CommonLayout navbar={<Navigation title="Company Selection" />}>
         <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="text-white/50 text-sm animate-pulse">Loading companies...</div>
+          <div className="text-white/50 text-sm animate-pulse">{finalizingPayment ? "Finalizing company registration..." : "Loading companies..."}</div>
         </div>
       </CommonLayout>
     );
   }
 
   // ── Shared sub-components ────────────────────────────────────────────────────
-  const ErrorBanner = error ? (
+  const ErrorBanner = !showPaymentSuccess && !finalizingPayment && error ? (
     <div className="mb-6 flex items-start gap-3 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3">
       <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
       <div>
