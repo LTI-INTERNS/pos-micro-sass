@@ -51,6 +51,7 @@ export default function RegisterPage() {
     if (!name.trim()) e.name = "Name is required";
 
     if (!email.trim()) e.email = "Email is required";
+    else if (/[A-Z]/.test(email)) e.email = "Please use only simple letters (lowercase) in the email address.";
     else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Enter a valid email";
 
     if (!password) e.password = "Password is required";
