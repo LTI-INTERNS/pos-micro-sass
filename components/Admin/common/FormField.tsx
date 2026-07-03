@@ -9,6 +9,11 @@ type FormFieldProps = {
   options?: { value: string; label: string }[];
   disabled?: boolean;
   readOnly?: boolean;
+  min?: string;
+  max?: string;
+  maxLength?: number;
+  inputMode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  pattern?: string;
 };
 
 export default function FormField({
@@ -20,6 +25,11 @@ export default function FormField({
   options = [],
   disabled = false,
   readOnly = false,
+  min,
+  max,
+  maxLength,
+  inputMode,
+  pattern,
 }: FormFieldProps) {
   return (
     <div className="space-y-2">
@@ -54,6 +64,11 @@ export default function FormField({
           readOnly={readOnly}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          min={min}
+          max={max}
+          maxLength={maxLength}
+          inputMode={inputMode}
+          pattern={pattern}
           className={`
             w-full rounded-full border px-4 py-2 outline-none
             placeholder:text-gray-300
