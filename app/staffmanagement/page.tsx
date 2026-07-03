@@ -19,9 +19,10 @@ import {
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 import { staffService } from "@/lib/services/staff-service";
 
-// THE FIX: Import our global toast system
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
+import LoadingState from "@/components/Admin/common/LoadingState";
+import RefreshButton from "@/components/Admin/common/RefreshButton";
 
 import type {
   AdminStaff,
@@ -49,7 +50,6 @@ export default function StaffManagementPage() {
   const { data: session } = useSession();
   const userRole = String(session?.user?.role ?? "").toUpperCase();
 
-  // THE FIX: Initialize the toast hook
   const { toasts, showToast, dismissToast } = useToast();
 
   const [directory, setDirectory] = useState<StaffDirectory>({ admins: [], managers: [] });
@@ -114,6 +114,15 @@ export default function StaffManagementPage() {
   );
 
   const managerRows = directory.managers;
+
+  // Collect all existing phone numbers across all staff for duplicate checking
+  const allExistingPhones = useMemo(
+    () => [
+      ...directory.admins.map((s) => s.phone.trim()),
+      ...directory.managers.map((s) => s.phone.trim()),
+    ],
+    [directory]
+  );
 
   const selectedStaff =
     activeTab === "admins"
@@ -290,21 +299,23 @@ export default function StaffManagementPage() {
         <TabSelector tabs={TABS} activeTab={activeTab} onChange={(tab) => setActiveTab(tab as StaffTab)} />
 
         <div className="relative">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder={`Search ${activeTab === "admins" ? "Admins" : "Managers"}...`}
-            showClear={true}
-            showFilter={activeTab === "managers"}
-            filterLabel="Filter"
-            onFilter={() => setShowFilter(true)}
-            isFilterApplied={isFilterApplied}
-            onClearFilters={() => setFilters({})}
-          />
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1">
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder={`Search ${activeTab === "admins" ? "Admins" : "Managers"}...`}
+                showClear={true}
+                showFilter={activeTab === "managers"}
+                filterLabel="Filter"
+                onFilter={() => setShowFilter(true)}
+                isFilterApplied={isFilterApplied}
+                onClearFilters={() => setFilters({})}
+              />
 
-          {activeTab === "managers" && (
-            <>
-              <FilterChips
+            {activeTab === "managers" && (
+              <>
+                <FilterChips
                 filters={filters}
                 onRemove={(key) => setFilters((prev) => ({ ...prev, [key]: "" }))}
               />
@@ -317,6 +328,14 @@ export default function StaffManagementPage() {
               />
             </>
           )}
+            </div>
+
+            <RefreshButton
+              onClick={() => { void fetchStaff(); }}
+              loading={isLoading}
+              title="Refresh staff"
+            />
+          </div>
         </div>
 
           <div className="mt-4 flex flex-wrap gap-3">
@@ -359,9 +378,7 @@ export default function StaffManagementPage() {
           </div>
 
         {isLoading ? (
-          <div className="flex justify-center p-12">
-            <span className="text-gray-400">Loading staff data...</span>
-          </div>
+          <LoadingState message="Loading staff data..." className="py-24" />
         ) : activeTab === "admins" ? (
           <CommonTable
             title="Admin Accounts"
@@ -388,6 +405,7 @@ export default function StaffManagementPage() {
         role={addStaffRole}
         onClose={() => setShowAddPopup(false)}
         showToast={showToast}
+        existingPhones={allExistingPhones}
         onSuccess={async () => {
           await fetchStaff();
           await fetchCreateOptions();
@@ -403,6 +421,7 @@ export default function StaffManagementPage() {
         options={createOptions}
         currentUserRole={userRole}
         showToast={showToast}
+        existingPhones={allExistingPhones}
         onClose={() => setShowEditPopup(false)}
         onSuccess={async () => {
           await fetchStaff();

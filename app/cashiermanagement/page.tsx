@@ -23,6 +23,8 @@ import type { Cashier as ApiCashier, UpdateCashierInput } from "@/types/cashier.
 // THE FIX: Import our global toast system
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
+import LoadingState from "@/components/Admin/common/LoadingState";
+import RefreshButton from "@/components/Admin/common/RefreshButton";
 
 function toTableCashier(c: ApiCashier): TableCashier {
   return {
@@ -308,25 +310,35 @@ export default function CashierManagementPage() {
         <CashierStatCardGrid />
 
         <div className="relative w-full">
-          <SearchBar
-            placeholder="Search Cashier..."
-            value={query}
-            onChange={setQuery}
-            showFilter
-            filterLabel="Filter"
-            onFilter={() => setFilterOpen(true)}
-            isFilterApplied={isFilterApplied}
-            onClearFilters={() => setFilters({ revenueRange: "", status: "", branch: "" })}
-          />
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1">
+              <SearchBar
+                placeholder="Search Cashier..."
+                value={query}
+                onChange={setQuery}
+                showFilter
+                filterLabel="Filter"
+                onFilter={() => setFilterOpen(true)}
+                isFilterApplied={isFilterApplied}
+                onClearFilters={() => setFilters({ revenueRange: "", status: "", branch: "" })}
+              />
 
-          <FilterChips filters={filters} onRemove={removeFilter} />
+              <FilterChips filters={filters} onRemove={removeFilter} />
 
-          <FilterPopup
-            open={filterOpen}
-            onClose={() => setFilterOpen(false)}
-            fields={filterFields}
-            onApply={(values) => setFilters(values)}
-          />
+              <FilterPopup
+                open={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                fields={filterFields}
+                onApply={(values) => setFilters(values)}
+              />
+            </div>
+
+            <RefreshButton
+              onClick={() => { void cashiersQuery.refetch(); }}
+              loading={loadingData}
+              title="Refresh cashiers"
+            />
+          </div>
         </div>
 
         <CashierActionsBar
@@ -357,9 +369,7 @@ export default function CashierManagementPage() {
         />
 
         {loadingData ? (
-          <div className="py-16 text-center text-white/40 text-sm animate-pulse">
-            Loading cashiers…
-          </div>
+          <LoadingState message="Loading cashiers..." className="py-24" />
         ) : fetchError ? (
           <div className="py-10 text-center text-red-400 text-sm">
             {fetchError}

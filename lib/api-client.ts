@@ -37,8 +37,17 @@ apiClient.interceptors.response.use(
         if (status === 403 && code === 'NO_COMPANY_CONTEXT') {
             const session = await getSession();
             const role = session?.user?.role?.toUpperCase();
-            if (role === 'OWNER' || role === 'ADMIN') {
+            
+            if (role === 'OWNER') {
                 window.location.replace('/companyselection');
+            } else if (role === 'ADMIN') {
+                if (session?.user?.companyId) {
+                    // Admin had a company but lost access -> Force logout
+                    await signOut({ callbackUrl: '/login?expired=true' });
+                } else {
+                    // Admin just logged in, needs to select a company
+                    window.location.replace('/companyselection');
+                }
             } else {
                 await signOut({ callbackUrl: '/login' });
             }

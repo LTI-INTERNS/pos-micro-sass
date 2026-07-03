@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import type {
@@ -18,7 +19,8 @@ type Props = {
   onSuccess: () => void | Promise<void>;
   options: StaffCreateOptions;
   optionsLoading?: boolean;
-  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX: Accept showToast
+  existingPhones?: string[];
+  showToast: (message: string, type: "success" | "error" | "info") => void;
 };
 
 type AdminMode = "" | "NEW" | "EXISTING";
@@ -79,21 +81,37 @@ function RoundedInput({
   name?: string;
   suppressAutoFill?: boolean;
 }) {
+  const [showPassword, setShowPassword] = React.useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
-    <input
-      type={type}
-      name={name}
-      value={value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      autoComplete={autoComplete}
-      data-1p-ignore={suppressAutoFill ? "true" : undefined}
-      data-lpignore={suppressAutoFill ? "true" : undefined}
-      className={`w-full rounded-full border px-4 py-2 outline-none placeholder:text-gray-300 ${
-        disabled ? "border-gray-200 bg-gray-100 text-gray-400" : "border-gray-200 text-gray-700"
-      } focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
-    />
+    <div className="relative w-full">
+      <input
+        type={inputType}
+        name={name}
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        data-1p-ignore={suppressAutoFill ? "true" : undefined}
+        data-lpignore={suppressAutoFill ? "true" : undefined}
+        className={`w-full rounded-full border px-4 py-2 outline-none placeholder:text-gray-300 ${
+          disabled ? "border-gray-200 bg-gray-100 text-gray-400" : "border-gray-200 text-gray-700"
+        } ${isPassword ? "pr-10" : ""} focus:border-orange-500 focus:ring-2 focus:ring-orange-200`}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+          tabIndex={-1}
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -161,6 +179,7 @@ export default function AddStaffPopup({
   onSuccess,
   options,
   optionsLoading = false,
+  existingPhones = [],
   showToast,
 }: Props) {
   const [adminMode, setAdminMode] = React.useState<AdminMode>("");
@@ -311,6 +330,9 @@ export default function AddStaffPopup({
 
     if (phone.trim() && phone.trim().length < 10) {
       nextErrors.phone = "Phone number must have at least 10 digits";
+    } else if (phone.trim() && existingPhones.includes(phone.trim())) {
+      showToast("Phone number is already registered to another staff member.", "error");
+      nextErrors.phone = "Phone number already in use";
     }
 
     if (password.trim() && password.trim().length < 6) {
@@ -358,13 +380,13 @@ export default function AddStaffPopup({
       }
 
       await onSuccess();
-      onClose(); // Only runs if successful!
+      onClose();
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error
           ?.message ?? "Failed to save staff member.";
 
-      showToast(message, "error"); // THE FIX: Toast displays, but popup doesn't close or clear data
+      showToast(message, "error");
     } finally {
       setSaving(false);
     }
