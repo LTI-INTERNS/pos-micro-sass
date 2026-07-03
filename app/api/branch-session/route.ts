@@ -17,7 +17,7 @@ type BranchSessionContext = {
   expiresAt: number;
 };
 
-const COOKIE_MAX_AGE = 30; // 30 seconds
+const COOKIE_MAX_AGE = 8 * 60 * 60; // 8 hours
 const BRANCH_SESSION_DURATION_MS = COOKIE_MAX_AGE * 1000;
 
 const clearBranchSessionCookies = (res: NextResponse): NextResponse => {
