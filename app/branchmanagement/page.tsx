@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import { getApiErrorMessage } from "@/lib/utils/api-error";
 import SearchBar from "@/components/Admin/common/Search-bar";
@@ -12,11 +12,14 @@ import { branchService, Branch, UpdateBranchInput } from "@/lib/services/branch-
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
 
+import RefreshButton from "@/components/Admin/common/RefreshButton";
+import LoadingState from "@/components/Admin/common/LoadingState";
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
 
 export default function BranchesPage() {
   const [allBranches, setAllBranches] = useState<Branch[]>([]);
+  const [loading, setLoading] = useState(true);
   const [start] = useState<Date | undefined>();
   const [end] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
@@ -25,9 +28,21 @@ export default function BranchesPage() {
 
   const { toasts, showToast, dismissToast } = useToast();
 
-  useEffect(() => {
-    branchService.getAll().then(setAllBranches).catch(err => console.error("Failed to fetch branches", err));
+  const fetchBranches = useCallback(async () => {
+    setLoading(true);
+    try {
+      const branches = await branchService.getAll();
+      setAllBranches(branches);
+    } catch (err) {
+      console.error("Failed to fetch branches", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void fetchBranches();
+  }, [fetchBranches]);
 
   const [filters, setFilters] = useState<{
     name?: string;
@@ -135,13 +150,8 @@ export default function BranchesPage() {
       setSelectedBranch(updated);
       showToast("Branch updated successfully!", "success");
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      if (err.response?.data?.message) {
-        showToast(err.response.data.message, "error");
-      } else {
-        showToast("Failed to update branch.", "error");
-      }
-      throw error; // THE FIX: Pass the error back to the popup so it stays open
+      showToast(getApiErrorMessage(error, "Failed to update branch."), "error");
+      throw error; // keeps the modal open
     }
   };
 
@@ -164,30 +174,40 @@ export default function BranchesPage() {
         <StatCardGrid branches={allBranches} />
 
         <div className="relative">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search branches..."
-            debounceMs={300}
-            showFilter
-            onFilter={() => setShowFilter((v) => !v)}
-            isFilterApplied={isFilterApplied}
-            onClearFilters={clearAllFilters}
-          />
-          <FilterChips filters={filters} onRemove={handleRemoveFilter} />
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1">
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Search branches..."
+                debounceMs={300}
+                showFilter
+                onFilter={() => setShowFilter((v) => !v)}
+                isFilterApplied={isFilterApplied}
+                onClearFilters={clearAllFilters}
+              />
+              <FilterChips filters={filters} onRemove={handleRemoveFilter} />
 
-          <FilterPopup
-            open={showFilter}
-            onClose={() => setShowFilter(false)}
-            onApply={(values) => {
-              setFilters(values);
-              setShowFilter(false);
-            }}
-            fields={[
-              { name: "name", placeholder: "Branch Name", options: nameOptions },
-              { name: "address", placeholder: "Address", options: addressOptions },
-            ]}
-          />
+              <FilterPopup
+                open={showFilter}
+                onClose={() => setShowFilter(false)}
+                onApply={(values) => {
+                  setFilters(values);
+                  setShowFilter(false);
+                }}
+                fields={[
+                  { name: "name", placeholder: "Branch Name", options: nameOptions },
+                  { name: "address", placeholder: "Address", options: addressOptions },
+                ]}
+              />
+            </div>
+
+            <RefreshButton
+              onClick={() => { void fetchBranches(); }}
+              loading={loading}
+              title="Refresh branches"
+            />
+          </div>
         </div>
 
         <BranchActionsBar
@@ -198,11 +218,15 @@ export default function BranchesPage() {
           showToast={showToast} // THE FIX: Pass the showToast function
         />
 
-        <BranchesTable
-          branches={filteredBranches}
-          selectedBranch={selectedBranch}
-          setSelectedBranch={setSelectedBranch}
-        />
+        {loading ? (
+          <LoadingState message="Loading branches..." className="py-24" />
+        ) : (
+          <BranchesTable
+            branches={filteredBranches}
+            selectedBranch={selectedBranch}
+            setSelectedBranch={setSelectedBranch}
+          />
+        )}
       </div>
 
       <ToastNotification toasts={toasts} onDismiss={dismissToast} />
