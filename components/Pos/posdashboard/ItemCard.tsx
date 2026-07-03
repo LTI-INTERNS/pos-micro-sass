@@ -11,6 +11,8 @@ type Item = {
   name: string;
   price: number;
   image?: string;
+  availability?: boolean;
+  stockQty?: number;
 };
 
 type Props = {
@@ -22,7 +24,10 @@ type Props = {
 export default function ItemCard({ item, onClick, disabled = false }: Props) {
   const { currency, useCents } = useCurrency();
 
-  const hasImage = Boolean(item.image);
+  const hasImage = Boolean(item.image?.trim());
+  const stockQty = Number(item.stockQty ?? 0);
+  const outOfStock = !item.availability || stockQty <= 0;
+  const lowStock = !outOfStock && stockQty <= 5;
 
   return (
     <div
@@ -37,6 +42,11 @@ export default function ItemCard({ item, onClick, disabled = false }: Props) {
       {/* IMAGE OR ICON */}
       {hasImage ? (
         <div className="relative w-full h-32 rounded-t-xl overflow-hidden">
+          {(outOfStock || lowStock) && (
+            <span className={`absolute top-2 right-2 z-10 rounded-full px-2 py-1 text-[10px] font-semibold text-white ${outOfStock ? "bg-red-600" : "bg-amber-500"}`}>
+              {outOfStock ? "Out of stock" : `Low stock: ${stockQty}`}
+            </span>
+          )}
           <Image
             src={item.image!}
             alt={item.name}
@@ -53,7 +63,9 @@ export default function ItemCard({ item, onClick, disabled = false }: Props) {
 
           <div>
             <p className="font-medium text-sm text-black">{item.name}</p>
-            <p className="text-xs text-gray-500">No image</p>
+            <p className="text-xs text-gray-500">
+              {outOfStock ? "Out of stock" : lowStock ? `Low stock: ${stockQty}` : "No image"}
+            </p>
           </div>
         </div>
       )}
@@ -65,6 +77,11 @@ export default function ItemCard({ item, onClick, disabled = false }: Props) {
           <p className="text-xs text-orange-500">
             {formatCurrency(item.price, currency, useCents)}
           </p>
+          {(outOfStock || lowStock) && (
+            <p className={`mt-1 text-[11px] font-medium ${outOfStock ? "text-red-600" : "text-amber-600"}`}>
+              {outOfStock ? "Out of stock" : `Low stock: ${stockQty}`}
+            </p>
+          )}
         </div>
       ) : (
         <p className="text-sm font-semibold text-orange-600">
