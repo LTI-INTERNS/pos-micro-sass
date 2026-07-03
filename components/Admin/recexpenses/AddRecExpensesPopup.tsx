@@ -56,6 +56,23 @@ const PAYMENT_OPTIONS = [
   { value: "CARD", label: "Card" },
 ];
 
+const toLocalDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getCurrentMonthStartValue = () => {
+  const now = new Date();
+  return toLocalDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
+};
+
+const getTodayValue = () => toLocalDateInputValue(new Date());
+
+const isBeforeDateInputValue = (value: string, min: string) => value < min;
+const isAfterDateInputValue = (value: string, max: string) => value > max;
+
 const AddRecExpensesPopup = ({
   open,
   onClose,
@@ -83,6 +100,10 @@ const AddRecExpensesPopup = ({
   const canEditBranch = role === "owner" || role === "admin";
   const sessionBranchId =
     (session?.user as { branchId?: string } | undefined)?.branchId?.trim?.() || "";
+  const todayValue = React.useMemo(() => getTodayValue(), []);
+  const currentMonthStartValue = React.useMemo(() => getCurrentMonthStartValue(), []);
+  const dateMin = role === "manager" ? currentMonthStartValue : undefined;
+  const dateMax = todayValue;
 
   const [values, setValues] = React.useState<RecExpenseFormValues>({
     date: "",
@@ -134,7 +155,16 @@ const AddRecExpensesPopup = ({
   const validateForm = () => {
     const newErrors: FormErrors = {};
 
-    if (!values.date.trim()) newErrors.date = "Date is required";
+    if (!values.date.trim()) {
+      newErrors.date = "Date is required";
+    } else if (isAfterDateInputValue(values.date, todayValue)) {
+      newErrors.date = "Future dates are not allowed";
+    } else if (
+      role === "manager" &&
+      isBeforeDateInputValue(values.date, currentMonthStartValue)
+    ) {
+      newErrors.date = "Managers can only save recurring expenses for the current month";
+    }
     if (!values.categoryId.trim()) newErrors.categoryId = "Category is required";
 
     if (!values.description.trim()) {
@@ -203,6 +233,8 @@ const AddRecExpensesPopup = ({
               value={values.date}
               onChange={(v) => setField("date", v)}
               type="date"
+              min={dateMin}
+              max={dateMax}
             />
             {errors.date && <p className="px-3 pt-1 text-xs text-red-500">{errors.date}</p>}
           </div>
