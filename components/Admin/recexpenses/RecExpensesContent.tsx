@@ -6,6 +6,7 @@ import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
 import RecurringExpensesTable, {
   RecurringExpenses,
 } from "@/components/Admin/recexpenses/RecExpensesTable";
@@ -64,6 +65,8 @@ export default function RecurringExpensesContent() {
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editingRecExpense, setEditingRecExpense] = useState<RecurringExpenses | null>(null);
   const [selectedRecExpense, setSelectedRecExpense] = useState<RecurringExpenses | null>(null);
 
@@ -270,25 +273,28 @@ export default function RecurringExpensesContent() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (!selectedRecExpense) {
-      showToast("Please select a recurring expense first.", "error"); // THE FIX: Toast instead of alert
+      showToast("Please select a recurring expense first.", "error");
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${selectedRecExpense.description}"?`
-    );
-    if (!confirmed) return;
+    setDeletePopupOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedRecExpense) return;
 
     try {
+      setDeleteLoading(true);
       await recurringExpenseApi.deleteRecurringExpense(
         session,
         selectedRecExpense.recExpenseId
       );
+      setDeletePopupOpen(false);
       setSelectedRecExpense(null);
       await fetchAll();
-      showToast("Recurring expense deleted successfully!", "success"); // THE FIX: Added success toast
+      showToast("Recurring expense deleted successfully!", "success");
     } catch (error: unknown) {
       console.error("Delete recurring expense failed:", error);
       const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
@@ -296,7 +302,9 @@ export default function RecurringExpensesContent() {
         err?.response?.data?.error?.message ||
           "Failed to delete recurring expense.",
         "error"
-      ); // THE FIX: Toast instead of alert
+      );
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -382,7 +390,7 @@ export default function RecurringExpensesContent() {
         <ActionButton
           label="Delete Recurring Expense"
           variant="outline"
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
         />
 
         <ActionButton
@@ -429,6 +437,30 @@ export default function RecurringExpensesContent() {
             : null
         }
       />
+
+      {selectedRecExpense && (
+        <DeletePopup
+          isOpen={deletePopupOpen}
+          onClose={() => setDeletePopupOpen(false)}
+          item={selectedRecExpense}
+          itemName="Recurring Expense"
+          getDisplayText={(expense) => (
+            <>
+              <br />
+              <br />
+              ID - {expense.id}
+              <br />
+              Description - {expense.description || "N/A"}
+              <br />
+              Amount - {expense.amount}
+              {deleteLoading && (
+                <span className="block mt-2 text-gray-400 text-sm">Deleting...</span>
+              )}
+            </>
+          )}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
       
       {/* THE FIX: Render global toast container */}
       <ToastNotification toasts={toasts} onDismiss={dismissToast} />
