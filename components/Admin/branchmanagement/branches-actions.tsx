@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useSession } from "next-auth/react"; 
 import ActionButton from "@/components/Admin/common/ActionButton";
 import AddBranchForm from "@/components/Admin/branchmanagement/AddBranchForm";
-import DeletePopup from "@/components/Admin/common/Deletepopup";
 import { Branch } from "@/lib/services/branch-service";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 
@@ -13,13 +12,13 @@ type Props = {
   onAdd?: (values: Record<string, string>) => Promise<void> | void;
   onEdit?: (branch: Branch) => Promise<void> | void;
   onDelete?: () => void;
-  showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX: Added prop
+  deleteLoading?: boolean;
+  showToast: (message: string, type: "success" | "error" | "info") => void;
 };
 
-export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDelete, showToast }: Props) {
+export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDelete, deleteLoading, showToast }: Props) {
   const { data: session } = useSession(); 
   const [showPopup, setShowPopup] = useState(false);
-  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
 
   const userRole = session?.user?.role?.toUpperCase(); 
@@ -45,13 +44,14 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
     <>
       <div className="grid grid-cols-3 gap-3">
         <ActionButton
-          label="Delete Branch"
+          label={deleteLoading ? "Checking..." : "Delete Branch"}
+          disabled={deleteLoading}
           onClick={() => {
             if (!selectedBranch) {
-              showToast("Please select a Branch first!", "error"); // THE FIX: Use showToast
+              showToast("Please select a Branch first!", "error");
               return;
             }
-            setDeletePopupOpen(true);
+            onDelete?.();
           }}
         />
         <ActionButton
@@ -85,26 +85,6 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
         />
       )}
 
-      {selectedBranch && (
-        <DeletePopup
-          isOpen={deletePopupOpen}
-          onClose={() => setDeletePopupOpen(false)}
-          item={selectedBranch}
-          itemName="Branch"
-          getDisplayText={(c) => (
-            <>
-              <br /><br />
-              Reg.No - {c.regno}<br />
-              Branch Name - {c.name}<br />
-              Address - {c.address}
-            </>
-          )}
-          onConfirm={() => {
-            onDelete?.();
-            setDeletePopupOpen(false);
-          }}
-        />
-      )}
 
       {selectedBranch && editPopupOpen && (
         <EditEntityModal<Branch> 
@@ -113,9 +93,22 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
           initialValues={selectedBranch}
           fields={editFields}
           onClose={() => setEditPopupOpen(false)}
-          validate={() => {
+          validate={(vals) => {
             const errors: Record<string, string> = {};
-            // ... (your existing validation logic)
+            const name = (vals.name ?? "").trim();
+            const city = (vals.city ?? "").trim();
+            const address = (vals.address ?? "").trim();
+
+            if (!name) errors.name = "Name is required";
+            else if (!/[a-zA-Z]/.test(name)) errors.name = "Name must contain at least one letter (only numbers not allowed)";
+            else if (name.length > 15) errors.name = "Name must be less than or equal to 15 characters";
+
+            if (!city) errors.city = "City is required";
+            else if (!/[a-zA-Z]/.test(city)) errors.city = "City must contain at least one letter (only numbers not allowed)";
+
+            if (!address) errors.address = "Address is required";
+            else if (!/[a-zA-Z]/.test(address)) errors.address = "Address must contain at least one letter (only numbers not allowed)";
+
             return errors;
           }}
           onSave={async (updatedBranch) => {
