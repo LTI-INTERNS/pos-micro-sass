@@ -63,9 +63,11 @@ export default function AddBranchForm({
     const newErrors: FormErrors = {};
 
     if (!values.name.trim()) newErrors.name = "Name is required";
+    else if (!/[a-zA-Z]/.test(values.name)) newErrors.name = "Name must contain at least one letter (only numbers not allowed)";
     else if (values.name.length > 15) newErrors.name = "Name must be less than or equal to 15 characters";
 
     if (!values.city.trim()) newErrors.city = "City is required";
+    else if (!/[a-zA-Z]/.test(values.city)) newErrors.city = "City must contain at least one letter (only numbers not allowed)";
 
     if (values.phoneNumber.trim()) {
       const phoneWithoutSpaces = values.phoneNumber.replace(/\s+/g, "");
@@ -96,6 +98,7 @@ export default function AddBranchForm({
     }
 
     if (!values.address.trim()) newErrors.address = "Address is required";
+    else if (!/[a-zA-Z]/.test(values.address)) newErrors.address = "Address must contain at least one letter (only numbers not allowed)";
 
     if (!values.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) newErrors.email = "Please enter a valid email address";
