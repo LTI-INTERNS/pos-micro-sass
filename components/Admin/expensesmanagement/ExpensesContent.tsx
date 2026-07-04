@@ -6,6 +6,7 @@ import DateRangePicker from "@/components/Admin/common/DateRangeBar";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
 import ActionButton from "@/components/Admin/common/ActionButton";
+import DeletePopup from "@/components/Admin/common/Deletepopup";
 import ExpensesTable, {
   Expenses,
 } from "@/components/Admin/expensesmanagement/ExpensesTable";
@@ -62,6 +63,8 @@ export default function ExpensesContent() {
   const [branches, setBranches] = useState<BranchItem[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deletePopupOpen, setDeletePopupOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expenses | null>(null);
   const [selectedExpense, setSelectedExpense] = useState<Expenses | null>(null);
 
@@ -256,22 +259,25 @@ export default function ExpensesContent() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
     if (!selectedExpense) {
-      showToast("Please select an expense first.", "error"); // THE FIX: Toast instead of alert
+      showToast("Please select an expense first.", "error");
       return;
     }
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${selectedExpense.description}"?`
-    );
-    if (!confirmed) return;
+    setDeletePopupOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedExpense) return;
 
     try {
+      setDeleteLoading(true);
       await expenseApi.deleteExpense(session, selectedExpense.expenseId);
+      setDeletePopupOpen(false);
       setSelectedExpense(null);
       await fetchAll();
-      showToast("Expense deleted successfully!", "success"); // THE FIX: Added success toast
+      showToast("Expense deleted successfully!", "success");
     } catch (error: unknown) {
       console.error("Delete expense failed:", error);
       const err = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
@@ -280,6 +286,8 @@ export default function ExpensesContent() {
           "Failed to delete expense.",
         "error"
       );
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -362,7 +370,7 @@ export default function ExpensesContent() {
         <ActionButton
           label="Delete Expense"
           variant="outline"
-          onClick={handleDelete}
+          onClick={handleDeleteClick}
         />
 
         <ActionButton
@@ -407,6 +415,30 @@ export default function ExpensesContent() {
             : null
         }
       />
+
+      {selectedExpense && (
+        <DeletePopup
+          isOpen={deletePopupOpen}
+          onClose={() => setDeletePopupOpen(false)}
+          item={selectedExpense}
+          itemName="Expense"
+          getDisplayText={(expense) => (
+            <>
+              <br />
+              <br />
+              ID - {expense.id}
+              <br />
+              Description - {expense.description || "N/A"}
+              <br />
+              Amount - {expense.amount}
+              {deleteLoading && (
+                <span className="block mt-2 text-gray-400 text-sm">Deleting...</span>
+              )}
+            </>
+          )}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
 
       {/* THE FIX: Render global toast container */}
       <ToastNotification toasts={toasts} onDismiss={dismissToast} />

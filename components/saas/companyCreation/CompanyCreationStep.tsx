@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { RegistrationData } from "@/app/companyregistration/page";
+import { validateCompanyDetails } from "@/lib/services/saas-service";
 
 import GlassBackground from "@/components/saas/common/GlassBackground";
 import SplitPanelLayout from "@/components/saas/common/SplitPanelLayout";
@@ -59,6 +60,7 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
     const [logoUrl,       setLogoUrl]       = useState<string>(data.logoUrl ?? "");
     const [logoPublicId,  setLogoPublicId]  = useState<string>(data.logoPublicId ?? "");
     const [logoUploading, setLogoUploading] = useState(false);
+    const [checkingDetails, setCheckingDetails] = useState(false);
 
     const [errors, setErrors] = useState<Errors>({});
     const [touched, setTouched] = useState<Touched>({});
@@ -124,16 +126,45 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
         setLogoUploading(false);
     };
 
-    const onSubmit = (e: React.FormEvent) => {
+    const applyServerValidationError = (code: string | undefined, message: string) => {
+        if (code === "DUPLICATE_EMAIL" || code === "INVALID_EMAIL") {
+            setTouched((prev) => ({ ...prev, email: true }));
+            setErrors((prev) => ({ ...prev, email: message }));
+            setFormError("Please fix the highlighted fields.");
+            return;
+        }
+
+        if (code === "DUPLICATE_PHONE" || code === "INVALID_PHONE") {
+            setTouched((prev) => ({ ...prev, contact: true }));
+            setErrors((prev) => ({ ...prev, contact: message }));
+            setFormError("Please fix the highlighted fields.");
+            return;
+        }
+
+        if (code === "DUPLICATE_COMPANY") {
+            setTouched((prev) => ({ ...prev, companyName: true, address: true }));
+            setErrors((prev) => ({
+                ...prev,
+                companyName: "This company name and address are already registered.",
+                address: "This address is already used for the same company name.",
+            }));
+            setFormError(message);
+            return;
+        }
+
+        setFormError(message);
+    };
+
+    const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError("");
 
-    setTouched({
-      companyName: true,
-      address: true,
-      contact: true,
-      email: true,
-    });
+        setTouched({
+            companyName: true,
+            address: true,
+            contact: true,
+            email: true,
+        });
 
         const ok = validate();
         if (!ok) {
@@ -143,6 +174,20 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
 
         if (logoUploading) {
             setFormError("Please wait for the logo upload to complete.");
+            return;
+        }
+
+        setCheckingDetails(true);
+        const validation = await validateCompanyDetails({
+            companyName,
+            address,
+            contactNumber: contact,
+            email,
+        });
+        setCheckingDetails(false);
+
+        if (!validation.ok) {
+            applyServerValidationError(validation.code, validation.message);
             return;
         }
 
@@ -247,10 +292,10 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
 
                                     <ActionButton
                                         type="submit"
-                                        disabled={!isFormValid || logoUploading}
+                                        disabled={!isFormValid || logoUploading || checkingDetails}
                                         className="w-full py-4 text-base"
                                     >
-                                        {logoUploading ? "Uploading logo…" : "Next"}
+                                        {logoUploading ? "Uploading logo…" : checkingDetails ? "Checking details…" : "Next"}
                                     </ActionButton>
                                 </form>
                             </div>
