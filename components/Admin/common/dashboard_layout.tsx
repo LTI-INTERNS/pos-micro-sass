@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from '@/components/Admin/common/navbar';
 import Sidebar from '@/components/Admin/common/sidebar';
 import StockAlertProvider from '@/components/Admin/notifications/StockAlertProvider';
+import AdminSessionGuard from '@/components/Admin/common/AdminSessionGuard';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -63,6 +64,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
       {/* Stock alert toasts — branch-wise, variant-level, bottom-right */}
       <StockAlertProvider />
+      
+      {/* Session guard specifically for Admins if they lose company access */}
+      <AdminSessionGuard />
     </div>
   );
 };

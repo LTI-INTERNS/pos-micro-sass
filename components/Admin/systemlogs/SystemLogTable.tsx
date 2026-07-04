@@ -105,31 +105,8 @@ function toRow(log: SystemLogEntry): LogRow {
     minute: "2-digit",
   });
 
-  let timestamp = formattedLogin;
-  let message = log.message ?? "—";
-
-  if (log.actionType === "LOGIN" && log.logoutAt) {
-    const logoutDate = new Date(log.logoutAt);
-    const diffMs = logoutDate.getTime() - loginDate.getTime();
-    const diffMins = Math.max(1, Math.round(diffMs / 60000));
-    
-    let durationStr = "";
-    if (diffMins < 60) {
-      durationStr = `${diffMins}m`;
-    } else {
-      const hours = Math.floor(diffMins / 60);
-      const mins = diffMins % 60;
-      durationStr = `${hours}h ${mins}m`;
-    }
-    
-    timestamp = `${formattedLogin} (${durationStr})`;
-
-    const formattedLogoutTime = logoutDate.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    message = `${message} (Logged out at: ${formattedLogoutTime})`;
-  }
+  const timestamp = formattedLogin;
+  const message = log.message ?? "—";
 
   return {
     id:      log.logId,

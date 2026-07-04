@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useImage } from "@/lib/context/ImageContext";
 import ManagerVerification from "./ManagerVerification";
+import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 
 type StoredCashier = {
   cashierId: string;
@@ -212,6 +213,7 @@ export default function PinEntryPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-cover bg-center relative">
+      <SessionExpiryGuard variant="switchuser" />
       <Image
         src={backgroundImage}
         alt="Background"

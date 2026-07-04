@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Eye, EyeOff } from "lucide-react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import FormField from "@/components/Admin/common/FormField";
@@ -8,13 +9,12 @@ import FormField from "@/components/Admin/common/FormField";
 type FormValues = {
   branchId: string;
   name: string;
-  city: string; 
+  city: string;
   phoneNumber: string;
   address: string;
   registrationNumber: string;
   email: string;
   password: string;
-  confirmPassword: string;
 };
 
 type FormErrors = Partial<Record<keyof FormValues, string>>;
@@ -36,14 +36,15 @@ export default function AddBranchForm({
   const [values, setValues] = React.useState<Record<string, string>>({
     branchId: branchId,
     name: "",
-    city: "", 
+    city: "",
     phoneNumber: "",
     address: "",
     registrationNumber: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
+
+  const [showPassword, setShowPassword] = React.useState(false);
 
   const [errors, setErrors] = React.useState<FormErrors>({});
 
@@ -109,9 +110,6 @@ export default function AddBranchForm({
     if (!values.password) newErrors.password = "Password is required";
     else if (values.password.length < 8) newErrors.password = "Password must be at least 8 characters";
 
-    if (!values.confirmPassword) newErrors.confirmPassword = "Confirm password is required";
-    else if (values.password !== values.confirmPassword) newErrors.confirmPassword = "Passwords do not match";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -140,14 +138,14 @@ export default function AddBranchForm({
     setValues({
       branchId: branchId,
       name: "",
-      city: "", 
+      city: "",
       phoneNumber: "",
       address: "",
       registrationNumber: "",
       email: "",
       password: "",
-      confirmPassword: "",
     });
+    setShowPassword(false);
     setErrors({});
   };
 
@@ -237,34 +235,31 @@ export default function AddBranchForm({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <FormField
-              label="Password"
-              placeholder="Enter Password"
-              value={values.password}
-              onChange={(next) => setField("password", next)}
-              type="password"
-            />
-            {errors.password && (
-              <p className="text-xs text-red-500 mt-1 px-3">{errors.password}</p>
-            )}
+        <div>
+          <div className="space-y-2">
+            <label className="text-[12px] text-gray-500">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={values.password}
+                onChange={(e) => setField("password", e.target.value)}
+                placeholder="Enter Password"
+                className="w-full rounded-full border border-gray-200 px-4 py-2 pr-11 outline-none text-gray-800 placeholder:text-gray-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-200"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
           </div>
-
-          <div>
-            <FormField
-              label="Confirm Password"
-              placeholder="Confirm Password"
-              value={values.confirmPassword}
-              onChange={(next) => setField("confirmPassword", next)}
-              type="password"
-            />
-            {errors.confirmPassword && (
-              <p className="text-xs text-red-500 mt-1 px-3">
-                {errors.confirmPassword}
-              </p>
-            )}
-          </div>
+          {errors.password && (
+            <p className="text-xs text-red-500 mt-1 px-3">{errors.password}</p>
+          )}
         </div>
 
         <div className="flex justify-center">

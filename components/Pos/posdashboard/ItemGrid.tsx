@@ -9,9 +9,12 @@ type Props = {
   search: string;
   onSearchChange?: (val: string) => void;
   onAdd: (item: PosProduct) => void;
+  refreshKey?: number;
 };
 
-export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
+const isSellable = (item: PosProduct) => item.availability && item.stockQty > 0;
+
+export default function ItemGrid({ search, onSearchChange, onAdd, refreshKey = 0 }: Props) {
   const [items, setItems] = useState<PosProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +32,7 @@ export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [refreshKey]);
 
   const barcodeRef = useRef("");
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -63,7 +66,7 @@ export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
           
           const allMatches = itemsRef.current.filter((item) => item.barcode === scanned);
           
-          if (allMatches.length === 1 && allMatches[0].availability) {
+          if (allMatches.length === 1 && isSellable(allMatches[0])) {
             onAddRef.current(allMatches[0]);
             if (onSearchChangeRef.current) onSearchChangeRef.current(""); 
           } else {
@@ -94,8 +97,8 @@ export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
     .filter((i) => {
       const term = search.trim().toLowerCase();
 
-      // No search — only show available products in the default view
-      if (!term) return i.availability;
+      // No search — show products with stock status so cashiers do not treat low/out-of-stock items as normal.
+      if (!term) return true;
 
       // Active search — show all products that match by name or barcode
       // (so the cashier can look up any product, even unavailable ones)
@@ -158,8 +161,8 @@ export default function ItemGrid({ search, onSearchChange, onAdd }: Props) {
         <ItemCard
           key={item.id}
           item={item}
-          disabled={!item.availability}
-          onClick={() => onAdd(item)}
+          disabled={!isSellable(item)}
+          onClick={() => isSellable(item) && onAdd(item)}
         />
       ))}
     </div>

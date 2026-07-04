@@ -102,6 +102,7 @@ export interface UpdateStaffInput {
   email?: string;
   phone?: string;
   password?: string;
+  branchId?: string;
   addCompanyIds?: string[];
   removeCompanyIds?: string[];
 }

@@ -29,12 +29,19 @@ export const authOptions: NextAuthOptions = {
             async authorize(credentials) {
                 if (!credentials?.email || !credentials?.password) return null;
 
-                const body    = JSON.stringify({ email: credentials.email, password: credentials.password });
+                const email = credentials.email.trim();
+                if (/[A-Z]/.test(email)) throw new Error('EMAIL_MUST_BE_LOWERCASE');
+
+                const body    = JSON.stringify({ email, password: credentials.password });
                 const headers = { 'Content-Type': 'application/json' };
 
                 // ── Step 1: try staff login ──────────────────────────────────
                 const staffRes  = await fetch(`${API}/api/v1/auth/login`, { method: 'POST', headers, body });
                 const staffData = await staffRes.json();
+
+                if (!staffRes.ok && staffData?.error?.code === 'EMAIL_MUST_BE_LOWERCASE') {
+                    throw new Error('EMAIL_MUST_BE_LOWERCASE');
+                }
 
                 if (!staffRes.ok && staffRes.status === 403 && staffData?.error?.code === 'UNVERIFIED_ACCOUNT') {
                     throw new Error('UNVERIFIED_ACCOUNT');
@@ -58,6 +65,10 @@ export const authOptions: NextAuthOptions = {
                 // ── Step 2: try branch login ─────────────────────────────────
                 const branchRes  = await fetch(`${API}/api/v1/auth/branch-login`, { method: 'POST', headers, body });
                 const branchData = await branchRes.json();
+
+                if (!branchRes.ok && branchData?.error?.code === 'EMAIL_MUST_BE_LOWERCASE') {
+                    throw new Error('EMAIL_MUST_BE_LOWERCASE');
+                }
 
                 if (branchRes.ok && branchData.success && branchData.data?.ok) {
                     const b = branchData.data;

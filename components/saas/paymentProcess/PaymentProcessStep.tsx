@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { signIn, useSession } from "next-auth/react";
 import { RegistrationData } from "@/app/companyregistration/page";
 import { createCompany } from "@/lib/services/saas-service";
 import { createStripeCheckoutSession } from "@/lib/services/stripe-service";
@@ -21,14 +20,17 @@ function LineText({ children }: { children: React.ReactNode }) {
   return <div className="leading-6">{children}</div>;
 }
 
+function normalizePhoneForApi(phone: string) {
+  const compact = phone.trim().replace(/[\s().-]/g, "");
+  return compact.startsWith("00") ? `+${compact.slice(2)}` : compact;
+}
+
 type Props = {
   data: RegistrationData;
   onComplete: () => void;
 };
 
 export default function PaymentProcessStep({ data, onComplete }: Props) {
-  const { data: session } = useSession();
-
   const isFree = data.subId === "SUB_FREE";
 
   const [formError, setFormError] = useState("");
@@ -45,7 +47,7 @@ export default function PaymentProcessStep({ data, onComplete }: Props) {
     const result = await createCompany({
       companyName: data.companyName,
       address: data.address,
-      contactNumber: data.contact,
+      contactNumber: normalizePhoneForApi(data.contact),
       email: data.email,
       logoUrl: data.logoUrl ?? "",
       businessTypeId: data.businessTypeId,
@@ -58,26 +60,27 @@ export default function PaymentProcessStep({ data, onComplete }: Props) {
       return false;
     }
 
-    await signIn("select-company", {
-      redirect: false,
-      companyId: result.companyId,
-      companyName: result.name,
-      role: session?.user?.role ?? "",
-      email: session?.user?.email ?? "",
-      name: session?.user?.name ?? "",
-      branchId: session?.user?.branchId ?? "",
-      branchName: session?.user?.branchName ?? "",
-      token: session?.user?.backendToken ?? "",
-    });
-
+    // Do not stamp the created company into the NextAuth session here.
+    // The company selection page must continue using a token whose companyId
+    // matches the session context. Stamping a companyId with the old token causes
+    // COMPANY_CONTEXT_MISMATCH and prevents the company list from loading.
     setSubmitting(false);
     return true;
   }
 
   async function handleCreateCompany() {
     const ok = await createAndStamp();
-    setRegistrationSuccess(ok);
+
+    if (!ok) {
+      setPaymentSuccess(false);
+      setRegistrationSuccess(false);
+      setShowSuccess(false);
+      return;
+    }
+
+    setFormError("");
     setPaymentSuccess(true);
+    setRegistrationSuccess(true);
     setShowSuccess(true);
   }
 
@@ -88,7 +91,7 @@ export default function PaymentProcessStep({ data, onComplete }: Props) {
     const result = await createStripeCheckoutSession({
       companyName: data.companyName,
       address: data.address,
-      contactNumber: data.contact,
+      contactNumber: normalizePhoneForApi(data.contact),
       email: data.email,
       logoUrl: data.logoUrl ?? "",
       businessTypeId: data.businessTypeId,

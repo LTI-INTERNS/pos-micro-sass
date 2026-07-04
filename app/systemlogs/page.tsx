@@ -35,6 +35,8 @@ const ENTITY_OPTIONS = [
   "Staff",
   "Branch",
   "Supplier",
+  "Customer",
+  "Cashier",
 ].map((v) => ({ label: v, value: v }));
 
 export default function SystemLogsPage() {

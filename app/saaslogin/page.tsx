@@ -20,6 +20,8 @@ import ActionButton from "@/components/Admin/common/ActionButton";
 import LandingToast from "@/components/saas/common/LandingToast";
 import { useLandingToast } from "@/hooks/useLandingToast";
 
+const LOWERCASE_EMAIL_MESSAGE = "Email address should be in lowercase letters.";
+
 export default function SaasLoginPage() {
   const [isPending, startTransition] = useTransition();
   const [submitted, setSubmitted]    = useState(false);
@@ -38,6 +40,7 @@ export default function SaasLoginPage() {
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     if (!email.trim())                    e.email = "Email is required";
+    else if (/[A-Z]/.test(email))           e.email = LOWERCASE_EMAIL_MESSAGE;
     else if (!/^\S+@\S+\.\S+$/.test(email)) e.email = "Enter a valid email";
     if (!pw)                              e.pw = "Password is required";
     else if (pw.length < 6)              e.pw = "Password must be at least 6 characters";
@@ -56,14 +59,21 @@ export default function SaasLoginPage() {
       return;
     }
 
+    const loginEmail = email.trim();
+
     startTransition(async () => {
       const result = await signIn("credentials", {
-        email,
+        email: loginEmail,
         password: pw,
         redirect: false,
       });
 
       if (!result?.ok || result.error) {
+        if (result?.error === "EMAIL_MUST_BE_LOWERCASE") {
+          showToast(LOWERCASE_EMAIL_MESSAGE, "error");
+          setTouched({ email: true, pw: true });
+          return;
+        }
         showToast("Invalid email or password", "error");
         setTouched({ email: true, pw: true });
         return;
@@ -129,7 +139,7 @@ export default function SaasLoginPage() {
                       name="email"
                       type="email"
                       autoComplete="email"
-                      placeholder="ABC123@gmail.com"
+                      placeholder="abc123@gmail.com"
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);

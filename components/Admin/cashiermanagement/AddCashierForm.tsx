@@ -106,6 +106,13 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
     setField(name, digitsOnly);
   };
 
+  const setPhoneField = (value: string) => {
+    const startsWithPlus = value.trim().startsWith("+");
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 15);
+    const next = startsWithPlus ? `+${digitsOnly}`.slice(0, 16) : digitsOnly;
+    setField("phone", next);
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -131,12 +138,14 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
 
     if (!formValues.phone.trim()) {
       newErrors.phone = "Phone number is required";
+    } else if (!/^\+?\d{7,15}$/.test(formValues.phone.trim())) {
+      newErrors.phone = "Enter a valid phone number using 7–15 digits";
     }
 
     if (!formValues.pin) {
       newErrors.pin = "PIN is required";
-    } else if (!/^\d{4,6}$/.test(formValues.pin)) {
-      newErrors.pin = "PIN must be 4–6 digits";
+    } else if (!/^\d{4}$/.test(formValues.pin)) {
+      newErrors.pin = "PIN must be exactly 4 digits";
     }
 
     setErrors(newErrors);
@@ -282,7 +291,10 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
           label="Phone"
           placeholder="Enter Phone Number"
           value={formValues.phone}
-          onChange={(val) => setField("phone", val)}
+          onChange={(val) => setPhoneField(val)}
+          type="tel"
+          inputMode="tel"
+          maxLength={16}
         />
         {errors.phone && (
           <p className="text-xs text-red-500 px-3">{errors.phone}</p>
@@ -292,8 +304,10 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
           label="PIN"
           placeholder="Enter PIN"
           value={formValues.pin}
-          onChange={(val) => setNumericField("pin", val, 6)}
+          onChange={(val) => setNumericField("pin", val, 4)}
           type="password"
+          inputMode="numeric"
+          maxLength={4}
         />
         {errors.pin && (
           <p className="text-xs text-red-500 px-3">{errors.pin}</p>
