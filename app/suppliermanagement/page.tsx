@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useState, Suspense, useCallback } from "react";
 import DashboardLayout from "@/components/Admin/common/dashboard_layout";
 import SearchBar from "@/components/Admin/common/Search-bar";
 import SupplierActionsBar from "@/components/Admin/suppliermanagement/SupplierActionBar";
@@ -21,6 +21,8 @@ import type { Branch } from "@/types/branch.types";
 // THE FIX: Import our global toast system
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
+import RefreshButton from "@/components/Admin/common/RefreshButton";
+import LoadingState from "@/components/Admin/common/LoadingState";
 
 type UserRole = "owner" | "admin" | "manager";
 
@@ -58,37 +60,31 @@ export default function SupplierPage() {
   const canViewAllSuppliers = isOwner || isAdmin;
   const canManageSuppliers = isOwner || isAdmin;
 
-  useEffect(() => {
-    let ignore = false;
+  const [isLoading, setIsLoading] = useState(true);
 
-    const load = async () => {
-      try {
-        const supplierData = await supplierService.getAll();
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const supplierData = await supplierService.getAll();
+      setSuppliersList(supplierData);
 
-        if (ignore) return;
-
-        setSuppliersList(supplierData);
-
-        if (canManageSuppliers) {
-          const branchData = await branchService.getAll();
-
-          if (ignore) return;
-
-          setBranches(branchData);
-        } else {
-          setBranches([]);
-        }
-      } catch (error) {
-        console.error("Failed to load suppliers:", error);
+      if (canManageSuppliers) {
+        const branchData = await branchService.getAll();
+        setBranches(branchData);
+      } else {
+        setBranches([]);
       }
-    };
+    } catch (error) {
+      console.error("Failed to load suppliers:", error);
+      showToast("Failed to load suppliers. Please try again.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [canManageSuppliers, showToast]);
 
-    load();
-
-    return () => {
-      ignore = true;
-    };
-  }, [canManageSuppliers]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const branchFilteredSuppliers = useMemo(() => {
     return canViewAllSuppliers
@@ -165,8 +161,13 @@ export default function SupplierPage() {
         s.coverarea?.trim().toLowerCase() ===
           filters.coverarea.trim().toLowerCase();
 
+      const searchLower = search.toLowerCase().trim();
       const nameToSearch = `${s.name} ${s.companyName ?? ""}`.toLowerCase();
-      const matchesSearch = nameToSearch.includes(search.toLowerCase().trim());
+      const matchesSearch =
+        nameToSearch.includes(searchLower) ||
+        (s.email && s.email.toLowerCase().includes(searchLower)) ||
+        (s.phone && s.phone.includes(searchLower)) ||
+        (s.regNo && s.regNo.toLowerCase().includes(searchLower));
 
       return matchesType && matchesCoverArea && matchesSearch;
     });
@@ -200,25 +201,34 @@ export default function SupplierPage() {
   return (
     <DashboardLayout>
       <div className="w-full space-y-6 relative">
-        <StatCardGrid suppliers={filteredSuppliers} userRole={role} />
+        <StatCardGrid suppliers={branchFilteredSuppliers} userRole={role} />
 
         <div className="relative">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder="Search supplier by name"
-            debounceMs={300}
-            showFilter={true}
-            onFilter={() => setFilterOpen(true)}
-            isFilterApplied={Object.values(visibleFilters).some(
-              (v) => v && v.trim() !== ""
-            )}
-            onClearFilters={() =>
-              setFilters((prev) =>
-                isManager ? { ...prev, supplierType: "", coverarea: "" } : {}
-              )
-            }
-          />
+          <div className="flex gap-3 items-center">
+            <div className="relative flex-1">
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Search supplier by name, email, phone, or reg no"
+                debounceMs={300}
+                showFilter={true}
+                onFilter={() => setFilterOpen(true)}
+                isFilterApplied={Object.values(visibleFilters).some(
+                  (v) => v && v.trim() !== ""
+                )}
+                onClearFilters={() =>
+                  setFilters((prev) =>
+                    isManager ? { ...prev, supplierType: "", coverarea: "" } : {}
+                  )
+                }
+              />
+            </div>
+            <RefreshButton
+              onClick={() => { void fetchData(); }}
+              loading={isLoading}
+              title="Refresh suppliers"
+            />
+          </div>
 
           <FilterChips filters={visibleFilters} onRemove={removeFilter} />
 
@@ -242,6 +252,7 @@ export default function SupplierPage() {
             <SupplierActionsBar
               selectedSupplier={selectedSupplier}
               branches={branches}
+              suppliers={suppliersList}
               onAdd={handleAddSupplier}
               onEdit={handleEditSupplier}
               onDelete={handleDeleteSupplier}
@@ -250,12 +261,16 @@ export default function SupplierPage() {
           </Suspense>
         )}
 
-        <SupplierTable
-          suppliers={filteredSuppliers}
-          selectedSupplier={selectedSupplier}
-          setSelectedSupplier={setSelectedSupplier}
-          userRole={role}
-        />
+        {isLoading ? (
+          <LoadingState message="Loading suppliers..." className="py-24" />
+        ) : (
+          <SupplierTable
+            suppliers={filteredSuppliers}
+            selectedSupplier={selectedSupplier}
+            setSelectedSupplier={setSelectedSupplier}
+            userRole={role}
+          />
+        )}
       </div>
 
       {/* THE FIX: Render global toast container */}
