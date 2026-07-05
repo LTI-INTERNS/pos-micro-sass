@@ -8,6 +8,7 @@ import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useImage } from "@/lib/context/ImageContext";
 import ManagerVerification from "./ManagerVerification";
 import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
+import { usePosChannel } from "@/hooks/usePosChannel";
 
 type StoredCashier = {
   cashierId: string;
@@ -60,6 +61,16 @@ export default function PinEntryPage() {
     events.forEach((e) => window.addEventListener(e, handler));
     return () => events.forEach((e) => window.removeEventListener(e, handler));
   }, [resetCashierTimeout]);
+
+  // ── Kick out immediately if this cashier is deactivated by admin ─────────────
+  usePosChannel((msg) => {
+    if (msg.type !== "CASHIER_DEACTIVATED") return;
+    if (cashier && msg.cashierId === cashier.cashierId) {
+      sessionStorage.removeItem("cashier");
+      router.replace("/switchuser");
+    }
+  });
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // ── Keypad helpers ───────────────────────────────────────────────────────────
   const activePin    = formStep === "new-pin-entry" ? newPin : pin;
