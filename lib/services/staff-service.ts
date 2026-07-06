@@ -75,7 +75,11 @@ function mapOptions(data: {
   }>;
 }): StaffCreateOptions {
   return {
-    managerBranches: data.managerBranches,
+    // Filter out soft-deleted branches — the backend marks deleted branches
+    // by appending "_del_<timestamp>" to their name.
+    managerBranches: data.managerBranches.filter(
+      (branch) => !branch.name.includes('_del_')
+    ),
     adminCompanies: data.adminCompanies,
     existingAdmins: data.existingAdmins.map(
       (admin): ExistingAdminOption => ({

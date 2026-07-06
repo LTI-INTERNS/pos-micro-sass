@@ -283,6 +283,7 @@ export default function EditStaffPopup({
     const nextErrors: FormErrors = {};
 
     if (!name.trim()) nextErrors.name = "Name is required";
+    else if (!/[a-zA-Z]/.test(name)) nextErrors.name = "Name must contain at least one letter (only numbers not allowed)";
     if (!staffNo.trim()) nextErrors.staffNo = "Staff number is required";
     if (!email.trim()) nextErrors.email = "Email is required";
     if (!phone.trim()) nextErrors.phone = "Phone is required";
@@ -291,8 +292,8 @@ export default function EditStaffPopup({
       nextErrors.email = "Please enter a valid email address";
     }
 
-    if (phone.trim() && phone.trim().length < 10) {
-      nextErrors.phone = "Phone number must have at least 10 digits";
+    if (phone.trim() && !/^0\d{9}$/.test(phone.trim())) {
+      nextErrors.phone = "Phone must be exactly 10 digits and start with 0 (e.g. 0771234567)";
     } else if (
       phone.trim() &&
       phone.trim() !== staff.phone.trim() &&

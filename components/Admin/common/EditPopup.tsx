@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { Eye, EyeOff } from "lucide-react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import { uploadService, type UploadFolder } from "@/lib/services/upload-service";
@@ -25,6 +26,48 @@ type Props<T extends object> = {
   validate?: (values: T) => Record<string, string>; 
   onSave: (values: T) => Promise<void> | void;
 };
+
+// ── Password input with visibility toggle ─────────────────────────────────────
+function PasswordInput({
+  id,
+  value,
+  readOnly,
+  placeholder,
+  onChange,
+  inputBaseClass,
+  stateClass,
+}: {
+  id: string;
+  value: string;
+  readOnly?: boolean;
+  placeholder: string;
+  onChange: (v: string) => void;
+  inputBaseClass: string;
+  stateClass: string;
+}) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative w-full">
+      <input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        readOnly={readOnly}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${inputBaseClass} rounded-full pr-10 placeholder:text-gray-300 ${stateClass}`}
+      />
+      <button
+        type="button"
+        onClick={() => setShow((prev) => !prev)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+        tabIndex={-1}
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
 
 // ── Image upload field ────────────────────────────────────────────────────────
 function ImageUploadField({
@@ -300,6 +343,16 @@ export default function EditEntityModal<T extends object>({
                       className="w-full px-4 py-2.5 outline-none bg-transparent placeholder:text-gray-300 text-sm"
                     />
                   </div>
+                ) : field.type === "password" ? (
+                  <PasswordInput
+                    id={fieldId}
+                    value={String(values[field.name as keyof T] ?? "")}
+                    readOnly={field.readOnly}
+                    placeholder={field.label}
+                    onChange={(v) => handleChange(field.name, v)}
+                    inputBaseClass={inputBaseClass}
+                    stateClass={stateClass}
+                  />
                 ) : (
                   <input
                     id={fieldId}

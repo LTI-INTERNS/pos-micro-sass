@@ -118,6 +118,8 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
 
     if (!formValues.name.trim()) {
       newErrors.name = "Name is required";
+    } else if (!/[a-zA-Z]/.test(formValues.name)) {
+      newErrors.name = "Name must contain at least one letter (only numbers not allowed)";
     } else if (formValues.name.trim().length < 5) {
       newErrors.name = "Name must be at least 5 characters";
     }

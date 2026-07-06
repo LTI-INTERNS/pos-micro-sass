@@ -13,7 +13,8 @@ export type PosMessage =
   | { type: "ORDER_CLEARED" }
   | { type: "PAYMENT_DONE"; total: number }
   | { type: "PAYMENT_SUMMARY"; summary: PaymentSummary }
-  | { type: "ORDER_CONFIRMED" };
+  | { type: "ORDER_CONFIRMED" }
+  | { type: "CASHIER_DEACTIVATED"; cashierId: string };
 
 const CHANNEL_NAME = "pos-customer-display";
 

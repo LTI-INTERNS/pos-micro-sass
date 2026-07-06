@@ -1,6 +1,7 @@
 "use client";
 import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import ItemGrid from "@/components/Pos/posdashboard/ItemGrid";
 import CustomerInfoPanel, {
   CustomerInfoPanelHandle,
@@ -21,6 +22,7 @@ import { orderService } from "@/lib/services/order-service";
 import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 import type { CreateOrderInput } from "@/types/order.types";
 import { getApiErrorCode, getApiErrorMessage } from "@/lib/utils/api-error";
+import { usePosChannel } from "@/hooks/usePosChannel";
 
 
 type SavedReceiptData = {
@@ -196,6 +198,18 @@ const Page = () => {
   const { posSettings } = usePosSettings();
   const { orderItems, addItem, increaseQty, decreaseQty, setQty, clearCart } = usePosStore();
   const { data: session } = useSession();
+  const router = useRouter();
+
+  // ── Force-logout when admin deactivates this cashier ────────────────────────
+  usePosChannel((msg) => {
+    if (msg.type !== "CASHIER_DEACTIVATED") return;
+    const currentCashierId = session?.user?.cashierId;
+    if (currentCashierId && msg.cashierId === currentCashierId) {
+      sessionStorage.removeItem("cashier");
+      router.replace("/switchuser");
+    }
+  });
+  // ────────────────────────────────────────────────────────────────────────────
 
   const [search, setSearch] = useState("");
   const [inventoryRefreshKey, setInventoryRefreshKey] = useState(0);

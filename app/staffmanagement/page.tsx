@@ -11,13 +11,15 @@ import ActionButton from "@/components/Admin/common/ActionButton";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import FilterPopup from "@/components/Admin/common/FilterPopup";
 import TabSelector from "@/components/Admin/common/TabSelector";
-import DeletePopup from "@/components/Admin/common/Deletepopup";
+import StaffDeleteWarningModal, { StaffDeleteWarnings } from "@/components/Admin/staffmanagement/StaffDeleteWarningModal";
 import {
   useTableFilters,
   getFilterOptions,
 } from "@/components/Admin/common/Filterlogic";
 import { useCSVExport } from "@/components/Admin/common/csvExport";
 import { staffService } from "@/lib/services/staff-service";
+import { cashierService } from "@/lib/services/cashier-service";
+import { orderService } from "@/lib/services/order-service";
 
 import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
@@ -60,10 +62,14 @@ export default function StaffManagementPage() {
   const [activeTab, setActiveTab] = useState<StaffTab>("admins");
   const [showAddPopup, setShowAddPopup] = useState(false);
   const [showEditPopup, setShowEditPopup] = useState(false);
-  const [showDeletePopup, setShowDeletePopup] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Delete warning modal state
+  const [deleteWarningOpen, setDeleteWarningOpen] = useState(false);
+  const [deleteWarnings, setDeleteWarnings] = useState<StaffDeleteWarnings>({ role: "MANAGER" });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const exportCSV = useCSVExport();
 
@@ -228,7 +234,8 @@ export default function StaffManagementPage() {
     setShowAddPopup(true);
   };
 
-  const handleDeleteClick = () => {
+  // Step 1 — pre-check linked records and open warning modal
+  const handleDeleteClick = async () => {
     if (!selectedStaff) {
       showToast("Please select a staff row first.", "error");
       return;
@@ -239,7 +246,40 @@ export default function StaffManagementPage() {
       return;
     }
 
-    setShowDeletePopup(true);
+    setDeleteLoading(true);
+    try {
+      if (selectedStaff.role === "MANAGER") {
+        const manager = selectedStaff as import("@/types/staff.types").ManagerStaff;
+        const [allCashiers, branchOrders] = await Promise.all([
+          cashierService.getAll(),
+          orderService.getAll({ branchId: manager.branchId }),
+        ]);
+        const activeCashiers = allCashiers.filter(
+          (c) => c.branchId === manager.branchId && c.activeStatus
+        );
+        setDeleteWarnings({
+          role: "MANAGER",
+          branchName: manager.branchName,
+          activeCashierCount: activeCashiers.length,
+          orderCount: branchOrders.length,
+        });
+      } else {
+        // Admin
+        const admin = selectedStaff as import("@/types/staff.types").AdminStaff;
+        setDeleteWarnings({
+          role: "ADMIN",
+          assignedCompanyCount: admin.assignedCompanies.length,
+          assignedCompanyNames: admin.assignedCompanies.map((c) => c.name),
+        });
+      }
+      setDeleteWarningOpen(true);
+    } catch {
+      // Pre-check failed — still open modal with minimal info
+      setDeleteWarnings({ role: selectedStaff.role });
+      setDeleteWarningOpen(true);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleEditClick = () => {
@@ -256,12 +296,12 @@ export default function StaffManagementPage() {
     setShowEditPopup(true);
   };
 
+  // Step 2 — user confirmed in the warning modal, actually delete
   const handleDeleteConfirm = async () => {
     if (!selectedStaff) return;
-
+    setDeleteWarningOpen(false);
     try {
       await staffService.remove(selectedStaff.id);
-      setShowDeletePopup(false);
       setSelectedId(null);
       await fetchStaff();
       await fetchCreateOptions();
@@ -343,9 +383,10 @@ export default function StaffManagementPage() {
               <>
                 <ActionButton
                   className="rounded-full border border-orange-500 px-4 py-2 text-xs font-semibold text-orange-500 hover:bg-orange-50"
-                  label="Delete Staff"
+                  label={deleteLoading ? "Checking..." : "Delete Staff"}
                   variant="outline"
-                  onClick={handleDeleteClick}
+                  disabled={deleteLoading}
+                  onClick={() => { void handleDeleteClick(); }}
                 />
 
                 <ActionButton
@@ -431,20 +472,14 @@ export default function StaffManagementPage() {
         }}
       />
 
-      {selectedStaff && showDeletePopup && (
-        <DeletePopup
-          isOpen={showDeletePopup}
-          item={selectedStaff}
-          itemName="Staff"
-          onClose={() => setShowDeletePopup(false)}
+      {selectedStaff && deleteWarningOpen && (
+        <StaffDeleteWarningModal
+          isOpen={deleteWarningOpen}
+          staffName={selectedStaff.name}
+          staffRole={selectedStaff.role}
+          warnings={deleteWarnings}
+          onClose={() => setDeleteWarningOpen(false)}
           onConfirm={handleDeleteConfirm}
-          getDisplayText={(item) => (
-            <>
-              <span className="font-semibold">{item.name}</span>
-              <br />
-              {item.position}
-            </>
-          )}
         />
       )}
 
