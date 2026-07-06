@@ -265,7 +265,15 @@ export default function EditEntityModal<T extends object>({
         return;
       }
     }
-    await onSave(values);
+    try {
+      try {
+      await onSave(values);
+    } catch {
+      // The caller displays the API error; keep the modal open without an unhandled rejection.
+    }
+    } catch {
+      // The caller displays the API error; keep the modal open without an unhandled rejection.
+    }
   };
 
   return (
