@@ -330,6 +330,10 @@ export default function AddStaffPopup({
       nextErrors.email = "Please enter a valid email address";
     }
 
+    if ((role === "MANAGER" || adminMode === "NEW") && /[A-Z]/.test(email)) {
+      nextErrors.email = "Email must contain lowercase letters only";
+    }
+
     if (phone.trim() && !/^0\d{9}$/.test(phone.trim())) {
       nextErrors.phone = "Phone must be exactly 10 digits and start with 0 (e.g. 0771234567)";
     } else if (phone.trim() && existingPhones.includes(phone.trim())) {
@@ -368,7 +372,7 @@ export default function AddStaffPopup({
           companyId: scopeId,
           name: name.trim(),
           staffNo: staffNo.trim(),
-          email: email.trim().toLowerCase(),
+          email: email.trim(),
           phone: phone.trim(),
           password,
         });
@@ -463,7 +467,7 @@ export default function AddStaffPopup({
                   <FieldLabel>Email</FieldLabel>
                   <RoundedInput
                     value={email}
-                    onChange={setEmail}
+                    onChange={(value) => setEmail(value.toLowerCase())}
                     placeholder="Enter email"
                     type="email"
                   />
@@ -533,7 +537,7 @@ export default function AddStaffPopup({
                   <FieldLabel>Email</FieldLabel>
                   <RoundedInput
                     value={email}
-                    onChange={setEmail}
+                    onChange={(value) => setEmail(value.toLowerCase())}
                     placeholder="Enter email"
                     type="email"
                   />
