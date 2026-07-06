@@ -8,11 +8,12 @@ import ReceiptCustomizationSection from "@/components/Admin/settings/AdditionalS
 import ActionButton from "@/components/Admin/common/ActionButton";
 import { useCurrency } from "@/lib/context/CurrencyContext";
 import SystemImageSection from "@/components/Admin/settings/AdditionalSettings/SystemImageSection";
-import SuccessPopup from "@/components/Admin/common/SuccessPopup";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
 import { useReceiptSettings } from "@/lib/context/ReceiptSettingsContext";
 import { settingsService } from "@/lib/services/settings-service";
 import LoadingState from "@/components/Admin/common/LoadingState";
+import { useToast } from "@/hooks/useToast";
+import ToastNotification from "@/components/Admin/common/ToastNotification";
 
 type LocalReceiptSettings = {
   headerText: string;
@@ -39,10 +40,11 @@ export default function AdditionalSettingsContent() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
   const [systemImageUrl, setSystemImageUrl] = useState<string | null>(null);
+
+  const { toasts, showToast, dismissToast } = useToast();
 
   const [features, setFeatures] = useState({
     customerDisplays: false,
@@ -177,12 +179,13 @@ export default function AdditionalSettingsContent() {
         customerDetails: "",
       });
 
-      setShowSuccess(true);
+      showToast("Settings updated successfully!", "success");
     } catch (err: unknown) {
       const errorResponse = err as { response?: { data?: { error?: string } }; message?: string };
       const msg =
         errorResponse.response?.data?.error || errorResponse.message || "Failed to save settings.";
       setSaveError(msg);
+      showToast(msg, "error");
     } finally {
       setSaving(false);
     }
@@ -269,12 +272,7 @@ export default function AdditionalSettingsContent() {
         />
       </div>
 
-      <SuccessPopup
-        open={showSuccess}
-        title="Settings Saved!"
-        subText="Your system settings have been saved to the database."
-        onClose={() => setShowSuccess(false)}
-      />
+      <ToastNotification toasts={toasts} onDismiss={dismissToast} />
     </div>
   );
 }
