@@ -22,6 +22,8 @@ type Props = {
     onClear?:      () => void;
     externalError?: string;
     required?: boolean;
+    initialPreviewUrl?: string;
+    initialFileName?: string;
 };
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -33,15 +35,17 @@ export default function LogoUploadPill({
     onClear,
     externalError,
     required,
+    initialPreviewUrl = "",
+    initialFileName = "Company logo",
 }: Props) {
     const id = useId();
     const inputRef = useRef<HTMLInputElement | null>(null);
     const abortRef  = useRef<AbortController | null>(null);
 
-    const [uploadState, setUploadState] = useState<UploadState>("idle");
-    const [progress,    setProgress]    = useState(0);
-    const [previewUrl,  setPreviewUrl]  = useState<string | null>(null);
-    const [fileName,    setFileName]    = useState("");
+    const [uploadState, setUploadState] = useState<UploadState>(initialPreviewUrl ? "done" : "idle");
+    const [progress,    setProgress]    = useState(initialPreviewUrl ? 100 : 0);
+    const [previewUrl,  setPreviewUrl]  = useState<string | null>(initialPreviewUrl || null);
+    const [fileName,    setFileName]    = useState(initialPreviewUrl ? initialFileName : "");
     const [error,       setError]       = useState("");
 
     const previewUrlRef = useRef<string | null>(null);
