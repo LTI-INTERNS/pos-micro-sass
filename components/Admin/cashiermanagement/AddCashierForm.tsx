@@ -137,6 +137,9 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
       newErrors.email = "Please enter a valid email address";
     }
+    if (/[A-Z]/.test(formValues.email)) {
+      newErrors.email = "Email must contain lowercase letters only";
+    }
 
     if (!formValues.phone.trim()) {
       newErrors.phone = "Phone number is required";
@@ -283,7 +286,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
           label="Email"
           placeholder="Enter Email"
           value={formValues.email}
-          onChange={(val) => setField("email", val)}
+          onChange={(val) => setField("email", val.toLowerCase())}
         />
         {errors.email && (
           <p className="text-xs text-red-500 px-3">{errors.email}</p>
