@@ -9,6 +9,7 @@ type Props = {
   onEdit?: () => void;
   onAdd?: () => void;
   onExport?: () => void;
+  deleteLoading?: boolean;
 };
 
 export default function CashierActionsBar({
@@ -18,6 +19,7 @@ export default function CashierActionsBar({
   onEdit,
   onAdd,
   onExport,
+  deleteLoading,
 }: Props) {
   const canDelete = role === "OWNER" || role === "ADMIN";
 
@@ -31,9 +33,10 @@ export default function CashierActionsBar({
 
       {canDelete && (
         <ActionButton
-          label="Delete Cashier"
+          label={deleteLoading ? "Checking..." : "Delete Cashier"}
           onClick={onDelete}
           variant="outline"
+          disabled={deleteLoading}
         />
       )}
 

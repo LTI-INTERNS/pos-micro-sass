@@ -15,6 +15,7 @@ import OrderSummaryContent, {
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
 import { customerService } from "@/lib/services/customer-service";
+import { usePosChannel } from "@/hooks/usePosChannel";
 
 export type ConfirmItem = CommonOrderItem;
 
@@ -44,6 +45,7 @@ export default function OrderConfirmation({
   requiresCustomer = false,
 }: Props) {
   const { currency } = useCurrency();
+  const { send } = usePosChannel(() => {});
 
   const [showEmailPopup, setShowEmailPopup] = useState(false);
   const [manualEmail, setManualEmail] = useState<string>("");
@@ -103,6 +105,18 @@ export default function OrderConfirmation({
     }
 
     setAddedEmail(trimmed);
+    if (payment.customer) {
+      send({
+        type: "CUSTOMER_UPDATED",
+        customer: {
+          customerId: payment.customer.customerId,
+          name: payment.customer.name,
+          phoneNumber1: payment.customer.phoneNumber,
+          email: trimmed,
+          activeState: true,
+        },
+      });
+    }
     setEmailError("");
     setShowEmailPopup(false);
   }
@@ -171,7 +185,7 @@ export default function OrderConfirmation({
                   className="flex-1 h-12 rounded-xl bg-gray-900 text-white flex items-center justify-center gap-2 text-xs transition active:scale-95 cursor-pointer hover:bg-gray-800"
                 >
                   <Mail size={16} />
-                  <span className="truncate max-w-[120px]">{addedEmail || payment.customer?.email}</span>
+                  <span className="truncate max-w-30">{addedEmail || payment.customer?.email}</span>
                   {emailSaved && <span className="text-green-400 text-[10px] font-semibold ml-1">✓ saved</span>}
                 </button>
               ) : (

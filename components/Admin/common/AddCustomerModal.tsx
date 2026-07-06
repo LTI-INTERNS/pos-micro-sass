@@ -4,6 +4,7 @@ import * as React from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import FormField from "@/components/Admin/common/FormField";
 import PopupActions from "@/components/Admin/common/PopupActions";
+import { getApiErrorCode } from "@/lib/utils/api-error";
 
 export type CustomerFormValues = {
   customerId?: string;
@@ -22,7 +23,7 @@ type AddCustomerModalProps = {
   title?: string;
   submitLabel?: string;
   onClose: () => void;
-  onSubmit: (values: CustomerFormValues) => void;
+  onSubmit: (values: CustomerFormValues) => void | Promise<void>;
   headerSlot?: React.ReactNode;
 };
 
@@ -96,19 +97,38 @@ export default function AddCustomerModal({
     setErrors({});
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    onSubmit({
-      name: values.name.trim(),
-      email: values.email?.trim() || undefined,
-      promocard: values.promocard?.trim() || undefined,
-      activeState: values.activeState,
-      phoneNumber1: values.phoneNumber1.trim(),
-      phoneNumber2: values.phoneNumber2?.trim() || undefined,
-    });
-
-    resetForm();
+    try {
+      await onSubmit({
+        name: values.name.trim(),
+        email: values.email?.trim() || undefined,
+        promocard: values.promocard?.trim() || undefined,
+        activeState: values.activeState,
+        phoneNumber1: values.phoneNumber1.trim(),
+        phoneNumber2: values.phoneNumber2?.trim() || undefined,
+      });
+      resetForm();
+    } catch (error: unknown) {
+      const code = getApiErrorCode(error);
+      if (code === "DUPLICATE_EMAIL") {
+        setErrors((prev) => ({
+          ...prev,
+          email: "This email is already registered to another customer",
+        }));
+      } else if (code === "DUPLICATE_PHONE") {
+        setErrors((prev) => ({
+          ...prev,
+          phoneNumber1: "This phone number is already registered to another customer",
+        }));
+      } else if (code === "DUPLICATE_PHONE2") {
+        setErrors((prev) => ({
+          ...prev,
+          phoneNumber2: "This optional phone number is already registered to another customer",
+        }));
+      }
+    }
   };
 
   const handleCancel = () => {
@@ -124,7 +144,7 @@ export default function AddCustomerModal({
       widthClassName="w-[600px] max-w-[92vw]"
     >
       {headerSlot}
-      <form className="space-y-1 mt-[-10px]">
+      <form className="space-y-1 -mt-2.5">
         <FormField
           label="Customer Name *"
           placeholder="Enter customer name"
@@ -179,7 +199,7 @@ export default function AddCustomerModal({
         
 
         <div className="flex justify-center pt-4">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 {

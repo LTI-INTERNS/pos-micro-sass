@@ -14,6 +14,7 @@ export type Cashier = {
   branchName?: string;
   totalRevenue: number;
   email: string;
+  phone?: string;
   passwordMasked: string;
   pinMasked: string;
   status?: "Active" | "Deactive";
@@ -23,6 +24,7 @@ type Props = {
   cashiers: Cashier[];
   selectedRowId?: string;
   onSelectRow?: (row: Cashier | null) => void;
+  showBranch?: boolean;
 };
 
 function AvatarCell({ name, imgUrl }: { name: string; imgUrl?: string | null }) {
@@ -53,7 +55,7 @@ function AvatarCell({ name, imgUrl }: { name: string; imgUrl?: string | null }) 
   );
 }
 
-export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: Props) {
+export default function CashiersTable({ cashiers, selectedRowId, onSelectRow, showBranch = false }: Props) {
   const { currency, useCents } = useCurrency();
 
   const columns: Column<Cashier>[] = [
@@ -68,6 +70,15 @@ export default function CashiersTable({ cashiers, selectedRowId, onSelectRow }: 
       render: (c) => <AvatarCell name={c.name} imgUrl={c.imgUrl} />,
     },
     { key: "cashierNo", label: "Cashier No" },
+    ...(showBranch
+      ? [
+          {
+            key: "branchName",
+            label: "Branch",
+          } as Column<Cashier>,
+        ]
+      : []),
+    { key: "phone", label: "Phone" },
     {
       key: "totalRevenue",
       label: "Total Revenue",

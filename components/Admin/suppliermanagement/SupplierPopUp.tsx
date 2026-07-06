@@ -183,19 +183,39 @@ const getRequiredFieldErrors = (
   const nextErrors: ValidationErrors = {};
 
   if (supplierType === "company") {
-    if (isBlank(values.companyName))
+    if (isBlank(values.companyName)) {
       nextErrors.companyName = "Company name is required.";
-    if (isBlank(values.contactPersonName))
-      nextErrors.contactPersonName = "Name is required.";
+    } else if (!/[a-zA-Z]/.test(values.companyName)) {
+      nextErrors.companyName = "Company name must contain at least one letter (only numbers not allowed).";
+    }
+    if (isBlank(values.contactPersonName)) {
+      nextErrors.contactPersonName = "Contact person name is required.";
+    } else if (!/[a-zA-Z]/.test(values.contactPersonName)) {
+      nextErrors.contactPersonName = "Contact person name must contain at least one letter (only numbers not allowed).";
+    }
     if (isBlank(values.contactPersonPhone)) {
       nextErrors.contactPersonPhone = "Phone number is required.";
+    } else if (!/^\d{10}$/.test(values.contactPersonPhone.trim())) {
+      nextErrors.contactPersonPhone = "Phone number must be exactly 10 digits.";
     }
   } else {
-    if (isBlank(values.name)) nextErrors.name = "Name is required.";
-    if (isBlank(values.phone)) nextErrors.phone = "Phone number is required.";
+    if (isBlank(values.name)) {
+      nextErrors.name = "Name is required.";
+    } else if (!/[a-zA-Z]/.test(values.name)) {
+      nextErrors.name = "Name must contain at least one letter (only numbers not allowed).";
+    }
+    if (isBlank(values.phone)) {
+      nextErrors.phone = "Phone number is required.";
+    } else if (!/^\d{10}$/.test(values.phone.trim())) {
+      nextErrors.phone = "Phone number must be exactly 10 digits.";
+    }
   }
 
-  if (isBlank(values.email)) nextErrors.email = "Email is required.";
+  if (isBlank(values.email)) {
+    nextErrors.email = "Email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) {
+    nextErrors.email = "Please enter a valid email address.";
+  }
   if (isBlank(values.address)) nextErrors.address = "Address is required.";
   if (isBlank(values.coverArea))
     nextErrors.coverArea = "Cover area is required.";
@@ -354,8 +374,8 @@ export default function SupplierPopUp({
               <FieldWithError
                 field={{
                   name: "contactPersonName",
-                  label: "Name",
-                  placeholder: "Enter name",
+                  label: "Contact Person Name",
+                  placeholder: "Enter contact person name",
                   type: "text",
                 }}
                 value={values.contactPersonName ?? ""}

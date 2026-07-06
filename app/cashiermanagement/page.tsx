@@ -25,6 +25,9 @@ import ToastNotification from "@/components/Admin/common/ToastNotification";
 import { useToast } from "@/hooks/useToast";
 import LoadingState from "@/components/Admin/common/LoadingState";
 import RefreshButton from "@/components/Admin/common/RefreshButton";
+import { usePosChannel } from "@/hooks/usePosChannel";
+import { orderService } from "@/lib/services/order-service";
+import CashierDeleteWarningModal, { CashierDeleteWarnings } from "@/components/Admin/cashiermanagement/CashierDeleteWarningModal";
 
 function toTableCashier(c: ApiCashier): TableCashier {
   return {
@@ -34,6 +37,7 @@ function toTableCashier(c: ApiCashier): TableCashier {
     branchId:       c.branchId,
     branchName:     c.branchName,
     email:          c.email,
+    phone:          c.phone,
     imgUrl:         c.imgUrl,
     totalRevenue:   c.totalRevenue ?? 0,
     passwordMasked: "*****",
@@ -51,6 +55,9 @@ export default function CashierManagementPage() {
   // THE FIX: Initialize the toast hook
   const { toasts, showToast, dismissToast } = useToast();
 
+  // Broadcast deactivation events to any open POS tab
+  const { send: sendPosMessage } = usePosChannel(() => {});
+
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
   const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
 
@@ -63,6 +70,9 @@ export default function CashierManagementPage() {
 
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen]         = useState(false);
+  const [deleteWarningOpen, setDeleteWarningOpen]     = useState(false);
+  const [deleteWarnings, setDeleteWarnings]           = useState<CashierDeleteWarnings>({ orderCount: 0 });
+  const [deleteLoading, setDeleteLoading]             = useState(false);
   const [editPopupOpen, setEditPopupOpen]             = useState(false);
   const [actionLoading, setActionLoading]             = useState(false);
 
@@ -93,7 +103,8 @@ export default function CashierManagementPage() {
     refetchOnWindowFocus: true,
   });
   const cashiers = useMemo(() => cashiersQuery.data ?? [], [cashiersQuery.data]);
-  const loadingData = cashiersQuery.isLoading;
+  const loadingData  = cashiersQuery.isLoading;
+  const isRefetching = cashiersQuery.isFetching;
   const fetchError = cashiersQuery.isError
     ? "Failed to load cashiers. Please try again."
     : "";
@@ -181,8 +192,16 @@ export default function CashierManagementPage() {
   async function handleToggleStatus() {
     if (!selectedCashier) return;
     setActionLoading(true);
+    const isDeactivating = selectedCashier.activeStatus; // true → being deactivated
     try {
       await cashierService.toggleStatus(selectedCashier.id, !selectedCashier.activeStatus);
+
+      // If we just deactivated the cashier, broadcast to any open POS tab so they
+      // are kicked out immediately without waiting for a poll cycle.
+      if (isDeactivating) {
+        sendPosMessage({ type: "CASHIER_DEACTIVATED", cashierId: selectedCashier.id });
+      }
+
       setSelectedCashier(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.list(effectiveBranchId) }),
@@ -197,6 +216,31 @@ export default function CashierManagementPage() {
     }
   }
 
+  async function handleDeleteClick() {
+    if (!selectedCashier) {
+      showToast("Please select a cashier first!", "error");
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const branchOrders = await orderService.getAll({ branchId: selectedCashier.branchId });
+      const cashierOrders = branchOrders.filter(
+        (o) => o.cashier === selectedCashier.name
+      );
+      setDeleteWarnings({
+        orderCount: cashierOrders.length,
+      });
+      setDeleteWarningOpen(true);
+    } catch (err) {
+      console.error("Failed to check cashier relations:", err);
+      setDeleteWarnings({ orderCount: 0 });
+      setDeleteWarningOpen(true);
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
+
   async function handleDelete() {
     if (!selectedCashier) return;
     setActionLoading(true);
@@ -207,6 +251,7 @@ export default function CashierManagementPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.list(effectiveBranchId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
       ]);
+      setDeleteWarningOpen(false);
       setDeletePopupOpen(false);
       showToast("Cashier deleted successfully!", "success");
     } catch {
@@ -218,6 +263,41 @@ export default function CashierManagementPage() {
 
   function handleEdit(updatedFields: TableCashier) {
     if (!selectedCashier) return;
+
+    // ── Pre-save duplicate checks (client-side, before API call) ──────────────
+    const otherCashiers = cashiers.filter((c) => c.id !== selectedCashier.id);
+    const targetBranchId = updatedFields.branchId ?? selectedCashier.branchId;
+
+    // Duplicate cashier number within the same branch
+    const duplicateCashierNo = otherCashiers.some(
+      (c) => c.branchId === targetBranchId && c.cashierNo === updatedFields.cashierNo
+    );
+    if (duplicateCashierNo) {
+      showToast("Duplicate staff number in the same branch.", "error");
+      return;
+    }
+
+    // Duplicate email across all cashiers
+    const duplicateEmail = otherCashiers.some(
+      (c) => c.email.toLowerCase() === updatedFields.email.toLowerCase()
+    );
+    if (duplicateEmail) {
+      showToast("Email is already registered to another cashier.", "error");
+      return;
+    }
+
+    // Duplicate phone across all cashiers
+    if (updatedFields.phone) {
+      const duplicatePhone = otherCashiers.some(
+        (c) => c.phone && c.phone === updatedFields.phone
+      );
+      if (duplicatePhone) {
+        showToast("Phone number is already registered to another cashier.", "error");
+        return;
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     setActionLoading(true);
 
     const payload: UpdateCashierInput = {
@@ -250,15 +330,20 @@ export default function CashierManagementPage() {
   }
 
   function exportCsv(rows: TableCashier[]) {
-    const header = ["Name", "Cashier No", "Total Revenue", "Email", "Status"];
+    const header = canSeeAllBranches
+      ? ["Name", "Cashier No", "Total Revenue", "Email", "Phone", "Branch", "Status"]
+      : ["Name", "Cashier No", "Total Revenue", "Email", "Phone", "Status"];
 
     const csvRows = [
       header.join(","),
-      ...rows.map((r) =>
-        [r.name, r.cashierNo, r.totalRevenue, r.email, r.status ?? "Active"]
+      ...rows.map((r) => {
+        const values = canSeeAllBranches
+          ? [r.name, r.cashierNo, r.totalRevenue, r.email, r.phone ?? "", r.branchName ?? "", r.status ?? "Active"]
+          : [r.name, r.cashierNo, r.totalRevenue, r.email, r.phone ?? "", r.status ?? "Active"];
+        return values
           .map((v) => `"${String(v).replaceAll('"', '""')}"`)
-          .join(",")
-      ),
+          .join(",");
+      }),
     ];
 
     const blob = new Blob([csvRows.join("\n")], {
@@ -301,6 +386,8 @@ export default function CashierManagementPage() {
         ]
       : [{ name: "branchName", label: "Branch Name", readOnly: true }]),
     { name: "email", label: "Email" },
+    { name: "phone", label: "Phone" },
+    { name: "pin", label: "PIN", type: "password" as const },
   ];
 
   return (
@@ -335,7 +422,7 @@ export default function CashierManagementPage() {
 
             <RefreshButton
               onClick={() => { void cashiersQuery.refetch(); }}
-              loading={loadingData}
+              loading={isRefetching}
               title="Refresh cashiers"
             />
           </div>
@@ -350,13 +437,8 @@ export default function CashierManagementPage() {
             }
             setDeactivatePopupOpen(true);
           }}
-          onDelete={() => {
-            if (!selectedCashier) {
-              showToast("Please select a cashier first!", "error");
-              return;
-            }
-            setDeletePopupOpen(true);
-          }}
+          onDelete={() => { void handleDeleteClick(); }}
+          deleteLoading={deleteLoading}
           onEdit={() => {
             if (!selectedCashier) {
               showToast("Please select a cashier first!", "error");
@@ -382,6 +464,7 @@ export default function CashierManagementPage() {
             cashiers={filteredTableCashiers}
             selectedRowId={selectedTableCashier?.id}
             onSelectRow={handleSelectRow}
+            showBranch={canSeeAllBranches}
           />
         )}
 
@@ -405,21 +488,12 @@ export default function CashierManagementPage() {
           onConfirm={handleToggleStatus}
         />
 
-        {selectedCashier && (
-          <DeletePopup
-            isOpen={deletePopupOpen}
-            onClose={() => { setDeletePopupOpen(false); }}
-            item={selectedTableCashier!}
-            itemName="Cashier"
-            getDisplayText={(c) => (
-              <>
-                <br />
-                <br />
-                ID - {c.id}
-                <br />
-                Cashier Name- {c.name}
-              </>
-            )}
+        {selectedCashier && deleteWarningOpen && (
+          <CashierDeleteWarningModal
+            isOpen={deleteWarningOpen}
+            cashierName={selectedCashier.name}
+            warnings={deleteWarnings}
+            onClose={() => setDeleteWarningOpen(false)}
             onConfirm={handleDelete}
           />
         )}
@@ -431,6 +505,47 @@ export default function CashierManagementPage() {
             initialValues={selectedTableCashier!}
             fields={editFields}
             onClose={() => { setEditPopupOpen(false); }}
+            validate={(values) => {
+              const errors: Record<string, string> = {};
+              
+              if (values.name && !/[a-zA-Z]/.test(values.name)) {
+                errors.name = "Name must contain at least one letter (only numbers not allowed)";
+              } else if (values.name && values.name.trim().length < 5) {
+                errors.name = "Name must be at least 5 characters";
+              }
+
+              const otherCashiers = cashiers.filter((c) => c.id !== values.id);
+
+              if (values.email) {
+                if (/[A-Z]/.test(values.email)) {
+                  errors.email = "Email must contain lowercase letters only";
+                }
+                const emailExists = otherCashiers.some(
+                  (c) => c.email.toLowerCase() === values.email.toLowerCase()
+                );
+                if (emailExists) {
+                  errors.email = "Email is already registered to another cashier";
+                }
+              }
+
+              if (values.phone) {
+                const phoneExists = otherCashiers.some((c) => c.phone === values.phone);
+                if (phoneExists) {
+                  errors.phone = "Phone number is already registered to another cashier";
+                }
+              }
+
+              if (values.cashierNo && values.branchId) {
+                const numberExists = otherCashiers.some(
+                  (c) => c.branchId === values.branchId && c.cashierNo === values.cashierNo
+                );
+                if (numberExists) {
+                  errors.cashierNo = "Cashier number is already in use in this branch";
+                }
+              }
+
+              return errors;
+            }}
             onSave={handleEdit}
           />
         )}

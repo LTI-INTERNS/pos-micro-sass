@@ -129,6 +129,7 @@ const CustomerInfoPanel = forwardRef<CustomerInfoPanelHandle, Props>(
         onPaymentDone?.(summaryWithCustomer);
       },
       sendOrderConfirmed() {
+        setSelectedCustomer(null);
         if (!customerDisplayEnabled) return;
         send({ type: "ORDER_CONFIRMED" });
       },

@@ -13,10 +13,12 @@ import type {
   UpdateSupplierInput,
 } from "@/types/supplier.types";
 import type { Branch } from "@/types/branch.types";
+import { getApiErrorMessage } from "@/lib/utils/api-error";
 
 type Props = {
   selectedSupplier: Supplier | null;
   branches: Branch[];
+  suppliers: Supplier[];
   onAdd: (payload: CreateSupplierInput) => Promise<void>;
   onEdit: (supplierId: string, payload: UpdateSupplierInput) => Promise<void>;
   onDelete: (supplierId: string) => Promise<void>;
@@ -53,6 +55,7 @@ function buildPayload(values: SupplierFormValues & { supplierType: "company" | "
 export default function SupplierActionsBar({
   selectedSupplier,
   branches,
+  suppliers,
   onAdd,
   onEdit,
   onDelete,
@@ -118,6 +121,37 @@ export default function SupplierActionsBar({
           title="New Supplier"
           branchOptions={branchOptions}
           onSave={async (values) => {
+            // Duplicate checks for addition
+            const emailToCheck = values.email.trim().toLowerCase();
+            const phoneToCheck = (values.supplierType === "company" ? values.contactPersonPhone : values.phone).trim();
+            const regNoToCheck = values.registrationNumber.trim().toLowerCase();
+
+            const duplicateEmail = suppliers.some(
+              (s) => s.email && s.email.toLowerCase() === emailToCheck
+            );
+            if (duplicateEmail) {
+              showToast("Email address is already in use by another supplier.", "error");
+              return;
+            }
+
+            const duplicatePhone = suppliers.some(
+              (s) => s.phone && s.phone === phoneToCheck
+            );
+            if (duplicatePhone) {
+              showToast("Phone number is already in use by another supplier.", "error");
+              return;
+            }
+
+            if (regNoToCheck) {
+              const duplicateRegNo = suppliers.some(
+                (s) => s.regNo && s.regNo.toLowerCase() === regNoToCheck
+              );
+              if (duplicateRegNo) {
+                showToast("Registration number is already in use by another supplier.", "error");
+                return;
+              }
+            }
+
             try {
               const payload = buildPayload(values);
               await onAdd(payload);
@@ -125,8 +159,8 @@ export default function SupplierActionsBar({
               showToast("Supplier added successfully!", "success"); // THE FIX
             } catch (error: unknown) {
               console.error("Failed to create supplier:", error);
-              const err = error as { response?: { data?: { message?: string } }; message?: string };
-              showToast(err?.response?.data?.message || err?.message || "Failed to create supplier.", "error"); // THE FIX
+              const message = getApiErrorMessage(error, "Failed to create supplier.");
+              showToast(message, "error");
             }
           }}
         />
@@ -141,14 +175,47 @@ export default function SupplierActionsBar({
           supplierId={selectedSupplier.id}
           branchOptions={branchOptions}
           onSave={async (values) => {
+            // Duplicate checks for editing (exclude current supplier)
+            const emailToCheck = values.email.trim().toLowerCase();
+            const phoneToCheck = (values.supplierType === "company" ? values.contactPersonPhone : values.phone).trim();
+            const regNoToCheck = values.registrationNumber.trim().toLowerCase();
+
+            const otherSuppliers = suppliers.filter((s) => s.id !== selectedSupplier.id);
+
+            const duplicateEmail = otherSuppliers.some(
+              (s) => s.email && s.email.toLowerCase() === emailToCheck
+            );
+            if (duplicateEmail) {
+              showToast("Email address is already in use by another supplier.", "error");
+              return;
+            }
+
+            const duplicatePhone = otherSuppliers.some(
+              (s) => s.phone && s.phone === phoneToCheck
+            );
+            if (duplicatePhone) {
+              showToast("Phone number is already in use by another supplier.", "error");
+              return;
+            }
+
+            if (regNoToCheck) {
+              const duplicateRegNo = otherSuppliers.some(
+                (s) => s.regNo && s.regNo.toLowerCase() === regNoToCheck
+              );
+              if (duplicateRegNo) {
+                showToast("Registration number is already in use by another supplier.", "error");
+                return;
+              }
+            }
+
             try {
               await onEdit(selectedSupplier.id, buildPayload(values));
               setShowEditPopup(false);
               showToast("Supplier updated successfully!", "success"); // THE FIX
             } catch (error: unknown) {
               console.error("Failed to update supplier:", error);
-              const err = error as { response?: { data?: { message?: string } }; message?: string };
-              showToast(err?.response?.data?.message || err?.message || "Failed to update supplier.", "error"); // THE FIX
+              const message = getApiErrorMessage(error, "Failed to update supplier.");
+              showToast(message, "error");
             }
           }}
         />
@@ -176,8 +243,8 @@ export default function SupplierActionsBar({
               showToast("Supplier deleted successfully!", "success"); // THE FIX
             } catch (error: unknown) {
               console.error("Failed to delete supplier:", error);
-              const err = error as { response?: { data?: { message?: string } }; message?: string };
-              showToast(err?.response?.data?.message || err?.message || "Failed to delete supplier.", "error"); // THE FIX
+              const message = getApiErrorMessage(error, "Failed to delete supplier.");
+              showToast(message, "error");
             }
           }}
         />
