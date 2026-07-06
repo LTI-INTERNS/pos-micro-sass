@@ -292,6 +292,10 @@ export default function EditStaffPopup({
       nextErrors.email = "Please enter a valid email address";
     }
 
+    if (/[A-Z]/.test(email)) {
+      nextErrors.email = "Email must contain lowercase letters only";
+    }
+
     if (phone.trim() && !/^0\d{9}$/.test(phone.trim())) {
       nextErrors.phone = "Phone must be exactly 10 digits and start with 0 (e.g. 0771234567)";
     } else if (
@@ -328,7 +332,7 @@ export default function EditStaffPopup({
       await staffService.update(staff.id, {
         name: name.trim(),
         staffNo: staffNo.trim(),
-        email: email.trim().toLowerCase(),
+        email: email.trim(),
         phone: phone.trim(),
         ...(password.trim() ? { password: password.trim() } : {}),
         ...(staff.role === "MANAGER" ? { branchId: managerBranchId } : {}),
@@ -466,7 +470,7 @@ export default function EditStaffPopup({
           <FieldLabel>Email</FieldLabel>
           <RoundedInput
             value={email}
-            onChange={setEmail}
+            onChange={(value) => setEmail(value.toLowerCase())}
             placeholder="Enter email"
             type="email"
             disabled={adminEditLocked}
