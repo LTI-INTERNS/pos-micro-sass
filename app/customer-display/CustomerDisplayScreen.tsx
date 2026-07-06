@@ -78,6 +78,9 @@ export default function CustomerDisplayScreen() {
           setCustomer(msg.customer);
           setScreen("customer");
           break;
+        case "CUSTOMER_UPDATED":
+          setCustomer(msg.customer);
+          break;
         case "CUSTOMER_CLEARED":
           setCustomer(null);
           setScreen("dialpad");
