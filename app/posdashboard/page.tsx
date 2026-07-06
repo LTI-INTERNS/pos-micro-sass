@@ -19,6 +19,7 @@ import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 import { usePosStore } from "@/store/usePosStore";
 import PosNegativeStockToast, { type PosNegativeToastInfo } from "@/components/Pos/notifications/PosNegativeStockToast";
 import { orderService } from "@/lib/services/order-service";
+import { customerService } from "@/lib/services/customer-service";
 import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 import type { CreateOrderInput } from "@/types/order.types";
 import { getApiErrorCode, getApiErrorMessage } from "@/lib/utils/api-error";
@@ -201,7 +202,7 @@ const Page = () => {
   const router = useRouter();
 
   // ── Force-logout when admin deactivates this cashier ────────────────────────
-  usePosChannel((msg) => {
+  const { send: sendPosMessage } = usePosChannel((msg) => {
     if (msg.type !== "CASHIER_DEACTIVATED") return;
     const currentCashierId = session?.user?.cashierId;
     if (currentCashierId && msg.cashierId === currentCashierId) {
@@ -349,9 +350,29 @@ const Page = () => {
         }
 
         const effectiveEmail = email?.trim() || selectedCustomer?.email || null;
+        let resolvedCustomer = selectedCustomer;
+
+        if (!resolvedCustomer?.customerId && effectiveEmail) {
+          try {
+            const customers = await customerService.search(effectiveEmail);
+            const match = customers.find(
+              (customer) => customer.email?.toLowerCase() === effectiveEmail.toLowerCase()
+            );
+            if (match) {
+              resolvedCustomer = {
+                customerId: match.id,
+                name: match.name,
+                phoneNumber: match.phone,
+                email: match.email ?? effectiveEmail,
+              };
+            }
+          } catch {
+            // The order API performs the same lookup authoritatively.
+          }
+        }
 
         const payload: CreateOrderInput = {
-          ...(selectedCustomer?.customerId && { customerId: selectedCustomer.customerId }),
+          ...(resolvedCustomer?.customerId && { customerId: resolvedCustomer.customerId }),
           ...(paymentSummary.discountId    && { discountId: paymentSummary.discountId }),
           ...(note?.trim()                 && { note: note.trim() }),
           ...(effectiveEmail               && { customerEmail: effectiveEmail }),
@@ -377,10 +398,23 @@ const Page = () => {
           paymentMethod: paymentSummary.paymentMethod,
           cashPaid:      paymentSummary.cashPaid,
           cardPaid:      paymentSummary.cardPaid,
-          customerName:  selectedCustomer?.name        ?? null,
-          customerPhone: selectedCustomer?.phoneNumber  ?? null,
+          customerName:  resolvedCustomer?.name        ?? null,
+          customerPhone: resolvedCustomer?.phoneNumber  ?? null,
           customerEmail: effectiveEmail,
         };
+
+        if (resolvedCustomer) {
+          sendPosMessage({
+            type: "CUSTOMER_UPDATED",
+            customer: {
+              customerId: resolvedCustomer.customerId,
+              name: resolvedCustomer.name,
+              phoneNumber1: resolvedCustomer.phoneNumber,
+              email: effectiveEmail ?? resolvedCustomer.email,
+              activeState: true,
+            },
+          });
+        }
 
         setSavedReceipt(receipt);
         setCompletedOrderNo(order.orderNumber);
@@ -388,7 +422,8 @@ const Page = () => {
         setConfirmOpen(false);
         setPaymentOpen(false);
         clearCart();
-      setInventoryRefreshKey((key) => key + 1);
+        setInventoryRefreshKey((key) => key + 1);
+        router.refresh();
         hardResetPaymentFlow();
         panelRef.current?.sendOrderConfirmed();
       } catch (err: unknown) {
@@ -429,6 +464,8 @@ const Page = () => {
       currency,
       clearCart,
       hardResetPaymentFlow,
+      router,
+      sendPosMessage,
     ]
   );
 
