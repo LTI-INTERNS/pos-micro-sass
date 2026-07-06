@@ -102,6 +102,7 @@ export default function AddBranchForm({
 
     if (!values.email.trim()) newErrors.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) newErrors.email = "Please enter a valid email address";
+    else if (/[A-Z]/.test(values.email)) newErrors.email = "Email must contain lowercase letters only";
 
     if (
       values.registrationNumber.trim() && 
@@ -230,7 +231,7 @@ export default function AddBranchForm({
             label="Email"
             placeholder="Enter email address"
             value={values.email}
-            onChange={(next) => setField("email", next)}
+            onChange={(next) => setField("email", next.toLowerCase())}
             type="email"
           />
           {errors.email && (
