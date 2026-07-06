@@ -8,6 +8,7 @@ import { PaymentSummary } from "@/components/Pos/posdashboard/OrderPaymentModal"
 export type PosMessage =
   | { type: "FEATURE_TOGGLE"; enabled: boolean } 
   | { type: "CUSTOMER_SELECTED"; customer: CustomerFormValues }
+  | { type: "CUSTOMER_UPDATED"; customer: CustomerFormValues }
   | { type: "CUSTOMER_CLEARED" }
   | { type: "ORDER_UPDATED"; items: OrderItem[]; subtotal: number; total: number }
   | { type: "ORDER_CLEARED" }
