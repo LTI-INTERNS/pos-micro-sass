@@ -30,6 +30,7 @@ export default function ManageCustomer({
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasSessionUser = Boolean(session?.user);
 
   useEffect(() => {
     const run = async () => {
@@ -46,10 +47,10 @@ export default function ManageCustomer({
       }
     };
 
-    if (session?.user) {
+    if (hasSessionUser) {
       void run();
     }
-  }, [session?.user]);
+  }, [hasSessionUser]);
 
   const filteredCustomers = useMemo(() => {
     const q = search.trim().toLowerCase();
