@@ -283,6 +283,8 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
                                     />
 
                                     <LogoUploadPill
+                                        initialPreviewUrl={logoUrl}
+                                        initialFileName={logoFile?.name ?? "Company logo"}
                                         onUploadStart={handleLogoUploadStart}
                                         onUploadDone={handleLogoUploadDone}
                                         onClear={handleLogoClear}
