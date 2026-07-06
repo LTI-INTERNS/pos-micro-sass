@@ -13,6 +13,7 @@ import ReportTable from "@/components/Admin/reports/ReportTable";
 import type { SaleRow, ExpenseRow, ProductRow } from "@/types/report.type";
 import type { ExportColumn } from "@/components/Admin/reports/exportUtils";
 import { expenseApi, type ExpenseApiItem } from "@/lib/api/expenses";
+import { branchService } from "@/lib/services/branch-service";
 import { orderService } from "@/lib/services/order-service";
 import { productService, type Product } from "@/lib/services";
 import type { Order } from "@/types/order.types";
@@ -49,6 +50,11 @@ export default function ReportsPage() {
   const [tableTab, setTableTab] = useState<TableTab>("sales");
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [branchOptions, setBranchOptions] = useState<{ label: string; value: string }[]>([]);
+
+  const userRole = (session?.user?.role ?? "").toLowerCase();
+  const canUseBranchFilter = userRole === "admin" || userRole === "owner";
 
   const statDateRange = useMemo(() => {
     if (!startDate || !endDate) return undefined;
@@ -75,22 +81,58 @@ export default function ReportsPage() {
   useEffect(() => {
     if (status !== "authenticated") return;
 
+    if (!canUseBranchFilter) {
+      setBranchOptions([]);
+      setSelectedBranch("");
+      return;
+    }
+
+    let cancelled = false;
+
+    branchService
+      .getAll()
+      .then((branches) => {
+        if (cancelled) return;
+        setBranchOptions(
+          branches.map((branch) => ({
+            label: branch.name,
+            value: branch.id,
+          }))
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setBranchOptions([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, canUseBranchFilter]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
     let cancelled = false;
     setExportLoading(true);
 
     const salesPromise = orderService
-      .getAll({ page: 1, limit: 1000 })
+      .getAll({
+        page: 1,
+        limit: 1000,
+        ...(selectedBranch ? { branchId: selectedBranch } : {}),
+      })
       .then(async (orders) => enrichOrdersWithItems(orders))
       .then((orders) => orders.map(mapOrderToSaleRow))
       .catch(() => [] as SaleRow[]);
 
     const expensesPromise = expenseApi
-      .getExpenses(session)
+      .getExpenses(session, selectedBranch ? { branchId: selectedBranch } : undefined)
       .then((rows) => rows.map(mapExpense))
       .catch(() => [] as ExpenseRow[]);
 
     const productsPromise = productService
-      .getAll()
+      .getAll(selectedBranch ? { branchId: selectedBranch } : undefined)
       .then((rows) => rows.map(mapProductToReportRow))
       .catch(() => [] as ProductReportRow[]);
 
@@ -109,9 +151,12 @@ export default function ReportsPage() {
     return () => {
       cancelled = true;
     };
-  }, [status, session]);
+  }, [status, session, selectedBranch]);
 
-  const branchLabel = "All Branches";
+  const branchLabel = useMemo(() => {
+    if (!selectedBranch) return "All Branches";
+    return branchOptions.find((branch) => branch.value === selectedBranch)?.label ?? "Selected Branch";
+  }, [branchOptions, selectedBranch]);
 
   const SALE_COLUMNS: ExportColumn[] = [
     { key: "date", label: "Date" },
@@ -245,15 +290,21 @@ export default function ReportsPage() {
                         const orders = await orderService.getAll({
                           page: 1,
                           limit: 1000,
+                          ...(selectedBranch ? { branchId: selectedBranch } : {}),
                         });
                         const enriched = await enrichOrdersWithItems(orders);
                         return enriched.map(mapOrderToSaleRow) as Record<string, unknown>[];
                       }
                       if (tableTab === "expenses") {
-                        const rows = await expenseApi.getExpenses(session);
+                        const rows = await expenseApi.getExpenses(
+                          session,
+                          selectedBranch ? { branchId: selectedBranch } : undefined
+                        );
                         return rows.map(mapExpense) as Record<string, unknown>[];
                       }
-                      const rows = await productService.getAll();
+                      const rows = await productService.getAll(
+                        selectedBranch ? { branchId: selectedBranch } : undefined
+                      );
                       return rows.map(mapProductToReportRow) as Record<string, unknown>[];
                     }
                   : undefined
@@ -275,12 +326,36 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder={`Search ${tableTab}...`}
-          debounceMs={300}
-        />
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+          <div className="flex-1">
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder={`Search ${tableTab}...`}
+              debounceMs={300}
+            />
+          </div>
+
+          {canUseBranchFilter && (
+            <div className="w-full lg:w-64">
+              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Branch
+              </label>
+              <select
+                value={selectedBranch}
+                onChange={(event) => setSelectedBranch(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none focus:border-indigo-500"
+              >
+                <option value="">All Branches</option>
+                {branchOptions.map((branch) => (
+                  <option key={branch.value} value={branch.value}>
+                    {branch.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
 
         <ReportActionsBar
           activeTab={tableTab}
@@ -293,6 +368,7 @@ export default function ReportsPage() {
           activeTab={tableTab}
           search={search}
           dateRange={statDateRange}
+          selectedBranch={selectedBranch}
           selectedSale={selectedSale}
           onSelectSale={setSelectedSale}
           selectedExpense={selectedExpense}
