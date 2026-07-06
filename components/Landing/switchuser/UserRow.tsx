@@ -109,7 +109,7 @@ export default function UserRow() {
         <div
           key={cashier.cashierId}
           onClick={() => handleSelectUser(cashier)}
-          className="w-[110px] flex justify-center bg-transparent cursor-pointer"
+          className="w-27.5 flex justify-center bg-transparent cursor-pointer"
         >
           <UserAvatar
             name={cashier.name}

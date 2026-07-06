@@ -237,7 +237,7 @@ export default function PinEntryPage() {
           className="object-cover"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-black" />
+        <div className="absolute inset-0 bg-linear-to-br from-gray-900 via-gray-800 to-black" />
       )}
       <div className="absolute inset-0 bg-black/20" />
 

@@ -227,7 +227,7 @@ function DialpadScreen({ phone, error, loading, onKey, onBackspace, onClear, onC
       <h1 className="text-2xl font-bold mb-1">Welcome</h1>
       <p className="text-white/70 text-sm mb-6">Enter your phone number to get started</p>
 
-      <div className="bg-white/10 rounded-2xl px-6 py-4 mb-2 min-h-[56px] flex items-center justify-center">
+      <div className="bg-white/10 rounded-2xl px-6 py-4 mb-2 min-h-14 flex items-center justify-center">
         <span className="text-3xl font-mono tracking-widest">
           {phone || <span className="text-white/30 text-lg font-sans font-normal">Enter number</span>}
         </span>

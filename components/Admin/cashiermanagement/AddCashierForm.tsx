@@ -204,7 +204,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
 
   return (
     <ModalShell open={isOpen} title="Add New Cashier" onClose={handleCancel}>
-      <div className="space-y-2 mt-[-4px]">
+      <div className="space-y-2 -mt-1">
 
         {/* Profile Image */}
         <ImageUploader
@@ -318,7 +318,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
         )}
 
         <div className="flex justify-center">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 {

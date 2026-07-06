@@ -304,9 +304,9 @@ export default function CompanyCreationStep({ data, onNext }: Props) {
                         }
                         left={
                             <div className="hidden md:block">
-                                <div className="rounded-2xl bg-gradient-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
+                                <div className="rounded-2xl bg-linear-to-b from-orange-500 to-orange-600 p-8 sm:p-10 text-white shadow-xl">
                                     <div className="flex justify-center mb-8">
-                                        <div className="relative w-full max-w-[380px] h-48 md:h-[230px] mx-auto">
+                                        <div className="relative w-full max-w-95 h-48 md:h-57.5 mx-auto">
                                             <Image
                                                 src="/saas/creationcompanylogo.svg"
                                                 alt="Company illustration"

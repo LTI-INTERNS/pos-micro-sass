@@ -144,7 +144,7 @@ export default function AddCustomerModal({
       widthClassName="w-[600px] max-w-[92vw]"
     >
       {headerSlot}
-      <form className="space-y-1 mt-[-10px]">
+      <form className="space-y-1 -mt-2.5">
         <FormField
           label="Customer Name *"
           placeholder="Enter customer name"
@@ -199,7 +199,7 @@ export default function AddCustomerModal({
         
 
         <div className="flex justify-center pt-4">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 {

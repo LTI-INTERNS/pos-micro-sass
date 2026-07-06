@@ -86,7 +86,7 @@ function OrderCompletePopup({
 
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-60 flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       aria-hidden={!open}
@@ -106,7 +106,7 @@ function OrderCompletePopup({
         <div className="p-8 text-center">
           <div className="relative mx-auto w-20 h-20 grid place-items-center">
             <span className="absolute inset-0 rounded-full glow" />
-            <span className="absolute inset-[-14px] rounded-full glow-strong" />
+            <span className="absolute -inset-3.5 rounded-full glow-strong" />
             <div className="w-16 h-16 rounded-full bg-orange-400 grid place-items-center relative z-10">
               <Check className="text-white" size={34} />
             </div>
@@ -127,7 +127,7 @@ function OrderCompletePopup({
             )}
             <button
               onClick={onClose}
-              className="px-8 py-3 h-12 min-w-[140px] rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
+              className="px-8 py-3 h-12 min-w-35 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
             >
               OK
             </button>
@@ -173,7 +173,7 @@ function PosToast({
   if (!message) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm shadow-xl max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-70 flex items-center gap-3 px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm shadow-xl max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <AlertCircle size={18} className="shrink-0 text-orange-400" />
       <span className="flex-1">{message}</span>
       <button

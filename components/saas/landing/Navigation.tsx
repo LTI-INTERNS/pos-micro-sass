@@ -125,7 +125,7 @@ export default function Navigation({
             variant="outline"
             fullWidth={false}
             className="
-              px-5 !bg-transparent
+              px-5 bg-transparent!
               [@media(min-width:768px)_and_(max-width:1023px)]:px-2
               [@media(min-width:768px)_and_(max-width:1023px)]:py-1
               [@media(min-width:768px)_and_(max-width:1023px)]:text-xs

@@ -160,7 +160,7 @@ export default function AddBranchForm({
       onClose={handleCancel}
       widthClassName="w-[700px] max-w-[92vw]"
     >
-      <form className="space-y-0.5 mt-[-10px]">
+      <form className="space-y-0.5 -mt-2.5">
         <div>
           <FormField
             label="Name"
@@ -267,7 +267,7 @@ export default function AddBranchForm({
         </div>
 
         <div className="flex justify-center">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 {
