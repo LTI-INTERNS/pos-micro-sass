@@ -309,6 +309,8 @@ const Page = () => {
 
       setIsSubmitting(true);
       setSubmitError(null);
+      setCompleteOpen(false);
+      setSavedReceipt(null);
 
       try {
 
