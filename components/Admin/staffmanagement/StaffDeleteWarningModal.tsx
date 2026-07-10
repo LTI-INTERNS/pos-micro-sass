@@ -61,7 +61,7 @@ export default function StaffDeleteWarningModal({
       {/* Staff info */}
       <p className="text-sm text-gray-700 mb-4">
         You are about to permanently delete{" "}
-        <span className="font-semibold text-gray-900">"{staffName}"</span>
+        <span className="font-semibold text-gray-900">&quot;{staffName}&quot;</span>
         {isManager && warnings.branchName && (
           <>
             {" "}
