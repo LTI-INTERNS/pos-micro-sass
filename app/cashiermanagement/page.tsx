@@ -517,6 +517,9 @@ export default function CashierManagementPage() {
               const otherCashiers = cashiers.filter((c) => c.id !== values.id);
 
               if (values.email) {
+                if (/[A-Z]/.test(values.email)) {
+                  errors.email = "Email must contain lowercase letters only";
+                }
                 const emailExists = otherCashiers.some(
                   (c) => c.email.toLowerCase() === values.email.toLowerCase()
                 );

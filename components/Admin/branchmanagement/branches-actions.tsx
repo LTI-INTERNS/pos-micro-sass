@@ -106,8 +106,14 @@ export default function BranchActionsBar({ selectedBranch, onAdd, onEdit, onDele
             if (!city) errors.city = "City is required";
             else if (!/[a-zA-Z]/.test(city)) errors.city = "City must contain at least one letter (only numbers not allowed)";
 
+            const email = (vals.email ?? "").trim();
+
             if (!address) errors.address = "Address is required";
             else if (!/[a-zA-Z]/.test(address)) errors.address = "Address must contain at least one letter (only numbers not allowed)";
+
+            if (!email) errors.email = "Email is required";
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Please enter a valid email address";
+            else if (/[A-Z]/.test(email)) errors.email = "Email must contain lowercase letters only";
 
             return errors;
           }}

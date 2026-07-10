@@ -12,8 +12,6 @@ type Cashier = {
   activeStatus: boolean;
 };
 
-const FALLBACK_IMG = "https://i.pravatar.cc/150?img=";
-
 export default function UserRow() {
   const router = useRouter();
 
@@ -55,9 +53,7 @@ export default function UserRow() {
       JSON.stringify({
         cashierId: cashier.cashierId,
         name: cashier.name,
-        img:
-          cashier.imgUrl ??
-          `${FALLBACK_IMG}${Math.floor(Math.random() * 70) + 1}`,
+        img: cashier.imgUrl?.trim() || "",
       })
     );
 
@@ -113,11 +109,11 @@ export default function UserRow() {
         <div
           key={cashier.cashierId}
           onClick={() => handleSelectUser(cashier)}
-          className="w-[110px] flex justify-center bg-transparent cursor-pointer"
+          className="w-27.5 flex justify-center bg-transparent cursor-pointer"
         >
           <UserAvatar
             name={cashier.name}
-            img={cashier.imgUrl ?? `${FALLBACK_IMG}${cashier.cashierNo}`}
+            img={cashier.imgUrl?.trim() || ""}
           />
         </div>
       ))}

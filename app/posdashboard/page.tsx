@@ -19,6 +19,7 @@ import SessionExpiryGuard from "@/components/Pos/SessionExpiryGuard";
 import { usePosStore } from "@/store/usePosStore";
 import PosNegativeStockToast, { type PosNegativeToastInfo } from "@/components/Pos/notifications/PosNegativeStockToast";
 import { orderService } from "@/lib/services/order-service";
+import { customerService } from "@/lib/services/customer-service";
 import { useReceiptPrinter } from "@/hooks/useReceiptActions";
 import type { CreateOrderInput } from "@/types/order.types";
 import { getApiErrorCode, getApiErrorMessage } from "@/lib/utils/api-error";
@@ -85,7 +86,7 @@ function OrderCompletePopup({
 
   return (
     <div
-      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
+      className={`fixed inset-0 z-60 flex items-center justify-center bg-black/40 px-4 transition-opacity duration-200 ${
         open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
       }`}
       aria-hidden={!open}
@@ -105,7 +106,7 @@ function OrderCompletePopup({
         <div className="p-8 text-center">
           <div className="relative mx-auto w-20 h-20 grid place-items-center">
             <span className="absolute inset-0 rounded-full glow" />
-            <span className="absolute inset-[-14px] rounded-full glow-strong" />
+            <span className="absolute -inset-3.5 rounded-full glow-strong" />
             <div className="w-16 h-16 rounded-full bg-orange-400 grid place-items-center relative z-10">
               <Check className="text-white" size={34} />
             </div>
@@ -126,7 +127,7 @@ function OrderCompletePopup({
             )}
             <button
               onClick={onClose}
-              className="px-8 py-3 h-12 min-w-[140px] rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
+              className="px-8 py-3 h-12 min-w-35 rounded-full bg-orange-500 text-white font-semibold hover:bg-orange-600 transition active:scale-95 cursor-pointer"
             >
               OK
             </button>
@@ -172,7 +173,7 @@ function PosToast({
   if (!message) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm shadow-xl max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-70 flex items-center gap-3 px-5 py-3 rounded-2xl bg-gray-900 text-white text-sm shadow-xl max-w-sm w-full mx-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
       <AlertCircle size={18} className="shrink-0 text-orange-400" />
       <span className="flex-1">{message}</span>
       <button
@@ -201,7 +202,7 @@ const Page = () => {
   const router = useRouter();
 
   // ── Force-logout when admin deactivates this cashier ────────────────────────
-  usePosChannel((msg) => {
+  const { send: sendPosMessage } = usePosChannel((msg) => {
     if (msg.type !== "CASHIER_DEACTIVATED") return;
     const currentCashierId = session?.user?.cashierId;
     if (currentCashierId && msg.cashierId === currentCashierId) {
@@ -308,6 +309,8 @@ const Page = () => {
 
       setIsSubmitting(true);
       setSubmitError(null);
+      setCompleteOpen(false);
+      setSavedReceipt(null);
 
       try {
 
@@ -349,9 +352,29 @@ const Page = () => {
         }
 
         const effectiveEmail = email?.trim() || selectedCustomer?.email || null;
+        let resolvedCustomer = selectedCustomer;
+
+        if (!resolvedCustomer?.customerId && effectiveEmail) {
+          try {
+            const customers = await customerService.search(effectiveEmail);
+            const match = customers.find(
+              (customer) => customer.email?.toLowerCase() === effectiveEmail.toLowerCase()
+            );
+            if (match) {
+              resolvedCustomer = {
+                customerId: match.id,
+                name: match.name,
+                phoneNumber: match.phone,
+                email: match.email ?? effectiveEmail,
+              };
+            }
+          } catch {
+            // The order API performs the same lookup authoritatively.
+          }
+        }
 
         const payload: CreateOrderInput = {
-          ...(selectedCustomer?.customerId && { customerId: selectedCustomer.customerId }),
+          ...(resolvedCustomer?.customerId && { customerId: resolvedCustomer.customerId }),
           ...(paymentSummary.discountId    && { discountId: paymentSummary.discountId }),
           ...(note?.trim()                 && { note: note.trim() }),
           ...(effectiveEmail               && { customerEmail: effectiveEmail }),
@@ -377,10 +400,23 @@ const Page = () => {
           paymentMethod: paymentSummary.paymentMethod,
           cashPaid:      paymentSummary.cashPaid,
           cardPaid:      paymentSummary.cardPaid,
-          customerName:  selectedCustomer?.name        ?? null,
-          customerPhone: selectedCustomer?.phoneNumber  ?? null,
+          customerName:  resolvedCustomer?.name        ?? null,
+          customerPhone: resolvedCustomer?.phoneNumber  ?? null,
           customerEmail: effectiveEmail,
         };
+
+        if (resolvedCustomer) {
+          sendPosMessage({
+            type: "CUSTOMER_UPDATED",
+            customer: {
+              customerId: resolvedCustomer.customerId,
+              name: resolvedCustomer.name,
+              phoneNumber1: resolvedCustomer.phoneNumber,
+              email: effectiveEmail ?? resolvedCustomer.email,
+              activeState: true,
+            },
+          });
+        }
 
         setSavedReceipt(receipt);
         setCompletedOrderNo(order.orderNumber);
@@ -388,7 +424,8 @@ const Page = () => {
         setConfirmOpen(false);
         setPaymentOpen(false);
         clearCart();
-      setInventoryRefreshKey((key) => key + 1);
+        setInventoryRefreshKey((key) => key + 1);
+        router.refresh();
         hardResetPaymentFlow();
         panelRef.current?.sendOrderConfirmed();
       } catch (err: unknown) {
@@ -429,6 +466,8 @@ const Page = () => {
       currency,
       clearCart,
       hardResetPaymentFlow,
+      router,
+      sendPosMessage,
     ]
   );
 

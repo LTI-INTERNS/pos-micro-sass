@@ -107,9 +107,8 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
   };
 
   const setPhoneField = (value: string) => {
-    const startsWithPlus = value.trim().startsWith("+");
-    const digitsOnly = value.replace(/\D/g, "").slice(0, 15);
-    const next = startsWithPlus ? `+${digitsOnly}`.slice(0, 16) : digitsOnly;
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+    const next = digitsOnly;
     setField("phone", next);
   };
 
@@ -137,11 +136,14 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValues.email)) {
       newErrors.email = "Please enter a valid email address";
     }
+    if (/[A-Z]/.test(formValues.email)) {
+      newErrors.email = "Email must contain lowercase letters only";
+    }
 
     if (!formValues.phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^\+?\d{7,15}$/.test(formValues.phone.trim())) {
-      newErrors.phone = "Enter a valid phone number using 7–15 digits";
+    } else if (!/^\d{10}$/.test(formValues.phone.trim())) {
+      newErrors.phone = "Phone number must be exactly 10 digits";
     }
 
     if (!formValues.pin) {
@@ -202,7 +204,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
 
   return (
     <ModalShell open={isOpen} title="Add New Cashier" onClose={handleCancel}>
-      <div className="space-y-2 mt-[-4px]">
+      <div className="space-y-2 -mt-1">
 
         {/* Profile Image */}
         <ImageUploader
@@ -283,7 +285,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
           label="Email"
           placeholder="Enter Email"
           value={formValues.email}
-          onChange={(val) => setField("email", val)}
+          onChange={(val) => setField("email", val.toLowerCase())}
         />
         {errors.email && (
           <p className="text-xs text-red-500 px-3">{errors.email}</p>
@@ -316,7 +318,7 @@ export function AddCashierForm({ isOpen, onClose, onSaved, showToast }: AddCashi
         )}
 
         <div className="flex justify-center">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 {

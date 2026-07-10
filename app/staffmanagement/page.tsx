@@ -38,6 +38,7 @@ type AdminTableRow = AdminStaff & { assignedCompanyNames: string };
 type ManagerTableRow = ManagerStaff;
 
 const EMPTY_OPTIONS: StaffCreateOptions = {
+  hasBranches: false,
   managerBranches: [],
   adminCompanies: [],
   existingAdmins: [],
@@ -227,7 +228,12 @@ export default function StaffManagementPage() {
         return;
       }
     } else if (noManagerCapacity) {
-      showToast("All available branches already have manager accounts assigned.", "info");
+      showToast(
+        !createOptions.hasBranches
+          ? "Set up a branch first before adding a manager."
+          : "All available branches already have manager accounts assigned.",
+        "info"
+      );
       return;
     }
 

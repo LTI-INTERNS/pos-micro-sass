@@ -13,7 +13,7 @@ import { usePosChannel } from "@/hooks/usePosChannel";
 type StoredCashier = {
   cashierId: string;
   name:      string;
-  img:       string;
+  img?:      string | null;
 };
 
 type FormStep = "pin-entry" | "manager-verification" | "new-pin-entry";
@@ -221,17 +221,24 @@ export default function PinEntryPage() {
   };
 
   const pinDots = "●".repeat(activePin.length);
+  const hasCashierImage = Boolean(cashier?.img?.trim());
+  const cashierInitial = cashier?.name?.trim().charAt(0).toUpperCase() || "?";
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-cover bg-center relative">
       <SessionExpiryGuard variant="switchuser" />
-      <Image
-        src={backgroundImage}
-        alt="Background"
-        fill
-        priority
-        className="object-cover"
-      />
+      {backgroundImage?.trim() ? (
+        <Image
+          src={backgroundImage}
+          alt="Background"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-linear-to-br from-gray-900 via-gray-800 to-black" />
+      )}
       <div className="absolute inset-0 bg-black/20" />
 
       <button
@@ -247,13 +254,20 @@ export default function PinEntryPage() {
         {/* ── Cashier avatar ───────────────────────────────────────────────── */}
         {cashier && formStep === "pin-entry" && (
           <div className="flex flex-col items-center mb-4">
-            <div className="relative w-16 h-16 rounded-full overflow-hidden border border-white/30">
-              <Image
-                src={cashier.img}
-                alt={cashier.name}
-                fill
-                className="object-cover"
-              />
+            <div className="relative flex w-16 h-16 items-center justify-center rounded-full overflow-hidden border border-white/30 bg-white/10">
+              {hasCashierImage ? (
+                <Image
+                  src={cashier.img!}
+                  alt={cashier.name}
+                  fill
+                  sizes="64px"
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-semibold text-white select-none">
+                  {cashierInitial}
+                </span>
+              )}
             </div>
             <p className="mt-3 text-sm text-white/70">Cashier</p>
             <h2 className="text-lg font-semibold text-white">{cashier.name}</h2>

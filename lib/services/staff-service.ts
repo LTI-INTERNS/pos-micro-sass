@@ -63,6 +63,7 @@ function mapManager(item: BackendManager): ManagerStaff {
 }
 
 function mapOptions(data: {
+  hasBranches: boolean;
   managerBranches: BranchOption[];
   adminCompanies: CompanyOption[];
   existingAdmins: Array<{
@@ -75,6 +76,7 @@ function mapOptions(data: {
   }>;
 }): StaffCreateOptions {
   return {
+    hasBranches: data.hasBranches,
     // Filter out soft-deleted branches — the backend marks deleted branches
     // by appending "_del_<timestamp>" to their name.
     managerBranches: data.managerBranches.filter(
@@ -105,6 +107,7 @@ export const staffService = {
   getCreateOptions: async (): Promise<StaffCreateOptions> => {
     const res = await apiClient.get<
       ApiResponse<{
+        hasBranches: boolean;
         managerBranches: BranchOption[];
         adminCompanies: CompanyOption[];
         existingAdmins: Array<{

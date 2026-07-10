@@ -265,7 +265,15 @@ export default function EditEntityModal<T extends object>({
         return;
       }
     }
-    await onSave(values);
+    try {
+      try {
+      await onSave(values);
+    } catch {
+      // The caller displays the API error; keep the modal open without an unhandled rejection.
+    }
+    } catch {
+      // The caller displays the API error; keep the modal open without an unhandled rejection.
+    }
   };
 
   return (
@@ -306,7 +314,7 @@ export default function EditEntityModal<T extends object>({
                     readOnly={field.readOnly}
                     placeholder={field.label}
                     onChange={(e) => handleChange(field.name, e.target.value)}
-                    className={`${inputBaseClass} rounded-xl min-h-[100px] py-3 text-sm ${stateClass}`}
+                    className={`${inputBaseClass} rounded-xl min-h-25 py-3 text-sm ${stateClass}`}
                   />
                 ) : field.type === "select" ? (
                   <select
@@ -374,7 +382,7 @@ export default function EditEntityModal<T extends object>({
         })}
 
         <div className="flex justify-center pt-4">
-          <div className="w-[420px]">
+          <div className="w-105">
             <PopupActions
               actions={[
                 { label: "Cancel", variant: "secondary", onClick: onClose },
