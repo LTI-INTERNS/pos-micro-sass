@@ -44,6 +44,8 @@ type RawVariant = {
   optionValues?: Array<{ optionName?: string; value?: string } | string>;
   imageUrl?: string;
   branchVariants?: Array<{ branchId: string }>;
+  supplierId?: string | null;
+  supplierName?: string | null;
 };
 
 function getVariantLabel(raw: RawVariant): string {
@@ -231,6 +233,12 @@ export default function AddStockPopup({
       });
       setCurrentStock(stockMap);
       setBranchVariants(prefilled);
+
+      // Prefill selectedSupplierId from the first variant that already has one
+      const existingSupplierId = product.variants
+        .map((v) => v as unknown as RawVariant)
+        .find((v) => v.supplierId)?.supplierId ?? "";
+      setSelectedSupplierId(existingSupplierId);
 
       setSuppliersLoading(true);
       const fetchFn = managerBranchId
