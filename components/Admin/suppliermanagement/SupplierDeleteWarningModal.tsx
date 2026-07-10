@@ -4,21 +4,21 @@ import React from "react";
 import ModalShell from "@/components/Admin/common/ModalShell";
 import ActionButton from "@/components/Admin/common/ActionButton";
 
-export interface CashierDeleteWarnings {
-  orderCount: number;
+export interface SupplierDeleteWarnings {
+  productCount: number;
 }
 
 type Props = {
   isOpen: boolean;
-  cashierName: string;
-  warnings: CashierDeleteWarnings;
+  supplierName: string;
+  warnings: SupplierDeleteWarnings;
   onClose: () => void;
   onConfirm: () => void;
 };
 
-export default function CashierDeleteWarningModal({
+export default function SupplierDeleteWarningModal({
   isOpen,
-  cashierName,
+  supplierName,
   warnings,
   onClose,
   onConfirm,
@@ -32,20 +32,20 @@ export default function CashierDeleteWarningModal({
 
   if (!isOpen) return null;
 
-  const { orderCount } = warnings;
-  const hasWarnings = orderCount > 0;
+  const { productCount } = warnings;
+  const hasWarnings = productCount > 0;
 
   return (
     <ModalShell
       open={isOpen}
-      title="Delete Cashier"
+      title="Delete Supplier"
       onClose={onClose}
       widthClassName="w-[500px] max-w-[92vw]"
     >
-      {/* Cashier info */}
+      {/* Supplier info */}
       <p className="text-sm text-gray-700 mb-4">
-        You are about to permanently delete cashier{" "}
-        <span className="font-semibold text-gray-900">&quot;{cashierName}&quot;</span>.
+        You are about to permanently delete supplier{" "}
+        <span className="font-semibold text-gray-900">&quot;{supplierName}&quot;</span>.
       </p>
 
       {/* Warning cards */}
@@ -54,26 +54,26 @@ export default function CashierDeleteWarningModal({
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">⚠️</span>
             <p className="text-sm font-semibold text-amber-800">
-              This cashier has active linked records
+              This supplier has active linked records
             </p>
           </div>
 
-          {orderCount > 0 && (
+          {productCount > 0 && (
             <div className="flex items-center gap-2 text-sm">
               <span>📦</span>
               <span
                 className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-700"
               >
-                {orderCount}
+                {productCount}
               </span>
               <span className="text-gray-700">
-                {orderCount === 1 ? "Order Record" : "Order Records"} linked to this cashier
+                {productCount === 1 ? "Product Variant" : "Product Variants"} linked to this supplier
               </span>
             </div>
           )}
 
           <p className="text-xs text-amber-700 pt-1 border-t border-amber-200">
-            Deleting this cashier will affect order history statistics. Consider deactivating the cashier instead of deletion if you wish to retain reports.
+            Deleting this supplier might affect product inventory records. Consider editing or deactivating the supplier if you wish to retain records.
           </p>
         </div>
       )}
@@ -82,7 +82,7 @@ export default function CashierDeleteWarningModal({
       {!hasWarnings && (
         <div className="mb-5 rounded-xl border border-gray-200 bg-gray-50 p-4">
           <p className="text-sm text-gray-600">
-            No orders are linked to this cashier.
+            No products are linked to this supplier.
           </p>
         </div>
       )}
@@ -96,26 +96,24 @@ export default function CashierDeleteWarningModal({
           className="mt-0.5 h-4 w-4 accent-red-500 cursor-pointer shrink-0"
         />
         <span className="text-sm text-gray-700">
-          I understand the risks and want to permanently delete this cashier and all its linked data.
+          I understand the risks and want to permanently delete this supplier.
         </span>
       </label>
 
       {/* Actions */}
-      <div className="flex gap-3">
+      <div className="flex justify-end gap-3">
         <ActionButton
           label="Cancel"
           variant="outline"
-          fullWidth
+          fullWidth={true}
           onClick={onClose}
         />
         <ActionButton
-          label="Delete Cashier"
+          label="Delete"
           variant="primary"
-          fullWidth
-          onClick={() => {
-            if (confirmed) onConfirm();
-          }}
+          fullWidth={true}
           disabled={!confirmed}
+          onClick={onConfirm}
         />
       </div>
     </ModalShell>

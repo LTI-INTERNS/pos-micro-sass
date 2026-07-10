@@ -200,7 +200,7 @@ function mapProduct(p: RawProduct): Product {
                 : p.category || '',
         // Supplier resolved from the branch-variant layer
         supplier: resolvedSupplier,
-        options: (p.options ?? []).map((opt) => {
+        options: (p.options ?? []).map((opt, i) => {
             const values = (opt.values ?? []).map((v) => {
                 // Handle both direct string values and { value, ... } structure
                 if (typeof v === 'string') return v;
@@ -208,18 +208,22 @@ function mapProduct(p: RawProduct): Product {
                 return '';
             }).filter((v: string) => v.trim() !== '');
 
+            const parsedId = Number(opt.optionId ?? opt.id ?? 0);
             return {
                 ...opt,
                 // Backend stores the option label as `optionName` (enum); frontend expects `name`
                 name: opt.optionName ?? opt.name ?? '',
-                id: Number(opt.optionId ?? opt.id ?? 0),
+                id: Number.isNaN(parsedId) ? i + 1 : parsedId,
                 values,
             };
         }),
-        variants: (p.variants ?? []).map(mapVariant).map(v => ({
-            ...v,
-            id: Number(v.variantId || v.id || 0)
-        })),
+        variants: (p.variants ?? []).map(mapVariant).map((v, i) => {
+            const parsedId = Number(v.variantId || v.id || 0);
+            return {
+                ...v,
+                id: Number.isNaN(parsedId) ? i + 1 : parsedId
+            };
+        }),
         // Attach branch stock map for admin/owner popup
         // Only populated when branchId is not filtered (i.e. admin/owner view)
         branchesStock: Object.keys(branchesStock).length > 0 ? branchesStock : undefined,

@@ -40,7 +40,6 @@ export default function AdditionalSettingsContent() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [systemImageId, setSystemImageId] = useState<string | null>(null);
   const [systemImageUrl, setSystemImageUrl] = useState<string | null>(null);
 
@@ -141,10 +140,9 @@ export default function AdditionalSettingsContent() {
 
   const handleSave = async () => {
     if (taxNumberRequired) {
-      setSaveError("Tax number is required when 'Show Tax Number' is enabled.");
+      showToast("Tax number is required when 'Show Tax Number' is enabled.", "error");
       return;
     }
-    setSaveError(null);
     setSaving(true);
 
     try {
@@ -184,7 +182,6 @@ export default function AdditionalSettingsContent() {
       const errorResponse = err as { response?: { data?: { error?: string } }; message?: string };
       const msg =
         errorResponse.response?.data?.error || errorResponse.message || "Failed to save settings.";
-      setSaveError(msg);
       showToast(msg, "error");
     } finally {
       setSaving(false);
@@ -251,11 +248,7 @@ export default function AdditionalSettingsContent() {
         }}
       />
 
-      {saveError && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
-          {saveError}
-        </div>
-      )}
+
 
       <div className="flex flex-col items-end gap-2">
         {taxNumberRequired && (
