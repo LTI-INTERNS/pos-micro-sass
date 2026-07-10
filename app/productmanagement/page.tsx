@@ -28,7 +28,8 @@ import { productService, Product } from "@/lib/services";
 import { useUrlFilters } from "@/hooks/useUrlFilters";
 import { useStoreInfo } from "@/lib/context/StoreInfoContext";
 import LoadingState from "@/components/Admin/common/LoadingState";
-import { getApiErrorMessage } from "@/lib/utils/api-error";
+import { getApiErrorMessage, getApiErrorCode } from "@/lib/utils/api-error";
+import { orderService } from "@/lib/services/order-service";
 
 interface VariantLike {
   variantId?: string | number;
@@ -108,6 +109,8 @@ export default function DashboardPage() {
   const [addVariantOpen, setAddVariantOpen] = useState(false);
   const [addStockOpen, setAddStockOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteOrderCount, setDeleteOrderCount] = useState(0);
 
   const { filters: urlFilters, setFilter } = useUrlFilters();
 
@@ -688,6 +691,34 @@ export default function DashboardPage() {
     setAddVariantOpen(false);
   };
 
+  const handleDeleteClick = async () => {
+    if (!baseSelectedProduct) {
+      showToast("Please select a product first!", "error");
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const params = activeBranchId ? { branchId: activeBranchId } : undefined;
+      const allOrders = await orderService.getAll(params);
+      const productOrders = allOrders.filter((order) =>
+        order.items.some((item) => {
+          const trimmedName = item.name.trim();
+          const targetName = baseSelectedProduct.name.trim();
+          return trimmedName === targetName || trimmedName.startsWith(targetName + " – ");
+        })
+      );
+      setDeleteOrderCount(productOrders.length);
+      setDeleteOpen(true);
+    } catch (err) {
+      console.error("Failed to check product relations:", err);
+      setDeleteOrderCount(0);
+      setDeleteOpen(true);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const baseSelectedProduct = useMemo(() => 
     selectedProduct ? getBaseProduct(selectedProduct) : null
   , [selectedProduct]);
@@ -734,11 +765,14 @@ export default function DashboardPage() {
       categoryId: baseSelectedProduct.categoryId || baseSelectedProduct.category,
       brand: baseSelectedProduct.brand || "",
       description: baseSelectedProduct.description || "",
-      options: (baseSelectedProduct.options ?? []).map((opt) => ({
-        id: opt.id,
-        name: opt.name,
-        values: opt.values,
-      })),
+      options: (baseSelectedProduct.options ?? []).map((opt, i) => {
+        const parsedId = Number(opt.id);
+        return {
+          id: Number.isNaN(parsedId) ? i + 1 : parsedId,
+          name: opt.name,
+          values: opt.values,
+        };
+      }),
       variants: (baseSelectedProduct.variants ?? []).map((v, i) => ({
         id: i + 1,
         sku: v.sku,
@@ -814,12 +848,13 @@ export default function DashboardPage() {
         <ProductActionsBar
           selectedProduct={baseSelectedProduct}
           onAddStock={() => setAddStockOpen(true)}
-          onDelete={() => setDeleteOpen(true)}
+          onDelete={handleDeleteClick}
           onEdit={() => setEditOpen(true)}
           onAddNew={() => setAddOpen(true)}
           userRole={userRole}
           onAddVariant={() => setAddVariantOpen(true)}
           showToast={showToast} // THE FIX: Pass showToast down
+          deleteLoading={deleteLoading}
         />
 
         {isLoading ? (
@@ -858,8 +893,13 @@ export default function DashboardPage() {
             handleProductPopupClose();
           } catch (error: unknown) {
             console.error("Failed to save product:", error);
-            const msg = getApiErrorMessage(error, "Failed to save product.");
-            showToast(`Error: ${msg}`, "error");
+            const code = getApiErrorCode(error);
+            if (code === "SKU_ALREADY_EXISTS") {
+              showToast("Already existing SKU", "error");
+            } else {
+              const msg = getApiErrorMessage(error, "Failed to save product.");
+              showToast(`Error: ${msg}`, "error");
+            }
             // Do NOT call handleProductPopupClose() here, so data stays intact
           }
         }}
@@ -924,6 +964,7 @@ export default function DashboardPage() {
           onClose={() => setDeleteOpen(false)}
           product={baseSelectedProduct}
           showToast={showToast} // THE FIX: Pass showToast down
+          orderCount={deleteOrderCount}
           onConfirm={async ({ deleteAll, selectedVariants }) => {
             try {
               if (deleteAll) {
