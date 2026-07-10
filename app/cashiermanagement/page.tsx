@@ -11,7 +11,6 @@ import CashiersTable, { type Cashier as TableCashier } from "@/components/Admin/
 import { AddCashierForm } from "@/components/Admin/cashiermanagement/AddCashierForm";
 import FilterChips from "@/components/Admin/common/FilterChips";
 import DeactivateCashierPopup from "@/components/Admin/cashiermanagement/DeactivateCashierPopup";
-import DeletePopup from "@/components/Admin/common/Deletepopup";
 import EditEntityModal, { EditField } from "@/components/Admin/common/EditPopup";
 import { cashierService } from "@/lib/services/cashier-service";
 import { branchService } from "@/lib/services/branch-service";
@@ -69,7 +68,6 @@ export default function CashierManagementPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
 
   const [deactivatePopupOpen, setDeactivatePopupOpen] = useState(false);
-  const [deletePopupOpen, setDeletePopupOpen]         = useState(false);
   const [deleteWarningOpen, setDeleteWarningOpen]     = useState(false);
   const [deleteWarnings, setDeleteWarnings]           = useState<CashierDeleteWarnings>({ orderCount: 0 });
   const [deleteLoading, setDeleteLoading]             = useState(false);
@@ -252,7 +250,6 @@ export default function CashierManagementPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.cashiers.stats(effectiveBranchId) }),
       ]);
       setDeleteWarningOpen(false);
-      setDeletePopupOpen(false);
       showToast("Cashier deleted successfully!", "success");
     } catch {
       showToast("Failed to delete cashier. Please try again.", "error");
