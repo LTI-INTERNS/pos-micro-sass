@@ -39,6 +39,18 @@ import { productService } from "@/lib/services/product-service";
 import { uploadService } from "@/lib/services/upload-service";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
+const getPlaceholderForOption = (name: string): string => {
+  const n = name?.trim().toLowerCase();
+  if (!n) return "e.g. Enter a value";
+  if (n.includes("weight")) return "e.g. 500g, 1kg";
+  if (n.includes("size")) return "e.g. S, M, L, XL or 32, 34, 36";
+  if (n.includes("volume")) return "e.g. 250ml, 1L, 750ml";
+  if (n.includes("colour") || n.includes("color")) return "e.g. Red, Blue, Black";
+  if (n.includes("flavour") || n.includes("flavor")) return "e.g. Chocolate, Vanilla, Strawberry";
+  if (n.includes("pack")) return "e.g. Pack of 6, 10 Pieces, Box of 12";
+  return `e.g. Enter a value for ${name}`;
+};
+
 // ─── Step 1 — Product Selection Table (manager add-variant flow) ──────────────
 
 export function Step1VariantSelect({
@@ -422,7 +434,7 @@ export function Step2({
                 <FieldWrap>
                   <Label>Values (press Enter or Tab to add)</Label>
                   <Input
-                    placeholder="e.g. 500mg"
+                    placeholder={getPlaceholderForOption(opt.name)}
                     onKeyDown={(e) => {
                       if (e.key !== "Enter" && e.key !== "Tab") return;
                       e.preventDefault();
@@ -479,7 +491,7 @@ export function Step2({
           <FieldWrap>
             <Label>Values (press Enter or Tab to add)</Label>
             <Input
-              placeholder="e.g. 500mg"
+              placeholder={getPlaceholderForOption(opt.name)}
               onKeyDown={(e) => {
                 if (e.key !== "Enter" && e.key !== "Tab") return;
                 e.preventDefault();
@@ -870,7 +882,7 @@ export function Step3({
             >
               <option value="">Select a value…</option>
               {activeOptions.map((option) => (
-                <optgroup key={option.name} label={option.name}>
+                <optgroup key={option.id} label={option.name}>
                   {option.values.map((value) => (
                     <option key={value} value={`${option.name}:::${value}`}>
                       {value}
