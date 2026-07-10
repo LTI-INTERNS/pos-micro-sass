@@ -35,7 +35,17 @@ function normalizePhoneForApi(phone: string): string {
     return compact.startsWith("00") ? `+${compact.slice(2)}` : compact;
 }
 
-function readApiError(data: any, fallback: string): { message: string; code?: string } {
+interface ApiErrorData {
+    error?: {
+        userMessage?: string;
+        message?: string;
+        code?: string;
+    };
+    message?: string;
+    code?: string;
+}
+
+function readApiError(data: ApiErrorData | null | undefined, fallback: string): { message: string; code?: string } {
     return {
         message:
             data?.error?.userMessage ||
