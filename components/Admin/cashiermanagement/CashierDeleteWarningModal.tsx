@@ -45,7 +45,7 @@ export default function CashierDeleteWarningModal({
       {/* Cashier info */}
       <p className="text-sm text-gray-700 mb-4">
         You are about to permanently delete cashier{" "}
-        <span className="font-semibold text-gray-900">"{cashierName}"</span>.
+        <span className="font-semibold text-gray-900">&quot;{cashierName}&quot;</span>.
       </p>
 
       {/* Warning cards */}
