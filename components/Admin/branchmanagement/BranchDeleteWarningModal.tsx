@@ -48,7 +48,7 @@ export default function BranchDeleteWarningModal({
       {/* Branch info */}
       <p className="text-sm text-gray-700 mb-4">
         You are about to permanently delete branch{" "}
-        <span className="font-semibold text-gray-900">"{branchName}"</span>.
+        <span className="font-semibold text-gray-900">&quot;{branchName}&quot;</span>.
       </p>
 
       {/* Warning cards */}
