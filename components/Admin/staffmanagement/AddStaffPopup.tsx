@@ -302,6 +302,7 @@ export default function AddStaffPopup({
     if (role === "MANAGER") {
       if (!scopeId) nextErrors.branchId = "Please select a branch";
       if (!name.trim()) nextErrors.name = "Name is required";
+      else if (!/[a-zA-Z]/.test(name)) nextErrors.name = "Name must contain at least one letter (only numbers not allowed)";
       if (!staffNo.trim()) nextErrors.staffNo = "Staff number is required";
       if (!email.trim()) nextErrors.email = "Email is required";
       if (!phone.trim()) nextErrors.phone = "Phone is required";
@@ -311,6 +312,7 @@ export default function AddStaffPopup({
     if (role === "ADMIN" && adminMode === "NEW") {
       if (!scopeId) nextErrors.companyId = "Please select a company";
       if (!name.trim()) nextErrors.name = "Name is required";
+      else if (!/[a-zA-Z]/.test(name)) nextErrors.name = "Name must contain at least one letter (only numbers not allowed)";
       if (!staffNo.trim()) nextErrors.staffNo = "Staff number is required";
       if (!email.trim()) nextErrors.email = "Email is required";
       if (!phone.trim()) nextErrors.phone = "Phone is required";
@@ -328,8 +330,12 @@ export default function AddStaffPopup({
       nextErrors.email = "Please enter a valid email address";
     }
 
-    if (phone.trim() && phone.trim().length < 10) {
-      nextErrors.phone = "Phone number must have at least 10 digits";
+    if ((role === "MANAGER" || adminMode === "NEW") && /[A-Z]/.test(email)) {
+      nextErrors.email = "Email must contain lowercase letters only";
+    }
+
+    if (phone.trim() && !/^0\d{9}$/.test(phone.trim())) {
+      nextErrors.phone = "Phone must be exactly 10 digits and start with 0 (e.g. 0771234567)";
     } else if (phone.trim() && existingPhones.includes(phone.trim())) {
       showToast("Phone number is already registered to another staff member.", "error");
       nextErrors.phone = "Phone number already in use";
@@ -366,7 +372,7 @@ export default function AddStaffPopup({
           companyId: scopeId,
           name: name.trim(),
           staffNo: staffNo.trim(),
-          email: email.trim().toLowerCase(),
+          email: email.trim(),
           phone: phone.trim(),
           password,
         });
@@ -461,7 +467,7 @@ export default function AddStaffPopup({
                   <FieldLabel>Email</FieldLabel>
                   <RoundedInput
                     value={email}
-                    onChange={setEmail}
+                    onChange={(value) => setEmail(value.toLowerCase())}
                     placeholder="Enter email"
                     type="email"
                   />
@@ -531,7 +537,7 @@ export default function AddStaffPopup({
                   <FieldLabel>Email</FieldLabel>
                   <RoundedInput
                     value={email}
-                    onChange={setEmail}
+                    onChange={(value) => setEmail(value.toLowerCase())}
                     placeholder="Enter email"
                     type="email"
                   />
@@ -596,7 +602,7 @@ export default function AddStaffPopup({
                   <>
                     <div className="space-y-2">
                       <FieldLabel>Assigned Companies</FieldLabel>
-                      <div className="min-h-[48px] rounded-2xl border border-gray-200 px-3 py-3">
+                      <div className="min-h-12 rounded-2xl border border-gray-200 px-3 py-3">
                         <div className="flex flex-wrap gap-2">
                           {assignedTags.map((company) => (
                             <StaticTag key={company.companyId}>{company.name}</StaticTag>

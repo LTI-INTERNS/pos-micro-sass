@@ -11,6 +11,10 @@ import FilterPopup from "@/components/Admin/common/FilterPopup";
 import { branchService, Branch, UpdateBranchInput } from "@/lib/services/branch-service";
 import { useTableFilters, getFilterOptions } from "@/components/Admin/common/Filterlogic";
 import FilterChips from "@/components/Admin/common/FilterChips";
+import { staffService } from "@/lib/services/staff-service";
+import { cashierService } from "@/lib/services/cashier-service";
+import { orderService } from "@/lib/services/order-service";
+import BranchDeleteWarningModal, { BranchDeleteWarnings } from "@/components/Admin/branchmanagement/BranchDeleteWarningModal";
 
 import RefreshButton from "@/components/Admin/common/RefreshButton";
 import LoadingState from "@/components/Admin/common/LoadingState";
@@ -25,6 +29,15 @@ export default function BranchesPage() {
   const [search, setSearch] = useState("");
   const [showFilter, setShowFilter] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
+
+  // Delete warning modal state
+  const [deleteWarningOpen, setDeleteWarningOpen] = useState(false);
+  const [deleteWarnings, setDeleteWarnings] = useState<BranchDeleteWarnings>({
+    activeManagerCount: 0,
+    activeCashierCount: 0,
+    orderCount: 0,
+  });
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const { toasts, showToast, dismissToast } = useToast();
 
@@ -69,12 +82,20 @@ export default function BranchesPage() {
     search,
     start,
     end,
-    searchKeys: ["id", "name", "address", "regno", "email"],
+    searchKeys: ["id", "name", "city", "address", "regno", "email"],
     filters,
   });
 
   const handleAddBranch = async (values: Record<string, string>) => {
     // THE FIX: Added "throw new Error()" to stop the popup from closing!
+    if (allBranches.some(b => b.name.trim().toLowerCase() === values.name.trim().toLowerCase())) {
+      showToast("Branch name is already registered", "error");
+      throw new Error("Validation Error");
+    }
+    if (allBranches.some(b => b.address.trim().toLowerCase() === values.address.trim().toLowerCase())) {
+      showToast("Branch address is already registered", "error");
+      throw new Error("Validation Error");
+    }
     if (allBranches.some(b => b.phone === values.phoneNumber)) {
       showToast("Phone number is already registered", "error");
       throw new Error("Validation Error");
@@ -115,6 +136,14 @@ export default function BranchesPage() {
     if (!selectedBranch) return;
 
     // THE FIX: Added "throw new Error()" to stop the popup from closing!
+    if (allBranches.some(b => b.id !== selectedBranch.id && b.name.trim().toLowerCase() === updatedBranch.name.trim().toLowerCase())) {
+      showToast("Branch name is already registered", "error");
+      throw new Error("Validation Error");
+    }
+    if (allBranches.some(b => b.id !== selectedBranch.id && b.address.trim().toLowerCase() === updatedBranch.address.trim().toLowerCase())) {
+      showToast("Branch address is already registered", "error");
+      throw new Error("Validation Error");
+    }
     if (allBranches.some(b => b.id !== selectedBranch.id && b.phone === updatedBranch.phone)) {
       showToast("Phone number is already registered", "error");
       throw new Error("Validation Error");
@@ -155,8 +184,43 @@ export default function BranchesPage() {
     }
   };
 
+  // Step 1 — pre-check linked records and open warning modal
   const handleDeleteBranch = async () => {
     if (!selectedBranch) return;
+    setDeleteLoading(true);
+    try {
+      const [staffDir, allCashiers, branchOrders] = await Promise.all([
+        staffService.getAll(),
+        cashierService.getAll(),
+        orderService.getAll({ branchId: selectedBranch.id }),
+      ]);
+
+      const activeManagers = staffDir.managers.filter(
+        (m) => m.branchId === selectedBranch.id && m.activeStatus
+      );
+      const activeCashiers = allCashiers.filter(
+        (c) => c.branchId === selectedBranch.id && c.activeStatus
+      );
+
+      setDeleteWarnings({
+        activeManagerCount: activeManagers.length,
+        activeCashierCount: activeCashiers.length,
+        orderCount: branchOrders.length,
+      });
+      setDeleteWarningOpen(true);
+    } catch {
+      // If pre-check fails, still allow deletion with zero counts
+      setDeleteWarnings({ activeManagerCount: 0, activeCashierCount: 0, orderCount: 0 });
+      setDeleteWarningOpen(true);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Step 2 — user confirmed in the warning modal, actually delete
+  const handleConfirmDelete = async () => {
+    if (!selectedBranch) return;
+    setDeleteWarningOpen(false);
     try {
       await branchService.delete(selectedBranch.id);
       setAllBranches((prev) => prev.filter((b) => b.id !== selectedBranch.id));
@@ -215,7 +279,8 @@ export default function BranchesPage() {
           onAdd={handleAddBranch}
           onEdit={handleEditBranch}
           onDelete={handleDeleteBranch}
-          showToast={showToast} // THE FIX: Pass the showToast function
+          deleteLoading={deleteLoading}
+          showToast={showToast}
         />
 
         {loading ? (
@@ -230,6 +295,17 @@ export default function BranchesPage() {
       </div>
 
       <ToastNotification toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Branch delete warning modal */}
+      {selectedBranch && (
+        <BranchDeleteWarningModal
+          isOpen={deleteWarningOpen}
+          branchName={selectedBranch.name}
+          warnings={deleteWarnings}
+          onClose={() => setDeleteWarningOpen(false)}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </DashboardLayout>
   );
 }

@@ -64,6 +64,7 @@ export interface ExistingAdminOption {
 }
 
 export interface StaffCreateOptions {
+  hasBranches: boolean;
   managerBranches: BranchOption[];
   adminCompanies: CompanyOption[];
   existingAdmins: ExistingAdminOption[];

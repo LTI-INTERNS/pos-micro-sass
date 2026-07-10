@@ -1,5 +1,4 @@
 import { apiClient } from '@/lib/api-client';
-import { productsData } from '@/lib/mocks/productmanagement';
 
 export interface PosProduct {
     id: string;
@@ -89,14 +88,7 @@ export const posService = {
                     }
                 }
                 return posProducts;
-            })
-            .catch(() => productsData.map(p => ({ 
-                id: p.id, 
-                name: p.name, 
-                price: p.variants?.[0]?.price ?? 0,
-                availability: true,
-                stockQty: 0
-            }))),
+            }),
 
     createOrder: (data: unknown) =>
         apiClient.post<ApiResponse<unknown>>('/orders', data).then(res => res.data.data),

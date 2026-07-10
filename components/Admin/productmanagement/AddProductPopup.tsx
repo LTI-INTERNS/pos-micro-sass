@@ -15,7 +15,6 @@ import {
 } from "./types";
 import { StepBar } from "./ui-components";
 import { Step1, Step1VariantSelect, Step2, Step3 } from "./step-components";
-import SuccessPopup from "@/components/Admin/common/SuccessPopup";
 import { usePosSettings } from "@/lib/context/PosSettingsContext";
 
 export type { ExistingProduct } from "./types";
@@ -45,7 +44,6 @@ export default function AddProductPopup({
   const { addNotification } = useNotifications();
   const { posSettings } = usePosSettings();
   const productImageRequired = posSettings.productImageRequired;
-  const [showSuccessPopup, setShowSuccessPopup] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [state, setState] = React.useState<ProductState>(emptyState());
   const [submitting, setSubmitting] = React.useState(false);
@@ -55,6 +53,12 @@ export default function AddProductPopup({
   const [selectedOptionIds, setSelectedOptionIds] = React.useState<Set<number>>(new Set());
   const [selectedVariantIds, setSelectedVariantIds] = React.useState<Set<number>>(new Set());
   const [barcodeErrors, setBarcodeErrors] = React.useState<Record<number, string>>({});
+
+  const confirmedRemovalRef = React.useRef(false);
+
+  React.useEffect(() => {
+    confirmedRemovalRef.current = false;
+  }, [state.options, state.variants, selectedOptionIds, selectedVariantIds]);
 
   const isManagerVariantMode = userRole === "manager" && isAddVariantMode;
   const isManagerEditMode = userRole === "manager" && !!initialData && !isAddVariantMode;
@@ -286,6 +290,27 @@ export default function AddProductPopup({
       finalState = state;
     }
 
+    if (initialData) {
+      const initialOptionNames = new Set(initialData.options.map((o) => o.name.trim().toLowerCase()));
+      const currentOptionNames = new Set(finalState.options.map((o) => o.name.trim().toLowerCase()));
+      const hasRemovedOptions = [...initialOptionNames].some((name) => !currentOptionNames.has(name));
+
+      const initialVariantSkus = new Set(initialData.variants.map((v) => v.sku.trim().toUpperCase()));
+      const currentVariantSkus = new Set(finalState.variants.map((v) => v.sku.trim().toUpperCase()));
+      const hasRemovedVariants = [...initialVariantSkus].some((sku) => !currentVariantSkus.has(sku));
+
+      if ((hasRemovedOptions || hasRemovedVariants) && !confirmedRemovalRef.current) {
+        confirmedRemovalRef.current = true;
+        const msg = hasRemovedOptions && hasRemovedVariants
+          ? "Warning: You are removing options and variants. Saving will delete them and their stock. Click again to confirm."
+          : hasRemovedOptions
+            ? "Warning: You are removing product options. Saving will delete them. Click again to confirm."
+            : "Warning: You are removing variants. Saving will delete them and their stock. Click again to confirm.";
+        showToast(msg, "info");
+        return;
+      }
+    }
+
     if (userRole === "manager" && !isManagerEditMode && !isManagerVariantMode) {
       setSubmitting(true);
       try {
@@ -308,7 +333,8 @@ export default function AddProductPopup({
             optionValues: v.optionValues,
           })),
         });
-        setShowSuccessPopup(true);
+        showToast(`"${state.name.trim()}" has been submitted for approval.`, "success");
+        onClose();
       } catch {
         showToast("Failed to submit for approval. Please try again.", "error"); // THE FIX: Use toast
       } finally {
@@ -358,8 +384,7 @@ export default function AddProductPopup({
           : "Add Product";
 
   return (
-    <>
-      <ModalShell open={open && !showSuccessPopup} title={modalTitle} onClose={onClose} widthClassName="w-[860px] max-w-[95vw]">
+    <ModalShell open={open} title={modalTitle} onClose={onClose} widthClassName="w-[860px] max-w-[95vw]">
       <form onSubmit={(e) => { e.preventDefault(); if (step === STEPS.length - 1) { handleSave(); } else { handleNext(); } }}>
         <StepBar current={step} onGo={goStep} />
 
@@ -425,15 +450,5 @@ export default function AddProductPopup({
         </div>
       </form>
     </ModalShell>
-    <SuccessPopup
-      open={showSuccessPopup}
-      title="Approval Request Submitted!"
-      subText={`"${state.name.trim()}" has been submitted for approval. The admin/owner will review it shortly.`}
-      onClose={() => {
-        setShowSuccessPopup(false);
-        onClose();
-      }}
-    />
-    </>
   );
 }

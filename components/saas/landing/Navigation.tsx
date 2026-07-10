@@ -35,6 +35,30 @@ export default function Navigation({
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
   const router = useRouter();
 
+  const handleSectionClick = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    const destination = new URL(href, window.location.href);
+
+    if (destination.pathname !== window.location.pathname) return;
+
+    const section = document.querySelector<HTMLElement>(destination.hash);
+    if (!section) return;
+
+    event.preventDefault();
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    window.history.pushState(null, "", destination.hash);
+    setActiveHash(destination.hash);
+    section.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
   useEffect(() => {
     const updateHash = () => setActiveHash(window.location.hash);
     updateHash();
@@ -53,9 +77,12 @@ export default function Navigation({
       middleContent={
         <>
           {links.map((link, index) => {
+            const linkHash = link.href.includes("#")
+              ? `#${link.href.split("#")[1]}`
+              : "";
             const isActive =
               hoveredLink === link.href ||
-              link.href === activeHash ||
+              linkHash === activeHash ||
               link.href === pathname;
 
             return (
@@ -64,7 +91,7 @@ export default function Navigation({
                 href={link.href}
                 onMouseEnter={() => setHoveredLink(link.href)}
                 onMouseLeave={() => setHoveredLink(null)}
-                onClick={() => setActiveHash(link.href)}
+                onClick={(event) => handleSectionClick(event, link.href)}
                 className={`
                   relative px-6 py-3 transition-all duration-300
                   [@media(min-width:768px)_and_(max-width:1023px)]:px-2
@@ -98,7 +125,7 @@ export default function Navigation({
             variant="outline"
             fullWidth={false}
             className="
-              px-5 !bg-transparent
+              px-5 bg-transparent!
               [@media(min-width:768px)_and_(max-width:1023px)]:px-2
               [@media(min-width:768px)_and_(max-width:1023px)]:py-1
               [@media(min-width:768px)_and_(max-width:1023px)]:text-xs

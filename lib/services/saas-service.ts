@@ -15,18 +15,96 @@ export interface CreateCompanyInput {
     subId:          string;
 }
 
+export interface ValidateCompanyDetailsInput {
+    companyName:   string;
+    address:       string;
+    contactNumber: string;
+    email:         string;
+}
+
 export type CreateCompanyResult =
     | { ok: true;  companyId: string; name: string; businessType: string }
-    | { ok: false; message: string };
+    | { ok: false; message: string; code?: string };
 
+export type ValidateCompanyDetailsResult =
+    | { ok: true }
+    | { ok: false; message: string; code?: string };
+
+function normalizePhoneForApi(phone: string): string {
+    const compact = phone.trim().replace(/[\s().-]/g, "");
+    return compact.startsWith("00") ? `+${compact.slice(2)}` : compact;
+}
+
+interface ApiErrorData {
+    error?: {
+        userMessage?: string;
+        message?: string;
+        code?: string;
+    };
+    message?: string;
+    code?: string;
+}
+
+function readApiError(data: ApiErrorData | null | undefined, fallback: string): { message: string; code?: string } {
+    return {
+        message:
+            data?.error?.userMessage ||
+            data?.error?.message ||
+            data?.message ||
+            fallback,
+        code: data?.error?.code || data?.code,
+    };
+}
+
+async function getBackendToken(): Promise<string | null> {
+    const session = await getServerSession(authOptions);
+    return session?.user?.backendToken ?? null;
+}
+
+export async function validateCompanyDetails(
+    input: ValidateCompanyDetailsInput,
+): Promise<ValidateCompanyDetailsResult> {
+    const token = await getBackendToken();
+
+    if (!token) {
+        return { ok: false, message: "Not authenticated. Please sign in again.", code: "UNAUTHENTICATED" };
+    }
+
+    try {
+        const res = await fetch(`${API}/api/v1/companies/validate-details`, {
+            method:  "POST",
+            headers: {
+                "Content-Type":  "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                ...input,
+                email: input.email.trim().toLowerCase(),
+                contactNumber: normalizePhoneForApi(input.contactNumber),
+            }),
+            cache: "no-store",
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            const { message, code } = readApiError(data, "Company details are not valid.");
+            return { ok: false, message, code };
+        }
+
+        return { ok: true };
+    } catch {
+        return { ok: false, message: "Unable to reach the server. Please try again.", code: "NETWORK_ERROR" };
+    }
+}
 
 export async function createCompany(
     input: CreateCompanyInput,
 ): Promise<CreateCompanyResult> {
-    const session = await getServerSession(authOptions);
+    const token = await getBackendToken();
 
-    if (!session?.user?.backendToken) {
-        return { ok: false, message: "Not authenticated. Please sign in again." };
+    if (!token) {
+        return { ok: false, message: "Not authenticated. Please sign in again.", code: "UNAUTHENTICATED" };
     }
 
     try {
@@ -34,15 +112,21 @@ export async function createCompany(
             method:  "POST",
             headers: {
                 "Content-Type":  "application/json",
-                "Authorization": `Bearer ${session.user.backendToken}`,
+                "Authorization": `Bearer ${token}`,
             },
-            body: JSON.stringify(input),
+            body: JSON.stringify({
+                ...input,
+                email: input.email.trim().toLowerCase(),
+                contactNumber: normalizePhoneForApi(input.contactNumber),
+            }),
+            cache: "no-store",
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-            return { ok: false, message: data?.message ?? "Failed to create company." };
+            const { message, code } = readApiError(data, "Failed to create company.");
+            return { ok: false, message, code };
         }
 
         return {
@@ -53,6 +137,6 @@ export async function createCompany(
         };
 
     } catch {
-        return { ok: false, message: "Unable to reach the server. Please try again." };
+        return { ok: false, message: "Unable to reach the server. Please try again.", code: "NETWORK_ERROR" };
     }
 }

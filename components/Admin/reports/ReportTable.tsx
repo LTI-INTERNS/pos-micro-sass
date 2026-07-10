@@ -17,6 +17,7 @@ type Props = {
   activeTab: string;
   search: string;
   dateRange?: DateRangeParams;
+  selectedBranch?: string;
   selectedSale: SaleRow | null;
   selectedExpense: ExpenseRow | null;
   selectedProduct: ProductRow | null;
@@ -143,6 +144,7 @@ export default function ReportTable({
   activeTab,
   search,
   dateRange,
+  selectedBranch = "",
   selectedSale,
   onSelectSale,
   selectedExpense,
@@ -173,7 +175,11 @@ export default function ReportTable({
     let cancelled = false;
 
     orderService
-      .getAll({ page: 1, limit: 1000 }) // ðŸ”¥ FIX: fetch full dataset
+      .getAll({
+        page: 1,
+        limit: 1000,
+        ...(selectedBranch ? { branchId: selectedBranch } : {}),
+      })
       .then((data) => {
         if (cancelled) return;
         setRealSales(data.map(mapOrderToSaleRow));
@@ -190,7 +196,7 @@ export default function ReportTable({
     return () => {
       cancelled = true;
     };
-  }, [activeTab, status]);
+  }, [activeTab, status, selectedBranch]);
 
   const finalSalesData = realSales;
 
@@ -206,18 +212,16 @@ export default function ReportTable({
     if (status !== "authenticated") return;
 
     expenseApi
-      .getExpenses(session)
+      .getExpenses(session, selectedBranch ? { branchId: selectedBranch } : undefined)
       .then((rows) => setRealExpenses(rows.map(mapExpense)))
       .catch(() => setRealExpenses([]));
-  }, [status, session]);
+  }, [status, session, selectedBranch]);
 
   const finalExpensesData = realExpenses;
 
   const filteredExpensesData = useMemo(
     () =>
-      finalExpensesData.filter((row) =>
-        isWithinDateRange(row.date, dateRange)
-      ),
+      finalExpensesData.filter((row) => isWithinDateRange(row.date, dateRange)),
     [finalExpensesData, dateRange]
   );
 
@@ -231,17 +235,15 @@ export default function ReportTable({
     setProductsLoading(true);
 
     productService
-      .getAll()
+      .getAll(selectedBranch ? { branchId: selectedBranch } : undefined)
       .then((data) => setProductReportRows(data.map(mapProductToReportRow)))
       .catch(() => setProductReportRows([]))
       .finally(() => setProductsLoading(false));
-  }, [activeTab, status]);
+  }, [activeTab, status, selectedBranch]);
 
   const filteredProductRows = useMemo(
     () =>
-      productReportRows.filter((row) =>
-        isWithinDateRange(row.createdAt, dateRange)
-      ),
+      productReportRows.filter((row) => isWithinDateRange(row.createdAt, dateRange)),
     [productReportRows, dateRange]
   );
 

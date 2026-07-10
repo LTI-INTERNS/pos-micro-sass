@@ -31,7 +31,6 @@ function isAllowedRole(role: string): role is AllowedRole {
 export default function CustomersPage() {
   const { data: session, status } = useSession();
   const role     = session?.user?.role     ?? "";
-  const branchId = session?.user?.branchId ?? "";
   const canSeeAllBranches = role === "OWNER" || role === "ADMIN";
   const queryClient = useQueryClient();
 
@@ -45,7 +44,7 @@ export default function CustomersPage() {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [filters, setFilters]                   = useState<{ points?: string; branch?: string; status?: string }>({});
 
-  const effectiveBranchId = canSeeAllBranches ? undefined : branchId;
+  const effectiveBranchId = undefined;
   const customersQuery = useQuery({
     queryKey: queryKeys.customers.list(effectiveBranchId),
     queryFn: () => customerService.getAll(effectiveBranchId),

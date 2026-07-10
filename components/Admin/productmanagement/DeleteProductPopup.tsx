@@ -13,6 +13,7 @@ type Props = {
     selectedVariants: string[];
   }) => void;
   showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
+  orderCount: number;
 };
 
 // ─── Reusable styled components ───────────────────
@@ -141,9 +142,15 @@ export default function DeleteProductPopup({
   product,
   onConfirm,
   showToast,
+  orderCount,
 }: Props) {
   const [deleteAll, setDeleteAll] = useState(true);
   const [selectedVariants, setSelectedVariants] = useState<string[]>([]);
+  const [confirmed, setConfirmed] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) setConfirmed(false);
+  }, [isOpen]);
 
   if (!isOpen || !product) return null;
 
@@ -171,6 +178,11 @@ export default function DeleteProductPopup({
       return;
     }
 
+    if (orderCount > 0 && !confirmed) {
+      showToast("Please confirm that you understand the risks of deletion", "error");
+      return;
+    }
+
     onConfirm({
       deleteAll: deleteAll || isAllSelected,
       selectedVariants,
@@ -191,7 +203,30 @@ export default function DeleteProductPopup({
             ? "This action cannot be undone. The entire product and all its variants will be permanently deleted."
             : "This action cannot be undone. The selected variants will be permanently deleted."
         }
-    </WarningMessage>
+      </WarningMessage>
+
+      {orderCount > 0 && (
+        <div className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">⚠️</span>
+            <p className="text-sm font-semibold text-amber-800">
+              This product has active linked records
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span>📦</span>
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-700">
+              {orderCount}
+            </span>
+            <span className="text-gray-700">
+              {orderCount === 1 ? "Order Record" : "Order Records"} linked to this product
+            </span>
+          </div>
+          <p className="text-xs text-amber-700 pt-1 border-t border-amber-200">
+            Deleting this product will affect order history statistics and sales reports. Consider deactivating the variants instead if you wish to retain reports.
+          </p>
+        </div>
+      )}
 
       {/* Product Info */}
       <div className="mb-5 p-3 bg-orange-50 border border-orange-300 rounded-xl">
@@ -247,6 +282,20 @@ export default function DeleteProductPopup({
         </div>
       )}
 
+      {orderCount > 0 && (
+        <label className="flex items-start gap-3 cursor-pointer mb-5 select-none">
+          <input
+            type="checkbox"
+            checked={confirmed}
+            onChange={(e) => setConfirmed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-red-500 cursor-pointer shrink-0"
+          />
+          <span className="text-sm text-gray-700">
+            I understand the risks and want to permanently delete this product and all its linked data.
+          </span>
+        </label>
+      )}
+
       {/* Actions */}
       <div className="flex justify-end gap-3 pt-2">
         <button
@@ -258,7 +307,8 @@ export default function DeleteProductPopup({
 
         <button
           onClick={handleConfirm}
-          className="px-6 py-2 text-sm bg-orange-500 text-white rounded-4xl hover:bg-orange-600 transition font-medium cursor-pointer"
+          disabled={orderCount > 0 && !confirmed}
+          className="px-6 py-2 text-sm bg-orange-500 text-white rounded-4xl hover:bg-orange-600 transition font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {deleteAll || isAllSelected
             ? `Delete ${product.name}`

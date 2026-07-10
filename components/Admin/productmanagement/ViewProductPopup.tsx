@@ -725,15 +725,26 @@ export default function ViewProductPopup({
                         </div>
                       </div>
                       {focusedVariant.imageUrl && (
-                        <div className="relative w-16 h-16 ml-3 flex-shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setImagePreviewUrl(focusedVariant.imageUrl!)}
+                          className="relative w-16 h-16 ml-3 flex-shrink-0 rounded-lg overflow-hidden border border-gray-200 hover:ring-2 hover:ring-orange-400 transition cursor-zoom-in"
+                          title="Click to enlarge"
+                        >
                           <Image
                             src={focusedVariant.imageUrl}
                             alt={focusedVariant.sku}
                             fill
-                            className="object-cover rounded-lg border border-gray-200"
+                            className="object-cover"
                             sizes="64px"
                           />
-                        </div>
+                          {/* Zoom hint overlay */}
+                          <span className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition">
+                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0zm-6-3v6m-3-3h6" />
+                            </svg>
+                          </span>
+                        </button>
                       )}
                     </div>
                   </div>

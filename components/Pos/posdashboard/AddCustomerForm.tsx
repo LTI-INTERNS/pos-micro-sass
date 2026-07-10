@@ -58,6 +58,7 @@ export default function AddCustomerForm({
         (err as { response?: { data?: { message?: string } } })?.response?.data
           ?.message ?? "Failed to add customer. Please try again.";
       setError(msg);
+      throw err;
     } finally {
       setSubmitting(false);
     }

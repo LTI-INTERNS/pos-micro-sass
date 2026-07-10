@@ -12,6 +12,7 @@ type Props = {
   onAddVariant?: () => void; 
   userRole?: "owner" | "admin" | "manager";
   showToast: (message: string, type: "success" | "error" | "info") => void; // THE FIX
+  deleteLoading?: boolean;
 };
 
 export default function ProductActionsBar({
@@ -23,6 +24,7 @@ export default function ProductActionsBar({
   onAddVariant,
   userRole = "admin",
   showToast,
+  deleteLoading = false,
 }: Props) {
   const requireSelection = (action?: () => void) => {
     if (!selectedProduct) {
@@ -43,8 +45,9 @@ export default function ProductActionsBar({
 
       {!isManager && (
         <ActionButton
-          label="Delete Product"
+          label={deleteLoading ? "Checking..." : "Delete Product"}
           onClick={() => requireSelection(onDelete)}
+          disabled={deleteLoading}
         />
       )}
 
