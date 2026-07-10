@@ -19,6 +19,8 @@ export interface ProductVariant {
     stockQty?: number;       // ← ADDED: mapped from branchVariant.stockQty
     lowStock?: number;       // ← ADDED: mapped from branchVariant.lowStock
     available?: boolean;     // ← ADDED: mapped from branchVariant.availability
+    supplierId?: string | null;
+    supplierName?: string | null;
 }
 
 export interface ProductOption {
